@@ -6,10 +6,10 @@ Each skill is a directory with a `SKILL.md` file (YAML frontmatter + markdown in
 
 ## Skills directory
 
-| Skill                                               | Description                                                                                                                                     |
-| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`create-agent-skill`](create-agent-skill/SKILL.md) | Create, revise, and validate agent skills that follow the [agentskills.io](https://agentskills.io) format and practical skill-writing guidance. |
-| [`coding-discipline`](coding-discipline/SKILL.md)   | Apply disciplined software engineering habits that keep agent-written code simple, scoped, maintainable, and verifiable. Adapted from [karpathy-guidelines](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/skills/karpathy-guidelines/SKILL.md). |
+| Skill                                               | Description                                                                                                                                                                                                                                                                                                                   |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`create-agent-skill`](create-agent-skill/SKILL.md) | Create, revise, and validate agent skills that follow the [agentskills.io](https://agentskills.io) format and practical skill-writing guidance.                                                                                                                                                                               |
+| [`coding-discipline`](coding-discipline/SKILL.md)   | Apply disciplined software engineering habits that keep agent-written code simple, scoped, maintainable, and verifiable. Based on [karpathy-guidelines](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/skills/karpathy-guidelines/SKILL.md), broadened to practical, production-ready engineering discipline. |
 
 ## Install
 
