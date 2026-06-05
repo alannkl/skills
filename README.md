@@ -12,18 +12,21 @@ Each skill is a directory with a `SKILL.md` file (YAML frontmatter + markdown in
 
 ## Install
 
-**Skills CLI** (recommended):
+### Skills CLI
+
+List skills in this repo:
 
 ```bash
-# List available skills
 npx skills add alannkl/skills --list
-
-# Install one skill (project-local)
-npx skills add alannkl/skills --skill create-agent-skill -y
-
-# Install globally
-npx skills add alannkl/skills --skill create-agent-skill -g -y
 ```
+
+Install all skills (project-local):
+
+```bash
+npx skills add alannkl/skills --all -y
+```
+
+Add `-g` for a global install. Use `--skill <name>` instead of `--all` to install one skill.
 
 **Manual** — copy or symlink a skill directory into your agent's skills path:
 
