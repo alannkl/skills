@@ -1,33 +1,35 @@
 ---
 name: refine-it
-description: Refine an existing artifact into a stronger ready-to-use version while preserving its intent, scope, and direction. Use when the user asks to refine, tighten, polish, finalize, improve, clean up, sharpen, or revise docs, plans, prompts, specs, messages, skill files, and other written artifacts. Default to producing the improved version, not just critique.
+description: Refine an existing artifact into a stronger, ready-to-use version while preserving its intent, scope, and direction. Use when the user asks to refine, tighten, polish, finalize, improve, clean up, sharpen, or revise a written artifact. Default to producing the improved version, not just critique.
 ---
 
 # Refine It
 
-A lightweight refinement pass for an existing artifact, whether a rough draft, a near-final version, or the current state of a document. Refine the writing; do not redesign the underlying plan, and do not refine code logic.
+A lightweight refinement pass for an existing artifact, whether it is a rough draft, a near-final version, or the current state of a document. Refine the writing; do not redesign the underlying plan or refine code logic.
 
 ## Workflow
 
 1. Identify the artifact and its job.
-   - Infer type, audience, purpose, desired tone, and level of intervention from the prompt and surrounding context.
+   - Infer the artifact type, audience, purpose, desired tone, and level of intervention from the prompt and surrounding context.
    - Preserve explicit constraints, terminology, structure, factual claims, and decisions unless they are unclear, contradictory, or actively weaken the artifact.
+   - Treat routing, eligibility, permissions, configuration, and scope metadata as operational semantics: refine the wording, but preserve the behavior.
    - If intent is genuinely ambiguous, ask only the smallest necessary question; otherwise make a conservative assumption and proceed.
 
 2. Evaluate before rewriting.
    - Look for unclear purpose, weak structure, repetition, vague wording, hidden assumptions, missing context, tone mismatch, overclaiming, and unfinished parts.
-   - Separate refinement problems from strategy problems. Improve the current direction; do not redesign it unless the user asks.
+   - Separate refinement problems from strategy problems. Improve the current direction without redesigning it unless the user asks.
 
 3. Refine and polish directly.
    - Produce a stronger version, not just critique, unless the user asks for review notes only.
    - Tighten language by removing filler, merging duplication, choosing concrete verbs and nouns, and making implicit decisions explicit.
-   - Improve structure only as much as needed for clarity, flow, scanability, and readiness.
+   - Improve structure only as much as clarity, flow, scanability, and readiness require.
+   - Polish scope-bearing language without broadening or narrowing it. Preserve triggers, audiences, promises, permissions, requirements, labels, statuses, API names, configuration keys, and eligibility criteria unless the user asks to change scope.
    - Preserve the user's voice; do not flatten casual, direct, or opinionated writing into generic corporate prose.
 
 4. Finalize the handoff.
    - Put the final version first when the user is likely to use it directly.
-   - For short artifacts, return only the refined version unless a note prevents confusion. For longer ones, use `Final Version` then optional `Notes`.
-   - Keep notes concise and only when useful: major changes, assumptions, unresolved ambiguity, or claims that need verification.
+   - For short artifacts, return only the refined version unless a note would prevent confusion. For longer artifacts, use `Final Version` followed by optional `Notes`.
+   - Keep notes concise and include them only when useful: major changes, assumptions, unresolved ambiguity, or claims that need verification.
    - If editing a repo file, update the file and summarize changed files. This is a text-edit pass only; do not run linters, link checks, builds, or other tooling.
 
 ## Example
@@ -43,3 +45,4 @@ After: "To use this, configure your settings first."
 - Do not add facts, examples, promises, or requirements unless they follow clearly from the existing artifact.
 - Do not over-expand lightweight artifacts; tighter and more usable often beats more complete.
 - Do not turn refinement into research, implementation, or product strategy unless the user explicitly broadens the task.
+- Do not change the behavior of operational text such as frontmatter descriptions, issue labels, policy clauses, CLI flags, configuration keys, routing text, or search/matching language just to make the wording sound stronger.

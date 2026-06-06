@@ -1,18 +1,28 @@
 # Skills
 
-A personal collection of agent skills: portable instruction packages that teach AI agents repeatable workflows.
+A personal collection of agent skills: portable instruction packages that teach AI agents repeatable workflows, project conventions, and domain-specific habits.
 
-Each skill lives in its own directory with a `SKILL.md` file containing YAML frontmatter and markdown instructions. Skills may also include `references/`, `scripts/`, and `assets/`, and follow the [agentskills.io specification](https://agentskills.io/specification).
+Each skill lives in its own directory and follows the [agentskills.io specification](https://agentskills.io/specification). A skill starts with `SKILL.md`, which contains YAML frontmatter and markdown instructions, and may include supporting `references/`, `scripts/`, or `assets/`.
 
 ## Available Skills
 
 | Skill                                               | Description                                                                                                                                                                                                                                                                                                                                     |
 | --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`create-agent-skill`](create-agent-skill/SKILL.md) | Create, revise, and validate agent skills that follow the [agentskills.io](https://agentskills.io) format and practical skill-writing guidance.                                                                                                                                                                                                 |
+| [`create-agent-skill`](create-agent-skill/SKILL.md) | Create new agent skills from reusable workflows, domain expertise, or project conventions, following the [agentskills.io](https://agentskills.io) format.                                                                                                                                                                                       |
 | [`coding-discipline`](coding-discipline/SKILL.md)   | Apply disciplined software engineering habits that keep agent-written code simple, scoped, maintainable, and verifiable. Based on [karpathy-guidelines](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/skills/karpathy-guidelines/SKILL.md), broadened for practical, production-ready engineering.                             |
 | [`commit-message`](commit-message/SKILL.md)         | Draft clear Conventional Commit messages from real git state, using staged changes by default when they exist. Includes behavior-oriented bullets, explicit breaking-change or required-action notes, and a copyable commit command when appropriate.                                                                                           |
 | [`grill-to-plan`](grill-to-plan/SKILL.md)           | Clarify casual ideas or stress-test plans, designs, and vague goals until they become decisions and an actionable plan. Based on [`grill-me`](https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-me/SKILL.md) and [`grill-with-docs`](https://github.com/mattpocock/skills/tree/main/skills/engineering/grill-with-docs). |
-| [`refine-it`](refine-it/SKILL.md)                   | Refine an existing artifact into a stronger, ready-to-use version while preserving its intent, scope, and direction. Useful for cleanup, final-pass editing, tightening, polishing, and clearer writing without silently redesigning the artifact.                                                                                              |
+| [`refine-it`](refine-it/SKILL.md)                   | Refine an existing artifact into a stronger, ready-to-use version while preserving its intent, scope, and direction. Use for cleanup, final-pass editing, tightening, polishing, and clearer writing without silently redesigning the artifact.                                                                                                 |
+
+## Repository Layout
+
+```text
+<skill-name>/
+  SKILL.md
+  references/  # optional supporting docs
+  scripts/     # optional deterministic helpers
+  assets/      # optional templates, images, or static data
+```
 
 ## Installation
 
