@@ -8,6 +8,7 @@ Use ADRs for durable architectural or boundary decisions that are hard to revers
 - In multi-context repos, use root `docs/adr/` for system-wide decisions and context-local `docs/adr/` when the decision belongs to one documented context.
 - Use sequential files: `0001-slug.md`, `0002-slug.md`, and so on.
 - Create `docs/adr/` lazily, only when the first ADR is needed.
+- Create missing parent directories the first time you write an ADR.
 
 ## Shape
 

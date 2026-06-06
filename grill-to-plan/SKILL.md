@@ -5,7 +5,7 @@ description: Turn casual ideas, vague goals, plans, or designs into clearer deci
 
 # Grill to Plan
 
-Turn a vague goal, rough idea, plan, or design into shared understanding, clear decisions, and a final actionable plan. Start with the `grill-me` behavior: ask one question at a time, provide a recommended answer, walk the decision tree branch by branch, and inspect the codebase instead of asking when the answer is discoverable.
+Turn a vague goal, rough idea, plan, or design into shared understanding, clear decisions, and a final actionable plan.
 
 ## Modes
 
@@ -71,12 +71,8 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - Skip the session record for lightweight mode unless requested or the discussion produces decisions worth preserving.
 
 9. Finish with a synthesis sized to the mode.
-   - Provide the resolved plan or clarified decision.
-   - List open questions or explicit deferrals.
-   - List decisions made.
-   - List docs updated, including `CONTEXT.md`, ADRs, and the session record, or say none were needed.
-   - List key risks or watchpoints.
-   - Provide concrete next steps.
+   - In lightweight mode, give the resolved decision, any explicit deferral, and the next step.
+   - In documented mode, provide the full synthesis: resolved plan, decisions made, open questions, docs updated, risks, and next steps.
 
 ## ADR Rule
 
