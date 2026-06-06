@@ -7,6 +7,7 @@ Use `CONTEXT.md` as a glossary for domain language only.
 - Single-context repo: create or update `/CONTEXT.md`.
 - Multi-context repo: if `/CONTEXT-MAP.md` exists, use it to find the relevant context and update that context's `CONTEXT.md`.
 - Create the file lazily, only when the first domain term is resolved.
+- Create missing parent directories the first time you write the file.
 - If multiple contexts exist and the right one is unclear, ask before writing.
 
 ## Shape

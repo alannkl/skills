@@ -7,6 +7,7 @@ Use the session record as the current state of the discussion, not as a full tra
 - Default location: `docs/grill-to-plan/{yyyy-mm-dd}-{slug}.md`.
 - Use an existing repo convention instead when the project already has a planning, discovery, or decision-log folder.
 - Create the document when the first question is answered or the first decision is made.
+- Create missing parent directories the first time you write the document.
 
 ## Shape
 
