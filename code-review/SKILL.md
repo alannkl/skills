@@ -30,10 +30,11 @@ Apply principal-engineer judgment: reason from evidence and first principles whe
    - If intent is missing, infer it and label it as an assumption, not a fact. When code appears to implement the wrong behavior, check intent against existing system and business logic before reviewing mechanics.
    - If tooling is unavailable because there is no PR platform, the checkout is detached or shallow, or commands fail, degrade gracefully: review what you can access, state which context you could not gather, and treat that gap as residual risk rather than guessing.
 
-2. Read enough context.
+2. Read enough context, then stop.
    - Inspect changed files, related tests, called functions, imported modules, neighboring code, and contract-defining files as needed.
    - Identify public surfaces touched: APIs, CLI flags, config, schemas, migrations, events, persisted data, permissions, external integrations, and serialized formats.
    - For generated or mechanical diffs, inspect the generator, source rule, or representative output instead of line-reviewing noise.
+   - Bound the reading: stay within the change's blast radius — the changed code and what it directly affects or depends on. Stop expanding once you can defend each finding's evidence; do not read the whole repository to chase hypothetical risk.
 
 3. Scan by risk, not file order.
    - Find plausible failure modes across the whole review surface before deciding which findings are worth reporting.
@@ -58,10 +59,11 @@ Apply principal-engineer judgment: reason from evidence and first principles whe
    - Treat missing tests as findings only when tied to concrete behavior risk.
    - Look for false confidence: brittle mocks, assertions that cannot fail, missing edge cases, nondeterminism, fixtures that hide the bug, or tests overfit to implementation.
    - Run focused tests when feasible. If tests are not run, state the gap.
+   - Before reporting a suspected bug, try to disprove it: trace the actual call sites, check the boundary or input that would trigger it, and confirm no guard, caller, or existing test already prevents it. If you cannot construct a concrete failing case, downgrade the finding or report it as an assumption rather than a proven defect.
 
 6. Control review size.
    - Flag large non-mechanical diffs as reviewability findings when they are too broad to inspect reliably.
-   - Use scrutiny thresholds, adjusted to repo norms and change complexity: roughly over 800 changed lines for non-mechanical changes, or over 500 for complex logic.
+   - Treat a non-mechanical change as too large when you can no longer hold its behavior and dependencies in working context well enough to defend each finding. Logic-dense or high-risk changes hit that limit far sooner than mechanical ones; calibrate to the repo's norms rather than a fixed line count.
    - Treat reviewability as a finding when change structure blocks reliable review: unrelated changes bundled together, mechanical and semantic edits mixed without separation, generated output without the source rule or generator change, migrations mixed with behavior changes, or broad rewrites without a clear dependency chain.
    - Suggest the smallest coherent stage based on real dependencies, affected call sites, and migration order.
 
@@ -75,14 +77,15 @@ Apply principal-engineer judgment: reason from evidence and first principles whe
    - **Do not report:** guessed intent without concrete evidence, pure style opinions, praise, restatements of the code, vague "check/ensure/verify" chores, speculative issues without evidence, or broad rewrites when a local fix addresses the issue.
 
 8. Self-check before finalizing.
-   - Confirm every finding meets the `Finding Quality` checklist below; drop any that do not.
+   - Confirm every finding meets the `Finding Quality` checklist below; drop any that do not, and apply the severity-calibration rule from Step 7 to anything uncertain.
    - Remove findings that would require the author to "check" something the reviewer can inspect, unless the next step is a specific test or measurement that cannot be run in the current environment.
-   - Downgrade uncertain but useful risks instead of presenting them as proven failures.
    - Keep optional report sections short. Omit sections that do not add useful information, except `Tests / checks` and residual risks when checks were not run or context was unavailable.
 
 ## Output Format
 
 Start with findings ordered by severity. Keep scope concise and place it after findings unless the user explicitly asks for a different format. If there are no findings, start with `No findings in the reviewed scope.`
+
+For small reviews (a narrow diff with one or few findings), `Findings`, `Scope`, and `Tests / checks` are sufficient; omit the other sections unless they carry real information.
 
 Use this structure:
 
@@ -117,8 +120,6 @@ Use this structure:
 
 - <smallest actionable review follow-ups for the code author>
 ```
-
-Do not include `Residual risks` just to restate ordinary uncertainty; use it only for material gaps that affect confidence in the review.
 
 ## Finding Quality
 
