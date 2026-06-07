@@ -1,19 +1,28 @@
 ---
 name: create-agent-skill
-description: Create new Agent Skills from reusable workflows, domain expertise, or project conventions. Use when the user asks to create an agent skill, write a new SKILL.md file, package reusable agent instructions, or turn a repeated workflow into a portable skill.
+description: Create Agent Skill files from reusable workflows, domain expertise, or project conventions. Use when the user asks to write, scaffold, implement, package, install, or update an actual SKILL.md or skill directory; do not use for plan-only skill design unless the user explicitly asks to create files.
 ---
 
 # Create Agent Skill
 
-Use this workflow to create a portable Agent Skill: a directory whose `SKILL.md` contains frontmatter plus concise instructions, with optional resources loaded only when needed.
+Use this workflow to create a portable Agent Skill: a directory with a concise `SKILL.md` and optional supporting resources loaded only when needed.
+
+## Activation Boundary
+
+- Use this skill only when the user wants files written or updated.
+- Planning-only requests stay in planning mode. This includes plans, designs, critiques, outlines, requirements, and skill-shape discussions.
+- If a request mixes planning and creation, resolve the plan first and edit only after the implementation path is confirmed.
+- Named tools, skills, frameworks, or workflows do not override the user's requested mode.
 
 ## Workflow
 
-1. Gather requirements.
+1. Confirm scope.
+   - Identify the concrete artifact to create or update: skill directory, `SKILL.md`, references, scripts, assets, or inventory docs.
+   - If file-writing intent is ambiguous and edits would be surprising, ask for confirmation before editing.
    - Identify the task or domain the skill covers.
    - Capture the specific prompts, contexts, files, or workflows that should trigger it.
-   - Note adjacent prompts that should not trigger it.
-   - Decide whether it needs instructions only or also scripts, references, assets, or templates.
+   - Note adjacent requests that should not trigger it.
+   - Decide whether it needs only instructions or also scripts, references, assets, or templates.
    - Collect reference materials to include or summarize.
    - Ground the skill in real expertise: completed tasks, user corrections, project docs, runbooks, schemas, review comments, issues, or patches.
 
@@ -37,7 +46,7 @@ Use this workflow to create a portable Agent Skill: a directory whose `SKILL.md`
    - Move detailed documentation into `references/`.
    - Move reusable templates, images, sample files, or static data into `assets/`.
    - Add scripts in `scripts/` only for deterministic operations that would otherwise be recreated repeatedly.
-   - Keep references one level deep and say exactly when to load each file.
+   - Keep references one level deep and state when to load each file.
 
 5. Review and validate the result.
    - Present the draft when scope is uncertain or the skill encodes domain-specific preferences.
