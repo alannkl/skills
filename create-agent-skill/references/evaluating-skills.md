@@ -1,6 +1,6 @@
 # Evaluating Agent Skills
 
-Use this reference only when the user asks to evaluate, benchmark, or improve a skill through formal tests.
+Use this reference only when the user asks to evaluate, benchmark, or improve a skill through formal tests. Do not treat these checks as part of the default skill-creation workflow; otherwise, suggest formal evals as an optional next step for the user.
 
 ## Trigger Checks
 
@@ -11,7 +11,7 @@ Use this reference only when the user asks to evaluate, benchmark, or improve a 
 
 ## Output Quality Checks
 
-- Start with 2-3 realistic eval cases in `evals/evals.json`.
+- If the user wants eval files, start with 2-3 realistic cases in `evals/evals.json`.
 - Each case should include `prompt`, `expected_output`, optional `files`, and later `assertions`.
 - Compare with no skill for new skills, or with the previous version for revised skills.
 - Grade assertions with concrete evidence. Use scripts for mechanical checks and human or LLM review for judgment-heavy qualities.
