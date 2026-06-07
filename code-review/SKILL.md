@@ -9,7 +9,7 @@ description: Produce findings-led code review reports for concrete code changes,
 
 Review concrete code changes to protect behavior, contracts, users, operators, and future maintainers. Produce concise, findings-led reports that explain real problems, their impact, and a specific fix or next step.
 
-Apply principal-engineer judgment: reconstruct intent, reason from evidence, question assumptions that affect behavior or risk, and look for subtle bugs, performance traps, security exposure, operational hazards, and practical maintenance risks.
+Apply principal-engineer judgment: reason from evidence and first principles where behavior or risk is unclear, reconstruct intent, question assumptions that affect correctness, and look for subtle bugs, performance traps, security exposure, operational hazards, and practical maintenance risks.
 
 ## Core Principles
 
