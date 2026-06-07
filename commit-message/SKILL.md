@@ -32,6 +32,7 @@ Draft commit-message text from the real git state. Default to Conventional Commi
    - Use `type(scope)!: summary` or `type!: summary` for breaking changes.
    - Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `build`, `ci`, `style`, `revert`.
    - Pick a scope that reflects the affected product area, package, module, command, or workflow, not the file extension.
+   - Pick the type from the behavioral intent of the change, not the file type. Instruction-bearing text changes are `feat` when they add or meaningfully change capabilities, `fix` when they correct broken or misleading behavior, and `docs` only when they are explanatory-only.
    - Keep the first line concise. Reflect the main change and, when clear from the diff, the reason.
    - Use imperative present tense: `fix auth refresh handling`, not `fixed` or `fixes`.
    - If the user asks for a subject-only, short, or one-line message, return only this header.
@@ -93,6 +94,7 @@ BREAKING CHANGE: `GET /users` no longer accepts `page` or `per_page`; clients mu
 - Do not trigger this skill for general PR review, branch review, history review, or commit-message critique.
 - Do not mix staged and unstaged changes by default when both exist; include unstaged changes only when they are the only changes, explicitly in scope, or requested as part of all changes.
 - Do not infer business impact from filenames alone.
+- Do not classify text-format changes as `docs` when they change executable instructions, agent behavior, workflows, prompts, generated outputs, configuration semantics, or runtime behavior.
 - Do not include a scope just to fill the format; an inaccurate scope is worse than no scope.
 - Do not use `chore` for user-visible fixes or features.
 - Do not bury migrations, environment changes, or manual follow-up in generic bullets.
