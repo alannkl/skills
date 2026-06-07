@@ -16,7 +16,7 @@ Review code to protect behavior, contracts, users, operators, and future maintai
 - Scope the review to the requested selection, branch, PR, files, or diff. Avoid unrelated legacy findings unless the change triggers or worsens them.
 - Correctness, security, regressions, data integrity, and contract safety outrank style and preference.
 - Respect repository rules, project architecture, framework conventions, and user instructions over generic advice.
-- Report only concrete, actionable, high-confidence issues; prefer a few defensible findings over broad commentary. Every finding must explain the problem, why it matters, and a specific proposed fix or next step.
+- Report only concrete, actionable, high-confidence issues; prefer a few defensible findings over broad commentary. See `## Finding Quality` for what each finding must contain.
 
 ## Workflow
 
