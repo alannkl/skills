@@ -18,6 +18,7 @@ A refinement pass for an existing artifact, whether it is a rough draft, a near-
 2. Evaluate before rewriting.
    - Look for unclear purpose, weak structure, repetition, vague wording, hidden assumptions, missing context, tone mismatch, overclaiming, and unfinished parts.
    - Separate refinement problems from strategy problems. Improve the current direction decisively without changing the artifact's goal, audience, or operational behavior unless the user asks.
+   - If the artifact is already strong for its job, make only light polish or state that no substantive edits are needed; do not invent changes merely to produce a visibly different version.
 
 3. Refine and polish directly.
    - Produce a stronger version, not just critique, unless the user asks for review notes only.
