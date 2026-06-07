@@ -21,9 +21,12 @@ A lightweight refinement pass for an existing artifact, whether it is a rough dr
 
 3. Refine and polish directly.
    - Produce a stronger version, not just critique, unless the user asks for review notes only.
+   - Prefer semantic preservation over brevity. Do not remove domain terms, repeated labels, qualifiers, constraints, or intentionally specific phrasing merely to shorten the artifact.
+   - Before trimming, identify protected terms and scope-bearing phrases. Keep them unless they are clearly redundant or the user explicitly asks for a shorter version.
    - Tighten language by removing filler, merging duplication, choosing concrete verbs and nouns, and making implicit decisions explicit.
    - Improve structure only as much as clarity, flow, scanability, and readiness require.
    - Polish scope-bearing language without broadening or narrowing it. Preserve triggers, audiences, promises, permissions, requirements, labels, statuses, API names, configuration keys, and eligibility criteria unless the user asks to change scope.
+   - If a refinement removes, renames, or compresses key terminology, mention that change in `Notes`.
    - Preserve the user's voice; do not flatten casual, direct, or opinionated writing into generic corporate prose.
 
 4. Finalize the handoff.
