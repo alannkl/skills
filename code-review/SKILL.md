@@ -61,7 +61,7 @@ Apply principal-engineer judgment: reason from evidence and first principles whe
 
 6. Control review size.
    - Flag large non-mechanical diffs as reviewability findings when they are too broad to inspect reliably.
-   - Use rough scrutiny thresholds, adjusted to repo norms and change complexity: roughly over 800 changed lines for non-mechanical changes, or over 500 for complex logic.
+   - Use scrutiny thresholds, adjusted to repo norms and change complexity: roughly over 800 changed lines for non-mechanical changes, or over 500 for complex logic.
    - Treat reviewability as a finding when change structure blocks reliable review: unrelated changes bundled together, mechanical and semantic edits mixed without separation, generated output without the source rule or generator change, migrations mixed with behavior changes, or broad rewrites without a clear dependency chain.
    - Suggest the smallest coherent stage based on real dependencies, affected call sites, and migration order.
 
@@ -75,9 +75,9 @@ Apply principal-engineer judgment: reason from evidence and first principles whe
    - **Do not report:** guessed intent without concrete evidence, pure style opinions, praise, restatements of the code, vague "check/ensure/verify" chores, speculative issues without evidence, or broad rewrites when a local fix addresses the issue.
 
 8. Self-check before finalizing.
-   - Verify every finding has a concrete trigger condition or evidence path: input, state, call path, changed contract, failing scenario, or incompatible mixed-version case.
+   - Confirm every finding meets the `Finding Quality` checklist below; drop any that do not.
    - Remove findings that would require the author to "check" something the reviewer can inspect, unless the next step is a specific test or measurement that cannot be run in the current environment.
-   - Confirm each severity matches impact, likelihood, and confidence. Downgrade uncertain but useful risks instead of presenting them as proven failures.
+   - Downgrade uncertain but useful risks instead of presenting them as proven failures.
    - Keep optional report sections short. Omit sections that do not add useful information, except `Tests / checks` and residual risks when checks were not run or context was unavailable.
 
 ## Output Format
@@ -87,7 +87,7 @@ Start with findings ordered by severity. Keep scope concise and place it after f
 Use this structure:
 
 ```markdown
-## Findings
+## Findings (required; if none, replace this section with "No findings in the reviewed scope.")
 
 ### [Critical] <short title>
 
@@ -97,28 +97,28 @@ Use this structure:
 - **Why it matters:** <behavioral, user, security, operational, or maintainability impact>
 - **Proposed fix:** <specific next step>
 
-## Scope
+## Scope (required; place after findings)
 
 <what was reviewed; what is out of scope; stated or inferred intent in one short paragraph>
 
-## Open questions / assumptions
-
-- <inferred intent labeled as assumption, ambiguities to confirm>
-
-## Tests / checks
+## Tests / checks (required)
 
 - <tests reviewed or run, and the result; state "not run" with the reason when applicable>
 
-## Residual risks
+## Open questions / assumptions (optional)
+
+- <inferred intent labeled as assumption, ambiguities to confirm>
+
+## Residual risks (optional; only for material gaps that affect review confidence)
 
 - <material uncertainty from unavailable context, unavailable tooling, or checks that were not run>
 
-## Next steps
+## Next steps (optional)
 
 - <smallest actionable review follow-ups for the code author>
 ```
 
-`Tests / checks` is always required. `Open questions / assumptions`, `Residual risks`, and `Next steps` are optional. Do not include `Residual risks` just to restate ordinary uncertainty; use it only for material gaps that affect confidence in the review.
+Do not include `Residual risks` just to restate ordinary uncertainty; use it only for material gaps that affect confidence in the review.
 
 ## Finding Quality
 
