@@ -1,18 +1,18 @@
 ---
 name: create-agent-skill
-description: Create Agent Skill files from reusable workflows, domain expertise, or project conventions. Use when the user asks to write, scaffold, implement, package, install, or update an actual SKILL.md or skill directory; do not use for plan-only skill design unless the user explicitly asks to create files.
+description: Create Agent Skill files from reusable workflows, domain expertise, or project conventions. Use when the user asks to write, scaffold, implement, package, install, or update an actual SKILL.md file or skill directory; do not use for plan-only skill design unless the user explicitly asks to create files.
 ---
 
 # Create Agent Skill
 
-Use this workflow to create a portable Agent Skill: a directory with a concise `SKILL.md` and optional supporting resources loaded only when needed.
+Use this workflow to create a portable Agent Skill: a directory with a focused `SKILL.md` and optional supporting resources that load only when needed.
 
 ## Activation Boundary
 
 - Use this skill only when the user wants files written or updated.
 - Planning-only requests stay in planning mode. This includes plans, designs, critiques, outlines, requirements, and skill-shape discussions.
-- If a request mixes planning and creation, resolve the plan first and edit only after the implementation path is confirmed.
-- Named tools, skills, frameworks, or workflows do not override the user's requested mode.
+- If a request mixes planning and creation, resolve the plan first. Edit only after the implementation path is confirmed.
+- Named tools, skills, frameworks, and workflows do not override the user's requested mode.
 
 ## Workflow
 
@@ -21,28 +21,29 @@ Use this workflow to create a portable Agent Skill: a directory with a concise `
    - If file-writing intent is ambiguous and edits would be surprising, ask for confirmation before editing.
    - Identify the task or domain the skill covers.
    - Capture the specific prompts, contexts, files, or workflows that should trigger it.
-   - Note adjacent requests that should not trigger it.
-   - Decide whether it needs only instructions or also scripts, references, assets, or templates.
+   - Note adjacent requests that should not load it.
+   - Decide whether it needs instructions only, or also scripts, references, assets, or templates.
    - Collect reference materials to include or summarize.
    - Ground the skill in real expertise: completed tasks, user corrections, project docs, runbooks, schemas, review comments, issues, or patches.
 
 2. Choose the skill name and location.
    - Use a lowercase, hyphenated directory name that matches the `name` field and is 1-64 characters.
    - Use only lowercase letters, numbers, and hyphens.
-   - Do not start/end with a hyphen or use consecutive hyphens.
+   - Do not start or end with a hyphen, or use consecutive hyphens.
 
 3. Write `SKILL.md`.
    - Start with YAML frontmatter containing at least `name` and `description`.
    - Add optional fields such as `license`, `compatibility`, `metadata`, or `allowed-tools` only when they add useful information.
    - Keep the description under 1024 characters and write it in third person.
    - Make the first sentence say what the skill does.
-   - Start the second sentence with `Use when` and include trigger phrases, adjacent near-misses, and load conditions.
-   - Focus the body on procedures, defaults, examples, gotchas, scripts, and validation.
+   - Start the second sentence with `Use when`; include trigger phrases, adjacent near-misses, and load conditions.
+   - Focus the body on procedures, defaults, examples, gotchas, scripts, and validation steps.
 
 4. Apply progressive disclosure.
    - Keep `SKILL.md` to the core instructions the agent needs on every run.
-   - Treat 100 non-empty body lines as a ceiling, not a target.
-   - Split files when `SKILL.md` approaches that ceiling, content spans distinct domains, or advanced features are rarely needed.
+   - Use ~100 non-empty body lines as a reference point for when to split, not a hard limit or target.
+   - Prioritize completeness and correctness over staying under that size. Never omit or weaken instructions just to fit.
+   - Split files when `SKILL.md` approaches that reference point, content spans distinct domains, or advanced features are rarely needed.
    - Move detailed documentation into `references/`.
    - Move reusable templates, images, sample files, or static data into `assets/`.
    - Add scripts in `scripts/` only for deterministic operations that would otherwise be recreated repeatedly.
@@ -54,15 +55,15 @@ Use this workflow to create a portable Agent Skill: a directory with a concise `
    - Confirm the directory name matches the frontmatter `name`.
    - Confirm frontmatter parses as YAML.
    - Confirm `description` has specific trigger language.
-   - Confirm `SKILL.md` stays under 100 non-empty body lines, excluding YAML frontmatter and blank lines.
+   - Check non-empty body line count (~100, excluding YAML frontmatter and blank lines) as a split cue, not a pass/fail limit.
    - Avoid time-sensitive facts unless the skill tells the agent how to refresh them.
    - Keep terminology consistent across `SKILL.md` and references.
-   - Try realistic positive prompts and near-miss negative prompts; revise descriptions that are too broad or too narrow.
-   - For formal evals, read `references/evaluating-skills.md` only when the user asks to evaluate or benchmark a skill.
+   - Sanity-check the description against realistic positive prompts and near-miss negative prompts. Revise wording that is too broad or too narrow.
+   - If formal evals would be useful, suggest them as a next step for the user; do not run manual evals as part of this workflow.
 
 ## Description Pattern
 
-Use this shape:
+Use this structure:
 
 ```md
 description: [What the skill enables]. Use when [specific user intents, keywords, contexts, file types, or workflow names].
@@ -115,8 +116,9 @@ description: Do a specific reusable task. Use when the user asks for concrete in
 
 ## Quality Bar
 
+- Completeness and correctness beat brevity; a longer `SKILL.md` is fine when the workflow needs it.
 - The skill is a coherent unit of reusable work, not a general knowledge dump.
-- The instructions include what the agent would likely get wrong without the skill and omit what it already knows.
+- The instructions cover what the agent would likely get wrong without the skill and omit what it already knows.
 - Defaults are clear; alternatives appear only when they change a decision.
-- Prescriptive steps are reserved for fragile operations; flexible tasks explain intent.
+- Reserve prescriptive steps for fragile operations; for flexible tasks, explain intent.
 - Examples are concrete and realistic, and validation catches common mistakes.
