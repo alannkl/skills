@@ -12,7 +12,7 @@ Review code to protect behavior, contracts, users, operators, and future maintai
 ## Core Principles
 
 - Reconstruct the change intent before judging code. Use the stated goal when available; otherwise infer it from the code, call sites, tests, names, and surrounding behavior, and label the inference as an assumption.
-- Validate intent when code or context raises doubt: does the inferred or stated goal fit existing system design, business rules, and user-facing contracts? If the implementation matches the stated request but violates existing contracts, frame the finding as an intent/system-contract conflict.
+- Validate intent against available evidence before asking the user: does the inferred or stated goal fit existing system design, business rules, and user-facing contracts? Ask only when the answer cannot be inferred and would materially change review correctness. If the implementation matches the stated request but violates existing contracts, frame the finding as an intent/system-contract conflict.
 - Scope the review to the requested selection, branch, PR, files, or diff. Avoid unrelated legacy findings unless the change triggers or worsens them.
 - Correctness, security, regressions, data integrity, and contract safety outrank style and preference.
 - Respect repository rules, project architecture, framework conventions, and user instructions over generic advice.
@@ -23,6 +23,7 @@ Review code to protect behavior, contracts, users, operators, and future maintai
 1. Establish scope and intent.
    - State what is being reviewed and what appears out of scope.
    - Gather goals and context, adapting to the repo's VCS and platform: the diff and its size against the merge target (e.g. `git diff <base>...HEAD`) and the PR/MR description (e.g. `gh`/`glab`); project guidance if present (`AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, `CONTRIBUTING.md`, architecture docs, linter config).
+   - Determine the full review surface before deep reading: status, staged and unstaged changes, untracked files, diff stat, file name/status changes, renames, deletes, generated files, migrations, lockfiles, and config changes. For PRs, identify the target branch or merge base; for local-only reviews, state whether unstaged or untracked files are in scope.
    - If intent is missing, infer it and label it as an assumption, not a fact. When the code appears to implement the wrong behavior, check intent against existing system and business logic before reviewing mechanics.
    - If tooling is unavailable (no PR platform, detached/shallow checkout, commands fail), degrade gracefully: review what you can access, state which context you could not gather, and treat it as a residual risk rather than guessing.
 
@@ -68,9 +69,15 @@ Review code to protect behavior, contracts, users, operators, and future maintai
    - If there are no findings, say so directly; do not invent low-value findings to avoid an empty review.
    - **Do not report:** guessed intent without concrete evidence, pure style opinions, praise, restatements of the code, vague "check/ensure/verify" chores, speculative issues without evidence, or broad rewrites when a local fix addresses the issue.
 
+8. Self-check the report before finalizing.
+   - For each finding, verify that it has a concrete trigger condition or evidence path: input, state, call path, changed contract, failing scenario, or incompatible mixed-version case.
+   - Remove findings that would require the author to "check" something the reviewer can inspect, unless the requested next step is a specific test or measurement that cannot be run in the current environment.
+   - Confirm each severity matches impact, likelihood, and confidence; downgrade uncertain but useful risks instead of presenting them as proven failures.
+   - Keep optional sections short and omit any that do not add useful information, except tests/checks and residual risks when checks were not run or context was unavailable.
+
 ## Output Format
 
-Start with findings ordered by severity. Keep scope concise and place it after findings unless the user explicitly asks for a different format. If there are no findings, say so clearly (e.g. "No blocking issues found in the reviewed scope.") and still report scope, tests, and residual risks. Omit optional sections when they would be empty or irrelevant. Use this structure:
+Start with findings ordered by severity. Keep scope concise and place it after findings unless the user explicitly asks for a different format. If there are no findings, say so clearly (e.g. "No findings in the reviewed scope.") and still report scope, tests/checks, and any residual risks. Omit optional sections when they would be empty or irrelevant. Use this structure:
 
 ```markdown
 ## Findings
@@ -103,6 +110,8 @@ Start with findings ordered by severity. Keep scope concise and place it after f
 
 - <smallest actionable review follow-ups for the code author>
 ```
+
+`Open questions / assumptions` and `Next steps` are optional. `Residual risks` is optional only when all relevant context was available and checks were run or deliberately unnecessary. `Tests / checks` should always state what was reviewed or run, even if the answer is "not run".
 
 ## Finding Quality
 
