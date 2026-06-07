@@ -16,6 +16,7 @@ Review code to protect behavior, contracts, users, operators, and future maintai
 - Scope the review to the requested selection, branch, PR, files, or diff. Avoid unrelated legacy findings unless the change triggers or worsens them.
 - Correctness, security, regressions, data integrity, and contract safety outrank style and preference.
 - Respect repository rules, project architecture, framework conventions, and user instructions over generic advice.
+- Apply baseline engineering discipline when judging code quality and risk: scoped changes, simple enough design, clear boundaries, explicit contracts, testable behavior, and verifiable outcomes. Treat project conventions as the local standard, but report convention-aligned code when it still creates concrete correctness, security, compatibility, data-integrity, operational, or maintainability risk.
 - Report only concrete, actionable, high-confidence findings. Prefer a few defensible findings over broad commentary. Every finding must explain the problem, evidence, impact, and the specific fix or next step.
 
 ## Workflow
@@ -40,7 +41,7 @@ Review code to protect behavior, contracts, users, operators, and future maintai
    - Security and privacy: authorization, input validation, injection, secrets, sensitive logging, personal data, dependency risk, and least privilege.
    - Data integrity: old data, partial writes, transaction boundaries, retries, duplicate delivery, and failure recovery.
    - Performance and reliability: N+1 calls, data volume, complexity, batching, caching, timeouts, retries, rate limits, backpressure, observability, and cleanup.
-   - Maintainability: unnecessary abstractions, duplicated logic, unclear boundaries, naming, large unfocused functions, and code that is hard to change safely.
+   - Maintainability: scope drift, unnecessary abstractions, duplicated logic, unclear boundaries, hidden side effects, weak contracts, naming that obscures intent, large unfocused functions, and code that is hard to test or change safely.
 
 4. Deepen the review for touched surfaces that need specialized scrutiny.
    - Apply these overlays only when the Step 3 scan or the changed surface calls for them.
