@@ -1,31 +1,31 @@
 ---
 name: code-review
-description: Produce full, findings-led code review reports focused on intent fit, correctness, security, maintainability, tests, and operational risk. Use when the user asks for code review, PR review, diff review, pre-merge review, bug-risk review, or findings on changed code; do not use for implementation, prose editing, pure design critique, inline review comments, or architecture brainstorming without concrete code to review.
+description: Produce findings-led code review reports focused on intent fit, correctness, security, maintainability, tests, and operational risk. Use when the user asks for code review, PR review, diff review, pre-merge review, bug-risk review, or findings on changed code; do not use for implementation, prose editing, pure design critique, inline review comments, or architecture brainstorming without concrete code to review.
 ---
 
 # Code Review
 
 ## Purpose
 
-Review code to protect behavior, contracts, users, operators, and future maintainers. Produce a concise report of real issues, their impact, and a proposed fix or next step. Apply principal-engineer judgment: reason from first principles, question assumptions that affect behavior or risk, and hunt for subtle bugs, performance traps, and concrete maintenance risks.
+Review code to protect behavior, contracts, users, operators, and future maintainers. Produce a concise, findings-led report of real issues, their impact, and a proposed fix or next step. Apply principal-engineer judgment: reason from first principles, question assumptions that affect behavior or risk, and look for subtle bugs, performance traps, and concrete maintenance risks.
 
 ## Core Principles
 
-- Reconstruct the change intent before judging code. Use the stated goal when available; otherwise infer it from the code, call sites, tests, names, and surrounding behavior, and label the inference as an assumption.
-- Validate intent against available evidence before asking the user: does the inferred or stated goal fit existing system design, business rules, and user-facing contracts? Ask only when the answer cannot be inferred and would materially change review correctness. If the implementation matches the stated request but violates existing contracts, frame the finding as an intent/system-contract conflict.
+- Reconstruct the change intent before judging code. Use the stated goal when available; otherwise infer it from the code, call sites, tests, names, and surrounding behavior, and label that inference as an assumption.
+- Validate intent against evidence before asking the user. Check whether the stated or inferred goal fits existing system design, business rules, and user-facing contracts. Ask only when the answer cannot be inferred and would materially affect review correctness. If the implementation matches the stated request but violates existing contracts, frame the finding as an intent/system-contract conflict.
 - Scope the review to the requested selection, branch, PR, files, or diff. Avoid unrelated legacy findings unless the change triggers or worsens them.
 - Correctness, security, regressions, data integrity, and contract safety outrank style and preference.
 - Respect repository rules, project architecture, framework conventions, and user instructions over generic advice.
-- Report only concrete, actionable, high-confidence issues; prefer a few defensible findings over broad commentary. Every finding must explain the problem, why it matters, and a specific proposed fix or next step.
+- Report only concrete, actionable, high-confidence issues. Prefer a few defensible findings over broad commentary. Every finding must explain the problem, why it matters, and a specific proposed fix or next step.
 
 ## Workflow
 
 1. Establish scope and intent.
    - State what is being reviewed and what appears out of scope.
-   - Gather goals and context, adapting to the repo's VCS and platform: the diff and its size against the merge target (e.g. `git diff <base>...HEAD`) and the PR/MR description (e.g. `gh`/`glab`); project guidance if present (`AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, `CONTRIBUTING.md`, architecture docs, linter config).
-   - Determine the full review surface before deep reading: status, staged and unstaged changes, untracked files, diff stat, file name/status changes, renames, deletes, generated files, migrations, lockfiles, and config changes. For PRs, identify the target branch or merge base; for local-only reviews, state whether unstaged or untracked files are in scope.
+   - Gather goals and context, adapting to the repo's VCS and platform: the diff and its size against the merge target, for example `git diff <base>...HEAD`; the PR/MR description, for example via `gh` or `glab`; and project guidance such as `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, `CONTRIBUTING.md`, architecture docs, or linter config.
+   - Determine the full review surface before deep reading: status, staged and unstaged changes, untracked files, diff stat, file name/status changes, renames, deletes, generated files, migrations, lockfiles, and config changes. For PRs, identify the target branch or merge base. For local-only reviews, state whether unstaged and untracked files are in scope.
    - If intent is missing, infer it and label it as an assumption, not a fact. When the code appears to implement the wrong behavior, check intent against existing system and business logic before reviewing mechanics.
-   - If tooling is unavailable (no PR platform, detached/shallow checkout, commands fail), degrade gracefully: review what you can access, state which context you could not gather, and treat it as a residual risk rather than guessing.
+   - If tooling is unavailable because there is no PR platform, the checkout is detached or shallow, or commands fail, degrade gracefully: review what you can access, state which context you could not gather, and treat that gap as residual risk rather than guessing.
 
 2. Read enough context.
    - Inspect changed files, related tests, called functions, imported modules, neighboring code, and contract-defining files as needed.
@@ -34,12 +34,12 @@ Review code to protect behavior, contracts, users, operators, and future maintai
 
 3. Review by risk, not file order.
    - Intent fit: logical, system-aligned behavior without scope drift or missing cases.
-   - Functional correctness: boundaries, edge cases, missing branches, null/error handling, off-by-one, state transitions, concurrency, race conditions, lock ordering, idempotency, resource lifecycle.
-   - Breaking changes: backward/forward compatibility, mixed-version behavior, migrations, defaults, rollback, external integrations.
-   - Security and privacy: authorization, input validation, injection, secrets, sensitive logging, personal data, dependency risk, least privilege.
-   - Data integrity: old data, partial writes, transaction boundaries, retries, duplicate delivery, failure recovery.
-   - Performance and reliability: N+1 calls, data volume, complexity, batching, caching, timeouts, retries, rate limits, backpressure, observability, cleanup.
-   - Maintainability: unnecessary abstractions, duplicated logic, unclear boundaries, naming, large unfocused functions, code that is hard to change safely.
+   - Functional correctness: boundaries, edge cases, missing branches, null/error handling, off-by-one errors, state transitions, concurrency, race conditions, lock ordering, idempotency, and resource lifecycle.
+   - Breaking changes: backward and forward compatibility, mixed-version behavior, migrations, defaults, rollback, and external integrations.
+   - Security and privacy: authorization, input validation, injection, secrets, sensitive logging, personal data, dependency risk, and least privilege.
+   - Data integrity: old data, partial writes, transaction boundaries, retries, duplicate delivery, and failure recovery.
+   - Performance and reliability: N+1 calls, data volume, complexity, batching, caching, timeouts, retries, rate limits, backpressure, observability, and cleanup.
+   - Maintainability: unnecessary abstractions, duplicated logic, unclear boundaries, naming, large unfocused functions, and code that is hard to change safely.
 
 4. Apply specialized overlays only for touched surfaces that need deeper scrutiny beyond the Step 3 scan.
    - AI / agent systems: bounded prompt/context construction, hard caps on injected content, prompt-injection safety, session/resume compatibility, and manual review of large model-visible fragments.
@@ -49,21 +49,21 @@ Review code to protect behavior, contracts, users, operators, and future maintai
    - Production operations: for reliability-sensitive changes, check observability, timeouts, retries, rate limits, backpressure, cleanup, degraded behavior, incident diagnosability, and rollout safety.
 
 5. Review tests deliberately.
-   - Check whether changed behavior has meaningful tests at the right level; prefer behavior-level and integration coverage for cross-module behavior, workflows, external contracts, and agent logic.
+   - Check whether changed behavior has meaningful tests at the right level. Prefer behavior-level and integration coverage for cross-module behavior, workflows, external contracts, and agent logic.
    - Treat missing tests as a finding only when tied to real behavior risk.
    - Look for false confidence: brittle mocks, assertions that cannot fail, missing edge cases, nondeterminism, fixtures that hide the bug, or tests overfit to implementation.
    - Run focused tests when feasible. If not run, state the gap.
 
 6. Control review size.
-   - Flag large non-mechanical diffs as reviewability risks when too broad to inspect reliably.
+   - Flag large non-mechanical diffs as reviewability risks when they are too broad to inspect reliably.
    - Use rough scrutiny thresholds, adjusting to repo norms and change complexity: roughly over 800 changed lines for non-mechanical changes, or over 500 for complex logic.
    - Treat reviewability as a finding when the change structure blocks reliable review: unrelated changes bundled together, mechanical and semantic edits mixed without separation, generated output without the source rule or generator change, migrations mixed with behavior changes, or broad rewrites without a clear dependency chain.
    - Suggest the smallest coherent stage based on real dependencies, affected call sites, and migration order.
 
 7. Classify and filter findings.
    - Calibrate severity by impact, likelihood, and confidence. Do not escalate a severe but unproven risk without evidence; report it at a lower severity with the assumption or uncertainty stated.
-   - `Critical`: exploitable security issue, data loss/corruption, system-breaking regression, broken public contract, or complete logic failure.
-   - `High`: likely user-visible bug, severe regression, broken migration/rollback path, major performance issue, or explicit project-rule violation.
+   - `Critical`: exploitable security issue, data loss or corruption, system-breaking regression, broken public contract, or complete logic failure.
+   - `High`: likely user-visible bug, severe regression, broken migration or rollback path, major performance issue, or explicit project-rule violation.
    - `Medium`: contained but real bug, missing validation, meaningful test gap, brittle logic likely to cause future defects, or maintainability issue with practical risk.
    - `Low`: minor cleanup with practical value; omit unless the user asks for exhaustive review.
    - If there are no findings, say so directly; do not invent low-value findings to avoid an empty review.
@@ -72,12 +72,12 @@ Review code to protect behavior, contracts, users, operators, and future maintai
 8. Self-check the report before finalizing.
    - For each finding, verify that it has a concrete trigger condition or evidence path: input, state, call path, changed contract, failing scenario, or incompatible mixed-version case.
    - Remove findings that would require the author to "check" something the reviewer can inspect, unless the requested next step is a specific test or measurement that cannot be run in the current environment.
-   - Confirm each severity matches impact, likelihood, and confidence; downgrade uncertain but useful risks instead of presenting them as proven failures.
+   - Confirm each severity matches impact, likelihood, and confidence. Downgrade uncertain but useful risks instead of presenting them as proven failures.
    - Keep optional sections short and omit any that do not add useful information, except tests/checks and residual risks when checks were not run or context was unavailable.
 
 ## Output Format
 
-Start with findings ordered by severity. Keep scope concise and place it after findings unless the user explicitly asks for a different format. If there are no findings, say so clearly (e.g. "No findings in the reviewed scope.") and still report scope, tests/checks, and any residual risks. Omit optional sections when they would be empty or irrelevant. Use this structure:
+Start with findings ordered by severity. Keep scope concise and place it after findings unless the user explicitly asks for a different format. If there are no findings, say so clearly, for example: "No findings in the reviewed scope." Still report scope, tests/checks, and any residual risks. Omit optional sections when they would be empty or irrelevant. Use this structure:
 
 ```markdown
 ## Findings
@@ -115,23 +115,23 @@ Start with findings ordered by severity. Keep scope concise and place it after f
 
 ## Finding Quality
 
-Calibrate every finding to be concrete, evidence-backed, and tied to behavior risk: name the location, show the failing case, explain the impact, propose a specific fix. Severity should reflect impact, likelihood, and confidence. Review in the language and conventions present in the diff; the example below illustrates the _shape_ of a strong finding, not its domain.
+Calibrate every finding to be concrete, evidence-backed, and tied to behavior risk. Name the location, show the failing case, explain the impact, and propose a specific fix. Severity should reflect impact, likelihood, and confidence. Review in the language and conventions present in the diff; the example below illustrates the shape of a strong finding, not its domain.
 
-Good finding (report it):
+Good finding:
 
-> **[High] Pagination drops the partial last page** — `src/lib/paginate.ts:24`
-> **Problem:** `const pageCount = Math.floor(total / pageSize)` undercounts pages when there is a remainder: with `total = 101` and `pageSize = 25` it yields `4`, but the caller loops `page < pageCount` (pages `0..3`), so the final item is never returned.
-> **Evidence:** The remainder case `total = 101`, `pageSize = 25` needs five pages (`0..4`), but `Math.floor(101 / 25)` produces `4`.
+> **[High] Pagination drops the partial last page** - `src/lib/paginate.ts:24`
+> **Problem:** `const pageCount = Math.floor(total / pageSize)` undercounts pages when there is a remainder. With `total = 101` and `pageSize = 25`, it yields `4`, but the caller loops `page < pageCount`, pages `0..3`, so the final item is never returned.
+> **Evidence:** The remainder case `total = 101`, `pageSize = 25` needs five pages, `0..4`, but `Math.floor(101 / 25)` produces `4`.
 > **Why it matters:** Consumers silently lose the final partial page, breaking the documented "returns all items" contract.
 > **Proposed fix:** Use `Math.ceil(total / pageSize)` and add a boundary test for the remainder case.
 
-Bad findings (do not report):
+Bad findings:
 
-- "Consider adding more tests here." — vague, no behavior tied to it.
-- "This function is a bit long; you might refactor it." — preference with no concrete risk.
-- "Ensure this handles errors correctly." — a "verify" chore the reviewer can check directly.
-- "Nice clean implementation!" — praise, not a finding.
-- "Line 12 sets `count = 0`." — restates the code without identifying an issue.
+- "Consider adding more tests here." - vague, with no behavior risk.
+- "This function is a bit long; you might refactor it." - preference with no concrete risk.
+- "Ensure this handles errors correctly." - a "verify" chore the reviewer can check directly.
+- "Nice clean implementation!" - praise, not a finding.
+- "Line 12 sets `count = 0`." - restates the code without identifying an issue.
 
 ## Gotchas
 
