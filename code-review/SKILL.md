@@ -9,24 +9,24 @@ description: Produce findings-led code review reports for concrete code changes,
 
 Review concrete code changes to protect behavior, contracts, users, operators, and future maintainers. Produce concise, findings-led reports that explain real problems, their impact, and a specific fix or next step.
 
-Apply principal-engineer judgment: reason from evidence and first principles where behavior or risk is unclear, reconstruct intent, question assumptions that affect correctness, and look for subtle bugs, performance traps, security exposure, operational hazards, and practical maintenance risks.
+Apply principal-engineer judgment: reconstruct intent, reason from evidence and first principles, question assumptions that affect correctness, and look for subtle bugs, performance traps, security exposure, operational hazards, and practical maintenance risks.
 
 ## Core Principles
 
-- Reconstruct the change intent before judging the code. Use the stated goal when available; otherwise infer intent from the diff, call sites, tests, names, and surrounding behavior, and label that inference as an assumption.
-- Validate intent against existing system design, business rules, and user-facing contracts before asking the user. Ask only when the answer cannot be inferred and would materially affect review correctness. If the implementation matches the stated request but violates existing contracts, frame the finding as an intent/system-contract conflict.
+- Reconstruct the change intent before judging the code. Use the stated goal when available; otherwise infer intent from the diff, call sites, tests, names, and surrounding behavior, and label the inference as an assumption.
+- Validate intent against existing system design, business rules, and user-facing contracts before asking the user. Ask only when the answer cannot be inferred and would materially affect review correctness. If the implementation matches the stated request but violates existing contracts, frame the finding as a conflict between intent and system contract.
 - Scope the review to the requested selection, branch, PR, files, or diff. Avoid unrelated legacy findings unless the change triggers or worsens them.
 - Prioritize correctness, security, regressions, data integrity, and contract safety over style and preference.
 - Respect repository rules, project architecture, framework conventions, and user instructions over generic advice.
 - Judge code quality through concrete risk: scoped changes, simple enough design, clear boundaries, explicit contracts, testable behavior, and verifiable outcomes. Project conventions are the local standard, but convention-aligned code can still be reported when it creates correctness, security, compatibility, data-integrity, operational, or maintainability risk.
-- Report only concrete, actionable, high-confidence findings. Prefer a few defensible findings over broad commentary. Every finding must explain the problem, evidence, impact, and the specific fix or next step.
+- Report only concrete, actionable findings grounded in evidence. Prefer a few defensible findings over broad commentary. Every finding must explain the problem, evidence, impact, and the specific fix or next step; when uncertainty remains, state the assumption and calibrate severity instead of suppressing the risk or overstating it as proven.
 
 ## Workflow
 
 1. Establish scope and intent.
    - State what is being reviewed and what appears out of scope.
-   - Gather goals and context, adapting to the repo's VCS and platform: the diff and size against the merge target, for example `git diff <base>...HEAD`; PR/MR description, for example via `gh` or `glab`; and project guidance such as `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, `CONTRIBUTING.md`, architecture docs, or linter config.
-   - Determine the full review surface before deep reading: status, staged and unstaged changes, untracked files, diff stat, file name/status changes, renames, deletes, generated files, migrations, lockfiles, and config changes. For PRs, identify the target branch or merge base. For local-only reviews, state whether unstaged and untracked files are in scope.
+   - Gather goals and context from the repo's VCS and platform: diff and size against the merge target, for example `git diff <base>...HEAD`; PR/MR description, for example via `gh` or `glab`; and project guidance such as `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, `CONTRIBUTING.md`, architecture docs, or linter config.
+   - Determine the full review surface before deep reading: status, staged and unstaged changes, untracked files, diff stat, file status changes, renames, deletes, generated files, migrations, lockfiles, and config changes. For PRs, identify the target branch or merge base. For local-only reviews, state whether unstaged and untracked files are in scope.
    - If intent is missing, infer it and label it as an assumption, not a fact. When code appears to implement the wrong behavior, check intent against existing system and business logic before reviewing mechanics.
    - If tooling is unavailable because there is no PR platform, the checkout is detached or shallow, or commands fail, degrade gracefully: review what you can access, state which context you could not gather, and treat that gap as residual risk rather than guessing.
 
@@ -34,10 +34,10 @@ Apply principal-engineer judgment: reason from evidence and first principles whe
    - Inspect changed files, related tests, called functions, imported modules, neighboring code, and contract-defining files as needed.
    - Identify public surfaces touched: APIs, CLI flags, config, schemas, migrations, events, persisted data, permissions, external integrations, and serialized formats.
    - For generated or mechanical diffs, inspect the generator, source rule, or representative output instead of line-reviewing noise.
-   - Bound the reading: stay within the change's blast radius — the changed code and what it directly affects or depends on. Stop expanding once you can defend each finding's evidence; do not read the whole repository to chase hypothetical risk.
+   - Bound the reading: stay within the change's blast radius: the changed code and what it directly affects or depends on. Stop expanding once you can defend each finding's evidence; do not read the whole repository to chase hypothetical risk.
 
 3. Scan by risk, not file order.
-   - Find plausible failure modes across the whole review surface before deciding which findings are worth reporting.
+   - Identify plausible failure modes across the review surface before deciding which findings are worth reporting.
    - Intent fit: logical, system-aligned behavior without scope drift or missing cases.
    - Functional correctness: boundaries, edge cases, missing branches, null/error handling, off-by-one errors, state transitions, concurrency, race conditions, lock ordering, idempotency, and resource lifecycle.
    - Breaking changes: backward and forward compatibility, mixed-version behavior, migrations, defaults, rollback, and external integrations.
@@ -63,8 +63,9 @@ Apply principal-engineer judgment: reason from evidence and first principles whe
 
 6. Control review size.
    - Flag large non-mechanical diffs as reviewability findings when they are too broad to inspect reliably.
-   - Treat a non-mechanical change as too large when you can no longer hold its behavior and dependencies in working context well enough to defend each finding. Logic-dense or high-risk changes hit that limit far sooner than mechanical ones; calibrate to the repo's norms rather than a fixed line count.
+   - Treat a non-mechanical change as too large when you can no longer hold its behavior and dependencies in context well enough to defend each finding. Logic-dense or high-risk changes hit that limit sooner than mechanical ones; calibrate to the repo's norms rather than a fixed line count.
    - Treat reviewability as a finding when change structure blocks reliable review: unrelated changes bundled together, mechanical and semantic edits mixed without separation, generated output without the source rule or generator change, migrations mixed with behavior changes, or broad rewrites without a clear dependency chain.
+   - Do not use reviewability as an escape hatch before sampling enough of the diff, touched contracts, and representative call paths to explain why the change cannot be reviewed reliably as submitted.
    - Suggest the smallest coherent stage based on real dependencies, affected call sites, and migration order.
 
 7. Convert observations into findings.
@@ -74,7 +75,7 @@ Apply principal-engineer judgment: reason from evidence and first principles whe
    - `Medium`: contained but real bug, missing validation, meaningful test gap, brittle logic likely to cause future defects, or maintainability issue with practical risk.
    - `Low`: minor cleanup with practical value; omit unless the user asks for exhaustive review.
    - If there are no findings, say so directly; do not invent low-value findings to avoid an empty review.
-   - **Do not report:** guessed intent without concrete evidence, pure style opinions, praise, restatements of the code, vague "check/ensure/verify" chores, speculative issues without evidence, or broad rewrites when a local fix addresses the issue.
+   - **Do not report:** guessed intent without concrete evidence, pure style opinions, praise, restatements of the code, vague "check/ensure/verify" chores, speculative issues, or broad rewrites when a local fix addresses the issue.
 
 8. Self-check before finalizing.
    - Confirm every finding meets the `Finding Quality` checklist below; drop any that do not, and apply the severity-calibration rule from Step 7 to anything uncertain.
