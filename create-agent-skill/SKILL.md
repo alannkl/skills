@@ -5,13 +5,13 @@ description: Create Agent Skill files from reusable workflows, domain expertise,
 
 # Create Agent Skill
 
-Use this workflow to create a portable Agent Skill: a directory with a focused `SKILL.md` and optional supporting resources that load only when needed.
+Use this workflow to create or update a portable Agent Skill: a focused `SKILL.md` plus optional supporting resources that load only when needed.
 
 ## Activation Boundary
 
-- Use this skill only when the user wants files written or updated.
-- Planning-only requests stay in planning mode. This includes plans, designs, critiques, outlines, requirements, and skill-shape discussions.
-- If a request mixes planning and creation, resolve the plan first. Edit only after the implementation path is confirmed.
+- Use this skill only when the user wants skill files created or updated.
+- Keep planning-only requests in planning mode. This includes plans, designs, critiques, outlines, requirements, and skill-shape discussions.
+- If a request mixes planning and creation, resolve the plan before editing. Write files only after the implementation path is clear.
 - Named tools, skills, frameworks, and workflows do not override the user's requested mode.
 
 ## Workflow
@@ -19,11 +19,11 @@ Use this workflow to create a portable Agent Skill: a directory with a focused `
 1. Confirm scope.
    - Identify the concrete artifact to create or update: skill directory, `SKILL.md`, references, scripts, assets, or inventory docs.
    - If file-writing intent is ambiguous and edits would be surprising, ask for confirmation before editing.
-   - Identify the task or domain the skill covers.
-   - Capture the specific prompts, contexts, files, or workflows that should trigger it.
-   - Note adjacent requests that should not load it.
-   - Decide whether it needs instructions only, or also scripts, references, assets, or templates.
-   - Collect reference materials to include or summarize.
+   - Identify the task, workflow, project convention, or domain the skill covers.
+   - Capture the prompts, contexts, files, or workflows that should trigger it.
+   - Note adjacent requests that should not trigger it.
+   - Decide whether the skill needs instructions only or also references, scripts, assets, templates, or sample files.
+   - Collect or summarize the reference material the skill should preserve.
    - Ground the skill in real expertise: completed tasks, user corrections, project docs, runbooks, schemas, review comments, issues, or patches.
 
 2. Choose the skill name and location.
@@ -47,7 +47,7 @@ Use this workflow to create a portable Agent Skill: a directory with a focused `
    - Move detailed documentation into `references/`.
    - Move reusable templates, images, sample files, or static data into `assets/`.
    - Add scripts in `scripts/` only for deterministic operations that would otherwise be recreated repeatedly.
-   - Keep references one level deep and state when to load each file.
+   - Keep supporting resources one level deep and state when to load each file.
 
 5. Review and validate the result.
    - Present the draft when scope is uncertain or the skill encodes domain-specific preferences.
@@ -88,6 +88,19 @@ description: Helps with accessibility.
 - If bundling scripts, make them self-contained, non-interactive, idempotent, and runnable from the skill root with relative paths.
 - Scripts should provide concise `--help`, helpful errors, meaningful exit codes, safe defaults, and structured stdout with diagnostics on stderr.
 - For destructive or stateful operations, include dry-run or explicit confirmation flags.
+
+## Lightweight Skills
+
+For narrow, instruction-only skills, keep the skill as small as practical and prefer a single-file `SKILL.md` with:
+
+- Frontmatter containing `name` and a specific, trigger-focused `description`.
+- The shortest workflow that covers the decisions the agent might get wrong.
+- Gotchas only when they prevent likely mistakes.
+- No `references/`, `scripts/`, `assets/`, templates, or other supporting files.
+
+Add a short purpose paragraph only when the description alone is not enough to guide execution. Omit examples, sections, and validation steps unless they prevent likely failure.
+
+Use the fuller structure when the skill needs reusable resources, fragile procedures, domain-specific references, deterministic scripts, or multi-step validation.
 
 ## Starter Shape
 
