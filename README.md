@@ -18,6 +18,12 @@ Each skill lives in its own directory and follows the [agentskills.io specificat
 | [`shorten-it`](shorten-it/SKILL.md)                 | Shorten text while preserving meaning, tone, and important details.                                                                                                                                                                                                                                 |
 | [`simplify-code`](simplify-code/SKILL.md)           | Simplify source code for clarity and maintainability while preserving behavior. Based on [`code-simplifier`](https://github.com/anthropics/claude-code/blob/main/plugins/pr-review-toolkit/agents/code-simplifier.md).                                                                              |
 
+## Docs
+
+Background notes and research behind these skills:
+
+- [Working with Agents](docs/working-with-agents.md) — human-facing principles for directing an agent to complete tasks, synthesized from Anthropic, OpenAI, Microsoft Research, Ethan Mollick, Simon Willison, and academic human-AI collaboration research.
+
 ## Repository Layout
 
 ```text
