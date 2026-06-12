@@ -36,6 +36,8 @@ npx skills add alannkl/skills --all -g -y
 
 Omit `-g` for a project-local install. Use `--skill <name>` instead of `--all` to install a single skill.
 
+To remove a skill, use `npx skills remove --skill <name> -g -y` (omit `-g` for project-local). Run `npx skills remove -g` to pick skills interactively. `--all` removes every installed skill in that scope, not just this repo.
+
 ### Manual
 
 Copy or symlink a skill directory into your agent's skills path:
@@ -50,6 +52,8 @@ If an agent does not read `~/.agents/skills/` directly, symlink from there:
 ```bash
 ln -sfn ~/.agents/skills/commit-message ~/.cursor/skills/commit-message
 ```
+
+To uninstall manually, delete the skill directory (and any symlinks) from the same paths.
 
 ## Docs
 
