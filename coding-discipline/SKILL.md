@@ -30,7 +30,7 @@ Applies to any coding task: implementation, bug fixes, refactors, reviews, tests
    - Inspect the relevant files, tests, docs, and existing conventions.
    - Identify the behavioral surface: inputs, outputs, side effects, persistence, external calls, and user-visible contracts.
    - State assumptions when they affect implementation or risk; do not hide confusion.
-   - If multiple materially different interpretations exist, present them instead of picking silently.
+   - If multiple materially different interpretations exist, present them with a clear recommendation instead of picking silently.
    - If a simpler approach exists, say so and push back when warranted. If a more complex design is plausibly better for likely future needs, propose it with the tradeoff and let the user make that bet; do not build for the future unprompted.
 
 2. Define the smallest verifiable plan.
