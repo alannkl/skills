@@ -55,12 +55,42 @@ ln -sfn ~/.agents/skills/commit-message ~/.cursor/skills/commit-message
 
 To uninstall manually, delete the skill directory (and any symlinks) from the same paths.
 
+## AGENTS.md
+
+Besides skills, this repo ships an [`AGENTS.md`](AGENTS.md) — the Collaboration Constitution: task-agnostic rules so the agent itself leads the collaboration — surfacing assumptions, defining done, holding scope, pushing back on real issues. It is the agent-side counterpart to [Working with Agents](docs/working-with-agents.md), and it is live in this repo (with `CLAUDE.md` symlinked to it), so agents working here already follow it.
+
+### Using it yourself
+
+Unlike skills, the constitution is not installed — it is meant to be always loaded. Copy the whole of [AGENTS.md](AGENTS.md) into an always-loaded instruction file:
+
+| Scope   | File                                                  |
+| ------- | ----------------------------------------------------- |
+| Global  | `~/.claude/CLAUDE.md`                                 |
+| Project | `CLAUDE.md` or `AGENTS.md` at the repository root     |
+
+Then fill in the **Project-specific instructions** section at the end. When extending the universal rules, add only what pays off in every session — anything more specific belongs in a skill, a doc, or the project section.
+
+### Linking the coding-discipline skill
+
+For coding projects with the [`coding-discipline`](coding-discipline/SKILL.md) skill installed, point the project-specific section at it so every session loads it before code work:
+
+```markdown
+## Project-specific instructions
+
+### Coding Discipline
+
+Before any code work, load the `coding-discipline` skill first and follow it.
+Skip only for trivial formatting, pure prose edits, or explicitly throwaway
+prototypes.
+```
+
+Referencing the skill by name works for any install scope. If your agent does not resolve skills by name, link the installed `SKILL.md` path instead (e.g. `.agents/skills/coding-discipline/SKILL.md` for a project-local install).
+
 ## Docs
 
 Background notes and research behind these skills:
 
-- [Working with Agents](docs/working-with-agents.md) — human-facing principles for directing an agent to complete tasks, synthesized from Anthropic, OpenAI, Microsoft Research, Ethan Mollick, Simon Willison, and academic human-AI collaboration research.
-- [Collaboration Constitution](AGENTS.md) — the agent-side counterpart: task-agnostic rules so the agent itself leads the collaboration along those principles. It doubles as this repo's live `AGENTS.md`, so agents working here follow it. To use it in your own setup, copy the whole file into an always-loaded instruction file (global `~/.claude/CLAUDE.md`, a project `CLAUDE.md`, or `AGENTS.md`) and fill in the project-specific section at the end. When extending the universal rules, add only what pays off in every session — anything more specific belongs in a skill, a doc, or the project section.
+- [Working with Agents](docs/working-with-agents.md) — human-facing principles for directing an agent to complete tasks, synthesized from Anthropic, OpenAI, Microsoft Research, Ethan Mollick, Simon Willison, and academic human-AI collaboration research. Its agent-side counterpart is the [Collaboration Constitution](#agentsmd) above.
 
 ## Repository Layout
 
