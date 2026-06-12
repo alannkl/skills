@@ -10,7 +10,7 @@ Shorten existing text without changing its job, claims, audience, or voice. Do n
 ## Workflow
 
 1. Preserve meaning first.
-   - Keep intent, tone, nuance, claims, caveats, scope, names, numbers, examples, technical terms, requirements, constraints, labels, keys, and steps unless clearly redundant.
+   - Keep intent, tone, nuance, claims, caveats, scope, names, numbers, examples, technical terms, requirements, constraints, labels, field names, identifiers, and steps unless clearly redundant.
 
 2. Cut only low-value wording.
    - Remove repetition, filler, hedging, verbose transitions, and needless nesting.
