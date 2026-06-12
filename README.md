@@ -18,23 +18,6 @@ Each skill lives in its own directory and follows the [agentskills.io specificat
 | [`shorten-it`](shorten-it/SKILL.md)                 | Shorten text while preserving meaning, tone, and important details.                                                                                                                                                                                                                                 |
 | [`simplify-code`](simplify-code/SKILL.md)           | Simplify source code for clarity and maintainability while preserving behavior. Based on [`code-simplifier`](https://github.com/anthropics/claude-code/blob/main/plugins/pr-review-toolkit/agents/code-simplifier.md).                                                                              |
 
-## Docs
-
-Background notes and research behind these skills:
-
-- [Working with Agents](docs/working-with-agents.md) — human-facing principles for directing an agent to complete tasks, synthesized from Anthropic, OpenAI, Microsoft Research, Ethan Mollick, Simon Willison, and academic human-AI collaboration research.
-- [Collaboration Constitution](AGENTS.md) — the agent-side counterpart: task-agnostic rules so the agent itself leads the collaboration along those principles. It doubles as this repo's live `AGENTS.md`, so agents working here follow it. To use it in your own setup, copy the whole file into an always-loaded instruction file (global `~/.claude/CLAUDE.md`, a project `CLAUDE.md`, or `AGENTS.md`) and fill in the project-specific section at the end. When extending the universal rules, add only what pays off in every session — anything more specific belongs in a skill, a doc, or the project section.
-
-## Repository Layout
-
-```text
-<skill-name>/
-  SKILL.md
-  references/  # optional supporting docs
-  scripts/     # optional deterministic helpers
-  assets/      # optional templates, images, or static data
-```
-
 ## Installation
 
 ### Skills CLI
@@ -53,7 +36,9 @@ npx skills add alannkl/skills --all -g -y
 
 Omit `-g` for a project-local install. Use `--skill <name>` instead of `--all` to install a single skill.
 
-**Manual** — copy or symlink a skill directory into your agent's skills path:
+### Manual
+
+Copy or symlink a skill directory into your agent's skills path:
 
 | Scope   | Universal (Cursor, Codex, Claude Code, and others) | Agent-specific (also supported)          |
 | ------- | -------------------------------------------------- | ---------------------------------------- |
@@ -64,6 +49,23 @@ If an agent does not read `~/.agents/skills/` directly, symlink from there:
 
 ```bash
 ln -sfn ~/.agents/skills/commit-message ~/.cursor/skills/commit-message
+```
+
+## Docs
+
+Background notes and research behind these skills:
+
+- [Working with Agents](docs/working-with-agents.md) — human-facing principles for directing an agent to complete tasks, synthesized from Anthropic, OpenAI, Microsoft Research, Ethan Mollick, Simon Willison, and academic human-AI collaboration research.
+- [Collaboration Constitution](AGENTS.md) — the agent-side counterpart: task-agnostic rules so the agent itself leads the collaboration along those principles. It doubles as this repo's live `AGENTS.md`, so agents working here follow it. To use it in your own setup, copy the whole file into an always-loaded instruction file (global `~/.claude/CLAUDE.md`, a project `CLAUDE.md`, or `AGENTS.md`) and fill in the project-specific section at the end. When extending the universal rules, add only what pays off in every session — anything more specific belongs in a skill, a doc, or the project section.
+
+## Repository Layout
+
+```text
+<skill-name>/
+  SKILL.md
+  references/  # optional supporting docs
+  scripts/     # optional deterministic helpers
+  assets/      # optional templates, images, or static data
 ```
 
 ## License
