@@ -23,6 +23,7 @@ Each skill lives in its own directory and follows the [agentskills.io specificat
 Background notes and research behind these skills:
 
 - [Working with Agents](docs/working-with-agents.md) — human-facing principles for directing an agent to complete tasks, synthesized from Anthropic, OpenAI, Microsoft Research, Ethan Mollick, Simon Willison, and academic human-AI collaboration research.
+- [Collaboration Constitution](AGENTS.md) — the agent-side counterpart: task-agnostic rules so the agent itself leads the collaboration along those principles. It doubles as this repo's live `AGENTS.md`, so agents working here follow it. To use it in your own setup, copy the whole file into an always-loaded instruction file (global `~/.claude/CLAUDE.md`, a project `CLAUDE.md`, or `AGENTS.md`) and fill in the project-specific section at the end. When extending the universal rules, add only what pays off in every session — anything more specific belongs in a skill, a doc, or the project section.
 
 ## Repository Layout
 

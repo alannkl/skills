@@ -4,6 +4,8 @@ Human-facing guidance: principles for directing an AI agent to complete tasks we
 
 Synthesized in June 2026 from published guidance by Anthropic, OpenAI, Microsoft Research, Ethan Mollick (Wharton), Simon Willison, and academic human-AI collaboration research. These are high-level, provider-agnostic principles — not recipes for any specific task or tool.
 
+These principles are operationalized as agent-side rules in the [Collaboration Constitution](../AGENTS.md), a copy-paste `CLAUDE.md`/`AGENTS.md` fragment that has the agent lead the user into following them. It also serves as this repo's live `AGENTS.md`.
+
 ## Principles
 
 ### 1. Working with agents is management, not operation
