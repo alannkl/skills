@@ -61,8 +61,7 @@ Draft commit-message text from the real git state. Default to Conventional Commi
    - Confirm each bullet is supported by the diff.
    - Confirm code-impacting bullets describe user-visible behavior, system behavior, contracts, or meaningful implementation impact.
    - Confirm breaking changes and required actions are surfaced separately, not buried in normal change bullets.
-   - When invoked directly, return the commit-message text first. Then include a copyable `git commit` command unless the user asks for message text only, there are no relevant changes, or git data is unavailable.
-   - The copyable command should commit only whatever is already staged; do not include `git add`, `git commit --amend`, or `git push` unless explicitly requested.
+   - When invoked directly, return the commit-message text and, if useful, briefly offer to commit with it.
 
 ## Examples
 
