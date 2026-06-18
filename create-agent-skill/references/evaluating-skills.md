@@ -1,12 +1,12 @@
 # Evaluating Agent Skills
 
-Use this reference only when the user asks to evaluate, benchmark, or improve a skill through formal tests. Do not treat these checks as part of the default skill-creation workflow; otherwise, suggest formal evals as an optional next step for the user.
+Use this reference only when the user asks to evaluate, benchmark, or improve a skill through formal tests. Do not run these checks during the default skill-creation workflow; suggest formal evals as an optional next step instead.
 
 ## Trigger Checks
 
-- Create 8-10 should-trigger prompts and 8-10 near-miss should-not-trigger prompts.
+- Create 8-10 should-trigger prompts and 8-10 near-miss prompts that should not trigger the skill.
 - Include varied phrasing, casual language, typos, file paths, and cases where the skill intent is buried in a larger task.
-- Revise the `description` if should-trigger prompts do not load the skill or near-miss prompts load it too often.
+- Revise the `description` if should-trigger prompts fail to load the skill or near-miss prompts load it too often.
 - Avoid overfitting to exact failed prompt wording; fix the broader intent boundary.
 
 ## Output Quality Checks
