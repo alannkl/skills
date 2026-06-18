@@ -5,11 +5,11 @@ description: Create Agent Skill files from reusable workflows, domain expertise,
 
 # Create Agent Skill
 
-Use this workflow to create or update a portable Agent Skill: a focused `SKILL.md` plus optional supporting resources that load only when needed.
+Use this workflow to create or update a portable Agent Skill: a self-contained `SKILL.md` plus optional local resources that load only when needed.
 
 ## Activation Boundary
 
-- Use this skill only when the user wants skill files created or updated.
+- Use this skill only when the user wants actual skill files created or updated.
 - Keep planning-only requests in planning mode. This includes plans, designs, critiques, outlines, requirements, and skill-shape discussions.
 - If a request mixes planning and creation, resolve the plan before editing. Write files only after the implementation path is clear.
 - Named tools, skills, frameworks, and workflows do not override the user's requested mode.
@@ -20,8 +20,8 @@ Use this workflow to create or update a portable Agent Skill: a focused `SKILL.m
    - Identify the concrete artifact to create or update: skill directory, `SKILL.md`, references, scripts, assets, or inventory docs.
    - If file-writing intent is ambiguous and edits would be surprising, ask for confirmation before editing.
    - Identify the task, workflow, project convention, or domain the skill covers.
-   - Capture the prompts, contexts, files, or workflows that should trigger it.
-   - Note adjacent requests that should not trigger it.
+   - Capture the prompts, contexts, files, and workflows that should trigger it.
+   - Note adjacent requests and near-misses that should not trigger it.
    - Decide whether the skill needs instructions only or also references, scripts, assets, templates, or sample files.
    - Collect or summarize the reference material the skill should preserve.
    - Ground the skill in real expertise: completed tasks, user corrections, project docs, runbooks, schemas, review comments, issues, or patches.
@@ -33,21 +33,23 @@ Use this workflow to create or update a portable Agent Skill: a focused `SKILL.m
 
 3. Write `SKILL.md`.
    - Start with YAML frontmatter containing at least `name` and `description`.
-   - Add optional fields such as `license`, `compatibility`, `metadata`, or `allowed-tools` only when they add useful information.
+   - Add optional fields such as `license`, `compatibility`, `metadata`, or `allowed-tools` only when they carry useful information.
    - Keep the description under 1024 characters and write it in third person.
    - Make the first sentence say what the skill does.
    - Start the second sentence with `Use when`; include trigger phrases, adjacent near-misses, and load conditions.
    - Focus the body on procedures, defaults, examples, gotchas, scripts, and validation steps.
+   - Keep the skill self-contained. Do not require another skill to be installed, loaded, or followed; copy or summarize required guidance into this skill's own files.
 
 4. Apply progressive disclosure.
    - Keep `SKILL.md` to the core instructions the agent needs on every run.
    - Use ~100 non-empty body lines as a reference point for when to split, not a hard limit or target.
-   - Prioritize completeness and correctness over staying under that size. Never omit or weaken instructions just to fit.
+   - Prioritize completeness and correctness over size. Never omit or weaken instructions just to fit.
    - Split files when `SKILL.md` approaches that reference point, content spans distinct domains, or advanced features are rarely needed.
    - Move detailed documentation into `references/`.
    - Move reusable templates, images, sample files, or static data into `assets/`.
    - Add scripts in `scripts/` only for deterministic operations that would otherwise be recreated repeatedly.
-   - Keep supporting resources one level deep and state when to load each file.
+   - Keep supporting resources one level deep, relative to the skill directory, and state when to load each file.
+   - Do not require context from another skill's `SKILL.md`, `references/`, `scripts/`, or `assets/`.
 
 5. Review and validate the result.
    - Present the draft when scope is uncertain or the skill encodes domain-specific preferences.
@@ -56,6 +58,7 @@ Use this workflow to create or update a portable Agent Skill: a focused `SKILL.m
    - Confirm frontmatter parses as YAML.
    - Confirm `description` has specific trigger language.
    - Check non-empty body line count (~100, excluding YAML frontmatter and blank lines) as a split cue, not a pass/fail limit.
+   - Confirm the skill has no dependency on external skills or another skill directory.
    - Avoid time-sensitive facts unless the skill tells the agent how to refresh them.
    - Keep terminology consistent across `SKILL.md` and references.
    - Sanity-check the description against realistic positive prompts and near-miss negative prompts. Revise wording that is too broad or too narrow.
@@ -91,7 +94,7 @@ description: Helps with accessibility.
 
 ## Lightweight Skills
 
-For narrow, instruction-only skills, keep the skill as small as practical and prefer a single-file `SKILL.md` with:
+For narrow instruction-only skills, keep the skill as small as practical and prefer a single-file `SKILL.md` with:
 
 - Frontmatter containing `name` and a specific, trigger-focused `description`.
 - The shortest workflow that covers the decisions the agent might get wrong.
@@ -130,7 +133,8 @@ description: Do a specific reusable task. Use when the user asks for concrete in
 ## Quality Bar
 
 - Completeness and correctness beat brevity; a longer `SKILL.md` is fine when the workflow needs it.
-- The skill is a coherent unit of reusable work, not a general knowledge dump.
+- The skill is a coherent, self-contained unit of reusable work, not a general knowledge dump.
+- Local supporting files are fine, but external skills are not required context.
 - The instructions cover what the agent would likely get wrong without the skill and omit what it already knows.
 - Defaults are clear; alternatives appear only when they change a decision.
 - Reserve prescriptive steps for fragile operations; for flexible tasks, explain intent.
