@@ -18,7 +18,7 @@ When these principles conflict with each other, correctness and contract safety 
 
 Scale process to risk. On small, low-risk changes, assumptions, success criteria, and handoff notes can each be a sentence, or be skipped when self-evident. Reserve full rigor for contract-touching, multi-step, or hard-to-reverse work.
 
-The goal is industry-grade software: clear contracts, explicit boundaries, reliable behavior, testability, and maintainable code without unnecessary machinery.
+The goal is clean, efficient, elegant, industry-grade software: clear contracts, explicit boundaries, reliable behavior, testability, and maintainable code without unnecessary machinery — where elegance is economy, not cleverness for its own sake.
 
 ## When To Use
 
@@ -42,6 +42,7 @@ Use these steps whenever you are changing artifacts. When you are only reviewing
    - If multiple materially different interpretations exist, present them with a clear recommendation instead of picking silently.
    - If a simpler approach exists, say so and push back when warranted.
    - If a more complex design is plausibly better for likely future needs, propose it with the tradeoff and let the user make that bet; do not build for the future unprompted.
+   - For a bug fix, treat the report as a symptom, not the cause: trace the callers of the code you touch and fix the shared cause once, rather than patching only the path the report names and leaving sibling callers broken.
 
 2. Define the smallest verifiable plan.
    - Convert the request into concrete success criteria, each written as an observable check: a command to run, an expected output, or an assertion — not a vague goal. ("`GET /users/:id` returns 404 for unknown ids" beats "handle missing users".)
@@ -61,6 +62,7 @@ Use these steps whenever you are changing artifacts. When you are only reviewing
    - Protect public contracts: APIs, schemas, migrations, events, config, CLI flags, serialized formats, and persisted data need compatibility, rollout, and rollback care.
 
 4. Write clear code.
+   - The best code is the code never written. Before adding code, stop at the first rung that holds: does it need to exist (YAGNI); does the repo already provide it; does the standard library or platform cover it; does an already-installed dependency cover it. Only then write the minimum that works. Smaller never means flimsier: between two equally small options, take the edge-case-correct one.
    - Name by intent; make side effects visible in names.
    - Keep functions and modules focused on one purpose, using guard clauses to reduce nesting.
    - Avoid premature abstractions, wrapper layers, generic helpers, speculative safeguards, or configuration knobs until duplication, risk, contracts, or complexity prove they are needed. A request to "send one email" needs a function call, not a pluggable `NotificationProvider` interface with retry config.
@@ -99,6 +101,7 @@ Use these steps whenever you are changing artifacts. When you are only reviewing
 
 8. Document only useful intent.
    - Make code clear through names and structure first; add comments only for non-obvious why: invariants, tradeoffs, ordering, retries, idempotency, fallbacks, security constraints, or business rules.
+   - When you deliberately choose a simpler implementation with a known ceiling (a coarse lock, an O(n²) scan, a naive heuristic), comment the ceiling and the condition that would justify upgrading it — so the shortcut reads as a decision, not an oversight.
    - Do not comment obvious syntax, trivial control flow, or unclear code that should instead be simplified.
 
 9. Validate and finish cleanly.
@@ -114,6 +117,7 @@ Use these steps whenever you are changing artifacts. When you are only reviewing
 
 - Do not equate "more robust" with more code. Unrequested fallbacks, retries, abstractions, and options often make systems worse.
 - Do not use minimality to omit what present requirements demand: validation, error handling, and rollback care are part of correct, not extras.
+- Do not treat a smaller diff as automatically better: the smallest change in the wrong place isn't simpler, it's a second bug. Earn the small diff by understanding the flow first.
 - Do not refactor or restyle adjacent code just because you noticed it.
 - Do not hide uncertain requirements inside implementation choices.
 - Do not delete pre-existing dead code unless the user asked for that cleanup.
