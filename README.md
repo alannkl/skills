@@ -13,6 +13,7 @@ Each skill lives in its own directory and follows the [agentskills.io specificat
 | [`code-review`](code-review/SKILL.md)               | Produce findings-led code review reports for concrete code changes.                                                                                                                                                                                                                                 |
 | [`commit-message`](commit-message/SKILL.md)         | Draft accurate Conventional Commit messages from real git changes.                                                                                                                                                                                                                                  |
 | [`document-code`](document-code/SKILL.md)           | Improve source-code understanding by adding only useful comments, docstrings, or focused docs without changing behavior.                                                                                                                                                                            |
+| [`explain-change`](explain-change/SKILL.md)         | Explain a completed change before merge, with an optional quiz that surfaces gaps in the user's understanding of the new behavior.                                                                                                                                                                  |
 | [`grill-to-plan`](grill-to-plan/SKILL.md)           | Turn vague ideas and plans into clear decisions through scoped questioning. Based on [`grill-me`](https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-me/SKILL.md) and [`grill-with-docs`](https://github.com/mattpocock/skills/tree/main/skills/engineering/grill-with-docs). |
 | [`refine-it`](refine-it/SKILL.md)                   | Refine written artifacts for clarity and readiness while preserving intent and scope.                                                                                                                                                                                                               |
 | [`shorten-it`](shorten-it/SKILL.md)                 | Shorten text while preserving meaning, tone, and important details.                                                                                                                                                                                                                                 |
@@ -63,10 +64,10 @@ Besides skills, this repo ships an [`AGENTS.md`](AGENTS.md) — the Collaboratio
 
 Unlike skills, the constitution is not installed — it is meant to be always loaded. Copy the whole of [AGENTS.md](AGENTS.md) into an always-loaded instruction file:
 
-| Scope   | File                                                  |
-| ------- | ----------------------------------------------------- |
-| Global  | `~/.claude/CLAUDE.md`                                 |
-| Project | `CLAUDE.md` or `AGENTS.md` at the repository root     |
+| Scope   | File                                              |
+| ------- | ------------------------------------------------- |
+| Global  | `~/.claude/CLAUDE.md`                             |
+| Project | `CLAUDE.md` or `AGENTS.md` at the repository root |
 
 Then fill in the **Project-specific instructions** section at the end. When extending the universal rules, add only what pays off in every session — anything more specific belongs in a skill, a doc, or the project section.
 
