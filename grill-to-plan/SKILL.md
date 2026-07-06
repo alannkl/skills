@@ -36,6 +36,7 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
 4. Ask one question at a time.
    - Begin each question by restating the current understanding of the user's goal and the relevant settled decisions.
    - Ask a non-obvious, in-depth question that moves the plan toward resolution.
+   - Prioritize questions whose answers would change the architecture or ripple into other pending decisions; leave questions that only tune details for last.
    - When domain relationships are being discussed, use concrete scenarios that probe edge cases and force precise boundaries between concepts.
    - Provide your recommended answer and the reasoning behind it.
    - Use the agent's built-in ask-question tool when one is available and appropriate.
@@ -73,6 +74,7 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
 9. Finish with a synthesis sized to the mode.
    - In lightweight mode, give the resolved decision, any explicit deferral, and the next step.
    - In documented mode, provide the full synthesis: resolved plan, decisions made, open questions, docs updated, risks, and next steps.
+   - Order the plan by likelihood of revision: lead with the decisions the user is most likely to tweak (data models, type interfaces, user-facing behavior) and put mechanical or well-understood work last.
 
 ## ADR Rule
 
