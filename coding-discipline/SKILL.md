@@ -49,6 +49,7 @@ Use these steps whenever you are changing artifacts. When you are only reviewing
    - Prefer the narrowest change that satisfies those criteria without worsening system shape.
    - Ask when ambiguity would materially change the solution, create risk, or leave success criteria too weak to verify.
    - If no one is available to answer, choose the most reversible interpretation, state the assumption prominently in the handoff, and proceed.
+   - When mid-implementation discovery contradicts the agreed plan, take the most reversible option that honors the plan's intent, record the deviation in a notes file (preferred over commit messages or PR descriptions; the handoff summary is not a record), and surface it in the handoff. If the discovery invalidates the plan's premise, stop and re-plan instead of pushing through.
    - For multi-step work, state each step with its verification check.
 
 3. Preserve system shape.
@@ -111,7 +112,7 @@ Use these steps whenever you are changing artifacts. When you are only reviewing
    - Keep changes reviewable: avoid unrelated churn, explain non-obvious tradeoffs, and make contract or migration effects explicit.
    - Remove unused imports, variables, functions, and branches introduced by your edit.
    - Leave unrelated pre-existing issues untouched and mention them separately when useful.
-   - Summarize the handoff for the user: which success criteria passed, what changed and why, assumptions made, what was intentionally left out, and what remains unverified or risky.
+   - Summarize the handoff for the user: which success criteria passed, what changed and why, assumptions made, deviations from the agreed plan, what was intentionally left out, and what remains unverified or risky.
 
 ## Gotchas
 
