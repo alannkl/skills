@@ -64,7 +64,7 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - In lightweight mode, do this only when the user asks or a durable project decision emerges.
 
 8. Maintain a session record when useful.
-   - Create or update a session document as decisions crystallize. Store it at `docs/grill-to-plan/{yyyy-mm-dd}-{slug}.md` unless the repo has an established planning or decision-log location.
+   - Create or update a session document as decisions crystallize. Store it at `docs/grill-to-plan/{yyyy-mm-dd}-{slug}/session.md` unless the repo has an established planning or decision-log location.
    - For each question, record: context, question, discussion or debate summary, final conclusion, and any follow-up.
    - Treat the live conversation as the immediate source of truth and the session record as the durable checkpoint for settled state.
    - Keep it concise enough to guide the next question without becoming a transcript.
@@ -75,6 +75,8 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - In lightweight mode, give the resolved decision, any explicit deferral, and the next step.
    - In documented mode, provide the full synthesis: resolved plan, decisions made, open questions, docs updated, risks, and next steps.
    - Order the plan by likelihood of revision: lead with the decisions the user is most likely to tweak (data models, type interfaces, user-facing behavior) and put mechanical or well-understood work last.
+   - Whenever a session record exists, also persist the final plan as `plan.md` next to `session.md`, following `references/SESSION-RECORD-FORMAT.md`. Overwrite it if the session resumes and the plan changes.
+   - Keep `plan.md` forward-looking: what to build and in what order. Link to `session.md` for decision history instead of duplicating it.
 
 ## ADR Rule
 
