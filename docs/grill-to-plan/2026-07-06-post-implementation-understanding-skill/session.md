@@ -61,12 +61,6 @@ Conclusion: One round, scored feedback. Deliberate divergence from the article's
 
 Conclusion: Explains but never judges (code-review's job), never edits (document-code's job), never executes (verify's job). Cross-suggests document-code when confusion stems from unclear code; points to code-review when it notices suspicious behavior. Quiz questions are behavioral ("what happens if X"), never symbol trivia, to keep the score meaningful.
 
-### Q8 (user refinement): Quiz focus and format
-
-Context: After the session closed, the user sharpened the quiz design.
-
-Conclusion: (1) Questions cover the behavior change only — what the system observably does differently — never implementation details (no "which function/file/pattern"). (2) Lightweight multiple-choice: "what happens when X?" with plausible behavioral options, administered via the ask-question tool. (3) The quiz's goal is to surface misunderstanding or missing understanding easily, fast, and lightweight — a detector, not a mastery gate. This retroactively grounds the Q4 one-round choice: a detector needs one cheap round, not a pass-perfectly loop.
-
 ### Q6: Name
 
 Question: What is the skill called?
@@ -85,20 +79,58 @@ Recommendation: Hold; manually prompt an explainer + quiz after the next 1–2 s
 
 Conclusion: Hold until trial validates. This spec makes the eventual build a short create-agent-skill task.
 
+### Q8 (user refinement): Quiz focus and format
+
+Context: After the session closed, the user sharpened the quiz design.
+
+Conclusion: (1) Questions cover the behavior change only — what the system observably does differently — never implementation details (no "which function/file/pattern"). (2) Lightweight multiple-choice: "what happens when X?" with plausible behavioral options, administered via the ask-question tool. (3) The quiz's goal is to surface misunderstanding or missing understanding easily, fast, and lightweight — a detector, not a mastery gate. This retroactively grounds the Q4 one-round choice: a detector needs one cheap round, not a pass-perfectly loop.
+
+### Q9 (user refinement): Explainer persistence
+
+Context: After the skill was built, the user questioned storing the explainer as a notes file.
+
+Conclusion: The explainer is presented in chat, not written to a file; the skill closes by offering the explainer text as the PR description or extended commit-message body, so it persists where reviewers and future readers already look. This supersedes the Q3 notes-file decision and makes the open question about file location/naming moot. If the deferred buy-in doc ever materializes, it derives from the PR description instead.
+
+### Q10 (user refinement): First-trial feedback
+
+Context: The first trial run — the skill applied to its own build diff — surfaced three flaws: the quiz started immediately after the explainer, questions were obvious enough to insult the author, and the correct answer always sat in the first option slot.
+
+Conclusion: (1) The skill stops after presenting the explainer so the user can read; the quiz starts only on the user's go-ahead. (2) Questions cover only non-obvious, easy-to-miss behavior — edge cases, failure paths, defaults, interactions; a question the author answers without thinking detects nothing, and the quiz is skipped entirely when the change offers no suitable questions. (3) Correct options are shuffled across positions.
+
+### Q11 (user refinement): Quiz optionality and size
+
+Context: Further sharpening after the first trial: the quiz is only a mechanism for surfacing misunderstanding, and a fixed 3–7 question range invites padding — seven is too many.
+
+Conclusion: (1) The explainer is the deliverable; the quiz is optional — offered after the user has read the explainer, run only when the user asked for one or accepts the offer. The explainer-as-PR-text closing happens whether or not a quiz ran. (2) No question quota: ask the minimum that covers the genuinely missable behaviors, often two or three; the 3–7 range is dropped.
+
+### Q12 (user refinement): Question form
+
+Context: The quiz step mandated the literal form "what happens when X?".
+
+Conclusion: The required constraint is that questions and options are observable behaviors of the changed system; "what happens when X?" stays as the typical shape, not a required template.
+
+### Q13 (user refinement): Inferred rationale
+
+Context: The second trial's quiz surfaced a real divergence: the skill mandated writing "rationale not recorded" whenever no session context or notes exist, while the user expected the agent to infer rationale from the code and label it as inference. The spec had only ever weighed recorded rationale against invented rationale; labeled inference was a middle ground never considered.
+
+Conclusion: The explainer may infer rationale from the code when none is recorded, provided the inference is clearly labeled as such; "rationale not recorded" remains the fallback when the code offers no basis to infer. Presenting inferred rationale as fact stays banned.
+
 ## Decisions
 
 - v1 scope is explainer + quiz: buy-in doc deferred until team-sharing need is proven.
 - Input is the code diff as ground truth, enriched by session context or implementation-notes when available: skill must work in a fresh session.
-- Explainer is a durable markdown notes file; quiz is interactive in chat; HTML render is an optional enhancement only.
+- Rationale in the explainer: recorded sources first; clearly labeled inference from the code when unrecorded; "rationale not recorded" only when the code offers no basis to infer.
+- Explainer is presented in chat and offered as the PR description or extended commit-message body, not stored as a notes file (supersedes the earlier notes-file decision); quiz is interactive in chat; HTML render is an optional enhancement only.
 - Quiz is one round with scored feedback: misses re-taught with pointers, low score ends with a re-run suggestion; no forced loop (deliberate divergence from the article).
-- Quiz is a lightweight misunderstanding detector, not a mastery gate: multiple-choice "what happens when X?" questions about the behavior change only, never implementation details, run via the ask-question tool.
+- Quiz is a lightweight misunderstanding detector, not a mastery gate: behavioral multiple-choice questions about the behavior change only ("what happens when X?" as the typical shape, not a required template), never implementation details, run via the ask-question tool.
+- Quiz is optional and quota-free: offered after the user has read the explainer and run only on request or acceptance; the minimum number of questions that covers the genuinely missable behaviors (often two or three), targeting only non-obvious, easy-to-miss behavior with shuffled correct-option positions; skipped when the change offers no suitable questions.
 - Boundaries: explain-only — no judging (code-review), no editing (document-code), no executing (verify); cross-suggest those skills when their territory appears.
 - Name is `explain-change`: description triggers include "explain this change", "quiz me on it", "walk me through what changed", "before I merge".
 - Hold the build until the manual trial validates the need: build via create-agent-skill from this spec afterwards.
 
 ## Implementation Sketch
 
-For the future `create-agent-skill` build. Ordered by likelihood of revision — review the top items, trust the bottom.
+The pre-build sketch, kept as written for the record — the build has since happened. The built [`explain-change/SKILL.md`](../../../explain-change/SKILL.md) and the user-refinement entries above (Q8 onward) supersede it where they differ. Ordered by likelihood of revision — review the top items, trust the bottom.
 
 1. Description / triggers (most likely to change — validate during the manual trial): "Explain a completed change and verify the user's understanding with a lightweight behavior quiz before merge. Use when the user asks to explain this change, walk me through what changed, quiz me on it, or wants a pre-merge understanding check. Not for judging code quality (code-review), adding comments (document-code), or runtime verification (verify)."
 2. Explainer file convention (blocked on the implementation-notes trial): name, location, committed vs local — inherit whatever that trial settles.
@@ -109,8 +141,7 @@ For the future `create-agent-skill` build. Ordered by likelihood of revision —
 
 ## Open Questions
 
-- Buy-in doc variant: deferred until a real team-sharing need appears; the durable explainer file is designed to be its input when it does.
-- Explainer file location/naming: follow whatever convention the implementation-notes trial settles (same family of kept notes files).
+- Buy-in doc variant: deferred until a real team-sharing need appears; the explainer-as-PR-description is its input when it does.
 
 ## Risks / Watchpoints
 
