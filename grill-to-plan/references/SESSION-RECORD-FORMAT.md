@@ -1,15 +1,16 @@
 # Grill to Plan Session Record Format
 
-Use the session record as the current state of the discussion, not as a full transcript.
+Use the session record as the current state of the discussion, not as a full transcript. Use the plan as the forward-looking synthesis that comes out of it.
 
 ## Location
 
-- Default location: `docs/grill-to-plan/{yyyy-mm-dd}-{slug}.md`.
+- Each session gets one folder: `docs/grill-to-plan/{yyyy-mm-dd}-{slug}/` containing `session.md` (the session record) and `plan.md` (the final plan).
+- The folder name is a stable ID: the date is the session start date, fixed when the folder is created. When a session resumes on a later day, never rename the folder; update the `Date:` fields inside the documents instead.
 - Use an existing repo convention instead when the project already has a planning, discovery, or decision-log folder.
-- Create the document when the first question is answered or the first decision is made.
-- Create missing parent directories the first time you write the document.
+- Create `session.md` when the first question is answered or the first decision is made; create `plan.md` when the session concludes with a synthesis.
+- Create missing parent directories the first time you write a document.
 
-## Shape
+## Session Record Shape (`session.md`)
 
 ```md
 # {Goal Or Plan Name}
@@ -50,8 +51,34 @@ Follow-up: {Optional next action or dependency.}
 - {Risk and why it matters}
 ```
 
+## Plan Shape (`plan.md`)
+
+```md
+# {Goal Or Plan Name} — Plan
+
+Date: {yyyy-mm-dd}
+
+{One-paragraph statement of the goal and end state.}
+
+## Plan
+
+{The final synthesis: what to build and in what order, led by the parts most likely to be revised.}
+
+## Open Questions
+
+- {Deferred decision and when it must be resolved}
+
+## Risks / Watchpoints
+
+- {Risk and why it matters}
+
+See [session.md](session.md) for the decision history.
+```
+
 ## Rules
 
-- Update the record after each resolved question before asking the next one.
+- Update `session.md` after each resolved question before asking the next one.
 - Keep entries concise enough to guide the next question.
 - Do not duplicate ADRs; link to them when they exist.
+- Keep `plan.md` forward-looking; do not restate the question log or the reasoning behind settled decisions — link to `session.md` instead.
+- Overwrite `plan.md` when a resumed session changes the plan; the pair should always reflect the latest settled state.
