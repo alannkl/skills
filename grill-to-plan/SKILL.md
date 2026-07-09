@@ -44,6 +44,8 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
 
 5. Resolve each question before moving on.
    - If the user wants discussion, stay on that question until there is a conclusion, explicit deferral, or a documented disagreement.
+   - If the user's reply is a question, objection, or request for clarification rather than a decision, switch to discussion mode: answer in a full, detailed normal message and end the turn there. Do not invoke the ask-question tool in that reply; let the user respond freely in conversation.
+   - Return to the ask-question tool only after the discussion has converged or the user signals readiness to decide; the dialog is for collecting decisions, not delivering explanations.
    - Do not skip to the next question while the current decision is still open.
    - Before asking the next question, review the current conversation and the latest session record, then align the next question with what has already been decided.
 
@@ -66,12 +68,14 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
 8. Maintain a session record when useful.
    - Create or update a session document as decisions crystallize. Store it at `docs/grill-to-plan/{yyyy-mm-dd}-{slug}/session.md` unless the repo has an established planning or decision-log location.
    - For each question, record: context, question, discussion or debate summary, final conclusion, and any follow-up.
+   - Also capture the load-bearing facts behind decisions: verified research findings, external-API constraints, contract details, and rejected alternatives. Do not record only the decisions; the implementer will not have this conversation.
    - Treat the live conversation as the immediate source of truth and the session record as the durable checkpoint for settled state.
    - Keep it concise enough to guide the next question without becoming a transcript.
    - Use `references/SESSION-RECORD-FORMAT.md` when creating or updating this document.
    - Skip the session record for lightweight mode unless requested or the discussion produces decisions worth preserving.
 
 9. Finish with a synthesis sized to the mode.
+   - Always assume implementation happens in a different session, possibly by a different agent. The persistent documents (`plan.md`, `session.md`, ADRs) must be self-contained hand-offs. Every decision, constraint, research finding, naming choice, and integration contract needed for implementation must appear in them or a linked doc; the conversation is discarded context.
    - In lightweight mode, give the resolved decision, any explicit deferral, and the next step.
    - In documented mode, provide the full synthesis: resolved plan, decisions made, open questions, docs updated, risks, and next steps.
    - Order the plan by likelihood of revision: lead with the decisions the user is most likely to tweak (data models, type interfaces, user-facing behavior) and put mechanical or well-understood work last.
@@ -96,3 +100,5 @@ Use `references/ADR-FORMAT.md` when creating ADRs. Use `references/CONTEXT-FORMA
 - Do not turn `CONTEXT.md` into a spec, roadmap, scratch pad, or implementation note.
 - Do not batch resolved glossary updates until the end.
 - Do not present the final plan as settled when unresolved decisions remain.
+- Do not funnel discussion through the ask-question dialog; detailed explanations belong in a normal message that ends the turn.
+- Do not leave load-bearing details (research findings, API constraints, contracts, naming) only in the conversation; hand-off docs must stand alone for a fresh session.

@@ -77,6 +77,7 @@ See [session.md](session.md) for the decision history.
 
 ## Rules
 
+- Write both documents as cross-session hand-offs. Implementation happens in a fresh session without this conversation, so every decision, constraint, verified research finding, and integration contract the implementer needs must be in these documents or linked from them.
 - Update `session.md` after each resolved question before asking the next one.
 - Keep entries concise enough to guide the next question.
 - Do not duplicate ADRs; link to them when they exist.
