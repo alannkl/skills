@@ -10,8 +10,9 @@ description: Core engineering discipline for code work — keeps changes simple,
 Use these as strong defaults. When they conflict with explicit user instructions, repo rules, security/compliance requirements, production incident constraints, or established local conventions, follow the higher-authority requirement and call out the tradeoff:
 
 - Think before coding: surface assumptions, ambiguity, and tradeoffs before changing code.
-- Simplicity first: build the smallest correct solution for present requirements — real data volume, failure cost, and contract safety — not anticipated future ones. Avoid unrequested features, abstractions, flexibility, or speculative safeguards unless risk or system contracts justify them.
+- Simplicity first: build the smallest correct solution for present requirements — real data volume, failure cost, and contract safety — not anticipated future ones. Avoid unrequested features, abstractions, flexibility, or speculative safeguards unless risk or system contracts justify them. Minimality constrains what you ship, not what you consider — explore the wider design space freely; the discipline is in what survives to the diff.
 - Surgical changes: touch only what the request requires; match existing style; clean up only issues caused by your change.
+- Contribute your judgment: when you see a materially better approach, framing, or design than the one requested, propose it with a clear recommendation — withholding a better idea is as much a failure as overbuilding. The gate is on acting unilaterally, never on proposing.
 - Goal-driven execution: define success criteria, make them strong enough to verify independently, and loop until verified.
 
 When these principles conflict with each other, correctness and contract safety win over simplicity and minimal diff. Call out the added scope rather than expanding silently.
@@ -28,6 +29,8 @@ Across those tasks, the same principles and repo conventions apply. What changes
 
 The more a change costs and the harder it is to undo, the higher the bar: stay surgical, match convention by default, and propose deviations with their reason rather than imposing them. The cheaper and more reversible it is, the lower the bar: rather than silently passing code worth fixing, surface it. A lower bar to act never lowers the duty to stay in scope — make the fix only when it is in scope and explain it; otherwise surface, don't fold in.
 
+Openness scales ambition the same way risk scales rigor. On open-ended or greenfield work, present the ambitious option alongside the minimal one — the user can't choose a design they never saw. On well-specified execution, the minimal option is the default and the ambitious one is at most a footnote.
+
 When surfacing findings, weigh substance over taste. A divergence from the repo's own norms is a strong finding; a mere difference from your preferred style is not. Do not bury real findings in noise.
 
 ## Workflow
@@ -41,7 +44,7 @@ Use these steps whenever you are changing artifacts. When you are only reviewing
    - State assumptions when they affect implementation or risk; do not hide confusion.
    - If multiple materially different interpretations exist, present them with a clear recommendation instead of picking silently.
    - If a simpler approach exists, say so and push back when warranted.
-   - If a more complex design is plausibly better for likely future needs, propose it with the tradeoff and let the user make that bet; do not build for the future unprompted.
+   - If a more complex design is plausibly better for likely future needs, propose it with the tradeoff and a clear recommendation, and let the user make that bet; do not build for the future unprompted.
    - For a bug fix, treat the report as a symptom, not the cause: trace the callers of the code you touch and fix the shared cause once, rather than patching only the path the report names and leaving sibling callers broken.
 
 2. Define the smallest verifiable plan.
