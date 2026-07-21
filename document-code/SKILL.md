@@ -60,6 +60,7 @@ Improve code understanding without changing behavior, structure, or public contr
    - Default to a local comment. Use one whenever the rationale fits beside a single branch, helper, or call site.
    - Choose a doc file only when all of these hold: the rationale is needed to understand code in two or more files or modules, it cannot sit next to any single one without losing context, and inlining it would repeat the same explanation in more than one place. When undecided, keep it local.
    - Keep one source of truth: put the full rationale in the doc file, then leave a short local comment that points to it only where a nearby reader needs the pointer and immediate rationale.
+   - In focused doc files, use a diagram (sequence, state, flow) when cross-module structure, lifecycle, or ordering is easier to grasp visually than in prose. Follow the repo's existing diagram conventions if any; otherwise default to mermaid in markdown files. Never diagram what a sentence covers, and keep diagrams pinned to behavior that is stable, not implementation details that will drift.
    - Place new docs beside existing relevant docs when possible, and keep them narrowly scoped.
 
 6. Match local style.
