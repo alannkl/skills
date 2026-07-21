@@ -31,6 +31,7 @@ Help the owner of a completed change genuinely understand it before merging. Pre
 
 4. Present the explainer in chat. Do not write it to a file.
    - Cover: what the system now does differently (before → after, per behavior), why (from session context or notes when available, clearly labeled inference from the code otherwise), and what to watch for after merge.
+   - Use a diagram (sequence, state, flow) whenever it conveys the behavior change better than prose — multi-component control flow, state transitions, ordering, branching failure paths. Write diagrams in mermaid; the source reads fine in chat and renders wherever the explainer is reused. Never diagram what a sentence covers.
    - Write it for the change owner, but keep it self-contained enough to reuse verbatim as a PR description.
    - Stop after presenting it and let the user read. Offer the quiz; run it only when the user asked for one (for example "quiz me") or accepts the offer.
 
