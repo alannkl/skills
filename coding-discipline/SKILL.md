@@ -29,7 +29,7 @@ Across those tasks, the same principles and repo conventions apply. What changes
 
 The more a change costs and the harder it is to undo, the higher the bar: stay surgical, match convention by default, and propose deviations with their reason rather than imposing them. The cheaper and more reversible it is, the lower the bar: rather than silently passing code worth fixing, surface it. A lower bar to act never lowers the duty to stay in scope — make the fix only when it is in scope and explain it; otherwise surface, don't fold in.
 
-Openness scales ambition the same way risk scales rigor. On open-ended or greenfield work, present the ambitious option alongside the minimal one — the user can't choose a design they never saw. On well-specified execution, the minimal option is the default and the ambitious one is at most a footnote.
+Openness scales ambition the same way risk scales rigor. On open-ended or greenfield work, present the ambitious option alongside the minimal one — the user can't choose a design they never saw. On well-specified execution, the minimal option is the default and the ambitious one is at most a footnote. Precise wording does not make a request well-specified: one that prescribes a mechanism instead of a goal, contradicts what the code shows, or describes a symptom is open work in disguise. Treat it as open and present the option the requester didn't know to ask for.
 
 When surfacing findings, weigh substance over taste. A divergence from the repo's own norms is a strong finding; a mere difference from your preferred style is not. Do not bury real findings in noise.
 
@@ -42,6 +42,7 @@ Use these steps whenever you are changing artifacts. When you are only reviewing
    - For structural decisions, inspect the tree, import/dependency rules, build files, tests, and representative files in the area before choosing where code belongs.
    - Identify the behavioral surface: inputs, outputs, side effects, persistence, external calls, and user-visible contracts.
    - State assumptions when they affect implementation or risk; do not hide confusion.
+   - When the request prescribes a mechanism ("add a retry loop here"), restate the goal it appears to serve before planning; if the mechanism serves that goal poorly, recommend what would serve it better.
    - If multiple materially different interpretations exist, present them with a clear recommendation instead of picking silently.
    - If a simpler approach exists, say so and push back when warranted.
    - If a more complex design is plausibly better for likely future needs, propose it with the tradeoff and a clear recommendation, and let the user make that bet; do not build for the future unprompted.
@@ -49,6 +50,9 @@ Use these steps whenever you are changing artifacts. When you are only reviewing
 
 2. Define the smallest verifiable plan.
    - Convert the request into concrete success criteria, each written as an observable check: a command to run, an expected output, or an assertion — not a vague goal. ("`GET /users/:id` returns 404 for unknown ids" beats "handle missing users".)
+   - For new or changed behavior, write those criteria as a test list before implementing: one entry per case, given → expected with concrete values ("empty input → throws `ValidationError`" beats "handles empty input"). Expected outcomes come from intent, never from running the code.
+   - Name the seam each case tests — the public boundary where the behavior is observed (exported function, HTTP response, CLI output, emitted event) — so the choice of boundary is reviewed with the spec instead of settled later during implementation.
+   - Prefer writing the list as stub tests in the real test file — `test.todo`, skipped tests, or the repo framework's equivalent — carrying the given → expected in each test name, so completion and deviations stay diff-visible. Fall back to a written list in the plan or notes file when stubs are impractical. The list is the reviewable spec; test bodies may wait until after implementation.
    - Prefer the narrowest change that satisfies those criteria without worsening system shape.
    - Ask when ambiguity would materially change the solution, create risk, or leave success criteria too weak to verify.
    - If no one is available to answer, choose the most reversible interpretation, state the assumption prominently in the handoff, and proceed.
@@ -96,10 +100,13 @@ Use these steps whenever you are changing artifacts. When you are only reviewing
    - Add structure only for current complexity and current variation; one implementation rarely justifies a new boundary.
    - Document or enforce only load-bearing naming, ownership, dependency, and boundary rules.
 
-7. Test behavior at the right level, not implementation.
+7. Test new or changed behavior at the right level, not implementation.
+   - New or changed behavior requires automated tests. Skip only with a stated reason in the handoff: no test infrastructure, a behavior-preserving change already covered by existing tests, or explicitly throwaway work. Never write vacuous tests to satisfy this rule — a skipped test with a reason beats a test that cannot fail.
+   - Default ordering: stub the list from step 2 before implementing, then fill in the bodies, keeping each case's name and pinned outcome intact. For contract-heavy or high-risk changes, write the full test code first and watch it fail. For exploratory work where the interface is unknown, implementing first is fine — then write the tests from the success criteria rather than from the code, and state the inversion in the handoff.
+   - Treat the test list as append-only while implementing: add newly discovered cases with their intended outcome — derived from intent, or flagged as an assumption when intent is silent. Never modify or delete a listed outcome silently; if the code disagrees with one, surface the conflict and resolve it instead of editing the test to match.
    - Prefer outcomes over internals: return values, persisted state, emitted events, HTTP responses, UI-visible behavior, thrown errors, or meaningful side effects. (Assert that the saved record has `status: "active"`, not that `setStatus` was called once.)
    - Cover the happy path, important edge cases, and failure paths touched by the change.
-   - For unit and narrow integration tests, control true boundaries such as network, database, filesystem, clock, queues, and vendor clients with mocks, fakes, local services, or realistic test dependencies as appropriate to the repo.
+   - For unit and narrow integration tests, control true boundaries such as network, database, filesystem, clock, queues, and vendor clients with mocks, fakes, local services, or realistic test dependencies as appropriate to the repo; do not mock internal collaborators you own.
    - Keep fixtures minimal and deterministic; control time, randomness, and external effects.
    - Do not weaken implementation code to satisfy an incomplete test double.
 
@@ -115,7 +122,7 @@ Use these steps whenever you are changing artifacts. When you are only reviewing
    - Keep changes reviewable: avoid unrelated churn, explain non-obvious tradeoffs, and make contract or migration effects explicit.
    - Remove unused imports, variables, functions, and branches introduced by your edit.
    - Leave unrelated pre-existing issues untouched and mention them separately when useful.
-   - Summarize the handoff for the user: which success criteria passed, what changed and why, assumptions made, deviations from the agreed plan, what was intentionally left out, and what remains unverified or risky.
+   - Summarize the handoff for the user: which success criteria passed, what changed and why, assumptions made, deviations from the agreed plan, tests skipped or test-list outcomes changed (with reasons), what was intentionally left out, and what remains unverified or risky.
 
 ## Gotchas
 
@@ -127,4 +134,5 @@ Use these steps whenever you are changing artifacts. When you are only reviewing
 - Do not delete pre-existing dead code unless the user asked for that cleanup.
 - Do not split a file just because it is long, create catch-all helper modules, invert dependency direction, or add layers/interfaces/seams for a single implementation.
 - Do not make tests assert incidental counts, logs, ordering, timing, or payload shape unless those details are the contract.
+- Do not let the implementation grade itself: never derive expected test values by running the code and asserting whatever it produces, or by recomputing them in the test with the same logic. Expected outcomes are independent — known-good literals or worked examples from stated intent.
 - Do not log secrets, credentials, tokens, private keys, personal data, or full sensitive payloads.
