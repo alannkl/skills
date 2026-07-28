@@ -37,7 +37,9 @@ Use this workflow to create or update a portable Agent Skill: a self-contained `
    - Keep the description under 1024 characters and write it in third person.
    - Make the first sentence say what the skill does.
    - Start the second sentence with `Use when`; include trigger phrases, adjacent near-misses, and load conditions.
+   - Default to model-invocation. Only when the user says the skill should run solely by explicit invocation, set `disable-model-invocation: true` and write the description as a one-line human-facing summary without trigger lists.
    - Focus the body on procedures, defaults, examples, gotchas, scripts, and validation steps.
+   - Give workflow steps a checkable done-condition where one naturally exists, and prefer exhaustive phrasing ("every changed file reviewed") over vague phrasing ("review the changes"). For judgment steps with no objective criterion, cover their outcome with concrete checks in a final validation step instead of forcing an artificial metric.
    - Keep the skill self-contained. Do not require another skill to be installed, loaded, or followed; copy or summarize required guidance into this skill's own files.
 
 4. Apply progressive disclosure.
@@ -56,17 +58,17 @@ Use this workflow to create or update a portable Agent Skill: a self-contained `
    - Ask whether it covers the use cases, what is missing or unclear, and what should be more or less detailed.
    - Confirm the directory name matches the frontmatter `name`.
    - Confirm frontmatter parses as YAML.
-   - Confirm `description` has specific trigger language.
+   - Confirm the description matches the invocation mode: specific trigger language for model-invoked skills, a plain one-line summary for user-invoked skills.
    - Check non-empty body line count (~100, excluding YAML frontmatter and blank lines) as a split cue, not a pass/fail limit.
    - Confirm the skill has no dependency on external skills or another skill directory.
    - Avoid time-sensitive facts unless the skill tells the agent how to refresh them.
    - Keep terminology consistent across `SKILL.md` and references.
-   - Sanity-check the description against realistic positive prompts and near-miss negative prompts. Revise wording that is too broad or too narrow.
-   - If formal evals would be useful, suggest them as a next step for the user; do not run manual evals as part of this workflow.
+   - For model-invoked skills, sanity-check the description against realistic positive prompts and near-miss negative prompts. Revise wording that is too broad or too narrow.
+   - If formal evals would be useful, suggest them as a next step for the user; do not run manual evals as part of this workflow. When the user asks to evaluate, prune, or iterate on an existing skill, load `references/evaluating-skills.md`.
 
 ## Description Pattern
 
-Use this structure:
+For model-invoked skills, use this structure:
 
 ```md
 description: [What the skill enables]. Use when [specific user intents, keywords, contexts, file types, or workflow names].
@@ -137,5 +139,6 @@ description: Do a specific reusable task. Use when the user asks for concrete in
 - Local supporting files are fine, but external skills are not required context.
 - The instructions cover what the agent would likely get wrong without the skill and omit what it already knows.
 - Defaults are clear; alternatives appear only when they change a decision.
+- Every prohibition names what to do instead.
 - Reserve prescriptive steps for fragile operations; for flexible tasks, explain intent.
 - Examples are concrete and realistic, and validation catches common mistakes.

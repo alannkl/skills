@@ -1,6 +1,6 @@
 # Evaluating Agent Skills
 
-Use this reference only when the user asks to evaluate, benchmark, or improve a skill through formal tests. Do not run these checks during the default skill-creation workflow; suggest formal evals as an optional next step instead.
+Use this reference only when the user asks to evaluate, prune, or iterate on an existing skill. Do not run these checks during the default skill-creation workflow; suggest them as an optional next step instead.
 
 ## Trigger Checks
 
@@ -16,6 +16,12 @@ Use this reference only when the user asks to evaluate, benchmark, or improve a 
 - Compare with no skill for new skills, or with the previous version for revised skills.
 - Grade assertions with concrete evidence. Use scripts for mechanical checks and human or LLM review for judgment-heavy qualities.
 - Track time and token cost when practical; a skill should justify its context overhead.
+
+## No-Op Pruning
+
+- Test each sentence of `SKILL.md` in isolation: would the agent behave the same without it? A sentence the model already obeys by default only spends context.
+- Delete whole failing sentences rather than trimming words from them; most prose that fails the test should go, not be rewritten.
+- After pruning, re-run the trigger and output checks to confirm behavior held.
 
 ## Iteration Loop
 
