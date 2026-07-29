@@ -1,6 +1,7 @@
 ---
 name: grill-to-plan
-description: Turn casual ideas, vague goals, plans, or designs into clearer decisions through scoped questioning, decision-tree review, and optional records. Use when the user wants casual idea clarification, to get grilled on a plan, to refine requirements, to update project glossary terms, to create ADRs, or to keep a session decision log.
+description: Turn casual ideas, vague goals, plans, or designs into clearer decisions through scoped questioning, decision-tree review, and optional records.
+disable-model-invocation: true
 ---
 
 # Grill to Plan
