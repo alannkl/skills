@@ -26,6 +26,7 @@ A refinement pass for an existing artifact, whether it is a rough draft, a near-
    - Preserve semantic intent over brevity. Do not remove domain terms, repeated labels, qualifiers, constraints, or intentionally specific phrasing merely to shorten the artifact.
    - Before trimming, identify protected terms and scope-bearing phrases. Keep them unless they are clearly redundant or the user explicitly asks for a shorter version.
    - Tighten language by removing filler, merging duplication, choosing concrete verbs and nouns, and making implicit decisions explicit.
+   - In artifacts that instruct an executor — skills, runbooks, policies, agent prompts — cut clauses that change no behavior and add no judgment: pure emphasis, and rationale that only restates the rule it follows. Keep rationale that informs a call the reader has to make unaided.
    - Improve structure only as much as clarity, flow, scanability, and readiness require.
    - Polish scope-bearing language without broadening or narrowing it. Preserve triggers, audiences, promises, permissions, requirements, labels, statuses, API names, configuration keys, and eligibility criteria unless the user asks to change scope.
    - If a refinement removes, renames, or compresses key terminology, mention that change in `Notes`.
