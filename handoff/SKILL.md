@@ -1,6 +1,7 @@
 ---
 name: handoff
-description: Create a compact handoff document so another agent can continue the current conversation. Use when the user asks to hand off, compact, transfer, or resume work in a fresh agent or session; do not use for ordinary status summaries or durable project documentation.
+description: Create a compact handoff document so another agent can continue the current conversation.
+disable-model-invocation: true
 ---
 
 # Handoff
