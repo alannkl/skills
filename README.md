@@ -1,6 +1,6 @@
 # Skills
 
-A personal collection of agent skills: portable instruction packages that teach AI agents repeatable workflows, project conventions, and domain-specific habits.
+Agent skills for repeatable workflows, project conventions, and domain-specific habits.
 
 Each skill lives in its own directory and follows the [agentskills.io specification](https://agentskills.io/specification). A skill starts with `SKILL.md`, which contains YAML frontmatter and markdown instructions, and may include supporting `references/`, `scripts/`, or `assets/`.
 
@@ -60,7 +60,7 @@ To uninstall manually, delete the skill directory (and any symlinks) from the sa
 
 ## AGENTS.md
 
-Besides skills, this repo ships an [`AGENTS.md`](AGENTS.md) — the Collaboration Constitution: task-agnostic rules so the agent itself leads the collaboration — surfacing assumptions, defining done, holding scope, pushing back on real issues. It is the agent-side counterpart to [Working with Agents](docs/working-with-agents.md), and it is live in this repo (with `CLAUDE.md` symlinked to it), so agents working here already follow it.
+Besides skills, this repo includes [`AGENTS.md`](AGENTS.md) — the Collaboration Constitution: task-agnostic rules so the agent itself leads the collaboration — surfacing assumptions, defining done, holding scope, pushing back on real issues. It is the agent-side counterpart to [Working with Agents](docs/working-with-agents.md), and it is live in this repo (with `CLAUDE.md` symlinked to it), so agents working here already follow it.
 
 ### Using it yourself
 
