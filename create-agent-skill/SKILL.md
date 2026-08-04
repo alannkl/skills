@@ -138,6 +138,7 @@ description: Do a specific reusable task. Use when the user asks for concrete in
 - The skill is a coherent, self-contained unit of reusable work, not a general knowledge dump.
 - Local supporting files are fine, but external skills are not required context.
 - The instructions cover what the agent would likely get wrong without the skill and omit what it already knows.
+- Every instruction should change behavior in some situation. Cut sentences no agent could act on differently — "check your tools", "use judgment", "be thorough" — and hedges that restate what the harness already guarantees.
 - Defaults are clear; alternatives appear only when they change a decision.
 - Every prohibition names what to do instead.
 - Reserve prescriptive steps for fragile operations; for flexible tasks, explain intent.
