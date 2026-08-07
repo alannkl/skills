@@ -20,12 +20,11 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - Treat the input as a goal description until the user has provided enough decisions for it to count as a plan.
    - Say what you believe the desired end state is, what is in scope, and what may be out of scope.
    - If the initial context is too thin to make a reasonable guess, ask for the missing context first.
-   - Match the ceremony to the stakes: default to lightweight mode for casual clarification and documented mode when project knowledge, architecture, or durable decisions are involved.
-   - If you cannot confidently choose a mode from the initial input, ask whether the user wants lightweight clarification or documented decision capture before continuing.
+   - Choose the mode by stakes: default to lightweight, switch to documented when project knowledge, architecture, or durable decisions are involved. If the initial input leaves the mode unclear, ask whether the user wants lightweight clarification or documented decision capture before continuing.
 
 2. Scope before drilling down.
    - Estimate the rough number of questions needed from the initial input.
-   - If the session would need more than a handful of questions, usually around 5-7, ask scoping questions first to narrow the target.
+   - If the session would need more than a handful of questions (roughly 5-7), ask scoping questions first to narrow the target.
    - Ask scoping questions in convergence order: highest-leverage boundary questions first, then progressively narrower ones.
    - Once scope is clear, switch to decision-tree order and resolve dependent decisions branch by branch.
 
@@ -35,13 +34,12 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - Look for `CONTEXT-MAP.md`, `CONTEXT.md`, and `docs/adr/` when the discussion touches domain language or architecture.
 
 4. Ask one question at a time.
-   - Begin each question by restating the current understanding of the user's goal and the relevant settled decisions.
-   - Ask a non-obvious, in-depth question that moves the plan toward resolution.
-   - Prioritize questions whose answers would change the architecture or ripple into other pending decisions; leave questions that only tune details for last.
-   - When domain relationships are being discussed, use concrete scenarios that probe edge cases and force precise boundaries between concepts.
-   - Provide your recommended answer and the reasoning behind it.
-   - Use the agent's built-in ask-question tool when one is available and appropriate.
-   - Keep a reasonable maximum question budget. If the budget is running long, summarize the remaining branches and ask the user which branch to continue.
+   - Open each question by restating the goal and the relevant settled decisions.
+   - Ask only non-obvious questions: architecture-changing ones first, detail-tuning last.
+   - Probe domain relationships with concrete edge-case scenarios that force precise boundaries.
+   - When genuine alternatives exist, present 2-4 candidates — answers or options you propose — each with a trade-off phrase, and mark your recommendation with its reasoning. If more than 4 are viable, split the decision or name the pruned rest.
+   - Use the ask-question tool when available; otherwise number the same candidates in a plain chat message and invite a reply by number or free text. The option set must never depend on the tool.
+   - Keep a maximum question budget; when it runs long, summarize the remaining branches and ask which to continue.
 
 5. Resolve each question before moving on.
    - If the user wants discussion, stay on that question until there is a conclusion, explicit deferral, or a documented disagreement.
@@ -52,11 +50,9 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
 
 6. Push back on weak or harmful choices.
    - If the user's proposed decision appears wrong, risky, inconsistent, or inferior to an available alternative, do not silently comply.
-   - Explain why the current or alternative approach is better.
-   - State the concrete downside of the proposed choice.
-   - Ask whether the user wants to discuss or proceed anyway.
+   - Explain why the current approach or an alternative is better, state the concrete downside of the proposed choice, and ask whether the user wants to discuss or proceed anyway.
    - Continue only after the user confirms or gives a convincing counterargument.
-   - Record the final decision. If the decision is hard to reverse, surprising without context, and based on a real trade-off, create an ADR.
+   - Record the final decision; create an ADR when it meets the ADR Rule.
 
 7. Maintain project knowledge in documented mode.
    - Challenge terms that conflict with `CONTEXT.md`.
