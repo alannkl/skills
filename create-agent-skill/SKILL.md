@@ -117,10 +117,6 @@ description: Do a specific reusable task. Use when the user asks for concrete in
 
 # Skill Name
 
-## Quick Start
-
-- Include a minimal working example when it clarifies use.
-
 ## Workflow
 
 1. Follow the domain-specific procedure.
