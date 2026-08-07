@@ -34,10 +34,10 @@ Help the user genuinely understand code at the scope they request — a change b
    - System: what the system does for its users, the major components and their responsibilities, the key end-to-end flows, and where important state lives. Stay at architecture altitude; per-function detail belongs in part scope.
    - Other scopes: pick the altitude that matches the scope's size and interpolate — a login flow reads like a part traced across components, not a system overview.
 
-4. Present the explainer in chat. Do not write it to a file. Order it teach-first:
+4. Present the explainer in chat. Do not write it to a file. Order it for comprehension:
    - Background first: the surrounding-system context needed to follow the rest, scaled to what the user already knows — the author of a fresh change needs a sentence; a newcomer needs more. Never open with the details.
-   - Intuition before details: state the essence in a few sentences and walk one concrete example — a real or toy input and its observable result — before any code-level detail.
-   - Then the details, ordered for comprehension: follow the flow of behavior with a line of prose introducing each part, not a file-by-file listing.
+   - Intuition before details: state the essence in a few sentences and walk one concrete example — a real or toy input and its observable result — before any code-level detail. When the real system is too big to hold even for one example, shrink the world itself into a minimal imaginary one — two nodes, a three-slot queue — keeping only what makes the mechanism visible; this is a prose thought experiment, not the interactive micro-world of step 9. Walk a second, contrasting example — an edge case, the other branch — only when the boundary between behaviors is the hard part; a happy path alone hides it. When the code invites a natural-but-wrong reading, name that reading and correct it; dislodging the wrong model beats stating the right one beside it.
+   - Then the details: follow the flow of behavior with a line of prose introducing each part, not a file-by-file listing.
    - Change scope covers: what the system now does differently (before → after, per behavior), why (from session context or notes when available, labeled inference otherwise), and what to watch for after merge.
    - Part scope covers: the unit's responsibility, its key behaviors and flows, its edge cases and failure modes, and how it interacts with the rest of the system.
    - System scope covers: what the system does, the major components and how they collaborate, the key end-to-end flows, and the load-bearing design decisions a newcomer must know.
