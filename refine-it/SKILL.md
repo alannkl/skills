@@ -1,11 +1,9 @@
 ---
 name: refine-it
-description: Refine an existing artifact into a stronger, ready-to-use version while preserving its intent, scope, and direction. Use when the user asks to refine, tighten, polish, finalize, improve, clean up, sharpen, or revise a written artifact. Default to producing the improved version, not just critique.
+description: Refine an existing written artifact through open-ended improvement to its clarity, structure, tone, or readiness while preserving intent and scope. Use when the user asks to refine, polish, tighten, improve, clean up, sharpen, or finalize the artifact as a whole; do not use for precise user-specified edits, factual corrections, targeted replacements, or routine content updates.
 ---
 
 # Refine It
-
-A refinement pass for an existing artifact, whether it is a rough draft, a near-final version, or the current state of a document. Improve clarity, structure, emphasis, and readiness while preserving the artifact's intent, audience, and operational behavior. Refine the artifact; do not redesign the underlying plan or refine code logic.
 
 ## Workflow
 
@@ -46,6 +44,7 @@ After: "To use this, configure your settings first."
 
 ## Gotchas
 
+- Do not treat a request to update, fix, replace, add, remove, or correct specific content as an open-ended refinement request.
 - Do not treat "improve" as permission to change the artifact's goal, audience, or scope.
 - Do not preserve awkward wording just because it was in the original when the user asked for polish.
 - Do not add facts, examples, promises, or requirements unless they follow clearly from the existing artifact.
