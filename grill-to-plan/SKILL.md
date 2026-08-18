@@ -23,28 +23,30 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - Choose the mode by stakes: default to lightweight, switch to documented when project knowledge, architecture, or durable decisions are involved. If the initial input leaves the mode unclear, ask whether the user wants lightweight clarification or documented decision capture before continuing.
 
 2. Scope before drilling down.
-   - Estimate the rough number of questions needed from the initial input.
-   - If the session would need more than a handful of questions (roughly 5-7), ask scoping questions first to narrow the target.
+   - Judge from the initial input whether the scope is settled: can you already list the decisions that need making?
+   - If not — the boundaries are fuzzy or several directions are still open — ask scoping questions first to narrow the target.
    - Ask scoping questions in convergence order: highest-leverage boundary questions first, then progressively narrower ones.
    - Once scope is clear, switch to decision-tree order and resolve dependent decisions branch by branch.
 
 3. Use available context before asking.
    - Do not ask questions whose answers are obvious or easily discoverable in the codebase, docs, issue tracker, or existing session log.
    - If a question can be answered by exploration, inspect the relevant source first and report what you found.
+   - If a needed fact requires lengthy exploration, do not stall the session: move on to questions that do not depend on it and fold the finding in when it arrives.
    - Look for `CONTEXT-MAP.md`, `CONTEXT.md`, and `docs/adr/` when the discussion touches domain language or architecture.
 
-4. Ask one question at a time.
+4. Ask one question at a time by default.
    - Open each question by restating the goal and the relevant settled decisions.
    - Ask only non-obvious questions: architecture-changing ones first, detail-tuning last.
    - Probe domain relationships with concrete edge-case scenarios that force precise boundaries.
    - When genuine alternatives exist, present 2-4 candidates — answers or options you propose — each with a trade-off phrase, and mark your recommendation with its reasoning. If more than 4 are viable, split the decision or name the pruned rest.
-   - Use the ask-question tool when available; otherwise number the same candidates in a plain chat message and invite a reply by number or free text. The option set must never depend on the tool.
-   - Keep a maximum question budget; when it runs long, summarize the remaining branches and ask which to continue.
+   - Use the ask-question tool (structured tool for putting a question with options to the user) when one is available; otherwise number the same candidates in a plain chat message and invite a reply by number or free text. The option set must never depend on the tool.
+   - Batch questions into a single ask-question call only when they are truly independent — no answer could change another — and low-stakes, detail-tuning rather than architecture-changing. If a batched answer sparks discussion, return to that question on its own.
+   - After resolving each branch, briefly note which branches remain. Offer to close out the rest in bulk — present your recommendations for the remaining decisions and let the user accept, tweak, or defer them — when answers turn terse, when the user repeatedly says to just decide, or as a checkpoint after every 10 resolved questions regardless of signals. A "just decide" settles only the question it answers, not the rest.
 
 5. Resolve each question before moving on.
    - If the user wants discussion, stay on that question until there is a conclusion, explicit deferral, or a documented disagreement.
-   - If the user's reply is a question, objection, or request for clarification rather than a decision, switch to discussion mode: answer in a full, detailed normal message and end the turn there. Do not invoke the ask-question tool in that reply; let the user respond freely in conversation.
-   - Return to the ask-question tool only after the discussion has converged or the user signals readiness to decide; the dialog is for collecting decisions, not delivering explanations.
+   - If the user's reply is a question, objection, or request for clarification rather than a decision, switch to discussion mode: answer in detail in a normal message and end the turn there. Do not invoke the ask-question tool in that reply; let the user respond freely in conversation.
+   - Return to the ask-question tool only after the discussion has converged or the user signals readiness to decide; the tool is for collecting decisions, not delivering explanations.
    - Do not skip to the next question while the current decision is still open.
    - Before asking the next question, review the current conversation and the latest session record, then align the next question with what has already been decided.
 
@@ -63,8 +65,8 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - In lightweight mode, do this only when the user asks or a durable project decision emerges.
 
 8. Maintain a session record when useful.
-   - Create or update a session document as decisions crystallize. Store it at `docs/grill-to-plan/{yyyy-mm-dd}-{slug}/session.md` unless the repo has an established planning or decision-log location.
-   - For each question, record: context, question, discussion or debate summary, final conclusion, and any follow-up.
+   - Create or update a session document as decisions crystallize. Store it at `plans/{yyyy-mm-dd}-{slug}/session.md` unless the repo has an established planning or decision-log location.
+   - For each question, record: context, question, your recommendation, discussion or debate summary, final conclusion, and any follow-up.
    - Also capture the load-bearing facts behind decisions: verified research findings, external-API constraints, contract details, and rejected alternatives. Do not record only the decisions; the implementer will not have this conversation.
    - Treat the live conversation as the immediate source of truth and the session record as the durable checkpoint for settled state.
    - Keep it concise enough to guide the next question without becoming a transcript.
@@ -72,6 +74,7 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - Skip the session record for lightweight mode unless requested or the discussion produces decisions worth preserving.
 
 9. Finish with a synthesis sized to the mode.
+   - Before synthesizing, sweep for silent assumptions: anything you relied on but never asked becomes an explicit decision, an open question, or a stated assumption in the record.
    - Always assume implementation happens in a different session, possibly by a different agent. The persistent documents (`plan.md`, `session.md`, ADRs) must be self-contained hand-offs. Every decision, constraint, research finding, naming choice, and integration contract needed for implementation must appear in them or a linked doc; the conversation is discarded context.
    - In lightweight mode, give the resolved decision, any explicit deferral, and the next step.
    - In documented mode, provide the full synthesis: resolved plan, decisions made, open questions, docs updated, risks, and next steps.
@@ -94,9 +97,9 @@ Use `references/ADR-FORMAT.md` when creating ADRs. Use `references/CONTEXT-FORMA
 
 - Do not treat scoping order and decision-tree order as the same thing.
 - Do not ask broad discovery questions after scope is already clear.
-- Treat the question budget as a maximum, not a quota; stop asking once the plan is clear.
+- Stop asking once the plan is clear; when answers turn terse, offer recommendations for the remaining decisions instead of more questions.
 - Do not turn `CONTEXT.md` into a spec, roadmap, scratch pad, or implementation note.
 - Do not batch resolved glossary updates until the end.
-- Do not present the final plan as settled when unresolved decisions remain.
-- Do not funnel discussion through the ask-question dialog; detailed explanations belong in a normal message that ends the turn.
+- Do not present the final plan as settled while decisions remain unresolved or silently assumed.
+- Do not funnel discussion through the ask-question tool; detailed explanations belong in a normal message that ends the turn.
 - Do not leave load-bearing details (research findings, API constraints, contracts, naming) only in the conversation; hand-off docs must stand alone for a fresh session.
