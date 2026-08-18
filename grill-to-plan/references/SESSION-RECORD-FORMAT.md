@@ -4,7 +4,7 @@ Use the session record as the current state of the discussion, not as a full tra
 
 ## Location
 
-- Each session gets one folder: `docs/grill-to-plan/{yyyy-mm-dd}-{slug}/` containing `session.md` (the session record) and `plan.md` (the final plan).
+- Each session gets one folder: `plans/{yyyy-mm-dd}-{slug}/` containing `session.md` (the session record) and `plan.md` (the final plan).
 - The folder name is a stable ID: the date is the session start date, fixed when the folder is created. When a session resumes on a later day, never rename the folder; update the `Date:` fields inside the documents instead.
 - Use an existing repo convention instead when the project already has a planning, discovery, or decision-log folder.
 - Create `session.md` when the first question is answered or the first decision is made; create `plan.md` when the session concludes with a synthesis.
