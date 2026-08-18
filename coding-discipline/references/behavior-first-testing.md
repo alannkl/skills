@@ -3,7 +3,7 @@
 ## Define the Behavior Scaffold and Evidence Plan
 
 - For every new or changed behavior, create a behavior scaffold before writing its implementation or executable test bodies: one concrete Given → When → Then scenario per case, with expected outcomes derived from intent, contracts, or worked examples — never by running the code.
-- Pin each scenario's starting state or input, action through an established public seam when one exists, and complete observable outcome, including important boundary and failure conditions. If the technical seam is genuinely unknown, describe the domain-visible action and outcome and mark the seam unresolved rather than inventing an interface. Do not prescribe algorithms, internal collaborators, mocks, decomposition, or incidental calls.
+- Pin each scenario's starting state or input, action through an established public seam when one exists, and complete observable outcome, including important boundary and failure conditions. If the technical seam is genuinely unknown, describe the domain-visible action and outcome and mark the seam unresolved rather than inventing an interface. Do not prescribe algorithms, internal collaborators, mocks, decomposition, or incidental calls. Do not scaffold diagnostic logs, metrics, or traces unless that signal is itself the contract.
 - Record one non-running declaration (`test.todo`, a skipped test, or the framework equivalent) per scenario in the real test file; do not write the test bodies yet. Use a written list in the plan or notes only when the repository has no suitable test file or framework, and state why.
 - For material or ambiguous behavior, surface the scaffold while correction is cheap. Small, self-evident changes need no approval ceremony.
 - Choose evidence strength after establishing the scaffold:
@@ -14,7 +14,7 @@
 
 ## Test New or Changed Behavior at the Right Level, Not Implementation
 
-- New or changed behavior requires automated tests. Skip only with a stated reason in the handoff: no test infrastructure, a behavior-preserving change already covered by existing tests, or explicitly throwaway work. Never write vacuous tests to satisfy this rule — a skipped test with a reason beats a test that cannot fail.
+- New or changed behavior requires automated tests. Skip only with a stated reason in the handoff: no test infrastructure, a behavior-preserving change already covered by existing tests, explicitly throwaway work, or operational scripts (smoke checks, ops CLIs, and other one-off tooling). Operational scripts get no automated tests; verify them by review or a safe non-mutating run (help, dry-run, smoke), not by executing a migration or other irreversible effect. Never write vacuous tests to satisfy this rule — a skipped test with a reason beats a test that cannot fail.
 - After implementation, translate every remaining scaffolded scenario into an executable test from its pinned behavior and applicable contracts — not from the implementation's structure or observed output. Each body must prove the complete outcome through the public seam.
 - Treat the scaffold as change-controlled, not immutable. Do not revise it merely because the implementation disagrees. If clarified intent, an applicable contract, established behavior, or proof of an impossible scenario shows it is wrong, surface the conflict, revise it, and record the reason in the handoff.
 - Add newly discovered scenarios with outcomes derived from intent, or flag them as assumptions when intent is silent. Never silently revise or remove a pinned outcome.
