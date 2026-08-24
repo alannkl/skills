@@ -15,7 +15,7 @@ The core risk is anchoring: you can generate 20 polished ideas instantly, and th
 
 ## Session state file
 
-Create an idea-board markdown file at `docs/brainstorm/<topic-slug>.md` under the working directory (creating the directory if needed), or in the scratchpad directory when the working directory is unsuitable (read-only, or not a project this file belongs in). For a deep dive, create it at session start; for a quick spark, only once the session outgrows the chat or the user asks. Maintain it throughout: a `Phase:` line in the header, updated at every phase gate — it is what makes resuming possible — then the HMW statement and constraints, then every idea **verbatim**, tagged `[user]` or `[agent]`. A long or rambling contribution may get a short label for scannability, but keep the verbatim words under it. Never paraphrase or "improve" the user's wording — paraphrasing is silent judging. This file is the session's deliverable and survives it.
+Create an idea-board markdown file at `docs/brainstorm/<topic-slug>.md` under the working directory (creating the directory if needed), or in the scratchpad directory when the working directory is unsuitable (read-only, or not a project this file belongs in). For a deep dive, create it at session start; for a quick spark, only once the session outgrows the chat or the user asks. Maintain it throughout: a `Phase:` line in the header, updated at every phase gate — it is what makes resuming possible — then the HMW statement and constraints, then every idea **verbatim**, tagged `[user]` or `[agent]`. A long or rambling contribution may get a short label for scannability, but keep the verbatim words under it (paraphrasing is silent judging).
 
 ## Asking structured questions
 
@@ -33,10 +33,9 @@ Determine the preset from the topic first; ask only when you can't:
 - **Infer quick spark** when the topic is narrow and concrete with an obvious output shape ("name this module", "taglines for the launch email", "3 options for the error copy").
 - **Infer deep dive** when the topic is broad, strategic, or fuzzy ("how to grow retention", "what should our Q4 focus be"), or the user signals stakes or thoroughness.
 - **Honor explicit signals** over inference: "quick", "just a few ideas", "let's go deep", or a stated session length.
-- **When inferring, don't ask** — announce the choice in one line with a cheap override ("Treating this as a quick spark — say 'deep dive' if you want the full session.") and proceed.
-- **Ask a structured choice only when genuinely ambiguous** — e.g. a topic that could be either a quick option-list or a strategy question, with no signals either way.
+- **Announce an inferred choice** in one line with a cheap override ("Treating this as a quick spark — say 'deep dive' for the full session.") and proceed; reserve a structured choice for genuine ambiguity — no signals either way.
 
-Scale every later phase to the preset. In a quick spark, Phase 2's turn discipline and judgment suspension survive intact; the rest of the ceremony drops — no idea file unless the session outgrows the chat, no clustering or stress-test, convergence in a single structured choice, shortlist delivered in chat. Full ceremony on a small topic makes the skill annoying; skipped framing on a fuzzy topic wastes the session. If mid-session the preset proves wrong (a "quick" topic keeps unfolding), offer the upgrade rather than silently switching.
+Scale every later phase to the preset. In a quick spark, Phase 2's turn discipline and judgment suspension survive intact; the rest of the ceremony drops — no idea file unless the session outgrows the chat, no clustering or stress-test, convergence in a single structured choice, shortlist delivered in chat. If mid-session the preset proves wrong (a "quick" topic keeps unfolding), offer the upgrade rather than silently switching.
 
 ## Phase 1 — Frame
 
@@ -110,5 +109,5 @@ Phase discipline binds you, not the user — they can add anything at any point.
 
 - **User opens with a flood of their own ideas** (a pasted list, 15 ideas in one message): don't restart the protocol from Phase 0 as if they hadn't spoken. Capture the list verbatim, infer the preset and a draft frame from it, confirm the frame in one question, and enter Phase 2 already building on their material.
 - **User explicitly asks you to generate a batch** ("give me 20 taglines"): the ration is an anti-anchoring default for co-ideation, not a veto over a direct request — deliver the full batch. Then invite reactions and additions and return to the normal rhythm; their curation of your batch counts as their contribution.
-- **User says "you go first" or contributes nothing when invited:** the user-goes-first rule is anti-anchoring, not a deadlock. Contribute one small, deliberately rough batch (2–3 ideas, at least one bad on purpose) to lower the bar, then hand back. Don't keep re-asking, and don't take over.
+- **User says "you go first" or contributes nothing when invited:** the user-goes-first rule is anti-anchoring, not a deadlock. Contribute one small, deliberately rough batch (2–3 ideas, at least one bad on purpose) to lower the bar, then hand back.
 - **An idea file for this topic already exists in `docs/brainstorm/`** (resumed or repeated session): read it and offer to continue from its current phase rather than starting over or silently overwriting it.

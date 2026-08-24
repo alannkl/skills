@@ -8,7 +8,7 @@ Each skill lives in its own directory and follows the [agentskills.io specificat
 
 | Skill                                               | Description                                                                                                                                                                                                                                                                                         |
 | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`create-agent-skill`](create-agent-skill/SKILL.md) | Create agent skills from reusable workflows, domain expertise, or project conventions. Aligned with [`writing-for-agents`](https://github.com/mattpocock/skills/blob/main/skills/productivity/writing-for-agents/SKILL.md).                                                                          |
+| [`create-agent-skill`](create-agent-skill/SKILL.md) | Create agent skills from reusable workflows, domain expertise, or project conventions. Aligned with [`writing-for-agents`](https://github.com/mattpocock/skills/blob/main/skills/productivity/writing-for-agents/SKILL.md).                                                                         |
 | [`brainstorm`](brainstorm/SKILL.md)                 | Host a structured brainstorming session as both facilitator and participant, from problem framing through divergent ideation to an actionable shortlist.                                                                                                                                            |
 | [`coding-discipline`](coding-discipline/SKILL.md)   | Apply disciplined engineering habits for simple, scoped, maintainable, well-structured agent-written code. Based on [karpathy-guidelines](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/skills/karpathy-guidelines/SKILL.md).                                                      |
 | [`code-review`](code-review/SKILL.md)               | Produce findings-led code review reports for concrete code changes.                                                                                                                                                                                                                                 |
@@ -21,7 +21,7 @@ Each skill lives in its own directory and follows the [agentskills.io specificat
 | [`shorten-it`](shorten-it/SKILL.md)                 | Shorten text while preserving meaning, tone, and important details.                                                                                                                                                                                                                                 |
 | [`simplify-code`](simplify-code/SKILL.md)           | Simplify source code for clarity and maintainability while preserving behavior. Based on [`code-simplifier`](https://github.com/anthropics/claude-code/blob/main/plugins/pr-review-toolkit/agents/code-simplifier.md).                                                                              |
 
-All skills except `coding-discipline` are user-invoked (`disable-model-invocation: true`): they load only when you type `/<name>`, and cost no always-loaded context. `coding-discipline` stays model-invoked so agents load it on their own before code work.
+Most skills are user-invoked (`disable-model-invocation: true`): they load only when you type `/<name>`, and cost no always-loaded context. Five are model-invoked so agents reach them on their own when the ask arrives in natural language: `coding-discipline` (auto-loads before code work), `code-review`, `commit-message`, `simplify-code`, and `document-code`.
 
 ## Installation
 
@@ -68,6 +68,12 @@ External skills that pair well with this repo:
 
   ```bash
   npx skills add mattpocock/skills --skill writing-for-agents -g -y
+  ```
+
+- [`unslop`](https://github.com/cursor/plugins/blob/main/pstack/skills/unslop/SKILL.md) — cut AI tells from any writing. [`refine-it`](refine-it/SKILL.md) and [`shorten-it`](shorten-it/SKILL.md) improve structure and length; unslop strips the patterns that make text read as generated. Model-invoked, so agents load it on their own once installed.
+
+  ```bash
+  npx skills add cursor/plugins --skill unslop -g -y
   ```
 
 ## AGENTS.md

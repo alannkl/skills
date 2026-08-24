@@ -1,11 +1,11 @@
 ---
 name: commit-message
-description: Draft accurate commit-message text from real git changes, defaulting to Conventional Commits. Use when the user asks for a commit message, subject line, one-line commit, or Conventional Commit from staged, unstaged, untracked, or provided changes.
+description: Draft accurate commit-message text from real git changes, defaulting to Conventional Commits. Use when the user asks for a commit message or is committing work that needs one drafted.
 ---
 
 # Commit Message
 
-Draft commit-message text from the real git state. Default to Conventional Commits unless the user asks for another style or recent repo history clearly uses one. Prefer concise bodies that explain behavior, impact, and required follow-up. This skill only drafts the message; staging, committing, amending, and pushing belong to the surrounding workflow.
+Draft commit-message text from the real git state. Default to Conventional Commits. Prefer concise bodies that explain behavior, impact, and required follow-up. This skill only drafts the message; staging, committing, amending, and pushing belong to the surrounding workflow.
 
 ## Workflow
 
@@ -21,7 +21,7 @@ Draft commit-message text from the real git state. Default to Conventional Commi
    - Use available git status and diff information to identify staged, unstaged, and untracked changes in the chosen scope.
    - If git data is unavailable or the repo has no commits, say so and draft only from provided context.
    - Check recent commit messages when available. Follow repo-specific format, scope, and body conventions unless the user asks otherwise.
-   - For code changes, inspect enough surrounding context to understand behavior before writing the header or bullets.
+   - For code changes, inspect surrounding context until every header and bullet claim you will make traces to a specific hunk.
    - For docs, config, workflows, assets, lockfiles, or generated files, describe the operational effect instead of only naming files.
    - For binary, generated, or very large files, summarize from filenames, metadata, manifests, or nearby source changes rather than dumping content.
    - Surface migrations, environment variables, config changes, API or schema changes, data rewrites, dependency changes, and manual actions; mention sensitive keys without exposing secret values.
@@ -31,8 +31,8 @@ Draft commit-message text from the real git state. Default to Conventional Commi
    - Use `type: summary` when there is no meaningful scope.
    - Use `type(scope)!: summary` or `type!: summary` for breaking changes.
    - Common types: `feat`, `fix`, `docs`, `refactor`, `test`, `chore`, `perf`, `build`, `ci`, `style`, `revert`.
-   - Pick a scope that reflects the affected product area, package, module, command, or workflow, not the file extension.
-   - Pick the type from the behavioral intent of the change, not the file type. Instruction-bearing text changes are `feat` when they add or meaningfully change capabilities, `fix` when they correct broken or misleading behavior, and `docs` only when they are explanatory-only.
+   - Pick a scope that reflects the affected product area, package, module, command, or workflow, not the file extension; omit the scope rather than force an inaccurate one.
+   - Pick the type from the behavioral intent of the change, not the file type; user-visible fixes and features are never `chore`. Instruction-bearing text changes are `feat` when they add or meaningfully change capabilities, `fix` when they correct broken or misleading behavior, and `docs` only when they are explanatory-only.
    - Keep the first line concise. Reflect the main change and, when clear from the diff, the reason.
    - Use imperative present tense: `fix auth refresh handling`, not `fixed` or `fixes`.
    - If the user asks for a subject-only, short, or one-line message, return only this header.
@@ -61,40 +61,22 @@ Draft commit-message text from the real git state. Default to Conventional Commi
    - Confirm each bullet is supported by the diff.
    - Confirm code-impacting bullets describe user-visible behavior, system behavior, contracts, or meaningful implementation impact.
    - Confirm breaking changes and required actions are surfaced separately, not buried in normal change bullets.
-   - When invoked directly, return the commit-message text and, if useful, briefly offer to commit with it.
+   - Claim tests passed only when they were actually run.
+   - Return the commit-message text and, if useful, briefly offer to commit with it.
 
-## Examples
+## Example
 
-Body with follow-up:
-
-```md
-feat(billing): add invoice export job
-
-- Generate monthly invoice CSVs from settled payment records
-- Add queue configuration for scheduled exports
-
-Required actions:
-
-- Set `INVOICE_EXPORT_BUCKET` before enabling the worker
-```
-
-Breaking change:
+Body with both footers:
 
 ```md
 feat(api)!: require cursor pagination for users
 
 - Replace offset pagination with cursor pagination on the users endpoint
+- Add queue configuration for the cursor backfill worker
+
+Required actions:
+
+- Set `CURSOR_BACKFILL_QUEUE` before enabling the worker
 
 BREAKING CHANGE: `GET /users` no longer accepts `page` or `per_page`; clients must send `cursor` and `limit`.
 ```
-
-## Gotchas
-
-- Do not trigger this skill for general PR review, branch review, history review, or commit-message critique.
-- Do not mix staged and unstaged changes by default when both exist; include unstaged changes only when they are the only changes, explicitly in scope, or requested as part of all changes.
-- Do not infer business impact from filenames alone.
-- Do not classify text-format changes as `docs` when they change executable instructions, agent behavior, workflows, prompts, generated outputs, configuration semantics, or runtime behavior.
-- Do not include a scope just to fill the format; an inaccurate scope is worse than no scope.
-- Do not use `chore` for user-visible fixes or features.
-- Do not bury migrations, environment changes, or manual follow-up in generic bullets.
-- Do not mention tests as passed unless they were actually run.

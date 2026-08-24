@@ -1,11 +1,11 @@
 ---
 name: simplify-code
-description: Simplify source code for clarity, consistency, and maintainability while preserving exact behavior. Use when the user asks to simplify code, clean up logic, reduce complexity, improve readability, refactor without behavior changes, or run a code-simplifier pass on selected files, directories, or the current git diff.
+description: Simplify source code for clarity, consistency, and maintainability while preserving exact behavior. Use when the user asks to simplify code, clean up logic, or refactor without behavior changes.
 ---
 
 # Simplify Code
 
-Improve code clarity, consistency, and maintainability without changing behavior. Follow local project conventions, prefer readable code over clever compactness, and avoid expanding code merely to look more explicit. The result should be easier to read, debug, and maintain, with the same observable behavior and no broader scope than the original.
+Improve code clarity, consistency, and maintainability without changing behavior. Follow local project conventions. The result should be easier to read, debug, and maintain, with the same observable behavior and no broader scope than the original.
 
 ## Scope
 
@@ -29,13 +29,11 @@ Improve code clarity, consistency, and maintainability without changing behavior
    - Consolidate nearly identical branch bodies when only small payload fields differ.
    - Avoid nested ternaries; use a switch or if/else chain when there are multiple conditions.
    - Prefer concise direct mappings for simple binary or enum mappings when readable, such as `A -> x` and `B -> y`.
-   - Keep related logic together when doing so reduces jumping around without mixing separate concerns.
+   - Group related logic; keep separate concerns in separate units.
    - Favor compact, DRY implementations when they remain clear and debuggable, but keep small one-off decisions inline when extracting a helper would add naming overhead without reuse.
    - Prefer the simplest readable form; do not expand code only to appear more explicit.
    - Improve unclear variable, function, prop, or type names when the better name reflects established project language.
-   - Avoid combining too many concerns into one function, component, module, or abstraction.
-   - Do not introduce new helper functions, types, options, wrappers, or layers unless they reduce real complexity, isolate meaningful behavior, improve testability, or are reused.
-   - Remove an existing abstraction only when it carries no real domain meaning, reuse, testability, or separation of concerns.
+   - Add or remove an abstraction only on a real payoff — reduced complexity, isolated behavior, testability, reuse, or domain meaning; keep abstractions that carry any of these.
    - Reject a refactor if it increases cognitive load without a clear payoff.
    - Remove comments that explain obvious syntax or control flow, but preserve comments that explain intent, tradeoffs, invariants, or non-obvious behavior.
    - Remove commented-out code only when it is clearly stale noise and local practice supports doing so; otherwise leave it or ask.
@@ -49,12 +47,10 @@ Improve code clarity, consistency, and maintainability without changing behavior
 4. Avoid cosmetic-only churn.
    - Do not reformat code merely by changing line breaks, wrapping, indentation, function signatures, argument lists, or multi-line expression shape.
    - Let the formatter handle formatting.
-   - Touch formatting only as a side effect of a meaningful simplification.
    - If before and after are equally readable, prefer the version with fewer moving parts and less diff.
 
 5. Validate the result.
    - Re-read the changed code and compare business logic and externally observable behavior against the original, including subtle edge-case differences.
-   - Verify the refined code is simpler and more maintainable, not just shorter.
    - Run the narrowest relevant checks available, such as targeted tests, typecheck, lint, or build.
    - If checks are unavailable or too broad for the task, state the gap.
    - Review the diff and remove unrelated churn.
@@ -75,13 +71,3 @@ For larger passes, use this structure:
 - `Validation`: list commands run and results, or state what was not run.
 
 Keep the summary concrete and include only significant changes that affect understanding. Do not claim behavior changed, performance improved, or bugs were fixed unless the simplification actually did that and validation supports it.
-
-## Gotchas
-
-- Do not turn simplification into broad refactoring or architecture redesign.
-- Do not prioritize fewer lines over readability.
-- Do not create dense one-liners, nested ternaries, or clever abstractions.
-- Do not make the code harder to debug or extend.
-- Do not duplicate nearly identical code when a compact shared path is clearer.
-- Do not delete useful abstractions that preserve boundaries or domain meaning.
-- Do not edit unrelated files just because they are nearby.
