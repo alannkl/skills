@@ -1,15 +1,15 @@
 ---
 name: create-agent-skill
-description: Create Agent Skill files from reusable workflows, domain expertise, or project conventions. Use when the user asks to write, scaffold, implement, package, install, or update an actual SKILL.md file or skill directory; do not use for plan-only skill design unless the user explicitly asks to create files.
+description: Create Agent Skill files from reusable workflows, domain expertise, or project conventions.
+disable-model-invocation: true
 ---
 
 # Create Agent Skill
 
 ## Boundaries
 
-- Do not write files for planning-only requests. This includes plans, designs, critiques, outlines, requirements, and skill-shape discussions.
-- If a request mixes planning and creation, resolve the plan first; write files only after the implementation path is clear.
-- Treat named tools, skills, frameworks, and workflows as context, not permission to switch from planning to file creation.
+- Answer planning-only requests — plans, designs, critiques, outlines, requirements, skill-shape discussions — in conversation; for mixed requests, resolve the plan first and write files once the implementation path is clear.
+- Treat named tools, skills, frameworks, and workflows as context for the plan; switch to file creation only on the user's explicit ask.
 
 ## Workflow
 
@@ -29,22 +29,21 @@ description: Create Agent Skill files from reusable workflows, domain expertise,
 3. Write `SKILL.md`.
    - Start with YAML frontmatter containing at least `name` and `description`.
    - Add optional fields such as `license`, `compatibility`, `metadata`, or `allowed-tools` only when they carry useful information.
-   - Write the description following the Description Pattern section.
-   - Default to model-invocation. Only when the user says the skill should run solely by explicit invocation, set `disable-model-invocation: true` and write the description as a one-line human-facing summary without trigger lists.
+   - Choose invocation by who must reach the skill. Make it model-invoked only when the agent must fire it on its own or another skill must load it; its description then stays in context on every turn, so write it following the Description Pattern section. Otherwise set `disable-model-invocation: true` and write the description as a one-line human-facing summary without trigger lists — zero context cost, and typing the name still invokes it.
+   - When user-invoked skills multiply past easy recall, suggest a router skill: one user-invoked skill that names the others and when to reach for each.
    - Do not restate the description in the body. When the skill needs activation or scope rules the description cannot carry, put them in a `## Boundaries` section; skip the section when the description is already clear, and put execution defaults in the workflow steps.
    - Focus the body on procedures, defaults, examples, gotchas, scripts, and validation steps.
+   - Anchor recurring concepts on leading words: compact terms the user's prompts and the domain already use, repeated as the same token across the description and body. Collapse spelled-out enumerations and paraphrases into the word instead of restating the idea in new phrasing.
    - Give workflow steps a checkable done-condition where one naturally exists, and prefer exhaustive phrasing ("every changed file reviewed") over vague phrasing ("review the changes"). For judgment steps with no objective criterion, cover their outcome with concrete checks in a final validation step instead of forcing an artificial metric.
    - Write every body line for the agent executing the skill. Omit authoring rationale, request history, and explanations of the skill's shape.
    - Avoid time-sensitive facts unless the skill tells the agent how to refresh them.
    - Prefer a self-contained skill that works with no other skill installed. When the workflow genuinely needs another skill, declare the dependency explicitly: name it and instruct the agent to load it at the step that uses it. Do not copy or summarize that skill's guidance as a substitute for the dependency.
 
 4. Apply progressive disclosure.
-   - Keep `SKILL.md` to the core instructions the agent needs on every run.
-   - Use ~100 non-empty body lines as a reference point for when to split, not a hard limit or target.
-   - Prioritize completeness and correctness over size; never omit or weaken instructions just to fit.
-   - Split files when `SKILL.md` approaches that reference point, content spans distinct domains, or advanced features are rarely needed.
-   - Move detailed documentation into `references/`, and reusable templates, images, sample files, or static data into `assets/`; the Scripts section governs `scripts/`.
-   - Keep supporting resources one level deep, relative to the skill directory, and state when to load each file.
+   - Decide branch by branch: keep in `SKILL.md` what every run needs; push what only some branches reach into a supporting file behind a pointer that states when to load it.
+   - Treat ~100 non-empty body lines as a smell that inline material belongs behind a pointer, not a limit or target; prioritize completeness and correctness over size.
+   - A narrow instruction-only skill needs no supporting files: a single `SKILL.md` with the shortest workflow that covers the decisions the agent would get wrong, plus gotchas, examples, and validation only where they prevent likely mistakes.
+   - Move detailed documentation into `references/`, and reusable templates, images, sample files, or static data into `assets/`; the Scripts section governs `scripts/`. Keep supporting resources one level deep, relative to the skill directory.
 
 5. Review the result.
    - Present the draft when scope is uncertain or the skill encodes domain-specific preferences. Ask whether it covers the use cases, what is missing or unclear, and what should be more or less detailed.
@@ -60,7 +59,7 @@ For model-invoked skills, keep the description under 1024 characters, in third p
 description: [What the skill enables]. Use when [specific user intents, keywords, contexts, or file types].
 ```
 
-Make the first sentence say what the skill does. Start the second sentence with `Use when`; include trigger phrases, adjacent near-misses, and load conditions.
+Make the first sentence say what the skill does, front-loading the vocabulary the user actually types. Start the second sentence with `Use when`, listing one trigger per distinct branch the skill handles; collapse synonyms that rename the same branch, and cut identity the first sentence already carries. Add a `do not use for` clause only for a real near-miss the triggers would otherwise catch.
 
 Prefer:
 
@@ -68,10 +67,14 @@ Prefer:
 description: Review accessibility issues in React interfaces and suggest concrete fixes. Use when the user asks for accessibility review, WCAG checks, keyboard navigation fixes, or ARIA guidance for React components.
 ```
 
-Avoid:
+Avoid vagueness, and avoid synonym-stuffing one branch:
 
 ```md
 description: Helps with accessibility.
+```
+
+```md
+description: ... Use when the user asks to review, check, audit, inspect, examine, or assess accessibility.
 ```
 
 ## Scripts
@@ -81,16 +84,6 @@ description: Helps with accessibility.
 - If bundling scripts, make them self-contained, non-interactive, idempotent, and runnable from the skill root with relative paths.
 - Scripts should provide concise `--help`, helpful errors, meaningful exit codes, safe defaults, and structured stdout with diagnostics on stderr.
 - For destructive or stateful operations, include dry-run or explicit confirmation flags.
-
-## Lightweight Skills
-
-For narrow instruction-only skills, keep the skill as small as practical and prefer a single-file `SKILL.md` with:
-
-- The shortest workflow that covers the decisions the agent might get wrong.
-- Gotchas, examples, and validation steps only when they prevent likely mistakes.
-- No `references/`, `scripts/`, `assets/`, templates, or other supporting files.
-
-Use the fuller structure when the skill needs reusable resources, fragile procedures, domain-specific references, deterministic scripts, or multi-step validation.
 
 ## Starter Shape
 
@@ -110,7 +103,7 @@ description: Do a specific reusable task. Use when the user asks for concrete in
 
 ## Gotchas
 
-- Add concrete mistakes the agent would make without this skill.
+- State the correct behavior for a case the agent gets wrong by default; name the mistake itself only when the correct form alone won't prevent it.
 ```
 
 ## Quality Bar
