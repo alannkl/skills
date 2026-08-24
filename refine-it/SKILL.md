@@ -30,6 +30,7 @@ disable-model-invocation: true
    - Preserve the user's voice; keep casual, direct, or opinionated writing in its own register rather than flattening it into generic corporate prose.
 
 4. Finalize the handoff.
+   - Make a final compression pass over the refined version: prefer the shortest phrasing that preserves meaning, tone, and any explicitness added in step 3.
    - Put the final version first when the user is likely to use it directly.
    - For short artifacts, return only the refined version unless a note would prevent confusion. For longer artifacts, use `Final Version` followed by optional `Notes`.
    - Keep notes concise and include them only when useful: major changes, assumptions, unresolved ambiguity, or claims that need verification.
