@@ -1,6 +1,6 @@
 ---
 name: create-agent-skill
-description: Create Agent Skill files from reusable workflows, domain expertise, or project conventions.
+description: Create Agent Skill files from reusable workflows, domain expertise, project conventions, or shortcut instructions.
 disable-model-invocation: true
 ---
 
@@ -17,6 +17,7 @@ disable-model-invocation: true
    - Identify the concrete artifact to create or update: skill directory, `SKILL.md`, references, scripts, assets, or inventory docs.
    - If file-writing intent is ambiguous and edits would be surprising, ask for confirmation before editing.
    - Identify the task, workflow, project convention, or domain the skill covers.
+   - When the skill is a shortcut — instructions the user retypes each time and wants behind a name — write it directly and stop: name per step 2, user-invoked frontmatter with a one-line description, and the instructions themselves as the body.
    - Capture the prompts, contexts, files, and workflows that should trigger it.
    - Note adjacent requests and near-misses that should not trigger it.
    - Decide whether the skill needs instructions only or also references, scripts, assets, templates, or sample files.
