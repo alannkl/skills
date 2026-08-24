@@ -59,6 +59,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - In library or public-API code, extension points promised by the published contract are requirements, not speculation.
    - Prefer meaningful modules with small, honest interfaces over shallow pass-through wrappers.
    - Ask: "Would this look overcomplicated during review?" If yes — or if the solution is growing much larger than the problem suggests — stop and simplify.
+   - Zoom out on friction, not just failure: a third special case on the same mechanism, a fix that needs its own fix, or working around the existing design rather than with it signal the path is wrong even while each step succeeds. Restate the problem one level up — the outcome the code serves, not the current mechanism — and check for a simpler path; staying the course is then a stated decision, not a default.
    - Reuse official or canonical domain types and APIs when available; do not invent local aliases that drift from the source of truth.
    - Suggest or add high-quality dependencies when they reduce complexity, risk, or maintenance burden; account for security, licensing, bundle size, compatibility, and repo fit before adopting them.
 
