@@ -10,14 +10,14 @@ Help the user genuinely understand code at the scope they request — a change b
 
 ## Boundaries
 
-- Explain only. Never judge code quality, never edit the project's code or comments, never run the project's code. A micro-world (step 9) is a separate throwaway simulation, not an exception.
+- Explain only. Never judge code quality, never edit the project's code or comments, never run the project's code. A micro-world (step 8) is a separate throwaway simulation, not an exception.
 - If something looks buggy or suspicious while reading, note the observation in one line and suggest a code review; do not develop it into review findings.
 - If confusion stems from unclear code rather than from the target itself, say so and suggest a documentation or simplification pass; do not fix the code here.
 - If the user wants proof the code works, suggest runtime verification; this skill checks the user's understanding, not the code's correctness.
 
 ## Workflow
 
-1. Resolve the requested scope. Any slice of code is valid; the shapes below are common anchors, not a closed list. State the resolved scope in one line at the top of the explainer so a misread surfaces immediately.
+1. Resolve the requested scope. Any slice of code is valid. State the resolved scope in one line at the top of the explainer so a misread surfaces immediately.
    - **Change**: a diff. Default to the current branch plus working tree against its merge base with the default branch; accept an explicit commit range, PR, staged changes, or file set. The diff is the ground truth. If it is empty, report that there is nothing to explain and stop.
    - **Part**: a named function, class, module, feature, subsystem, directory, or file set. Resolve which files or regions implement it by reading, not guessing; if the name maps to several plausible units, name the mapping you chose.
    - **System**: the whole codebase or a whole service.
@@ -36,7 +36,7 @@ Help the user genuinely understand code at the scope they request — a change b
 
 4. Present the explainer in chat. Do not write it to a file. Order it for comprehension:
    - Background first: the surrounding-system context needed to follow the rest, scaled to what the user already knows — the author of a fresh change needs a sentence; a newcomer needs more. Never open with the details.
-   - Intuition before details: state the essence in a few sentences and walk one concrete example — a real or toy input and its observable result — before any code-level detail. When the real system is too big to hold even for one example, shrink the world itself into a minimal imaginary one — two nodes, a three-slot queue — keeping only what makes the mechanism visible; this is a prose thought experiment, not the interactive micro-world of step 9. Walk a second, contrasting example — an edge case, the other branch — only when the boundary between behaviors is the hard part; a happy path alone hides it. When the code invites a natural-but-wrong reading, name that reading and correct it; dislodging the wrong model beats stating the right one beside it.
+   - Intuition before details: state the essence in a few sentences and walk one concrete example — a real or toy input and its observable result — before any code-level detail. When the real system is too big to hold even for one example, shrink the world itself into a minimal imaginary one — two nodes, a three-slot queue — keeping only what makes the mechanism visible; this is a prose thought experiment, not the interactive micro-world of step 8. Walk a second, contrasting example — an edge case, the other branch — only when the boundary between behaviors is the hard part; a happy path alone hides it. When the code invites a natural-but-wrong reading, name that reading and correct it; dislodging the wrong model beats stating the right one beside it.
    - Then the details: follow the flow of behavior with a line of prose introducing each part, not a file-by-file listing.
    - Change scope covers: what the system now does differently (before → after, per behavior), why (from session context or notes when available, labeled inference otherwise), and what to watch for after merge.
    - Part scope covers: the unit's responsibility, its key behaviors and flows, its edge cases and failure modes, and how it interacts with the rest of the system.
@@ -44,48 +44,14 @@ Help the user genuinely understand code at the scope they request — a change b
    - Other scopes: cover what the user needs to hold the slice in their head — adapt the nearest anchor's coverage rather than forcing the slice into it.
    - Use a diagram (sequence, state, flow, component) whenever it beats prose — control flow across components, state transitions, ordering, branching failure paths. Write diagrams in mermaid; the source reads fine in chat and renders wherever the explainer is reused. Never diagram what a sentence covers.
    - Write it for the user, but keep it self-contained enough to reuse verbatim — as a PR description for change scope, as an onboarding or architecture note otherwise.
-   - Make every offer at once, so nothing is lost if the user leaves after reading: a Q&A session on the explainer (step 5), a durable home for the explainer (step 6), the quiz (step 7), and — only when step 9 warrants one — a micro-world. Present them as one numbered list — number only the options actually offered, with no gaps — and invite replies by number alone: "1", "2 3", or "all".
-   - Then stop and let the user read. Run only what the user accepts, in step order when several are picked.
+   - Make every offer at once, so nothing is lost if the user leaves after reading: a Q&A session on the explainer (step 5), a durable home for the explainer (step 6), the quiz (step 7), and — only when step 8 warrants one — a micro-world. Present them as one numbered list — number only the options actually offered, with no gaps — and invite replies by number alone: "1", "2 3", or "all".
+   - Then stop and let the user read. Run only what the user accepts, in step order when several are picked; when the session winds down, restate any offers from this list the user has not yet answered.
 
-5. Run a Q&A session when the user opts in: answer follow-up questions about the explained code until the user is satisfied.
-   - Ground every answer in the source. Answer from what was already read when it suffices; re-read or widen the reading when the question exceeds it. Distinguish what the code shows, what you infer, and what is not recorded — never fill a gap with a guess.
-   - Match the answer's altitude to the question: a "why does X happen" gets the behavior traced through the code, not a restated explainer section.
-   - The boundaries above still hold: explain only — a "should this be refactored?" gets a one-line observation and a suggestion to run a code review, not a critique.
-   - When a question reveals the explainer skipped something load-bearing, answer it and note the gap; if the user later accepts the durable-home offer, fold that answer in.
-   - When the session winds down, restate any offers from step 4 the user has not yet answered.
+5. Run a Q&A session when the user opts in: answer follow-up questions about the explained code until the user is satisfied. On acceptance, read `references/qa.md` and follow it.
 
-6. Give the explainer a durable home: write on acceptance, and if the step 4 offer is still unanswered when the session winds down, restate it before closing.
-   - Change scope: offer the explainer text as the PR description or extended commit-message body, so it persists where reviewers and future readers already look.
-   - Other scopes: name the concrete destination where the explainer belongs — the relevant README section, an existing docs page, an architecture note — not a vague "this could be documented". Keep it markdown; mermaid renders where docs live.
-   - Never update docs or run git or gh commands unasked: an explainer is written for one reader at one moment; silently merging it into shared docs invites rot and duplication. On acceptance, adapt it to the destination's audience rather than pasting verbatim.
-   - Write the full explanation, not a summary, unless the user asks for less.
-   - The final document must read as a single cohesive explanation, not an original plus an appended explainer: where the destination already covers a point the explainer also makes, fold the explainer's treatment into that existing content so nothing is explained twice; content the destination doesn't cover is simply added where it fits the document's flow.
-   - Carry the explainer's diagrams over with it, placed where they support the surrounding text — unless the destination already has a diagram covering the same thing, in which case keep the existing one.
+6. Give the explainer a durable home when the user opts in: write it where future readers will already look. On acceptance, read `references/durable-home.md` and follow it.
 
-7. Quiz the user when they opt in, one round.
-   - Ask multiple-choice questions about what the target code observably does — "what happens when X?" is the typical shape, not a required template.
-   - Quiz only non-obvious, easy-to-miss behavior: edge cases, failure paths, defaults, interactions between components or changes. Hard because the behavior is easy to miss, never because the question is tricky or hinges on incidental details. Skip anything already obvious from the explainer's summary or the user's own request — a question answerable without thinking detects nothing.
-   - No quota: ask the minimum that covers the genuinely missable behaviors — often just two or three questions. If the target offers none, say so and skip the quiz; never pad the round with easy questions.
-   - Every option must be a plausible behavior. No symbol trivia (never "which function/file/pattern"), and for change scope no questions about unchanged behavior.
-   - Shuffle the correct option's position from question to question, and keep all options similar in length and detail; a fixed slot or a longest-option-wins pattern is a tell.
-   - Ask one question at a time. Use the ask-question tool when available; otherwise ask as plain numbered chat messages. Confirm right or wrong in one line after each answer; save re-teaching for the end of the round.
+7. Quiz the user when they opt in: one round of multiple-choice questions on missable behavior, then score and re-teach. On acceptance, read `references/quiz.md` and follow it.
 
-8. Score and re-teach.
-   - After the round, report the score and each misunderstanding surfaced.
-   - For each miss, re-explain the behavior with a pointer into the explainer or the code.
-   - Do not force a re-quiz. If the score was low, end with a concrete suggestion: re-read the named explainer sections or code, then re-run the skill.
-
-9. Build a micro-world when warranted and opted into: a tiny interactive simulation the user inhabits to feel the logic work.
+8. Build a micro-world when warranted and opted into: a tiny interactive simulation the user inhabits to feel the logic work. On acceptance, read `references/micro-world.md` and follow it.
    - Warranted only for logic that is hard to hold by reading — state machines, coordinate or geometry math, multi-step transformations, scheduling or concurrency, algorithmic edge cases. If the logic reads fine, skip it entirely and do not offer one; prose, examples, and mermaid come first.
-   - Build a single self-contained HTML file — embedded CSS and JavaScript, no external dependencies — that simulates just the target logic with example data and lets the user probe it: scrub steps, drag inputs, toggle branches, watch the result change.
-   - Derive the simulated logic directly from the source and name every simplification. It models the code — it is not the code, and passing in the simulation proves nothing about runtime.
-   - Every control must answer a "what happens if" question the user could actually ask; interactivity that only decorates teaches nothing — fall back to a static diagram.
-   - Write it to a `.tmp/` folder under the repo root (creating the folder if needed), or publish it as an artifact where the harness supports that. It is throwaway: never commit it and never write it anywhere else in the project tree.
-
-## Gotchas
-
-- A quiz the user can pattern-match without understanding is worse than no quiz: it certifies a gap as covered.
-- The quiz's value is entirely in its hardest questions. Three questions on genuinely missable behavior beat seven that re-ask the explainer.
-- Do not pad the explainer with restated diff hunks or file-by-file inventories; it explains behavior and structure, not the patch or the directory tree.
-- Depth must scale inversely with scope: a system explainer that walks every directory is an inventory, not an explanation. Widen the altitude, don't multiply the words.
-- A micro-world drifts from the source easily: rebuild it after the code changes rather than trusting an old simulation.

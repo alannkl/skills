@@ -1,16 +1,17 @@
 ---
 name: shorten-it
-description: Shorten selected or provided text while preserving meaning, tone, nuance, and important details. Use when the user asks to shorten, condense, compress, tighten, trim, make concise, reduce length, or produce a shorter version without changing substance.
+description: Shorten text while preserving meaning, tone, nuance, and important details.
+disable-model-invocation: true
 ---
 
 # Shorten It
 
-Shorten existing text without changing its job, claims, audience, or voice. Do not broaden the task into general rewriting, polishing, or strategy changes.
+Shorten existing text without changing its job, claims, audience, or voice — and adding nothing.
 
 ## Workflow
 
 1. Preserve meaning first.
-   - Keep intent, tone, nuance, claims, caveats, scope, names, numbers, examples, technical terms, requirements, constraints, labels, field names, identifiers, and steps unless clearly redundant.
+   - Keep intent, tone, nuance, claims, caveats, scope, names and identifiers, numbers, examples, technical terms, requirements, constraints, and steps unless clearly redundant.
 
 2. Cut only low-value wording.
    - Remove repetition, filler, hedging, verbose transitions, and needless nesting.
@@ -19,8 +20,4 @@ Shorten existing text without changing its job, claims, audience, or voice. Do n
 3. Return the shortened text.
    - Follow any requested length or format.
    - Output only the shortened version.
-   - Do not add facts, claims, examples, requirements, or a different style.
-
-## Gotchas
-
-- If the requested length would require losing important meaning, say so briefly.
+   - If the requested length would require losing important meaning, say so briefly.

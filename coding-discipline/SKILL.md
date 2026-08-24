@@ -10,46 +10,32 @@ description: Core engineering discipline for code work — keeps changes simple,
 Use these as strong defaults. When they conflict with explicit user instructions, repo rules, security/compliance requirements, production incident constraints, or established local conventions, follow the higher-authority requirement and call out the tradeoff:
 
 - Think before coding: surface assumptions, ambiguity, and tradeoffs before changing code.
-- Simplicity first: build the smallest correct solution for present requirements — real data volume, failure cost, and contract safety — not anticipated future ones. Avoid unrequested features, abstractions, flexibility, or speculative safeguards unless risk or system contracts justify them. Minimality constrains what you ship, not what you consider — explore the wider design space freely.
+- Simplicity first: build the smallest correct solution for present requirements — real data volume, failure cost, and contract safety — not anticipated future ones, with no speculative machinery: features, abstractions, safeguards, or knobs no present requirement demands. Elegance is economy.
 - Surgical changes: touch only what the request requires; match existing style; clean up only issues caused by your change.
 - Contribute your judgment: propose materially better approaches, framings, or designs with a clear recommendation — withholding a better idea is as much a failure as overbuilding. The gate is on acting unilaterally, never on proposing.
 - Goal-driven execution: define success criteria, make them strong enough to verify independently, and loop until verified.
 
 When these principles conflict with each other, correctness and contract safety win over simplicity and minimal diff. Call out the added scope rather than expanding silently.
 
-Scale process to risk. On small, low-risk changes, assumptions, success criteria, and handoff notes can each be a sentence, or be skipped when self-evident. Reserve full rigor for contract-touching, multi-step, or hard-to-reverse work.
-
-The goal is clean, efficient, elegant, industry-grade software: clear contracts, explicit boundaries, reliable behavior, testability, and maintainable code without unnecessary machinery — where elegance is economy, not cleverness for its own sake.
-
-## Calibrate the Approach
-
-Apply the same principles and repo conventions across applicable tasks; scale the bar to the change's actual cost and reversibility, not its category. The same edit can be expensive in a large, contract-heavy system and cheap in a small, young, or well-tested one, so a mid-implementation refactor can still be worthwhile.
-
-As cost and irreversibility rise, stay surgical, match convention by default, and propose deviations with their reasons. As they fall, surface worthwhile fixes rather than silently passing them. Act only within scope: make and explain in-scope fixes; report the rest separately.
-
-Scale ambition with openness. For open-ended or greenfield work, present the ambitious option alongside the minimal one. For well-specified execution, default to the minimal option and mention the ambitious one only briefly. A precisely worded request may still be open-ended when it prescribes a mechanism instead of a goal, contradicts the code, or describes only a symptom; treat it accordingly and surface the option the requester may not know to ask for.
-
-When surfacing findings, weigh substance over taste. A divergence from the repo's own norms is a strong finding; a mere difference from your preferred style is not. Do not bury real findings in noise.
+Scale process to risk: scale the bar to the change's actual cost and reversibility, not its category. On small, low-risk changes, assumptions, success criteria, and handoff notes can each be a sentence, or be skipped when self-evident. Reserve full rigor for contract-touching, multi-step, or hard-to-reverse work.
 
 ## Workflow
 
 Follow these steps when changing artifacts. For reviews, use the same principles as evaluation criteria and weight findings by their risk.
 
-1. Read before coding.
-   - Inspect the relevant files, tests, docs, and existing conventions.
+1. Read before coding: files, tests, docs, conventions.
    - For structural decisions, inspect the tree, import/dependency rules, build files, tests, and representative files in the area before choosing where code belongs.
    - Identify the behavioral surface: inputs, outputs, side effects, persistence, external calls, and user-visible contracts.
    - State assumptions when they affect implementation or risk; do not hide confusion.
-   - When the request prescribes a mechanism ("add a retry loop here"), restate the goal it appears to serve before planning; if the mechanism serves that goal poorly, recommend what would serve it better.
+   - When the request prescribes a mechanism ("add a retry loop here"), contradicts the code, or names only a symptom, restate the goal it serves before planning; recommend what serves it better.
    - If multiple materially different interpretations exist, present them with a clear recommendation instead of picking silently.
-   - Recommend a simpler approach when one exists and push back when warranted.
-   - If a more complex design is plausibly better for likely future needs, present its tradeoff and let the user make that bet; do not build for the future unprompted.
-   - For a bug fix, treat the report as a symptom, not the cause: trace the callers of the code you touch and fix the shared cause once, rather than patching only the path the report names and leaving sibling callers broken.
+   - When a materially simpler or more capable design exists, present it with the tradeoff and a recommendation; build it only if the user takes the bet.
+   - For a bug fix, treat the report as a symptom, not the cause: trace the callers of the code you touch and fix the shared cause once, rather than patching only the path the report names and leaving sibling callers broken — the smallest change in the wrong place is a second bug.
 
 2. Define the smallest verifiable plan.
    - Convert the request into concrete success criteria, each written as an observable check: a command to run, an expected output, or an assertion — not a vague goal. ("`GET /users/:id` returns 404 for unknown ids" beats "handle missing users".)
    - For new or changed behavior, reproducible regressions, test work, or reviews of test adequacy, read [Behavior-First Testing](references/behavior-first-testing.md) before implementation or executable test bodies and follow its workflow.
-   - Prefer the narrowest change that satisfies those criteria without worsening system shape.
+   - Stay surgical: the narrowest change that satisfies the criteria without worsening system shape.
    - Ask when ambiguity would materially change the solution, create risk, or leave success criteria too weak to verify.
    - If no one is available to answer, choose the most reversible interpretation, state the assumption prominently in the handoff, and proceed.
    - When mid-implementation discovery contradicts the agreed plan, take the most reversible option that honors the plan's intent, record the deviation in a notes file (preferred over commit messages or PR descriptions; the handoff summary is not a record), and surface it in the handoff.
@@ -59,8 +45,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
 3. Preserve system shape.
    - Treat the codebase's existing structure — its system shape — and conventions as evidence and match them by default; when the current structure blocks the change or conflicts with these principles, propose the improvement with its reason.
    - Prefer domain or capability ownership over scattered technical-role buckets unless the repo already dictates otherwise.
-   - Where the system is layered, keep responsibilities separate: boundary adapters validate and translate, core logic decides, and persistence or integration code performs I/O.
-   - Do not mix business rules, transport details, storage concerns, and formatting unless the existing system already does so and the change is tiny.
+   - Where the system is layered, keep responsibilities separate — boundary adapters validate and translate, core logic decides, and persistence or integration code performs I/O — unless the existing system already mixes them and the change is tiny.
    - In small scripts or single-file programs, do not introduce layers or indirection.
    - Point dependencies toward stable core behavior and away from volatile edges; prefer explicit collaborators over hidden globals, ambient state, or hard-to-control side effects.
    - Avoid dependency cycles; they make separate parts change as one unit.
@@ -70,7 +55,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - The best code is the code never written. Before adding code, stop at the first rung that holds: does it need to exist (YAGNI); does the repo already provide it; does the standard library or platform cover it; does an already-installed dependency cover it. Only then write the minimum that works. Smaller never means flimsier: between two equally small options, take the edge-case-correct one.
    - Name by intent; make side effects visible in names.
    - Keep functions and modules focused on one purpose, using guard clauses to reduce nesting.
-   - Avoid premature abstractions, wrapper layers, generic helpers, speculative safeguards, or configuration knobs until duplication, risk, contracts, or complexity prove they are needed. A request to "send one email" needs a function call, not a pluggable `NotificationProvider` interface with retry config.
+   - Add no speculative machinery until duplication, risk, contracts, or complexity prove it needed. A request to "send one email" needs a function call, not a pluggable `NotificationProvider` interface with retry config.
    - In library or public-API code, extension points promised by the published contract are requirements, not speculation.
    - Prefer meaningful modules with small, honest interfaces over shallow pass-through wrappers.
    - Ask: "Would this look overcomplicated during review?" If yes — or if the solution is growing much larger than the problem suggests — stop and simplify.
@@ -81,7 +66,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - Validate untrusted input at boundaries and map external shapes to a canonical model kept within each context.
    - Treat authorization, injection risks, secrets, personal data, and least-privilege access as part of the design, not as afterthoughts.
    - When changing stored data, configs, queues, or external contracts, account for old data, mixed versions, migrations, defaults, and rollback behavior.
-   - Make errors actionable with enough context to diagnose, without leaking secrets or sensitive data.
+   - Make errors actionable with enough context to diagnose.
    - Never log secrets, credentials, tokens, private keys, personal data, or full sensitive payloads.
    - Make production behavior observable with appropriate logs, metrics, traces, or audit events when the system would otherwise be hard to diagnose.
    - Avoid hidden concurrency and fire-and-forget work unless intentional, documented, and observable.
@@ -108,12 +93,6 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - Keep changes reviewable: avoid unrelated churn, explain non-obvious tradeoffs, and make contract or migration effects explicit.
    - Remove unused imports, variables, functions, and branches introduced by your edit.
    - Leave unrelated pre-existing issues untouched and mention them separately when useful.
-   - Confirm every scaffolded scenario has an executable test body or a documented reason for remaining skipped (see [Behavior-First Testing](references/behavior-first-testing.md)).
+   - When surfacing findings, weigh substance over taste: a divergence from the repo's own norms is a strong finding; a mere difference from your preferred style is not.
+   - Confirm every scaffolded scenario has an executable test body or a documented reason for remaining skipped.
    - Summarize the handoff: passed success criteria; what changed and why; assumptions and plan deviations; skipped tests or revised scaffold outcomes with reasons; intentional exclusions; and remaining gaps or risks.
-
-## Gotchas
-
-- Do not equate "more robust" with more code. Unrequested fallbacks, retries, abstractions, and options often make systems worse.
-- Do not use minimality to omit what present requirements demand: validation, error handling, and rollback care are part of correct, not extras.
-- Do not treat a smaller diff as automatically better: the smallest change in the wrong place isn't simpler, it's a second bug. Earn the small diff by understanding the flow first.
-- Do not delete pre-existing dead code unless the user asked for that cleanup.

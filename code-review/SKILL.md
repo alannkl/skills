@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Produce findings-led code review reports for concrete code changes, focused on intent fit, correctness, security, maintainability, tests, and operational risk. Use for code review, PR review, diff review, pre-merge review, bug-risk review, or findings on changed code; do not use for implementation, prose editing, pure design critique, inline review comments, or architecture brainstorming without concrete code to review.
+description: Produce a findings-led code review report for concrete code changes. Use when the user asks for a code review, PR review, or findings on a diff or branch; not for implementing fixes or critiquing designs without code.
 ---
 
 # Code Review
@@ -9,17 +9,13 @@ description: Produce findings-led code review reports for concrete code changes,
 
 Review concrete code changes to protect behavior, contracts, users, operators, and future maintainers. Produce concise, findings-led reports that explain real problems, their impact, and a specific fix or next step.
 
-Apply principal-engineer judgment: reconstruct intent, reason from evidence and first principles, question assumptions that affect correctness, and look for subtle bugs, performance traps, security exposure, operational hazards, and practical maintenance risks.
+Apply principal-engineer judgment: reconstruct intent, reason from evidence and first principles, and question assumptions that affect correctness.
 
 ## Core Principles
 
-- Reconstruct the change intent before judging the code. Use the stated goal when available; otherwise infer intent from the diff, call sites, tests, names, and surrounding behavior, and label the inference as an assumption.
-- Validate intent against existing system design, business rules, and user-facing contracts before asking the user. Ask only when the answer cannot be inferred and would materially affect review correctness. If the implementation matches the stated request but violates existing contracts, frame the finding as a conflict between intent and system contract.
-- Scope the review to the requested selection, branch, PR, files, or diff. Avoid unrelated legacy findings unless the change triggers or worsens them.
 - Prioritize correctness, security, regressions, data integrity, and contract safety over style and preference.
 - Respect repository rules, project architecture, framework conventions, and user instructions over generic advice.
 - Judge code quality through concrete risk: scoped changes, simple enough design, clear boundaries, explicit contracts, testable behavior, and verifiable outcomes. Project conventions are the local standard, but convention-aligned code can still be reported when it creates correctness, security, compatibility, data-integrity, operational, or maintainability risk.
-- Report only concrete, actionable findings grounded in evidence. Prefer a few defensible findings over broad commentary. Every finding must explain the problem, evidence, impact, and the specific fix or next step; when uncertainty remains, state the assumption and calibrate severity instead of suppressing the risk or overstating it as proven.
 
 ## Workflow
 
@@ -37,7 +33,7 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
    - Bound the reading: stay within the change's blast radius: the changed code and what it directly affects or depends on. Stop expanding once you can defend each finding's evidence; do not read the whole repository to chase hypothetical risk.
 
 3. Scan by risk, not file order.
-   - Identify plausible failure modes across the review surface before deciding which findings are worth reporting.
+   - Map every changed file and touched public surface to at least one risk category below, or explicitly clear it, before deciding which findings are worth reporting.
    - Intent fit: logical, system-aligned behavior without scope drift or missing cases.
    - Functional correctness: boundaries, edge cases, missing branches, null/error handling, off-by-one errors, state transitions, concurrency, race conditions, lock ordering, idempotency, and resource lifecycle.
    - Breaking changes: backward and forward compatibility, mixed-version behavior, migrations, defaults, rollback, and external integrations.
@@ -48,11 +44,11 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
 
 4. Deepen scrutiny where the touched surface requires it.
    - Apply these overlays only when the Step 3 scan or the changed surface calls for them.
-   - AI / agent systems: bounded prompt/context construction, hard caps on injected content, prompt-injection safety, session/resume compatibility, and manual review of large model-visible fragments.
-   - Contract surfaces: for API, config, CLI, schema, migration, event, or serialized-format changes, check defaults, compatibility, rollback, client/server version skew, and external integration behavior.
-   - Frontend / UI: accessibility, keyboard behavior, responsive layout, loading/error/empty states, and internationalization.
-   - Trust boundaries: for authorization, secrets, personal data, dependency, or privilege changes, check escalation paths, exposure risk, least privilege, and auditability.
-   - Production operations: for reliability-sensitive changes, check observability, timeouts, retries, rate limits, backpressure, cleanup, degraded behavior, incident diagnosability, and rollout safety.
+   - AI / agent systems (prompts, tool calls, model-visible context, memory, retrieval, agent state, delegation, evals, generated output handling): read `references/ai-agent-systems.md`.
+   - Contract surfaces (APIs, config, CLI flags, schemas, migrations, events, persisted records, serialized formats, SDKs, public types, external integration behavior): read `references/contract-surfaces.md`.
+   - Frontend / UI (rendered UI, user interaction, forms, navigation, client state, accessibility, responsive layout, browser behavior): read `references/frontend-ui.md`.
+   - Trust boundaries (authorization, authentication, secrets, personal data, input validation, dependencies, permissions, network boundaries, uploads, webhooks, privileged operations): read `references/trust-boundaries.md`.
+   - Production operations (reliability, background jobs, queues, schedulers, external services, retries, timeouts, migrations, observability, incident response, high-volume paths): read `references/production-operations.md`.
 
 5. Review tests deliberately.
    - Check whether changed behavior has meaningful tests at the right level. Prefer behavior-level and integration coverage for cross-module behavior, workflows, external contracts, and agent logic.
@@ -75,18 +71,17 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
    - `Medium`: contained but real bug, missing validation, meaningful test gap, brittle logic likely to cause future defects, or maintainability issue with practical risk.
    - `Low`: minor cleanup with practical value; omit unless the user asks for exhaustive review.
    - If there are no findings, say so directly; do not invent low-value findings to avoid an empty review.
-   - **Do not report:** guessed intent without concrete evidence, pure style opinions, praise, restatements of the code, vague "check/ensure/verify" chores, speculative issues, or broad rewrites when a local fix addresses the issue.
+   - **Do not report:** guessed intent without concrete evidence, or broad rewrites when a local fix addresses the issue. The `Bad findings` examples below show the other shapes to reject.
 
 8. Self-check before finalizing.
    - Confirm every finding meets the `Finding Quality` checklist below; drop any that do not, and apply the severity-calibration rule from Step 7 to anything uncertain.
    - Remove findings that would require the author to "check" something the reviewer can inspect, unless the next step is a specific test or measurement that cannot be run in the current environment.
-   - Keep optional report sections short. Omit sections that do not add useful information, except `Tests / checks` and residual risks when checks were not run or context was unavailable.
 
 ## Output Format
 
 Start with findings ordered by severity. Keep scope concise and place it after findings unless the user explicitly asks for a different format. If there are no findings, start with `No findings in the reviewed scope.`
 
-For small reviews (a narrow diff with one or few findings), `Findings`, `Scope`, and `Tests / checks` are sufficient; omit the other sections unless they carry real information.
+For small reviews (a narrow diff with one or few findings), `Findings`, `Scope`, and `Tests / checks` are sufficient; omit the other sections unless they carry real information. Always include `Tests / checks`, and residual risks when checks were not run or context was unavailable.
 
 Use this structure:
 
@@ -149,9 +144,3 @@ Bad findings:
 - "Ensure this handles errors correctly." - a "verify" chore the reviewer can check directly.
 - "Nice clean implementation!" - praise, not a finding.
 - "Line 12 sets `count = 0`." - restates the code without identifying an issue.
-
-## Gotchas
-
-- Do not turn review into a style pass unless style affects correctness, maintainability, or explicit project rules.
-- Do not comment on unchanged code just because it is nearby.
-- Do not approve large risky diffs just because each line looks reasonable in isolation.

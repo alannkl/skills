@@ -10,8 +10,8 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
 
 ## Modes
 
-- Lightweight mode: use for casual ideas, early thinking, or quick clarification. Ask only the highest-value questions, keep the tone conversational, and skip repo docs unless the user asks or a durable project decision emerges.
-- Documented mode: use for serious product, domain, or architecture decisions. Apply the full workflow: code/doc checks, glossary updates, ADRs when warranted, session records, and final synthesis.
+- Lightweight mode: ask only the highest-value questions, keep the tone conversational, and skip repo docs unless the user asks or a durable project decision emerges.
+- Documented mode: apply the full workflow — code/doc checks, glossary updates, ADRs when warranted, session records, and final synthesis.
 
 ## Workflow
 
@@ -29,8 +29,7 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - Once scope is clear, switch to decision-tree order and resolve dependent decisions branch by branch.
 
 3. Use available context before asking.
-   - Do not ask questions whose answers are obvious or easily discoverable in the codebase, docs, issue tracker, or existing session log.
-   - If a question can be answered by exploration, inspect the relevant source first and report what you found.
+   - Answer discoverable questions yourself: inspect the codebase, docs, issue tracker, or session log first and report what you found; ask only what exploration cannot settle.
    - If a needed fact requires lengthy exploration, do not stall the session: move on to questions that do not depend on it and fold the finding in when it arrives.
    - Look for `CONTEXT-MAP.md`, `CONTEXT.md`, and `docs/adr/` when the discussion touches domain language or architecture.
 
@@ -47,7 +46,6 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - If the user wants discussion, stay on that question until there is a conclusion, explicit deferral, or a documented disagreement.
    - If the user's reply is a question, objection, or request for clarification rather than a decision, switch to discussion mode: answer in detail in a normal message and end the turn there. Do not invoke the ask-question tool in that reply; let the user respond freely in conversation.
    - Return to the ask-question tool only after the discussion has converged or the user signals readiness to decide; the tool is for collecting decisions, not delivering explanations.
-   - Do not skip to the next question while the current decision is still open.
    - Before asking the next question, review the current conversation and the latest session record, then align the next question with what has already been decided.
 
 6. Push back on weak or harmful choices.
@@ -62,6 +60,7 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - Cross-check user claims against code when possible and surface contradictions.
    - Update `CONTEXT.md` inline when a domain term is resolved. Keep it as a glossary only, without implementation details.
    - Create `CONTEXT.md` or `docs/adr/` lazily, only when there is something concrete to write.
+   - Use `references/CONTEXT-FORMAT.md` when creating or updating `CONTEXT.md`.
    - In lightweight mode, do this only when the user asks or a durable project decision emerges.
 
 8. Maintain a session record when useful.
@@ -74,7 +73,7 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - Skip the session record for lightweight mode unless requested or the discussion produces decisions worth preserving.
 
 9. Finish with a synthesis sized to the mode.
-   - Before synthesizing, sweep for silent assumptions: anything you relied on but never asked becomes an explicit decision, an open question, or a stated assumption in the record.
+   - Before synthesizing, sweep for silent assumptions: anything you relied on but never asked becomes an explicit decision, an open question, or a stated assumption in the record — present the plan as settled only when nothing remains silently assumed.
    - Always assume implementation happens in a different session, possibly by a different agent. The persistent documents (`plan.md`, `session.md`, ADRs) must be self-contained hand-offs. Every decision, constraint, research finding, naming choice, and integration contract needed for implementation must appear in them or a linked doc; the conversation is discarded context.
    - In lightweight mode, give the resolved decision, any explicit deferral, and the next step.
    - In documented mode, provide the full synthesis: resolved plan, decisions made, open questions, docs updated, risks, and next steps.
@@ -91,15 +90,4 @@ Offer or create an ADR only when all three are true:
 - Surprising without context: a future reader would reasonably ask why this choice was made.
 - Real trade-off: there were genuine alternatives and the decision chose one for specific reasons.
 
-Use `references/ADR-FORMAT.md` when creating ADRs. Use `references/CONTEXT-FORMAT.md` when creating or updating `CONTEXT.md`.
-
-## Gotchas
-
-- Do not treat scoping order and decision-tree order as the same thing.
-- Do not ask broad discovery questions after scope is already clear.
-- Stop asking once the plan is clear; when answers turn terse, offer recommendations for the remaining decisions instead of more questions.
-- Do not turn `CONTEXT.md` into a spec, roadmap, scratch pad, or implementation note.
-- Do not batch resolved glossary updates until the end.
-- Do not present the final plan as settled while decisions remain unresolved or silently assumed.
-- Do not funnel discussion through the ask-question tool; detailed explanations belong in a normal message that ends the turn.
-- Do not leave load-bearing details (research findings, API constraints, contracts, naming) only in the conversation; hand-off docs must stand alone for a fresh session.
+Use `references/ADR-FORMAT.md` when creating ADRs.

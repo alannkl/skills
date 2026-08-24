@@ -17,7 +17,7 @@ Create a temporary Markdown checkpoint for a fresh agent. The checkpoint complem
 
 2. Gather only continuation context.
    - Summarize the current objective, verified progress, unresolved decisions, blockers, relevant constraints, and the exact next actions.
-   - Distinguish verified facts from inferences and assumptions. Record checks already run and their outcomes so the next agent does not repeat work unnecessarily.
+   - Distinguish verified facts from inferences and assumptions. Record checks already run and their outcomes — failed ones, open questions, and uncommitted work included — so the next agent does not repeat work unnecessarily.
    - When workspace state is relevant to the handoff, inspect it live rather than relying on an earlier conversational description.
    - Find existing specs, plans, ADRs, issues, session records, commits, and diffs that already contain project knowledge. Reference each relevant artifact by path, commit identifier, or URL and say briefly why it matters.
    - Do not copy or paraphrase content already captured in those artifacts. Include only the small amount of context needed to explain why the next agent should open them.
@@ -36,11 +36,11 @@ Create a temporary Markdown checkpoint for a fresh agent. The checkpoint complem
    - `## Current state` — objective, verified progress, and what remains.
    - `## Referenced artifacts` — paths, commit identifiers, or URLs with one-line reasons to read them. Write `None` when there are none.
    - `## Continuation notes` — constraints, assumptions, unresolved decisions, blockers, and verification results not already owned by a referenced artifact.
-   - `## Suggested skills` — exact skill names and one-line reasons the next agent should invoke them. Suggest only skills relevant to the focus and evidenced in the conversation or discoverable in the environment; do not invent skill names. Write `No special skills suggested` when none apply.
+   - `## Suggested skills` — for each relevant skill: its name, the absolute path to its installed `SKILL.md` (resolve it — e.g. under `~/.claude/skills/<name>/` or `~/.agents/skills/<name>/`), and a one-line reason. Suggest only skills relevant to the focus. Write `No special skills suggested` when none apply.
    - `## First actions` — a short, ordered list of concrete steps for the next agent.
 
 5. Save it outside the workspace.
-   - Resolve the user's OS temporary directory from the platform's standard mechanism or environment setting. Do not create a `tmp` directory inside the workspace.
+   - Resolve the user's OS temporary directory from the platform's standard mechanism or environment setting, and save there even when a `tmp` directory already exists inside the workspace.
    - Use a collision-resistant Markdown filename beginning with `handoff-`.
    - Write only the handoff document to that file. Do not modify workspace files as part of this skill.
 
@@ -52,20 +52,10 @@ Create a temporary Markdown checkpoint for a fresh agent. The checkpoint complem
 
 ## Response Format
 
-Return the saved document first as a clickable file link when the interface supports local links; otherwise return its absolute path. Do not reproduce the handoff document in chat.
+Return the saved document first as a clickable file link when the interface supports local links; otherwise return its absolute path. Do not reproduce the handoff document in chat — the link (or path), and nothing else.
 
 Then provide exactly one copyable fenced block based on this instruction, filled with the actual path and focus:
 
 ```text
-Continue this work from the handoff document at `<absolute temporary path>`. Read it first, then inspect the referenced artifacts instead of asking me to repeat their contents. Invoke the skills listed under "Suggested skills" when they are available. Focus this session on: <next-session focus>.
+Continue this work from the handoff document at `<absolute temporary path>`. Read it first, then inspect the referenced artifacts instead of asking me to repeat their contents. For each entry under "Suggested skills", read the `SKILL.md` at its listed path and follow it for the matching part of the work. Focus this session on: <next-session focus>.
 ```
-
-Do not add a second summary that competes with the saved handoff.
-
-## Gotchas
-
-- A handoff is ephemeral routing context, not a substitute for a spec, plan, ADR, issue, commit, or diff.
-- Do not expose a secret merely because it appeared earlier in the conversation or repository history.
-- Do not silently omit failed checks, open questions, or uncommitted work that changes how the next agent should proceed.
-- Do not suggest every available skill; include only those that materially help the stated next-session focus.
-- Do not save the handoff under the current workspace, even when the workspace already contains a temporary directory.
