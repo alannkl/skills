@@ -7,7 +7,7 @@ description: Core engineering discipline for code work — keeps changes simple,
 
 ## Core Authority
 
-Use these as strong defaults. When they conflict with explicit user instructions, repo rules, security/compliance requirements, production incident constraints, or established local conventions, follow the higher-authority requirement and call out the tradeoff:
+Use these as strong defaults. When they conflict with explicit user instructions, repo rules, security/compliance requirements, production incident constraints, or established local conventions, follow the higher-authority requirement (explicit user instructions outrank established conventions) and call out the tradeoff:
 
 - Think before coding: surface assumptions, ambiguity, and tradeoffs before changing code.
 - Simplicity first: build the smallest correct solution for present requirements — real data volume, failure cost, and contract safety — not anticipated future ones, with no speculative machinery: features, abstractions, safeguards, or knobs no present requirement demands. Elegance is economy.
@@ -43,7 +43,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - For multi-step work, state each step with its verification check.
 
 3. Preserve system shape.
-   - Treat the codebase's existing structure — its system shape — and conventions as evidence and match them by default; when the current structure blocks the change or conflicts with these principles, propose the improvement with its reason.
+   - Treat the codebase's existing structure — its system shape — and conventions as evidence of taste, not proof: match them by default, but when the user's word or recent work is moving away from a pattern, extend the destination, not the legacy majority; when the current structure blocks the change or conflicts with these principles, propose the improvement with its reason.
    - Prefer domain or capability ownership over scattered technical-role buckets unless the repo already dictates otherwise.
    - Where the system is layered, keep responsibilities separate — boundary adapters validate and translate, core logic decides, and persistence or integration code performs I/O — unless the existing system already mixes them and the change is tiny.
    - In small scripts or single-file programs, do not introduce layers or indirection.
