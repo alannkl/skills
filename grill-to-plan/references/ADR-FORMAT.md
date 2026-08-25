@@ -23,6 +23,8 @@ Use ADRs for durable architectural or boundary decisions that are hard to revers
 Add these only when they clarify the decision:
 
 ```md
+Status: proposed | accepted | deprecated | superseded by ADR-NNNN
+
 ## Considered Options
 
 - {Option}: {why it was accepted or rejected}
@@ -31,6 +33,13 @@ Add these only when they clarify the decision:
 
 - {Important downstream effect}
 ```
+
+- `Status` sits directly under the title. When one ADR supersedes another, mark the old one `superseded by ADR-NNNN` rather than rewriting or deleting it.
+- In `Consequences`, state trade-offs as "we accept {X} in exchange for {Y}", and name anything a future reader might mistake for an oversight.
+
+## Staleness
+
+ADRs outlive the code they describe: avoid file paths and code snippets, which go stale silently. Exception: inline a snippet when it encodes the decision more precisely than prose can — a state machine, schema, or type shape — trimmed to its decision-rich parts.
 
 ## Numbering
 

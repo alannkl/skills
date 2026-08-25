@@ -34,14 +34,15 @@ Improve code understanding without changing behavior, structure, or public contr
    - Avoid unrelated files, even if nearby code could also benefit from documentation.
 
 2. Read enough surrounding context.
-   - Inspect callers, exported APIs, tests, types, nearby comments, existing docs, and local conventions when they explain intent.
+   - Inspect callers, exported APIs, tests, types, nearby comments, existing docs, and local conventions when they explain intent, plus commit and PR history — often the only place the why was recorded.
    - Understand the behavior before documenting it: inputs, outputs, side effects, error paths, lifecycle ordering, retries, idempotency, concurrency, persistence, and business rules.
    - Stop when you can state the behavior and the why behind each non-obvious part of the target.
-   - When intent remains unclear after reasonable reading, say so instead of inventing rationale.
+   - When intent remains unclear after reasonable reading, say so instead of inventing rationale: code that makes sense today may have been written for reasons that no longer apply, and a retrofitted rationale written into a comment becomes false documentation.
    - Prefer established project terms over inventing new vocabulary.
 
 3. Document only what helps understanding.
    - Document non-obvious invariants, assumptions, preconditions, and ownership rules, plus the tradeoffs, rejected alternatives, and compatibility or migration constraints behind them.
+   - Distinguish deliberate surprise from accidental: behavior forced by an external dependency, platform, or protocol, or chosen for a reason — a constraint, a tradeoff — earns a comment; confusing structure with no rationale behind it is a refactor target — route it to `Needs refactor, but not changed` rather than papering over it with a comment.
    - Clarify concurrency, ordering, cleanup, retry, backoff, and idempotency expectations, and fallback, failure-mode, or boundary behavior that is easy to misread.
    - Capture business or domain rules that are not obvious from syntax alone.
    - Describe private helper intent when a reader would reasonably ask why the helper exists.
@@ -51,10 +52,11 @@ Improve code understanding without changing behavior, structure, or public contr
 4. Leave clear code alone.
    - Add a comment only where a competent reader would otherwise pause to ask "why"; if you cannot name that question, leave the code uncommented.
    - Pin comments to intent and stable behavior so they stay correct when implementation details change.
-   - When each edge case would need its own comment, recommend a test in the summary instead of comment-listing them.
+   - When each edge case would need its own comment, recommend a test in the summary instead of comment-listing them. Likewise for a "must not change" invariant: document it, and recommend the cheapest enforceable check — a type, test, or lint — in the summary, because prose cannot enforce.
 
 5. Write documentation in the right place.
    - Default to a local comment. Use one whenever the rationale fits beside a single branch, helper, or call site.
+   - Name an invariant once at the boundary that owns it, not in every consumer: the reader learns it once, and copies cannot drift.
    - Choose a doc file only when all of these hold: the rationale is needed to understand code in two or more files or modules, it cannot sit next to any single one without losing context, and inlining it would repeat the same explanation in more than one place. When undecided, keep it local.
    - Keep one source of truth: put the full rationale in the doc file, then leave a short local comment that points to it only where a nearby reader needs the pointer and immediate rationale.
    - In focused doc files, use a diagram (sequence, state, flow) when cross-module structure, lifecycle, or ordering is easier to grasp visually than in prose. Follow the repo's existing diagram conventions if any; otherwise default to mermaid in markdown files. Never diagram what a sentence covers, and keep diagrams pinned to behavior that is stable, not implementation details that will drift.

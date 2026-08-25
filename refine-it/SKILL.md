@@ -17,17 +17,20 @@ disable-model-invocation: true
 
 2. Evaluate before rewriting.
    - Look for unclear purpose, weak structure, repetition, vague wording, hidden assumptions, missing context, tone mismatch, overclaiming, and unfinished parts — every section assessed against this list before any rewriting.
+   - Check grounding: a concept leaned on before it is introduced is a structural defect that reordering usually fixes. The unit is the concept, not the word — a passage can lean on an idea the reader lacks with no jargon in sight.
    - Separate refinement problems from strategy problems. Improve the current direction decisively without changing the artifact's goal, audience, or operational behavior unless the user asks.
    - If the artifact is already strong for its job, make only light polish or state that no substantive edits are needed; do not invent changes merely to produce a visibly different version.
 
 3. Refine and polish directly.
    - Produce a stronger version, not just critique, unless the user asks for review notes only.
-   - Cut filler and duplication, choose concrete verbs and nouns, sharpen hierarchy, make implicit decisions explicit.
+   - Cut filler and duplication, choose concrete verbs and nouns, sharpen hierarchy, make implicit decisions explicit. Whether a passage earns its place is a check, not a feeling: what breaks if it is cut, and what does it do for the reader that the previous one didn't?
+   - Choose form by content: prose carries argument; lists carry truly parallel items; a table earns its place when the same shape repeats three or more times; quote when the wording itself is the point. Headings carry the point, not just the topic.
    - Before trimming, identify protected terms — domain terms, qualifiers, constraints, intentionally specific phrasing — and keep them unless clearly redundant.
    - Add only content that follows clearly from the existing artifact.
    - In artifacts that instruct an executor — skills, runbooks, policies, agent prompts — cut clauses that change no behavior and add no judgment: pure emphasis, and rationale that only restates the rule it follows. Keep rationale that informs a call the reader has to make unaided.
    - If a refinement removes, renames, or compresses key terminology, mention that change in `Notes`.
    - Preserve the user's voice; keep casual, direct, or opinionated writing in its own register rather than flattening it into generic corporate prose.
+   - When a rule in this workflow makes a sentence worse, fix the sentence another way or leave it alone: the rules serve the reader, and a sentence that follows every rule but sounds machine-written has failed.
 
 4. Finalize the handoff.
    - Make a final compression pass over the refined version: prefer the shortest phrasing that preserves meaning, tone, and any explicitness added in step 3.
