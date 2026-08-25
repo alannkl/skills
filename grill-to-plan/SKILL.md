@@ -45,7 +45,7 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
 
 5. Resolve each question before moving on.
    - If the user wants discussion, stay on that question until there is a conclusion, explicit deferral, or a documented disagreement.
-   - If the user's reply is a question, objection, or request for clarification rather than a decision, switch to discussion mode: answer in detail in a normal message and end the turn there. Do not invoke the ask-question tool in that reply; let the user respond freely in conversation.
+   - If the user's reply is a question, objection, or request for clarification rather than a decision, switch to discussion: answer in detail in a normal message and end the turn there. Do not invoke the ask-question tool in that reply; let the user respond freely in conversation.
    - Return to the ask-question tool only after the discussion has converged or the user signals readiness to decide; the tool is for collecting decisions, not delivering explanations.
    - Before asking the next question, review the current conversation and the latest session record, then align the next question with what has already been decided.
 
@@ -53,7 +53,7 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - If the user's proposed decision appears wrong, risky, inconsistent, or inferior to an available alternative, do not silently comply.
    - Explain why the current approach or an alternative is better, state the concrete downside of the proposed choice, and ask whether the user wants to discuss or proceed anyway.
    - Continue only after the user confirms or gives a convincing counterargument.
-   - Record the final decision; create an ADR when it meets the ADR Rule.
+   - Record the final decision; create an ADR when it meets the ADR rule.
 
 7. Maintain project knowledge in documented mode.
    - Challenge terms that conflict with `CONTEXT.md`.
@@ -75,7 +75,7 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
 
 9. Finish with a synthesis sized to the mode.
    - Before synthesizing, sweep for silent assumptions: anything you relied on but never asked becomes an explicit decision, an open question, or a stated assumption in the record — present the plan as settled only when nothing remains silently assumed.
-   - Settle the definition of done with the user like any other decision: propose acceptance criteria as falsifiable checks, let the user confirm or correct them, and state the confirmed criteria in the synthesis — recorded in `plan.md` whenever one is written — the implementer inherits no checkable "done" from this conversation otherwise.
+   - Settle the definition of done with the user like any other decision: propose acceptance criteria as falsifiable checks, let the user confirm or correct them, and state the confirmed criteria in the synthesis, recorded in `plan.md` whenever one is written; the implementer inherits no checkable "done" from this conversation otherwise.
    - Always assume implementation happens in a different session, possibly by a different agent. The persistent documents (`plan.md`, `session.md`, ADRs) must be self-contained hand-offs. Every decision, constraint, research finding, naming choice, and integration contract needed for implementation must appear in them or a linked doc; the conversation is discarded context.
    - In lightweight mode, give the resolved decision, any explicit deferral, and the next step.
    - In documented mode, provide the full synthesis: resolved plan, decisions made, open questions, docs updated, risks, and next steps.
@@ -84,7 +84,7 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - Whenever a session record exists, also persist the final plan as `plan.md` next to `session.md`, following `references/SESSION-RECORD-FORMAT.md`. Overwrite it if the session resumes and the plan changes.
    - Keep `plan.md` forward-looking: what to build and in what order. Link to `session.md` for decision history instead of duplicating it.
 
-## ADR Rule
+## ADR rule
 
 Offer or create an ADR only when all three are true:
 

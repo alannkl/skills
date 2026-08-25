@@ -38,7 +38,7 @@ Draft commit-message text from the real git state. Default to Conventional Commi
    - If the user asks for a subject-only, short, or one-line message, return only this header.
 
 4. Write the body.
-   - For tiny single-purpose diffs, prefer a subject-only message unless a body adds needed context.
+   - Omit the body when the header alone covers the change, as it usually does for tiny single-purpose diffs.
    - For multi-part diffs, default to this base format:
 
      ```md
@@ -48,12 +48,10 @@ Draft commit-message text from the real git state. Default to Conventional Commi
      - <key behavior, feature, fix, or implementation change, including impact when meaningful>
      ```
 
-   - Omit `(scope)` when there is no meaningful scope.
-   - Omit the body when the header is enough or the user asked for a short message.
    - Prefer behavior-oriented bullets over file-by-file summaries.
    - Include code-level or business-logic impact when it clarifies why the change matters. Do not speculate beyond the diff and nearby context.
    - Include issue references only when they are present in the request, branch name, diff, or repo convention.
-   - Add `Required actions:` only for migrations, environment variables, manual steps, or operator follow-ups. Do not expose secret values.
+   - Add `Required actions:` only for migrations, environment variables, manual steps, or operator follow-ups.
    - Add `BREAKING CHANGE:` footer lines for breaking changes so Conventional Commit tooling can detect them.
 
 5. Validate before finalizing.

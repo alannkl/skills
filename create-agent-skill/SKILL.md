@@ -31,7 +31,7 @@ disable-model-invocation: true
 3. Write `SKILL.md`.
    - Start with YAML frontmatter containing at least `name` and `description`.
    - Add optional fields such as `license`, `compatibility`, `metadata`, or `allowed-tools` only when they carry useful information.
-   - Choose invocation by who must reach the skill. Make it model-invoked only when the agent must fire it on its own or another skill must load it; its description then stays in context on every turn, so write it following the Description Pattern section. Otherwise set `disable-model-invocation: true` and write the description as a one-line human-facing summary without trigger lists — zero context cost, and typing the name still invokes it.
+   - Choose invocation by who must reach the skill. Make it model-invoked only when the agent must fire it on its own or another skill must load it; its description then stays in context on every turn, so write it following the Description pattern section. Otherwise set `disable-model-invocation: true` and write the description as a one-line human-facing summary without trigger lists — zero context cost, and typing the name still invokes it.
    - When user-invoked skills multiply past easy recall, suggest a router skill: one user-invoked skill that names the others and when to reach for each. A router must be updated whenever a routed skill is added, renamed, or removed — a router that never mentions a new skill, or still routes to a stale one, lies.
    - Do not restate the description in the body. When the skill needs activation or scope rules the description cannot carry, put them in a `## Boundaries` section; skip the section when the description is already clear, and put execution defaults in the workflow steps.
    - Focus the body on procedures, defaults, examples, gotchas, scripts, and validation steps.
@@ -54,7 +54,7 @@ disable-model-invocation: true
    - For model-invoked skills, sanity-check the description against realistic positive prompts and near-miss negative prompts. Revise wording that is too broad or too narrow.
    - If formal evals would be useful, suggest them as a next step for the user; do not run manual evals as part of this workflow. When the user asks to evaluate, prune, or iterate on an existing skill, load `references/evaluating-skills.md`.
 
-## Description Pattern
+## Description pattern
 
 For model-invoked skills, keep the description under 1024 characters, in third person, with this structure:
 
@@ -85,11 +85,11 @@ description: ... Use when the user asks to review, check, audit, inspect, examin
 - Prefer a script when the operation is deterministic and either repeated or easy to get subtly wrong; otherwise use direct instructions or one-off commands.
 - If using one-off commands, pin versions and state prerequisites.
 - If bundling scripts, make them self-contained, non-interactive, idempotent, and runnable from the skill root with relative paths.
-- Scripts should provide concise `--help`, helpful errors, meaningful exit codes, safe defaults, and structured stdout with diagnostics on stderr.
+- Give scripts concise `--help`, helpful errors, meaningful exit codes, safe defaults, and structured stdout with diagnostics on stderr.
 - For destructive or stateful operations, include dry-run or explicit confirmation flags.
 - Run bundled scripts and exact commands end to end once before delivery — a skill whose executable content was never executed is a draft, not a deliverable. Exercise destructive or stateful operations through their dry-run, help, or confirmation paths or against disposable fixtures, never against real targets. Trigger tests and comparative evals stay a suggested next step.
 
-## Starter Shape
+## Starter shape
 
 ```md
 ---
@@ -110,7 +110,7 @@ description: Do a specific reusable task. Use when the user asks for concrete in
 - State the correct behavior for a case the agent gets wrong by default; name the mistake itself only when the correct form alone won't prevent it.
 ```
 
-## Quality Bar
+## Quality bar
 
 - The skill is a coherent unit of reusable work, not a general knowledge dump.
 - The instructions cover what the agent would likely get wrong without the skill and omit what it already knows.

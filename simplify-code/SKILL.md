@@ -5,7 +5,7 @@ description: Simplify source code for clarity, consistency, and maintainability 
 
 # Simplify Code
 
-Improve code clarity, consistency, and maintainability without changing behavior. Follow local project conventions. The result should be easier to read, debug, and maintain, with the same observable behavior and no broader scope than the original.
+Improve code clarity, consistency, and maintainability without changing behavior. Follow local project conventions. The result should be easier to read, debug, and maintain, with no broader scope than the original.
 
 ## Scope
 
@@ -23,7 +23,7 @@ Improve code clarity, consistency, and maintainability without changing behavior
    - Understand the externally observable behavior: inputs, outputs, side effects, error handling, rendered output, accessibility semantics, persistence, public API shape, serialization, ordering, timing, and user-visible text.
    - Check nearby tests or examples before changing subtle logic; use them to anchor behavior when available.
    - Check recorded rationale — ADRs, design docs, constraint comments — before simplifying deliberate complexity; a recorded decision is not this pass's to re-litigate.
-   - Note any ambiguity that could change behavior; proceed on reasonable assumptions, but stop and ask only when guessing wrong about intent could change observable behavior.
+   - Note any ambiguity; proceed on reasonable assumptions, but stop and ask only when guessing wrong about intent could change observable behavior.
 
 2. Find meaningful simplifications.
    - Reduce unnecessary branching, nesting, duplication, and indirection.
@@ -31,7 +31,7 @@ Improve code clarity, consistency, and maintainability without changing behavior
    - Delete dead code: provably unreachable branches, unused symbols, unused parameters. A guard that can still fire is behavior — keep it unless proven unreachable.
    - Consolidate nearly identical branch bodies when only small payload fields differ.
    - Avoid nested ternaries; use a switch or if/else chain when there are multiple conditions.
-   - Prefer concise direct mappings for simple binary or enum mappings when readable, such as `A -> x` and `B -> y`.
+   - Prefer concise direct mappings for simple binary or enum cases when readable, such as `A -> x` and `B -> y`.
    - Group related logic; keep separate concerns in separate units.
    - Favor compact, DRY implementations when they remain clear and debuggable, but keep small one-off decisions inline when extracting a helper would add naming overhead without reuse.
    - Prefer the simplest readable form; do not expand code only to appear more explicit.

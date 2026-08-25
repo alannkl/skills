@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Shorten It
 
-Shorten existing text without changing its job, claims, audience, or voice — and adding nothing.
+Shorten existing text without changing its job, claims, audience, or voice. Add nothing.
 
 ## Workflow
 
@@ -20,6 +20,6 @@ Shorten existing text without changing its job, claims, audience, or voice — a
 
 3. Return the shortened text.
    - Follow any requested length or format.
-   - Change text only where a cut or merge happened; leave untouched sentences worded as they were.
+   - Change text only where a cut or merge happened.
    - Output only the shortened version.
    - If the requested length would require losing important meaning, say so briefly.
