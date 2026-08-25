@@ -22,6 +22,7 @@ disable-model-invocation: true
    - Note adjacent requests and near-misses that should not trigger it.
    - Decide whether the skill needs instructions only or also references, scripts, assets, templates, or sample files.
    - Ground the skill in real expertise — completed tasks, user corrections, project docs, runbooks, schemas, review comments, issues, or patches — and collect the reference material it should preserve.
+   - Before encoding a lesson as instructions, check whether a mechanism can enforce it instead — a lint rule, a type, a runtime check, a script. Encode it in the skill's own artifacts (a bundled script, a hook) when it fits there and skip the sentence; when the mechanism belongs in the target repo, recommend it rather than editing beyond the skill. Prose is the fallback, not the default.
 
 2. Choose the skill name and location.
    - Use a directory name that matches the `name` field: 1-64 characters of lowercase letters, numbers, and hyphens.
@@ -31,9 +32,10 @@ disable-model-invocation: true
    - Start with YAML frontmatter containing at least `name` and `description`.
    - Add optional fields such as `license`, `compatibility`, `metadata`, or `allowed-tools` only when they carry useful information.
    - Choose invocation by who must reach the skill. Make it model-invoked only when the agent must fire it on its own or another skill must load it; its description then stays in context on every turn, so write it following the Description Pattern section. Otherwise set `disable-model-invocation: true` and write the description as a one-line human-facing summary without trigger lists — zero context cost, and typing the name still invokes it.
-   - When user-invoked skills multiply past easy recall, suggest a router skill: one user-invoked skill that names the others and when to reach for each.
+   - When user-invoked skills multiply past easy recall, suggest a router skill: one user-invoked skill that names the others and when to reach for each. A router must be updated whenever a routed skill is added, renamed, or removed — a router that never mentions a new skill, or still routes to a stale one, lies.
    - Do not restate the description in the body. When the skill needs activation or scope rules the description cannot carry, put them in a `## Boundaries` section; skip the section when the description is already clear, and put execution defaults in the workflow steps.
    - Focus the body on procedures, defaults, examples, gotchas, scripts, and validation steps.
+   - Pin the output contract: what a finished run delivers, with terminal outcomes enumerated when the work can end more than one way. For audit, review, and maintenance skills, make the empty outcome first-class — "nothing worth changing" is a complete result, not a report to pad.
    - Anchor recurring concepts on leading words: compact terms the user's prompts and the domain already use, repeated as the same token across the description and body. Collapse spelled-out enumerations and paraphrases into the word instead of restating the idea in new phrasing.
    - Give workflow steps a checkable done-condition where one naturally exists, and prefer exhaustive phrasing ("every changed file reviewed") over vague phrasing ("review the changes"). For judgment steps with no objective criterion, cover their outcome with concrete checks in a final validation step instead of forcing an artificial metric.
    - Write every body line for the agent executing the skill. Omit authoring rationale, request history, and explanations of the skill's shape.
@@ -41,7 +43,7 @@ disable-model-invocation: true
    - Prefer a self-contained skill that works with no other skill installed. When the workflow genuinely needs another skill, declare the dependency explicitly: name it and instruct the agent to load it at the step that uses it. Do not copy or summarize that skill's guidance as a substitute for the dependency.
 
 4. Apply progressive disclosure.
-   - Decide branch by branch: keep in `SKILL.md` what every run needs; push what only some branches reach into a supporting file behind a pointer that states when to load it.
+   - Decide branch by branch: keep in `SKILL.md` what every run needs; push what only some branches reach into a supporting file behind a pointer that states when to load it — worded so the branch that needs the target cannot miss it, or the file gets loaded only sometimes.
    - Treat ~100 non-empty body lines as a smell that inline material belongs behind a pointer, not a limit or target; prioritize completeness and correctness over size.
    - A narrow instruction-only skill needs no supporting files: a single `SKILL.md` with the shortest workflow that covers the decisions the agent would get wrong, plus gotchas, examples, and validation only where they prevent likely mistakes.
    - Move detailed documentation into `references/`, and reusable templates, images, sample files, or static data into `assets/`; the Scripts section governs `scripts/`. Keep supporting resources one level deep, relative to the skill directory.
@@ -85,6 +87,7 @@ description: ... Use when the user asks to review, check, audit, inspect, examin
 - If bundling scripts, make them self-contained, non-interactive, idempotent, and runnable from the skill root with relative paths.
 - Scripts should provide concise `--help`, helpful errors, meaningful exit codes, safe defaults, and structured stdout with diagnostics on stderr.
 - For destructive or stateful operations, include dry-run or explicit confirmation flags.
+- Run bundled scripts and exact commands end to end once before delivery — a skill whose executable content was never executed is a draft, not a deliverable. Exercise destructive or stateful operations through their dry-run, help, or confirmation paths or against disposable fixtures, never against real targets. Trigger tests and comparative evals stay a suggested next step.
 
 ## Starter Shape
 
@@ -111,8 +114,10 @@ description: Do a specific reusable task. Use when the user asks for concrete in
 
 - The skill is a coherent unit of reusable work, not a general knowledge dump.
 - The instructions cover what the agent would likely get wrong without the skill and omit what it already knows.
+- The environment is a source of truth: cache what the agent cannot find by looking — the unwritten convention, the reason behind a choice, the gotcha no config confesses — and leave one-file, one-command lookups (`package.json` scripts, `--help` output, directory layout) to the environment, where they cannot go stale.
 - Every instruction should change behavior in some situation. Cut sentences no agent could act on differently — "check your tools", "use judgment", "be thorough" — and hedges that restate what the harness already guarantees.
 - State each rule once, where it applies. Cut restatements of a rule elsewhere in the skill, including gotchas that only negate a rule the workflow already states.
+- Keep a concept's definition, rules, and caveats under one heading. Duplication repeats one meaning in two places; scattering fragments it across many — both fail.
 - Defaults are clear; alternatives appear only when they change a decision.
 - Every prohibition names what to do instead.
 - Reserve prescriptive steps for fragile operations; for flexible tasks, explain intent.

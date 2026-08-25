@@ -39,7 +39,7 @@ Scale every later phase to the preset. In a quick spark, Phase 2's turn discipli
 
 ## Phase 1 — Frame
 
-Goal: a confirmed **How Might We (HMW) statement** — the problem reframed as an open question that invites solutions (e.g. "How might we make onboarding feel finished in under a minute?") — plus known constraints, written at the top of the idea file. Framing is a gate, not a phase to savor — 3–5 questions maximum, fewer if the topic is already sharp; if still fuzzy at the cap, start ideating anyway and re-frame mid-session rather than asking more. Batch questions into structured choices where possible (reacting to options is less fatiguing than composing answers, and a wrong option provokes the useful correction).
+Goal: a confirmed **How Might We (HMW) statement** — the problem reframed as an open question that invites solutions (e.g. "How might we make onboarding feel finished in under a minute?") — plus known constraints, written at the top of the idea file. Answer what you can from available context before spending questions on it — prior idea files in `docs/brainstorm/`, ADRs, repo docs: "already tried or ruled out" is often already recorded. Framing is a gate, not a phase to savor — 3–5 questions maximum, fewer if the topic is already sharp; if still fuzzy at the cap, start ideating anyway and re-frame mid-session rather than asking more. Batch questions into structured choices where possible (reacting to options is less fatiguing than composing answers, and a wrong option provokes the useful correction).
 
 Dig for, in priority order:
 

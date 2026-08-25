@@ -31,6 +31,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - If multiple materially different interpretations exist, present them with a clear recommendation instead of picking silently.
    - When a materially simpler or more capable design exists, present it with the tradeoff and a recommendation; build it only if the user takes the bet.
    - For a bug fix, treat the report as a symptom, not the cause: trace the callers of the code you touch and fix the shared cause once, rather than patching only the path the report names and leaving sibling callers broken — the smallest change in the wrong place is a second bug.
+   - When the cause is not already evident, read [Diagnosing Bugs](references/diagnosing-bugs.md) and diagnose before fixing.
 
 2. Define the smallest verifiable plan.
    - Convert the request into concrete success criteria, each written as an observable check: a command to run, an expected output, or an assertion — not a vague goal. ("`GET /users/:id` returns 404 for unknown ids" beats "handle missing users".)
@@ -40,7 +41,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - If no one is available to answer, choose the most reversible interpretation, state the assumption prominently in the handoff, and proceed.
    - When mid-implementation discovery contradicts the agreed plan, take the most reversible option that honors the plan's intent, record the deviation in a notes file (preferred over commit messages or PR descriptions; the handoff summary is not a record), and surface it in the handoff.
    - If the discovery invalidates the plan's premise, stop and re-plan instead of pushing through.
-   - For multi-step work, state each step with its verification check.
+   - For multi-step work, state each step with its verification check and run it before starting the next step; in a sweep of similar edits, verify each edit as it lands — never batch the edits and verify once at the end.
 
 3. Preserve system shape.
    - Treat the codebase's existing structure — its system shape — and conventions as evidence of taste, not proof: match them by default, but when the user's word or recent work is moving away from a pattern, extend the destination, not the legacy majority; when the current structure blocks the change or conflicts with these principles, propose the improvement with its reason.
@@ -59,12 +60,13 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - In library or public-API code, extension points promised by the published contract are requirements, not speculation.
    - Prefer meaningful modules with small, honest interfaces over shallow pass-through wrappers.
    - Ask: "Would this look overcomplicated during review?" If yes — or if the solution is growing much larger than the problem suggests — stop and simplify.
-   - Zoom out on friction, not just failure: a third special case on the same mechanism, a fix that needs its own fix, or working around the existing design rather than with it signal the path is wrong even while each step succeeds. Restate the problem one level up — the outcome the code serves, not the current mechanism — and check for a simpler path; staying the course is then a stated decision, not a default.
+   - Zoom out on friction, not just failure: a third special case on the same mechanism, a growing if/else chain, a second boolean that must stay in sync with the first, a fix that needs its own fix, or working around the existing design rather than with it signal the path is wrong even while each step succeeds. Restate the problem one level up — the outcome the code serves, not the current mechanism — and check for a simpler path; often a structure (a state machine, lookup table, or discriminated union) replaces the branch pile. Staying the course is then a stated decision, not a default.
+   - In typed languages, make illegal states unrepresentable where partiality appears (`completed: boolean` beside an optional `completedAt` invites impossible combinations), and do not lie to the type system with casts or silencing escapes; strengthen a type only where partiality shows, then stop.
    - Reuse official or canonical domain types and APIs when available; do not invent local aliases that drift from the source of truth.
    - Suggest or add high-quality dependencies when they reduce complexity, risk, or maintenance burden; account for security, licensing, bundle size, compatibility, and repo fit before adopting them.
 
 5. Handle data, errors, and concurrency deliberately.
-   - Validate untrusted input at boundaries and map external shapes to a canonical model kept within each context.
+   - Validate untrusted input at boundaries and map external shapes to a canonical model kept within each context. Past a validated boundary, trust the types: no redundant re-validation deep in call chains — the test is "is this data crossing a system boundary right now?" High-stakes invariants (money, authorization) can still earn internal assertions.
    - Treat authorization, injection risks, secrets, personal data, and least-privilege access as part of the design, not as afterthoughts.
    - When changing stored data, configs, queues, or external contracts, account for old data, mixed versions, migrations, defaults, and rollback behavior.
    - Make errors actionable with enough context to diagnose.
@@ -90,6 +92,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
 8. Validate and finish cleanly.
    - Run the most relevant formatter, linter, typecheck, test, build, or targeted smoke check available.
    - If a full check is expensive or unavailable, run the narrowest meaningful check and state the gap.
+   - For a risky change, name the single fact its safety hinges on and verify that fact by running code, not by argument — a written justification reads as convincing whether or not it is true. Check impact where symbol search stops: serialized data, wire formats, readers in other languages, feature flags. A search that finds nothing is still an answer worth recording.
    - Review the diff: every changed line should trace to the request or to cleanup caused by your change.
    - Keep changes reviewable: avoid unrelated churn, explain non-obvious tradeoffs, and make contract or migration effects explicit.
    - Remove unused imports, variables, functions, and branches introduced by your edit.

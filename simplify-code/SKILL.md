@@ -22,10 +22,13 @@ Improve code clarity, consistency, and maintainability without changing behavior
    - Read the relevant files, local conventions, and nearby patterns before editing.
    - Understand the externally observable behavior: inputs, outputs, side effects, error handling, rendered output, accessibility semantics, persistence, public API shape, serialization, ordering, timing, and user-visible text.
    - Check nearby tests or examples before changing subtle logic; use them to anchor behavior when available.
+   - Check recorded rationale — ADRs, design docs, constraint comments — before simplifying deliberate complexity; a recorded decision is not this pass's to re-litigate.
    - Note any ambiguity that could change behavior; proceed on reasonable assumptions, but stop and ask only when guessing wrong about intent could change observable behavior.
 
 2. Find meaningful simplifications.
    - Reduce unnecessary branching, nesting, duplication, and indirection.
+   - Shrink state scope with behavior-preserving moves: prefer returns over mutations, locals over fields, fields over module state; derive values instead of keeping copies in sync. The test: a new reader can answer "where does X come from?" and "what can change X?" without a search.
+   - Delete dead code: provably unreachable branches, unused symbols, unused parameters. A guard that can still fire is behavior — keep it unless proven unreachable.
    - Consolidate nearly identical branch bodies when only small payload fields differ.
    - Avoid nested ternaries; use a switch or if/else chain when there are multiple conditions.
    - Prefer concise direct mappings for simple binary or enum mappings when readable, such as `A -> x` and `B -> y`.
@@ -33,7 +36,7 @@ Improve code clarity, consistency, and maintainability without changing behavior
    - Favor compact, DRY implementations when they remain clear and debuggable, but keep small one-off decisions inline when extracting a helper would add naming overhead without reuse.
    - Prefer the simplest readable form; do not expand code only to appear more explicit.
    - Improve unclear variable, function, prop, or type names when the better name reflects established project language.
-   - Add or remove an abstraction only on a real payoff — reduced complexity, isolated behavior, testability, reuse, or domain meaning; keep abstractions that carry any of these.
+   - Add or remove an abstraction only on a real payoff — reduced complexity, isolated behavior, testability, reuse, or domain meaning; keep abstractions that carry any of these. Collapse layers that earn nothing: wrappers with one caller, adapters with no second implementation, indirection built for a future that never came. The deletion test: imagine deleting the unit — if complexity vanishes it was a pass-through; if it reappears across the callers it was earning its keep.
    - Reject a refactor if it increases cognitive load without a clear payoff.
    - Remove comments that explain obvious syntax or control flow, but preserve comments that explain intent, tradeoffs, invariants, or non-obvious behavior.
    - Remove commented-out code only when it is clearly stale noise and local practice supports doing so; otherwise leave it or ask.

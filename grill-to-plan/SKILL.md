@@ -30,7 +30,7 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
 
 3. Use available context before asking.
    - Answer discoverable questions yourself: inspect the codebase, docs, issue tracker, or session log first and report what you found; ask only what exploration cannot settle.
-   - If a needed fact requires lengthy exploration, do not stall the session: move on to questions that do not depend on it and fold the finding in when it arrives.
+   - If a needed fact requires lengthy exploration, do not stall the session: start the exploration in the background when the harness allows, move on to questions that do not depend on it, and fold the finding in when it arrives.
    - Look for `CONTEXT-MAP.md`, `CONTEXT.md`, and `docs/adr/` when the discussion touches domain language or architecture.
 
 4. Ask one question at a time by default.
@@ -38,8 +38,9 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - Ask only non-obvious questions: architecture-changing ones first, detail-tuning last.
    - Probe domain relationships with concrete edge-case scenarios that force precise boundaries.
    - When genuine alternatives exist, present 2-4 candidates — answers or options you propose — each with a trade-off phrase, and mark your recommendation with its reasoning. If more than 4 are viable, split the decision or name the pruned rest.
+   - Alongside the candidates, always offer a way into discussion — a final "discuss / re-explain this" option in a structured choice, or a standing invitation in plain text. When the user takes it, re-pitch before discussing: restate the question plainly, supply the premise behind it, and use the session's canonical terms.
    - Use the ask-question tool (structured tool for putting a question with options to the user) when one is available; otherwise number the same candidates in a plain chat message and invite a reply by number or free text. The option set must never depend on the tool.
-   - Batch questions into a single ask-question call only when they are truly independent — no answer could change another — and low-stakes, detail-tuning rather than architecture-changing. If a batched answer sparks discussion, return to that question on its own.
+   - Prefer batching related light questions — grouped by topic in a single ask-question call — when they are truly independent: no answer could change another, and all are detail-tuning rather than architecture-changing. Coupled or architecture-changing questions stay one at a time. If a batched answer sparks discussion, return to that question on its own.
    - After resolving each branch, briefly note which branches remain. Offer to close out the rest in bulk — present your recommendations for the remaining decisions and let the user accept, tweak, or defer them — when answers turn terse, when the user repeatedly says to just decide, or as a checkpoint after every 10 resolved questions regardless of signals. A "just decide" settles only the question it answers, not the rest.
 
 5. Resolve each question before moving on.
@@ -74,6 +75,7 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
 
 9. Finish with a synthesis sized to the mode.
    - Before synthesizing, sweep for silent assumptions: anything you relied on but never asked becomes an explicit decision, an open question, or a stated assumption in the record — present the plan as settled only when nothing remains silently assumed.
+   - Settle the definition of done with the user like any other decision: propose acceptance criteria as falsifiable checks, let the user confirm or correct them, and state the confirmed criteria in the synthesis — recorded in `plan.md` whenever one is written — the implementer inherits no checkable "done" from this conversation otherwise.
    - Always assume implementation happens in a different session, possibly by a different agent. The persistent documents (`plan.md`, `session.md`, ADRs) must be self-contained hand-offs. Every decision, constraint, research finding, naming choice, and integration contract needed for implementation must appear in them or a linked doc; the conversation is discarded context.
    - In lightweight mode, give the resolved decision, any explicit deferral, and the next step.
    - In documented mode, provide the full synthesis: resolved plan, decisions made, open questions, docs updated, risks, and next steps.

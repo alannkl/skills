@@ -64,6 +64,10 @@ Date: {yyyy-mm-dd}
 
 {The final synthesis: what to build and in what order, led by the parts most likely to be revised.}
 
+## Acceptance Criteria
+
+- {Falsifiable check confirmed with the user; the plan is done when every check passes}
+
 ## Open Questions
 
 - {Deferred decision and when it must be resolved}
@@ -80,6 +84,7 @@ See [session.md](session.md) for the decision history.
 - Write both documents as cross-session hand-offs. Implementation happens in a fresh session without this conversation, so every decision, constraint, verified research finding, and integration contract the implementer needs must be in these documents or linked from them.
 - Update `session.md` after each resolved question before asking the next one.
 - Keep entries concise enough to guide the next question.
+- Phrase open questions as questions, not assertions, so the human's answer is the resolution.
 - Do not duplicate ADRs; link to them when they exist.
 - Keep `plan.md` forward-looking; do not restate the question log or the reasoning behind settled decisions — link to `session.md` instead.
 - Overwrite `plan.md` when a resumed session changes the plan; the pair should always reflect the latest settled state.
