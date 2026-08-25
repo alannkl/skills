@@ -111,6 +111,7 @@ Referencing the skill by name works for any install scope. If your agent does no
 
 Background notes and research behind these skills:
 
+- [Philosophy](docs/philosophy.md) — a standalone article of personal beliefs about engineering with AI.
 - [Working with Agents](docs/working-with-agents.md) — human-facing principles for directing an agent to complete tasks, synthesized from Anthropic, OpenAI, Microsoft Research, Ethan Mollick, Simon Willison, and academic human-AI collaboration research. Its agent-side counterpart is the [Collaboration Constitution](#agentsmd) above.
 - [Codebase Structure Principles](docs/codebase-structure.md) — durable principles for organizing code around ownership, change patterns, dependency direction, and module boundaries.
 - [Behavior-First Testing for Agentic Coding](docs/behavior-first-testing-for-agentic-coding.md) — a behavior-scaffold workflow that establishes intended behavior before the change's code or executable test mechanics exist to bias it.
