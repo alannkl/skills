@@ -128,6 +128,8 @@ Before reporting a finding, check that it has:
 - a severity that matches impact, likelihood, and confidence;
 - a specific fix or next step.
 
+Write each finding for a reader who may not have written or even read the code: open with the context needed to situate it — what the code is responsible for, in a line — then state the wrong behavior in one plain sentence before the mechanism, and let the evidence trace the path from trigger to wrong outcome so the reader follows it instead of re-deriving it. When the defect survives because the code invites a natural-but-wrong reading, name that reading and correct it — dislodging the wrong model beats stating the fact beside it. When the mechanism is too tangled to hold in prose — ordering, concurrency, state transitions — shrink the failing case to a minimal toy world (two writers, a three-slot queue) or draw a small mermaid diagram; never illustrate what a sentence covers.
+
 Review in the language and conventions present in the diff. The example below illustrates the shape of a strong finding, not its domain.
 
 Good finding:
