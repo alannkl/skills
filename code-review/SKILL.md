@@ -11,7 +11,7 @@ Review concrete code changes to protect behavior, contracts, users, operators, a
 
 Apply principal-engineer judgment: reconstruct intent, reason from evidence and first principles, and question assumptions that affect correctness.
 
-## Core Principles
+## Core principles
 
 - Prioritize correctness, security, regressions, data integrity, and contract safety over style and preference.
 - Respect repository rules, project architecture, framework conventions, and user instructions over generic advice.
@@ -30,7 +30,7 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
    - Inspect changed files, related tests, called functions, imported modules, neighboring code, and contract-defining files as needed.
    - Identify public surfaces touched: APIs, CLI flags, config, schemas, migrations, events, persisted data, permissions, external integrations, and serialized formats.
    - For generated or mechanical diffs, inspect the generator, source rule, or representative output instead of line-reviewing noise.
-   - Bound the reading: stay within the change's blast radius: the changed code and what it directly affects or depends on. Stop expanding once you can defend each finding's evidence; do not read the whole repository to chase hypothetical risk.
+   - Bound the reading to the change's blast radius: the changed code and what it directly affects or depends on. Stop expanding once you can defend each finding's evidence; do not read the whole repository to chase hypothetical risk.
 
 3. Scan by risk, not file order.
    - Map every changed file and touched public surface to at least one risk category below, or explicitly clear it, before deciding which findings are worth reporting.
@@ -75,14 +75,14 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
    - **Do not report:** guessed intent without concrete evidence; broad rewrites when a local fix addresses the issue; breakage that is the change's stated, scope-constrained intent (a removed flag, a deleted feature) unless its impacts look under-weighed; or issues the repo's linter, formatter, or type-checker already catches. The `Bad findings` examples below show the other shapes to reject.
 
 8. Self-check before finalizing.
-   - Confirm every finding meets the `Finding Quality` checklist below; drop any that do not, and apply the severity-calibration rule from Step 7 to anything uncertain.
+   - Confirm every finding meets the `Finding quality` checklist below; drop any that do not, and apply the severity-calibration rule from Step 7 to anything uncertain.
    - Remove findings that would require the author to "check" something the reviewer can inspect, unless the next step is a specific test or measurement that cannot be run in the current environment.
 
-## Output Format
+## Output format
 
 Start with findings ordered by severity. Keep scope concise and place it after findings unless the user explicitly asks for a different format. If there are no findings, start with `No findings in the reviewed scope.`
 
-For small reviews (a narrow diff with one or few findings), `Findings`, `Scope`, and `Tests / checks` are sufficient; omit the other sections unless they carry real information. Always include `Tests / checks`, and residual risks when checks were not run or context was unavailable.
+For small reviews (a narrow diff with one or few findings), `Findings`, `Scope`, and `Tests / checks` are sufficient; omit the other sections unless they carry real information. Always include `Tests / checks`; include `Residual risks` when checks were not run or context was unavailable.
 
 Use this structure:
 
@@ -118,7 +118,7 @@ Use this structure:
 - <smallest actionable review follow-ups for the code author>
 ```
 
-## Finding Quality
+## Finding quality
 
 Before reporting a finding, check that it has:
 

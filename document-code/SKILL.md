@@ -5,7 +5,7 @@ description: Improve source-code understanding with useful comments, API docs, o
 
 # Document Code
 
-Improve code understanding without changing behavior, structure, or public contracts. Add documentation only where it improves understanding: enough to explain relevant intent, invariants, and non-obvious tradeoffs without restating clear code.
+Improve code understanding without changing behavior, structure, or public contracts. Add documentation only where it earns its place: enough to explain intent, invariants, and non-obvious tradeoffs without restating clear code.
 
 ## Scope
 
@@ -16,7 +16,7 @@ Improve code understanding without changing behavior, structure, or public contr
 - Exclude docs, JSON, YAML, lockfiles, generated files, images, and other non-code files unless the user explicitly asks to edit them.
 - If no source-code files remain after filtering, report that there is nothing to document and make no changes.
 
-## Hard Constraints
+## Hard constraints
 
 - Do not edit executable behavior.
 - Do not rename symbols, reorder logic, simplify code, extract helpers, restructure files, or change formatting.
@@ -66,15 +66,14 @@ Improve code understanding without changing behavior, structure, or public contr
    - Follow the repository's comment style, language-specific documentation conventions, capitalization, punctuation, and terminology.
    - Keep comments close to the code they explain.
    - Prefer concise comments over block comments unless a public API or multi-step invariant needs structure.
-   - Preserve useful existing comments; update stale or misleading comments only when they are within scope.
-   - When documenting changed code, review existing comments and docstrings in the touched area and update any that no longer match the implementation, behavior, constraints, or public contract.
+   - Preserve useful existing comments, and update stale or misleading ones only within the target: review existing comments and docstrings in the touched area and fix any that no longer match the implementation, behavior, constraints, or public contract.
 
 7. Validate the result.
    - Re-read the diff and confirm only comments, docstrings, or explicitly needed docs changed.
    - Confirm executable code, formatting-only structure, generated files, and unrelated files were not touched.
    - Check that every added comment explains intent, rationale, constraints, or non-obvious behavior.
    - Run the narrowest relevant validation if available, such as lint or docs checks, when comments or docstrings can affect tooling.
-   - If checks are unavailable or unnecessary for a comments-only change, state that clearly.
+   - If checks are unavailable or unnecessary for a comments-only change, say so.
 
 ## Output
 

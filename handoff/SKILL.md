@@ -50,14 +50,14 @@ Create a temporary Markdown checkpoint for a fresh agent. The checkpoint complem
 
 6. Validate before responding.
    - Re-read the saved file and scan it for unredacted secrets, credentials, personal data, and sensitive URL parameters.
-   - Confirm the file exists, is readable, has all required sections, and is located in the OS temporary directory rather than the current workspace.
+   - Confirm the file has all required sections and is located in the OS temporary directory rather than the current workspace.
    - Confirm each referenced local artifact exists. Mark an external URL you could not verify as unverified rather than presenting it as checked.
    - Confirm the document does not duplicate the substance of referenced artifacts.
    - Apply the content bar: the handoff is done when the next agent could continue without asking the user to repeat anything from this conversation. Fill any gap that fails this test, or name it explicitly in `Continuation notes`.
 
-## Response Format
+## Response format
 
-Return the saved document first as a clickable file link when the interface supports local links; otherwise return its absolute path. Do not reproduce the handoff document in chat — the link (or path), and nothing else.
+Return the saved document first as a clickable file link when the interface supports local links; otherwise return its absolute path. Do not reproduce or summarize the handoff document in chat — the link (or path) stands in for it.
 
 Then provide exactly one copyable fenced block based on this instruction, filled with the actual path and focus:
 

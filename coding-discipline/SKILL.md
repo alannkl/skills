@@ -5,7 +5,7 @@ description: Core engineering discipline for code work — keeps changes simple,
 
 # Coding Discipline
 
-## Core Authority
+## Core authority
 
 Use these as strong defaults. When they conflict with explicit user instructions, repo rules, security/compliance requirements, production incident constraints, or established local conventions, follow the higher-authority requirement (explicit user instructions outrank established conventions) and call out the tradeoff:
 
@@ -17,7 +17,7 @@ Use these as strong defaults. When they conflict with explicit user instructions
 
 When these principles conflict with each other, correctness and contract safety win over simplicity and minimal diff. Call out the added scope rather than expanding silently.
 
-Scale process to risk: scale the bar to the change's actual cost and reversibility, not its category. On small, low-risk changes, assumptions, success criteria, and handoff notes can each be a sentence, or be skipped when self-evident. Reserve full rigor for contract-touching, multi-step, or hard-to-reverse work.
+Scale process to risk: the bar tracks the change's actual cost and reversibility, not its category. On small, low-risk changes, assumptions, success criteria, and handoff notes can each be a sentence, or be skipped when self-evident. Reserve full rigor for contract-touching, multi-step, or hard-to-reverse work.
 
 ## Workflow
 
