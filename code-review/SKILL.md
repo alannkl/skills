@@ -66,6 +66,8 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
    - Suggest the smallest coherent stage based on real dependencies, affected call sites, and migration order — for example schema, then core logic, then wiring, then UI, then tests.
 
 7. Convert observations into findings.
+   - Report findings as one batch: complete the read-only scan (Steps 1–6) across the whole review surface before presenting any finding, then deliver the full set in a single report. Findings accumulate during the scan; stop mid-scan only when the review premise is invalid — wrong branch or target, unusable scope — or continuing would be unsafe, such as exposed live credentials needing immediate action.
+   - Merge findings that share a root cause into one finding listing every affected location.
    - Calibrate severity by impact, likelihood, and confidence. Do not escalate severe but unproven risk without evidence; report it at a lower severity with the assumption or uncertainty stated.
    - `Critical`: exploitable security issue, data loss or corruption, system-breaking regression, broken public contract, or complete logic failure.
    - `High`: likely user-visible bug, severe regression, broken migration or rollback path, major performance issue, or explicit project-rule violation.
