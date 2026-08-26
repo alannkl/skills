@@ -81,6 +81,7 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - In documented mode, provide the full synthesis: resolved plan, decisions made, open questions, docs updated, risks, and next steps.
    - Order the plan by likelihood of revision: lead with the decisions the user is most likely to tweak (data models, type interfaces, user-facing behavior) and put mechanical or well-understood work last.
    - Use a diagram (flow, sequence, state, dependency) in the synthesis and in `plan.md` or `session.md` when structure — component interactions, data flow, decision branches, build order — is easier to grasp visually than in prose. Write diagrams in mermaid, in chat and in the records alike, unless the repo's existing docs use another diagram convention. Never diagram what a sentence covers.
+   - Offer an alignment quiz alongside the synthesis: a short multiple-choice round checking the user and the plan agree on how the planned system should behave — probing behaviors the user never reasoned through and the plan's critical paths. On acceptance, read `references/ALIGNMENT-QUIZ.md` and follow it; fold any changed decision back into the synthesis and records.
    - Whenever a session record exists, also persist the final plan as `plan.md` next to `session.md`, following `references/SESSION-RECORD-FORMAT.md`. Overwrite it if the session resumes and the plan changes.
    - Keep `plan.md` forward-looking: what to build and in what order. Link to `session.md` for decision history instead of duplicating it.
 
