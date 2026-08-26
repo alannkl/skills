@@ -18,11 +18,11 @@ Each skill lives in its own directory and follows the [agentskills.io specificat
 
 ### Reviewing
 
-| Skill                                               | Description                                                                                                                                                  |
-| --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| [`code-review`](code-review/SKILL.md)               | Produce findings-led code review reports for concrete code changes.                                                                                          |
-| [`adversarial-review`](adversarial-review/SKILL.md) | Hunt material failures in a diff, branch, or files. Return structured findings with failure scenarios, but never apply fixes.                                |
-| [`review-triage`](review-triage/SKILL.md)           | Triage review findings as the code's owner. Validate each, weigh fix cost against deployed complexity, and return dispositions instead of fixing everything. |
+| Skill                                               | Description                                                                                                                                                                                                |
+| --------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`code-review`](code-review/SKILL.md)               | Produce findings-led code review reports for concrete code changes.                                                                                                                                        |
+| [`adversarial-review`](adversarial-review/SKILL.md) | Hunt material failures in a diff, branch, or files. Return structured findings with failure scenarios, but never apply fixes.                                                                              |
+| [`review-triage`](review-triage/SKILL.md)           | Triage review findings as the code's owner. Validate each, weigh fix cost against deployed complexity, and return dispositions instead of fixing everything.                                               |
 | [`review-panel`](review-panel/SKILL.md)             | Run a parallel panel of reviewer models, then merge findings, triage, fix, and verify. Spawns several agent sessions (cost scales with preset); strongest with multiple harnesses installed. User-invoked. |
 
 ### Planning
@@ -51,6 +51,12 @@ Most skills are user-invoked (`disable-model-invocation: true`): they load only 
 
 ## Installation
 
+This repo plus the two [recommended](#recommended-skills) skills, globally:
+
+```bash
+npx skills add alannkl/skills --all -g -y && npx skills add mattpocock/skills --skill writing-for-agents -g -y && npx skills add cursor/plugins --skill unslop -g -y
+```
+
 ### Skills CLI
 
 List the skills in this repo:
@@ -59,7 +65,7 @@ List the skills in this repo:
 npx skills add alannkl/skills --list
 ```
 
-Install every skill globally:
+Install every skill from this repo globally:
 
 ```bash
 npx skills add alannkl/skills --all -g -y
@@ -137,10 +143,12 @@ Referencing the skill by name works for any install scope. If your agent does no
 
 Background notes and research behind these skills:
 
-- [Philosophy](docs/philosophy.md): a standalone article of personal beliefs about engineering with AI.
+- [Philosophy](docs/philosophy.md): a standalone, slowly growing list of personal beliefs about engineering with AI.
 - [Working with Agents](docs/working-with-agents.md): human-facing principles for directing an agent to complete tasks, synthesized from Anthropic, OpenAI, Microsoft Research, Ethan Mollick, Simon Willison, and academic human-AI collaboration research. Its agent-side counterpart is the [Collaboration Constitution](#agentsmd) above.
+- [How an agent should communicate with its human](docs/agent-communication.md): the evidence base behind the Communicating section of AGENTS.md, from a survey of this repo's skills and related sources.
 - [Codebase Structure Principles](docs/codebase-structure.md): durable principles for organizing code around ownership, change patterns, dependency direction, and module boundaries.
 - [Behavior-First Testing for Agentic Coding](docs/behavior-first-testing-for-agentic-coding.md): a behavior-scaffold workflow that establishes intended behavior before the change's code or executable test mechanics can bias it.
+- [Cheap Code, Expensive Systems](docs/cheap-code-expensive-systems.md): a cost model for adversarial review and review triage, so findings that are valid but not worth fixing stay unfixed.
 
 ## Repository layout
 
