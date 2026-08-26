@@ -68,6 +68,7 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
 7. Convert observations into findings.
    - Report findings as one batch: complete the read-only scan (Steps 1–6) across the whole review surface before presenting any finding, then deliver the full set in a single report. Findings accumulate during the scan; stop mid-scan only when the review premise is invalid — wrong branch or target, unusable scope — or continuing would be unsafe, such as exposed live credentials needing immediate action.
    - Merge findings that share a root cause into one finding listing every affected location.
+   - Give each finding a short id (`F1`, `F2`, ...) so later discussion and triage can reference it, and state confidence (high/med/low) alongside severity.
    - Calibrate severity by impact, likelihood, and confidence. Do not escalate severe but unproven risk without evidence; report it at a lower severity with the assumption or uncertainty stated.
    - `Critical`: exploitable security issue, data loss or corruption, system-breaking regression, broken public contract, or complete logic failure.
    - `High`: likely user-visible bug, severe regression, broken migration or rollback path, major performance issue, or explicit project-rule violation.
@@ -91,9 +92,8 @@ Use this structure:
 ```markdown
 ## Findings (required; if none, replace this section with "No findings in the reviewed scope.")
 
-### [Critical] <short title>
+### <id> [<severity>/<confidence>] <short title> — path/to/file.ext:42
 
-- **File:** path/to/file.ext:42
 - **Problem:** <the concrete issue>
 - **Evidence:** <specific code path, failing case, example input, violated contract, or reasoning chain>
 - **Why it matters:** <behavioral, user, security, operational, or maintainability impact>
@@ -136,7 +136,7 @@ Review in the language and conventions present in the diff. The example below il
 
 Good finding:
 
-> **[High] Pagination drops the partial last page** - `src/lib/paginate.ts:24`
+> **F1 [High/high] Pagination drops the partial last page** - `src/lib/paginate.ts:24`
 > **Problem:** `const pageCount = Math.floor(total / pageSize)` undercounts pages when there is a remainder. With `total = 101` and `pageSize = 25`, it yields `4`, but the caller loops `page < pageCount`, pages `0..3`, so the final item is never returned.
 > **Evidence:** The remainder case `total = 101`, `pageSize = 25` needs five pages, `0..4`, but `Math.floor(101 / 25)` produces `4`.
 > **Why it matters:** Consumers silently lose the final partial page, breaking the documented "returns all items" contract.
