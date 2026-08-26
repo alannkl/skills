@@ -1,7 +1,6 @@
 ---
 name: create-agent-skill
-description: Create Agent Skill files from reusable workflows, domain expertise, project conventions, or shortcut instructions.
-disable-model-invocation: true
+description: Create Agent Skill files from reusable workflows, domain expertise, project conventions, or shortcut instructions. Use when the user asks to create or update a skill or slash command, package repeated instructions behind a name, or evaluate and iterate on an existing skill.
 ---
 
 # Create Agent Skill
