@@ -1,6 +1,6 @@
 ---
 name: code-review
-description: Produce a findings-led code review report for concrete code changes. Use when the user asks for a code review, PR review, or findings on a diff or branch; not for implementing fixes or critiquing designs without code.
+description: Produce a findings-led code review report for concrete code changes. Use when the user asks for a code review, PR review, or findings on a commit, branch, diff, or named files; not for implementing fixes or critiquing designs without code.
 ---
 
 # Code Review
@@ -20,9 +20,11 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
 ## Workflow
 
 1. Establish scope and intent.
-   - State what is being reviewed and what appears out of scope.
+   - Use the scope the user named. It may be a pull request, commit or range, branch against a base, diff, staged or unstaged work, or named files.
+   - If the user supplies no scope, use the first non-empty of: staged changes; unstaged and untracked changes; commits ahead of the upstream (`@{upstream}..HEAD`); or the current branch against its merge base with the default branch.
+   - Freeze the resolved scope before deep reading. Inventory outside it only to state exclusions; never absorb adjacent changes into the review.
    - Gather goals and context from the repo's VCS and platform: diff and size against the merge target, for example `git diff <base>...HEAD`; PR/MR description, for example via `gh` or `glab`; commit messages and the issues they reference (`#123`, `Closes #45`); and project guidance such as `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, `CONTRIBUTING.md`, architecture docs, or linter config.
-   - Determine the full review surface before deep reading: status, staged and unstaged changes, untracked files, diff stat, file status changes, renames, deletes, generated files, migrations, lockfiles, and config changes. For PRs, identify the target branch or merge base, and confirm the base ref resolves and the diff is non-empty — a bad ref or empty diff fails here, not mid-review. For local-only reviews, state whether unstaged and untracked files are in scope.
+   - Determine the full review surface inside the resolved scope before deep reading: diff stat, file status changes, renames, deletes, generated files, migrations, lockfiles, and config changes. For PRs, identify the target branch or merge base, and confirm the base ref resolves and the diff is non-empty. A bad ref or empty diff fails here, not mid-review. For local-only reviews, state whether unstaged and untracked files are in scope.
    - If intent is missing, infer it and label it as an assumption, not a fact. When code appears to implement the wrong behavior, check intent against existing system and business logic before reviewing mechanics.
    - If tooling is unavailable because there is no PR platform, the checkout is detached or shallow, or commands fail, degrade gracefully: review what you can access, state which context you could not gather, and treat that gap as residual risk rather than guessing.
 
