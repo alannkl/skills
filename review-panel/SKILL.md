@@ -1,12 +1,14 @@
 ---
 name: review-panel
-description: "Panel review of any chosen scope: a review brief, parallel reviewer model voices (presets standard/max/ultra), merged findings, triage, fixes, and verification. Spawns several fresh agent sessions, so cost scales with the preset; strongest with multiple harnesses installed (claude, codex, cursor), falls back to one."
+description: "Panel review of any chosen scope: a review brief, parallel reviewer model voices (presets standard/max/ultra), merged findings, triage, and optionally fixes and verification. Fixes are user-gated by default; an upfront auto-fix option approves them. Spawns several fresh agent sessions, so cost scales with the preset; strongest with multiple harnesses installed (claude, codex, cursor), falls back to one."
 disable-model-invocation: true
 ---
 
 # Review panel
 
-Run the pipeline: scope → brief → panel → merge → triage → fix → verify → report.
+Run the pipeline: scope → brief → panel → merge → triage → findings report → approval gate → fix → verify → final report.
+
+Set the **approval mode** when the run starts. The default is **gated**. `/review-panel auto-fix` sets **auto-fix**, which grants standing approval for findings triaged with a **fix** disposition. Auto-fix never selects an **escalate** fork; escalations always require a later user decision.
 
 ## 1. Scope
 
@@ -71,15 +73,17 @@ Merge the reports into one findings list. Collapse findings that name the same d
 
 Invoke `review-triage` on the merged findings inline in this session. Keeping triage here preserves the conversation, review brief, and any author context recovered during the review.
 
-If triage returns any **escalations**, present each finding, why the patch is expensive, the A/B/C options, and the recommendation. Stop before touching code related to an escalation. Fixes independent of every escalation may proceed while the user decides. Once the user decides a fork, do not reopen it in later cycles.
+Present the complete triage report, including every disposition, proposed fix, and escalation fork. In gated mode, stop and ask the user which fixes and escalation options to approve. In auto-fix mode, proceed with every **fix** disposition after presenting the report; if the report contains an **escalate** disposition, stop before any fix work and ask the user to choose its fork. A `/review-panel` invocation without `auto-fix` authorizes review and triage only.
+
+If no finding has a **fix** or **escalate** disposition, the triage report is the final report and the pipeline is complete.
 
 ## 6. Fix
 
-Apply the accepted fixes as one batch, honoring triage's scope: nothing beyond the accepted findings.
+In gated mode, resume only after the user explicitly approves named findings or the whole triaged batch. In auto-fix mode, all **fix** dispositions are already approved. Apply the approved fixes as one batch, honoring triage's scope: nothing beyond the approved findings and escalation options. Unapproved findings remain pending.
 
 ## 7. Verify the fixes
 
-Verification is a closed check, not a re-review. Send the accepted findings and fix diff to one fresh first-rival context, not the whole panel. For each finding, require `resolved` or `unresolved` with concrete evidence, plus any blocking issues introduced by the fixes. Send unresolved and fix-introduced blocking findings through `review-triage` (step 5), then allow at most one more fix-and-verify round. **Two post-fix verification passes is the cap.** Report findings still open at the cap instead of fixing them.
+Verification is a closed check, not a re-review. Send the approved findings and fix diff to one fresh first-rival context, not the whole panel. For each finding, require `resolved` or `unresolved` with concrete evidence, plus any blocking issues introduced by the fixes. Send unresolved and fix-introduced blocking findings through `review-triage`, present its report, and return to step 5's approval gate: gated mode pauses again, while auto-fix mode may take one further **fix** batch automatically. **Two post-fix verification passes is the cap.** Report findings still open at the cap instead of fixing them.
 
 ## 8. Report
 
@@ -87,8 +91,9 @@ Report:
 
 - final verdict and fixes applied
 - panel composition, with any substitutions
+- findings left unapproved
 - deferred and rejected findings, each with its evidence
 - escalations and how they were decided
 - anything left open at the cycle cap
 
-The pipeline is complete when every accepted finding is verified resolved or explicitly reported open. Recommend a fresh `/review-panel` run on the new state only when the fix batch resolved several high-or-critical findings or reworked a large share of the scope. The user re-invoking is the outer loop.
+The pipeline is complete when every approved finding is verified resolved or explicitly reported open. Recommend a fresh `/review-panel` run on the new state only when the fix batch resolved several high-or-critical findings or reworked a large share of the scope. The user re-invoking is the outer loop.
