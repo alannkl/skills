@@ -23,7 +23,7 @@ Each skill lives in its own directory and follows the [agentskills.io specificat
 | [`code-review`](code-review/SKILL.md)               | Produce findings-led code review reports for concrete code changes.                                                                                                                                        |
 | [`adversarial-review`](adversarial-review/SKILL.md) | Hunt material failures in a diff, branch, or files. Return structured findings with failure scenarios, but never apply fixes.                                                                              |
 | [`review-triage`](review-triage/SKILL.md)           | Triage review findings as the code's owner. Validate each, weigh fix cost against deployed complexity, and return dispositions instead of fixing everything.                                               |
-| [`review-panel`](review-panel/SKILL.md)             | Run a parallel panel of reviewer models, then merge findings, triage, fix, and verify. Spawns several agent sessions (cost scales with preset); strongest with multiple harnesses installed. User-invoked. |
+| [`review-panel`](review-panel/SKILL.md)             | Run a parallel panel of reviewer models, then merge and triage findings. Fixes are user-gated by default; `/review-panel auto-fix` approves them upfront. Spawns several agent sessions (cost scales with preset); strongest with multiple harnesses installed. User-invoked. |
 
 ### Planning
 
