@@ -73,17 +73,27 @@ Merge the reports into one findings list. Collapse findings that name the same d
 
 Invoke `review-triage` on the merged findings inline in this session. Keeping triage here preserves the conversation, review brief, and any author context recovered during the review.
 
-Present the complete triage report, including every disposition, proposed fix, and escalation fork. In gated mode, stop and ask the user which fixes and escalation options to approve. In auto-fix mode, proceed with every **fix** disposition after presenting the report; if the report contains an **escalate** disposition, stop before any fix work and ask the user to choose its fork. A `/review-panel` invocation without `auto-fix` authorizes review and triage only.
+Present the complete triage report, including every disposition, proposed fix, and escalation fork.
+
+In gated mode, follow the report with a **decision round** over every **fix** and **escalate** finding — the findings that need a user decision. Deferred and rejected dispositions stand as reported; the user can override one through the same round. For each finding, present:
+
+- the problem, in one or two lines
+- the proposed fix
+- the fix's estimated cost: files and functions touched, rough lines changed, and any risk the fix itself introduces
+
+Then collect the decisions through the harness's multiple-choice question tool, one question per finding, batched up to the tool's limit; with no such tool, ask in prose. A **fix** finding offers **approve fix** (marked recommended), **defer**, and **reject**; an **escalate** finding offers its A/B/C fork with triage's recommendation marked. A rejection needs the user's reason — take it from the free-text option or ask — and it travels with the finding into the final report.
+
+In auto-fix mode, proceed with every **fix** disposition after presenting the report; if the report contains an **escalate** disposition, stop before any fix work and put its fork to the user through the same decision-round format. A `/review-panel` invocation without `auto-fix` authorizes review, triage, and the decision round; only the round's answers authorize fixes.
 
 If no finding has a **fix** or **escalate** disposition, the triage report is the final report and the pipeline is complete.
 
 ## 6. Fix
 
-In gated mode, resume only after the user explicitly approves named findings or the whole triaged batch. In auto-fix mode, all **fix** dispositions are already approved. Apply the approved fixes as one batch, honoring triage's scope: nothing beyond the approved findings and escalation options. Unapproved findings remain pending.
+In gated mode, the decision round's answers define the approved set. In auto-fix mode, all **fix** dispositions are already approved. Apply the approved fixes as one batch, honoring triage's scope: nothing beyond the approved findings and escalation options. Unapproved findings remain pending.
 
 ## 7. Verify the fixes
 
-Verification is a closed check, not a re-review. Send the approved findings and fix diff to one fresh first-rival context, not the whole panel. For each finding, require `resolved` or `unresolved` with concrete evidence, plus any blocking issues introduced by the fixes. Send unresolved and fix-introduced blocking findings through `review-triage`, present its report, and return to step 5's approval gate: gated mode pauses again, while auto-fix mode may take one further **fix** batch automatically. **Two post-fix verification passes is the cap.** Report findings still open at the cap instead of fixing them.
+Verification is a closed check, not a re-review. Send the approved findings and fix diff to one fresh first-rival context, not the whole panel. For each finding, require `resolved` or `unresolved` with concrete evidence, plus any blocking issues introduced by the fixes. Send unresolved and fix-introduced blocking findings through `review-triage`, present its report, and return to step 5's approval gate: gated mode runs another decision round, while auto-fix mode may take one further **fix** batch automatically. **Two post-fix verification passes is the cap.** Report findings still open at the cap instead of fixing them.
 
 ## 8. Report
 
