@@ -86,7 +86,9 @@ A **fix** finding offers **approve fix** (marked recommended), **defer**, and **
 
 In auto-fix mode, proceed with every **fix** disposition after presenting the report; if the report contains an **escalate** disposition, stop before any fix work and put its fork to the user through the same decision-round format. A `/review-panel` invocation without `auto-fix` authorizes review, triage, and the decision round; only the round's answers authorize fixes.
 
-If no finding has a **fix** or **escalate** disposition, the triage report is the final report and the pipeline is complete.
+**Record durable decisions in the artifact native to each kind.** A rejection whose reason is local and non-obvious gets a comment at the finding's site stating the code's rationale — the confusion that produced the finding is itself a defect, and the comment is its fix. A deferral with a site gets a `TODO` comment carrying its defer-until condition. A decided escalation gets an ADR when the repo keeps an ADR log. Scope rejections live in the final report only. Write each comment as the code's own voice ("validated at the parse boundary"), not as review history. Report the planned recording edits and continue; apply them with step 6's batch, or on their own when no fixes were approved. They need no step 7 ruling.
+
+If no finding has a **fix** or **escalate** disposition, the triage report and any recording edits complete the pipeline.
 
 ## 6. Fix
 
