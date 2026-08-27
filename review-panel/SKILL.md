@@ -31,12 +31,12 @@ Assemble the reviewer **voices** from the preset the user named (`/review-panel 
 
 Roster, ranked by capability:
 
-| Rank | Member        | Harness | Sibling      |
-| ---- | ------------- | ------- | ------------ |
-| 1    | fable 5       | claude  | opus 5       |
-| 2    | codex 5.6 sol | codex   | terra        |
-| 3    | opus 5        | claude  | fable 5      |
-| 4    | grok 4.6      | cursor  | kimi k3      |
+| Rank | Member        | Harness | Sibling |
+| ---- | ------------- | ------- | ------- |
+| 1    | fable 5       | claude  | opus 5  |
+| 2    | codex 5.6 sol | codex   | terra   |
+| 3    | opus 5        | claude  | fable 5 |
+| 4    | grok 4.6      | cursor  | kimi k3 |
 
 Ranks 3–4 are reserves. They enter as siblings, as fallback rivals, or as `ultra`'s second rival.
 
@@ -91,6 +91,8 @@ If no finding has a **fix** or **escalate** disposition, the triage report is th
 ## 6. Fix
 
 In gated mode, the decision round's answers define the approved set. In auto-fix mode, all **fix** dispositions are already approved. Apply the approved fixes as one batch, honoring triage's scope: nothing beyond the approved findings and escalation options. Unapproved findings remain pending.
+
+Parallel fixers need isolation chosen by file overlap. Partition the batch into disjoint file-ownership lists before launching; only a clean partition may share the working tree, and each fixer edits only the files it owns. Overlapping files, or a fixer that needs destructive git operations (a mutation check that reverts a file), get sequential waves or per-fixer worktrees instead. On a shared tree, treat mid-flight full-suite results as noise — neighbors' half-edited files fail tests that are not failures; the gate that counts is one full-suite run on the assembled tree after every fixer lands.
 
 ## 7. Verify the fixes
 
