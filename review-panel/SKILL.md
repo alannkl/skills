@@ -49,11 +49,11 @@ The parent always runs `code-review` inline on the resolved scope (the **parent 
 
 | Preset               | Fresh voices                                                |
 | -------------------- | ----------------------------------------------------------- |
-| `standard` (default) | adversarial: rival                                          |
+| `standard` (default) | code-review: rival · adversarial: rival                     |
 | `max`                | code-review: rival · adversarial: rival, twin               |
 | `ultra`              | code-review: both rivals · adversarial: both rivals, twin   |
 
-Step 7 verification always goes to the first rival. With a fable parent in a full environment, the rivals are sol, then grok. `standard` reviews with adversarial sol; `max` adds code-review sol and adversarial fable; `ultra` adds grok in both roles.
+Step 7 verification always goes to the first rival. With a fable parent in a full environment, the rivals are sol, then grok. `standard` reviews with sol in both roles; `max` adds adversarial fable; `ultra` adds grok in both roles.
 
 Rules:
 
@@ -75,13 +75,13 @@ Invoke `review-triage` on the merged findings inline in this session. Keeping tr
 
 Present the complete triage report, including every disposition, proposed fix, and escalation fork.
 
-In gated mode, follow the report with a **decision round** over every **fix** and **escalate** finding — the findings that need a user decision. Deferred and rejected dispositions stand as reported; the user can override one through the same round. For each finding, present:
+In gated mode, follow the report with a **decision round** over every **fix** and **escalate** finding — the findings that need a user decision. Deferred and rejected dispositions stand as reported; the user can override one through the same round. Collect the decisions through the harness's multiple-choice question tool, one question per finding, batched up to the tool's limit; with no such tool, ask in prose. Each question carries the finding's case in its own text, so the user decides without scrolling back to the report:
 
 - the problem, in one or two lines
 - the proposed fix
 - the fix's estimated cost: files and functions touched, rough lines changed, and any risk the fix itself introduces
 
-Then collect the decisions through the harness's multiple-choice question tool, one question per finding, batched up to the tool's limit; with no such tool, ask in prose. A **fix** finding offers **approve fix** (marked recommended), **defer**, and **reject**; an **escalate** finding offers its A/B/C fork with triage's recommendation marked. A rejection needs the user's reason — take it from the free-text option or ask — and it travels with the finding into the final report.
+A **fix** finding offers **approve fix** (marked recommended), **defer**, and **reject**; an **escalate** finding offers its A/B/C fork with triage's recommendation marked. A rejection needs the user's reason — take it from the free-text option or ask — and it travels with the finding into the final report.
 
 In auto-fix mode, proceed with every **fix** disposition after presenting the report; if the report contains an **escalate** disposition, stop before any fix work and put its fork to the user through the same decision-round format. A `/review-panel` invocation without `auto-fix` authorizes review, triage, and the decision round; only the round's answers authorize fixes.
 
