@@ -31,34 +31,35 @@ Assemble the reviewer **voices** from the preset the user named (`/review-panel 
 
 Roster, ranked by capability:
 
-| Rank | Member        |
-| ---- | ------------- |
-| 1    | fable 5       |
-| 2    | codex 5.6 sol |
-| 3    | opus 5        |
-| 4    | grok 4.6      |
+| Rank | Member        | Harness | Sibling      |
+| ---- | ------------- | ------- | ------------ |
+| 1    | fable 5       | claude  | opus 5       |
+| 2    | codex 5.6 sol | codex   | terra        |
+| 3    | opus 5        | claude  | fable 5      |
+| 4    | grok 4.6      | cursor  | kimi k3      |
 
-Ranks 3–4 are reserves. They enter only as fallback rivals or as `ultra`'s second rival.
+Ranks 3–4 are reserves. They enter as siblings, as fallback rivals, or as `ultra`'s second rival.
 
-Resolve two roles relative to the **parent**, meaning this session's harness and model:
+Resolve three roles relative to the **parent**, meaning this session's harness and model:
 
-- **rivals**: the highest-ranked members on harnesses other than the parent's, in rank order. `standard` and `max` use the first rival; `ultra` uses the first two. With no other harness installed, use the next model on the parent's harness (a claude-only environment resolves to opus). With a single-model harness, use a fresh subagent of the parent's model.
+- **rivals**: the highest-ranked members on harnesses other than the parent's, in rank order. `standard` and `max` use the first rival; `ultra` uses the first two. With no other harness installed, the sibling stands in as rival; with a single-model harness, the twin stands in.
+- **sibling**: the strongest model on the parent's harness other than the parent's own; the roster lists each member's. With a single-model harness, the twin stands in.
 - **twin**: the parent's own model in a fresh context.
 
 The parent always runs `code-review` inline on the resolved scope (the **parent voice**), plus the preset's fresh voices:
 
-| Preset               | Fresh voices                                                |
-| -------------------- | ----------------------------------------------------------- |
-| `standard` (default) | code-review: rival · adversarial: rival                     |
-| `max`                | code-review: rival · adversarial: rival, twin               |
-| `ultra`              | code-review: both rivals · adversarial: both rivals, twin   |
+| Preset               | Fresh voices                                                                |
+| -------------------- | --------------------------------------------------------------------------- |
+| `standard` (default) | code-review: rival · adversarial: rival                                     |
+| `max`                | code-review: rival, sibling · adversarial: rival, sibling, twin             |
+| `ultra`              | code-review: both rivals, sibling · adversarial: both rivals, sibling, twin |
 
-Step 7 verification always goes to the first rival. With a fable parent in a full environment, the rivals are sol, then grok. `standard` reviews with sol in both roles; `max` adds adversarial fable; `ultra` adds grok in both roles.
+Step 7 verification always goes to the first rival. With a fable parent in a full environment, the rivals are sol, then grok, and the sibling is opus. `standard` reviews with sol in both roles; `max` adds opus in both roles plus adversarial fable; `ultra` adds grok in both roles.
 
 Rules:
 
 - Every panel includes at least one `adversarial-review` voice in a fresh context; `adversarial-review` never runs in the parent context. A member named twice runs as two separate fresh contexts.
-- **Effort.** Fresh voices default to xhigh reasoning effort; fable defaults to high. The parent voice keeps the session's own effort. The user can override any voice's effort.
+- **Effort.** Fresh voices default to xhigh reasoning effort; fable and kimi k3 run at high, terra at max. The parent voice keeps the session's own effort. The user can override any voice's effort.
 - **Missing member.** When a preset or user-named member is unavailable, stop and recommend a composition built from the available members. Proceed only after the user chooses. The prescribed rival fallback chain needs no confirmation.
 - Route a voice whose model runs on the parent's own harness through the harness's builtin subagent tool if it has one; route every other voice through `spawn-agent`. Either way, pass the reviewing skill's `SKILL.md` path in the prompt as its charter.
 - The user may name members beyond the roster: any harness or model the environment can run. For a harness `spawn-agent` has no reference for, run a headless CLI session by that harness's own conventions (its `--help` is the source of truth); if it cannot be run, treat it as a missing member.
