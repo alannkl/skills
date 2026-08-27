@@ -59,7 +59,7 @@ Step 7 verification always goes to the first rival. With a fable parent in a ful
 Rules:
 
 - Every panel includes at least one `adversarial-review` voice in a fresh context; `adversarial-review` never runs in the parent context. A member named twice runs as two separate fresh contexts.
-- **Effort.** Fresh voices default to xhigh reasoning effort; fable and kimi k3 run at high, terra at max. The parent voice keeps the session's own effort. The user can override any voice's effort.
+- **Effort.** Under `standard`, fresh voices run at high reasoning effort. Under `max` and `ultra`, they default to xhigh; fable and kimi k3 stay at high. Terra always runs at max. The parent voice keeps the session's own effort. The user can override any voice's effort.
 - **Missing member.** When a preset or user-named member is unavailable, stop and recommend a composition built from the available members. Proceed only after the user chooses. The prescribed rival fallback chain needs no confirmation.
 - Route a voice whose model runs on the parent's own harness through the harness's builtin subagent tool if it has one; route every other voice through `spawn-agent`. Either way, pass the reviewing skill's `SKILL.md` path in the prompt as its charter.
 - The user may name members beyond the roster: any harness or model the environment can run. For a harness `spawn-agent` has no reference for, run a headless CLI session by that harness's own conventions (its `--help` is the source of truth); if it cannot be run, treat it as a missing member.
@@ -96,7 +96,15 @@ Parallel fixers need isolation chosen by file overlap. Partition the batch into 
 
 ## 7. Verify the fixes
 
-Verification is a closed check, not a re-review. Send the approved findings and fix diff to one fresh first-rival context, not the whole panel. For each finding, require `resolved` or `unresolved` with concrete evidence, plus any blocking issues introduced by the fixes. Send unresolved and fix-introduced blocking findings through `review-triage`, present its report, and return to step 5's approval gate: gated mode runs another decision round, while auto-fix mode may take one further **fix** batch automatically. **Two post-fix verification passes is the cap.** Report findings still open at the cap instead of fixing them.
+Verification is a closed check, not a re-review. Send it to one fresh first-rival context, not the whole panel, and never to the parent: by this step the parent authored the fix batch, and an author's own `resolved` ruling is the one check that always passes.
+
+Assemble the evidence in the parent so the verifier reads instead of re-derives:
+
+- the approved findings, each mapped to the diff hunks that claim to fix it
+- the fix diff
+- the full-suite result on the assembled tree, which the parent runs before handing off
+
+For each finding, require `resolved` or `unresolved` with concrete evidence, plus any blocking issues introduced by the fixes. Send unresolved and fix-introduced blocking findings through `review-triage`, present its report, and return to step 5's approval gate: gated mode runs another decision round, while auto-fix mode may take one further **fix** batch automatically. **Two post-fix verification passes is the cap.** Report findings still open at the cap instead of fixing them.
 
 ## 8. Report
 
