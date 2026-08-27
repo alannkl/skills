@@ -37,10 +37,10 @@ Set `codex_model_id` to a model available in the target environment.
 ```bash
 codex_model_id='replace-with-an-available-model-id'
 
-# One-off scoped task, read-only JSONL
+# One-off scoped task, read-only JSONL. `</dev/null` closes stdin — see gotchas.
 timeout 300 codex exec --cd "$PWD" --model "$codex_model_id" \
   --sandbox read-only -c 'approval_policy="never"' --strict-config --json \
-  "Summarize the public API of src/auth.ts in under 10 bullet points"
+  "Summarize the public API of src/auth.ts in under 10 bullet points" </dev/null
 
 # Pipe context in while keeping the instruction explicit
 git diff main | timeout 300 codex exec --cd "$PWD" --model "$codex_model_id" \
@@ -50,7 +50,7 @@ git diff main | timeout 300 codex exec --cd "$PWD" --model "$codex_model_id" \
 # Apply a bounded edit in the selected workspace
 timeout 900 codex exec --cd "$PWD" --model "$codex_model_id" \
   --sandbox workspace-write -c 'approval_policy="never"' --strict-config --json \
-  "Fix the failing tests in tests/unit; do not change public APIs and do not spawn other agents"
+  "Fix the failing tests in tests/unit; do not change public APIs and do not spawn other agents" </dev/null
 
 # Request a schema-constrained final response
 timeout 300 codex exec --cd "$PWD" --model "$codex_model_id" \
@@ -74,5 +74,6 @@ timeout 900 codex exec resume --model "$codex_model_id" \
 - `codex` without `exec` launches the interactive terminal UI. Always use `codex exec` for a headless subtask.
 - Codex requires a Git repository by default. Use `--skip-git-repo-check` only when the caller intentionally selected a safe non-repository directory.
 - If the prompt is omitted or is `-`, Codex reads the prompt from stdin. When stdin is piped alongside a prompt argument, Codex appends it as context.
+- A non-TTY stdin without EOF hangs the run: even with a prompt argument, Codex waits on "Reading additional input from stdin..." until stdin closes. Background shells and job runners often hand the process an open stdin that never closes, so a headless run must end with `</dev/null` unless it deliberately pipes context in.
 - `codex mcp-server` exposes Codex as an MCP server; it does not run a subtask. Call `codex exec` directly.
 - Official docs: <https://learn.chatgpt.com/docs/non-interactive-mode> and the [`codex exec` command reference](https://learn.chatgpt.com/docs/developer-commands?surface=cli#cli-codex-exec). Resume flags not listed here: `codex exec resume --help`.
