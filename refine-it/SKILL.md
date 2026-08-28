@@ -1,7 +1,6 @@
 ---
 name: refine-it
-description: Refine an existing written artifact for clarity, structure, tone, and readiness while preserving intent and scope.
-disable-model-invocation: true
+description: Refine an existing written artifact for clarity, structure, tone, and readiness while preserving intent and scope. Use when the user asks for open-ended, artifact-wide polishing or improvement. For exact edits or shortening only, follow the request directly without this skill.
 ---
 
 # Refine It
