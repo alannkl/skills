@@ -1,7 +1,6 @@
 ---
 name: handoff
-description: Create a compact handoff document so another agent can continue the current conversation.
-disable-model-invocation: true
+description: Create a compact handoff document so another agent can continue the current conversation. Use when the user asks for a handoff to another agent or a checkpoint for continuing in a new session.
 argument-hint: What will the next session focus on?
 ---
 

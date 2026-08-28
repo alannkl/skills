@@ -1,7 +1,6 @@
 ---
 name: shorten-it
-description: Shorten text while preserving meaning, tone, nuance, and important details.
-disable-model-invocation: true
+description: Shorten existing text while preserving meaning, tone, nuance, and important details. Use when the user asks for a shorter version or a tighter word or character limit without changing the text's job or claims.
 ---
 
 # Shorten It

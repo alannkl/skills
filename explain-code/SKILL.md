@@ -1,7 +1,6 @@
 ---
 name: explain-code
-description: Explain code at any requested scope — a change, a module, a flow, or the whole codebase — with optional follow-up Q&A, a quiz that surfaces understanding gaps, and an interactive micro-world for hard-to-hold logic.
-disable-model-invocation: true
+description: Explain existing code at any requested scope, including a change, module, flow, or whole codebase. Use when the user wants to understand what code does, how behavior flows, or what changed. Explanation only; not for code review, diagnosis, implementation, or documentation edits.
 ---
 
 # Explain Code
