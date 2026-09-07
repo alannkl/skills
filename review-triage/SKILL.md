@@ -45,8 +45,8 @@ Use these prices:
 
 4. **Disposition.**
    - **Fix.** Valid, material, low-cost. Choose the simplest correct design, even when that means rewriting undeployed code.
-   - **Defer.** Valid but not material now. State what would make it material.
-   - **Reject.** Invalid, speculative, or out of scope. Include the concrete refutation.
+   - **Defer.** Valid but not material now. State the trigger: what would make it material. When the deferred code is in scope, plan a comment there naming the ceiling and the trigger; a trigger needing a scheduled check (a date, a vendor change) gets a ticket instead.
+   - **Reject.** Invalid, speculative, or out of scope. Include the concrete refutation. When the code invites the misreading, or the finding has been rejected before, plan a one-line comment there naming the wrong reading.
    - **Escalate.** Material and high-cost. The expense of the fix is evidence about the design, so diagnose the cause before patching: architecture mismatch, misunderstood requirement, invalid core assumption, or inherent domain complexity. Present the fork exactly once: **(A)** patch the current design, **(B)** redesign the affected area, or **(C)** clarify or change the requirement. Give the cost of each option and your recommendation. "The domain is inherently like this; pay the cost" is a legitimate conclusion. Redesigns and requirement changes belong to the user. Present the fork; do not take it.
 
 ## Boundary
@@ -64,6 +64,6 @@ Open with a one-line tally (`N fix, N escalate, N defer, N reject`), then one bl
 - **Disposition:** <fix | defer | reject | escalate>; <one-line reason>
 ```
 
-Close each block with the final bullet its disposition requires: **Fix** (the planned change), **Defer until** (the condition that would make it material), **Evidence** (the concrete refutation from step 1), or **Fork** (the diagnosis and A/B/C options with recommendation).
+Close each block with the final bullet its disposition requires: **Fix** (the planned change), **Defer until** (the trigger, plus the planned comment or ticket), **Evidence** (the concrete refutation from step 1, plus the planned comment when one is due), or **Fork** (the diagnosis and A/B/C options with recommendation).
 
-End with the fix batch: `Fixes (batched for one re-review): <ids>`.
+End with the fix batch: `Fixes (batched for one re-review): <ids>`, including every deferred or rejected finding with a planned comment.
