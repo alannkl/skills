@@ -1,6 +1,6 @@
 ---
 name: agent-panel
-description: Coordinate N agents to complete a shared task, combine their work, and verify the final result against the brief.
+description: Coordinate N agents on a shared task or existing skill, with one combined result verified against its requirements.
 disable-model-invocation: true
 ---
 
@@ -8,8 +8,8 @@ disable-model-invocation: true
 
 ## Prepare
 
-1. Write a brief defining the goal, scope, evidence, requested deliverable and acceptance criteria. The brief determines the work and the form of the result. Use [brief examples](references/brief-examples.md) when examples would help frame the request.
-2. Read [runner usage](references/usage.md) to prepare the roster, evidence and execution settings. Select how the participants coordinate:
+1. Write a brief defining the goal, scope, evidence, requested deliverable and acceptance criteria. The brief determines the work and the form of the result. Use [brief examples](references/brief-examples.md) when examples would help frame the request. When the user names an existing skill to execute collaboratively, read [skill collaboration](references/skill-collaboration.md) and the selected skill before preparing the panel.
+2. Read [runner usage](references/usage.md) to prepare the roster, evidence and execution settings. Use the user's collaboration preset when specified; otherwise choose a suitable preset and state it before starting. For interactive skills, default to `leader-members` with one human-facing coordinator. Preserve the selected skill's own mode-selection rules. The presets describe how participants coordinate:
    - `independent-discussion`: independent work, reveal, critique, integration, review.
    - `leader-members`: a leader assigns complementary work and integrates contributions.
    - `flat-peers`: peers propose responsibilities, contribute, and a declared integrator assembles the result.
@@ -32,7 +32,7 @@ Use `--pause-between-rounds` when the human wants to inspect each round. Send ho
 
 ## Finish
 
-Read `report.json` and inspect the actual deliverable against every acceptance criterion in the brief. Deliver the requested content, structured data or files. For file changes, include the frozen files, patch and verification evidence.
+Read `report.json` and inspect the actual deliverable against every acceptance criterion in the brief. When executing another skill, also verify its completion rules and deliver its required output once for the team. Agreement on an intermediate question or proposal completes only that assignment. Deliver the requested content, structured data or files. For file changes, include the frozen files, patch and verification evidence.
 
 Report the outcome and artifact paths:
 

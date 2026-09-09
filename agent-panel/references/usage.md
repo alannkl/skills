@@ -4,6 +4,8 @@
 
 The brief defines what participants must do, what to deliver, and how to judge success. There is no task selector, category registry or profile loader. Optional [brief examples](brief-examples.md) help the host write a brief; the runner does not consume them.
 
+For collaborative execution of an existing skill, follow [skill collaboration](skill-collaboration.md). The host selects a preset when the user leaves it unspecified and supplies it to the CLI. The host also manages interactive skill stages; there is no automatic skill loader, stage scheduler or question-forwarding mechanism in this runner.
+
 A roster contains participants, coordination roles, optional evidence and explicit execution settings:
 
 ```json
