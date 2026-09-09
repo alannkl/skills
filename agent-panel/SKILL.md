@@ -13,8 +13,9 @@ disable-model-invocation: true
    - `independent-discussion`: independent work, reveal, critique, integration, review.
    - `leader-members`: a leader assigns complementary work and integrates contributions.
    - `flat-peers`: peers propose responsibilities, contribute, and a declared integrator assembles the result.
-3. Select the requested harnesses and their adapters using [runner usage](references/usage.md). Give each participant a unique ID, role, harness and explicit model. Multiple participants may share a harness; each gets a separate session. Set the integrator through `drafter` and the required approvers, which default to everyone. Working-copy runs need a required reviewer other than the integrator.
+3. Select the requested harnesses and their adapters using [runner usage](references/usage.md). Give each participant a unique ID, role, harness, explicit model and reasoning effort where supported. State when a harness does not expose effort control. Multiple participants may share a harness; each gets a separate session. Set the integrator through `drafter` and the required approvers, which default to everyone. Working-copy runs need a required reviewer other than the integrator.
 4. Set access and checks from the authorized scope: whether agents may use the web, run commands, or change source files. Choose executable checks with expected exit codes, or explain how review will verify completion. Freeze the inputs and report the roster, source revision, deliverable and execution bounds before launching. Keep existing authentication and billing settings.
+5. Confirm the roster before launching live participants. Show the participant count and each participant's harness, model, reasoning effort and role, plus required approvers, collaboration preset and run limits. When the user has already supplied or approved the roster, including effort or an approved effort default, use that confirmation and state any remaining role or limit choices without asking again. Obtain a new confirmation before changing the participant count, harnesses, models, effort or required approvers; never silently substitute an unavailable participant.
 
 ## Run
 

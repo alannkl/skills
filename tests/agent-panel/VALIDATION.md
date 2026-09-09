@@ -85,3 +85,12 @@ The extension keeps the N-participant scheduler, presets, delivery records and e
 - An external subprocess adapter passed all three presets through the CLI with three participants and distinct resumed sessions. Invalid module paths, duplicate names and invalid contracts fail before dispatch.
 - Tests, fixtures and this validation record moved to `tests/agent-panel/`. The installable skill contains runtime files and references only.
 - All **55 tests passed with no skips** after relocation. Run `python3 -m unittest discover -s tests/agent-panel -v` from the repository root.
+
+## Read-only evidence and roster fixes
+
+- The ACP discussion exposed a capability mismatch: the shared prompt declared `shell: false`, so Codex declined to use its sandboxed shell to read evidence. Removed that tool-availability claim, declared `file_reads: true`, and explicitly permitted read-only inspection through the harness's file-reading mechanism. Native read-only sandbox/tool settings remain unchanged.
+- The regression failed before the fix. Both new tests now pass across all presets, including checks that Codex starts/resumes read-only and Claude retains its read tools. The full suite passed **57 tests with no skips**.
+- Live evidence: `/tmp/agent-panel-readonly-regression-uqfjrdv7/run/report.json`. Both participants returned the generated initial marker and the separate review-stage marker, neither of which appeared in the brief. Codex's captured native command events show successful reads of both files. The source hash stayed unchanged and both reviewers approved the same candidate.
+- The live run skipped one timed-out Codex critique after confirmed process exit, then resumed that participant for successful final review. This was an agreed result with the skipped contribution recorded, not a failure-free run.
+- Added an explicit roster-confirmation step that includes models and reasoning effort. Reuse an already-provided or approved roster/effort default; reconfirm material roster or effort changes.
+- The user subsequently restricted live testing to Claude Sonnet and GPT Luna. The earlier run was already complete when checked; no additional Fable/Astra test invocation was launched. Future live testing follows the model restriction in this directory's README.
