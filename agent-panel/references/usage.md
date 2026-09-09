@@ -14,14 +14,16 @@ A roster contains participants, coordination roles, optional evidence and explic
   "execution": {"web": true},
   "drafter": "a",
   "participants": [
-    {"id": "a", "role": "Develop the approach and integrate", "harness": "claude", "settings": {"model": "YOUR_CLAUDE_MODEL"}},
-    {"id": "b", "role": "Challenge assumptions and verify evidence", "harness": "codex", "settings": {"model": "YOUR_CODEX_MODEL"}},
-    {"id": "c", "role": "Check the complete deliverable against the brief", "harness": "codex", "settings": {"model": "YOUR_CODEX_MODEL"}}
+    {"id": "a", "role": "Develop the approach and integrate", "harness": "claude", "settings": {"model": "YOUR_CLAUDE_MODEL", "effort": "high"}},
+    {"id": "b", "role": "Challenge assumptions and verify evidence", "harness": "codex", "settings": {"model": "YOUR_CODEX_MODEL", "effort": "high"}},
+    {"id": "c", "role": "Check the complete deliverable against the brief", "harness": "codex", "settings": {"model": "YOUR_CODEX_MODEL", "effort": "high"}}
   ]
 }
 ```
 
-Replace model placeholders with available models. IDs are unique; `host`, `runner` and `all` are reserved. Every participant gets a separate session, including repeated use of one harness. `required_approvers` defaults to everyone. `leader-members` also requires `leader`; that participant integrates. Other presets use `drafter`.
+Replace model placeholders with available models and select a supported effort value; the examples use `high`. IDs are unique; `host`, `runner` and `all` are reserved. Every participant gets a separate session, including repeated use of one harness. `required_approvers` defaults to everyone. `leader-members` also requires `leader`; that participant integrates. Other presets use `drafter`.
+
+The host confirms the proposed roster before launching live agents unless the user already supplied or approved it. Show each participant's harness, model, reasoning effort and role, plus the required approvers and run limits. Resolve effort explicitly where supported, or state that the harness has no effort control. A user-approved effort default can be reused. Changes to participant count, harnesses, models, effort or required approvers need renewed confirmation. Collaboration presets determine coordination, not roster composition. A direct CLI call with an explicit roster file remains noninteractive.
 
 Every opening contribution is required. Critique or clarification can skip a confirmed inactive, reconciled failure, while retaining that participant for required final approval. A failed participant never silently changes the approval policy.
 
@@ -39,6 +41,8 @@ Every opening contribution is required. Critique or clarification can skip a con
 | `verification_note` | Explain the review method when working-copy verification cannot use executable checks. |
 
 These settings do not select instructions or output formats. The same access settings can serve unrelated briefs. Tool approval is automatic within these boundaries; final result approval still requires every configured reviewer.
+
+All modes permit reading the supplied evidence. Use the harness's available file-reading mechanism, including bounded read-only shell inspection when that is how it accesses files. The permission description exposes `file_reads`, not a blanket `shell` switch. Native tool availability and sandbox enforcement remain with each adapter; this does not enable source edits or general side-effecting commands in read-only mode.
 
 Use Python 3.10+ on Linux or macOS and the authenticated CLIs selected in the roster. No Python packages are required. Git is required for `inspect` and `edit`.
 
@@ -58,8 +62,8 @@ For repository evidence or working copies, select `repository` and an explicit `
   },
   "drafter": "a",
   "participants": [
-    {"id": "a", "role": "Implement and integrate", "harness": "claude", "settings": {"model": "YOUR_CLAUDE_MODEL", "max_turns": 12}},
-    {"id": "b", "role": "Verify behavior and scope", "harness": "codex", "settings": {"model": "YOUR_CODEX_MODEL"}}
+    {"id": "a", "role": "Implement and integrate", "harness": "claude", "settings": {"model": "YOUR_CLAUDE_MODEL", "effort": "high", "max_turns": 12}},
+    {"id": "b", "role": "Verify behavior and scope", "harness": "codex", "settings": {"model": "YOUR_CODEX_MODEL", "effort": "high"}}
   ]
 }
 ```

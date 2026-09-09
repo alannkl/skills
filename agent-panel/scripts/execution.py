@@ -45,7 +45,8 @@ class ExecutionPolicy:
         self.config = dict(config, workspace=workspace, checks=checks, web=web, verification_note=note)
 
     def capabilities(self):
-        return {'workspace_write': self.worktree, 'source_edits': self.editable,
-                'web': self.config['web'], 'shell': self.worktree,
+        # Describe permitted effects; a harness may implement file reads through a shell.
+        return {'file_reads': True, 'workspace_write': self.worktree, 'source_edits': self.editable,
+                'web': self.config['web'],
                 'tool_approval': 'automatic within task bounds',
                 'verification_commands': [c['argv'] for c in self.config['checks']]}
