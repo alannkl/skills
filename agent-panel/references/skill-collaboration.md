@@ -5,7 +5,7 @@ When the user asks a team to execute an existing skill, naming it is sufficient;
 ## Prepare one shared execution
 
 1. Read the selected `SKILL.md` and every reference needed for the work. Freeze shared instructions and evidence, including the goal, settled decisions and acceptance criteria, in the brief or references all participants can read.
-2. Designate one coordinator. The host owns the skill's sequence, human interaction, approval gates and decision record. A panel leader coordinates assigned agent work. Assign stage responsibilities rather than having each member repeat the whole skill.
+2. Designate one coordinator. The host owns the skill's sequence, human interaction, approval gates and decision record. The panel leader assigns stage responsibilities, so members do not each repeat the whole skill; the host writes neither assignments nor viewpoint roles.
 3. Preserve the skill's dependencies, serial steps, role separation and verification requirements. Parallelize only where allowed. Choose and announce a collaboration preset if unspecified; resolve the skill's own modes by its instructions.
 4. State the current stage and expected contribution in each bounded panel brief. Share one decision record distinguishing user decisions, verified facts, agent recommendations and open questions.
 

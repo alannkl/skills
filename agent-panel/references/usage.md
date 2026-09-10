@@ -18,7 +18,7 @@ When the user leaves the roster unspecified, use two participants:
 1. Preserve explicit user choices and apply task-specific model restrictions only within their stated scope. Fill unspecified models on matching harnesses from the table; default unspecified effort to `high`.
 2. Resolve exact model identifiers for the installed harness and current account using current model listings or account availability evidence. Consult current official vendor guidance when identifiers or capability are unclear. If a preferred model is unavailable, choose that harness's most capable available model for general reasoning and coding. Use the same rule for other requested harnesses. Base the ranking on current model descriptions, not names or speed/cost defaults. Report fallbacks and reasons, or unresolved availability/ranking before launch; never invent an identifier.
 3. Set `high` explicitly where supported. If effort control exists but lacks `high`, disclose supported choices and resolve effort before launch. Report harnesses without effort control.
-4. Assign roles and the integrator to fit the brief and preset, with both default participants required to approve. Write the resolved choices into the roster file; the runner does not discover or substitute models. Spend model capability on required approvers first; the host's session model is independent of the roster.
+4. Assign neutral roles and the integrator to fit the preset, with both default participants required to approve. Write the resolved choices into the roster file; the runner does not discover or substitute models. Spend model capability on required approvers first; the host's session model is independent of the roster.
 
 ### Roster file
 
@@ -30,15 +30,17 @@ A roster specifies participants, coordination roles, optional evidence and execu
   "execution": {"web": true},
   "drafter": "a",
   "participants": [
-    {"id": "a", "role": "Develop the approach and integrate", "harness": "claude", "settings": {"model": "YOUR_CLAUDE_MODEL", "effort": "high"}},
-    {"id": "b", "role": "Challenge assumptions and verify evidence", "harness": "codex", "settings": {"model": "YOUR_CODEX_MODEL", "effort": "high"}}
+    {"id": "a", "role": "member", "harness": "claude", "settings": {"model": "YOUR_CLAUDE_MODEL", "effort": "high"}},
+    {"id": "b", "role": "member", "harness": "codex", "settings": {"model": "YOUR_CODEX_MODEL", "effort": "high"}}
   ]
 }
 ```
 
 Use supported effort values. IDs must be unique; `host`, `runner` and `all` are reserved. Each participant gets a separate session, even on the same harness. `required_approvers` defaults to everyone. Set `drafter`; `leader-members` also requires `leader`, who integrates instead. Working-copy runs require an approver other than the integrator.
 
-Follow the [skill's roster-confirmation step](../SKILL.md#prepare) before launch. Presets determine coordination, not roster composition. Direct CLI calls with explicit roster files remain noninteractive.
+Roles are neutral labels: `member` for every participant, and `leader` for the `leader-members` leader. The brief defines the work; the preset's opening round divides it, or keeps it whole. A role that names a viewpoint or a slice of the task prejudices that round, since the runner sends each participant its own role and the full roster in every phase, including the opening. The `drafter` designation is an editing duty.
+
+Follow the [skill's roster-confirmation step](../SKILL.md#prepare) before launch. Direct CLI calls with explicit roster files remain noninteractive.
 
 Every opening contribution is required. Critique or clarification may skip a failed participant after confirming inactivity and reconciling the failure. That participant remains required for final approval.
 
@@ -77,8 +79,8 @@ For repository evidence or working copies, select `repository` and an explicit `
   },
   "drafter": "a",
   "participants": [
-    {"id": "a", "role": "Implement and integrate", "harness": "claude", "settings": {"model": "YOUR_CLAUDE_MODEL", "effort": "high", "max_turns": 12}},
-    {"id": "b", "role": "Verify behavior and scope", "harness": "codex", "settings": {"model": "YOUR_CODEX_MODEL", "effort": "high"}}
+    {"id": "a", "role": "member", "harness": "claude", "settings": {"model": "YOUR_CLAUDE_MODEL", "effort": "high", "max_turns": 12}},
+    {"id": "b", "role": "member", "harness": "codex", "settings": {"model": "YOUR_CODEX_MODEL", "effort": "high"}}
   ]
 }
 ```
