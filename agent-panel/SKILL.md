@@ -39,6 +39,10 @@ The runner manages scheduling, sessions, working directories, input delivery, ar
 
 For round-by-round inspection, use `--pause-between-rounds` and send host decisions through stdin. Follow [human input and recovery](references/usage.md#human-input-and-recovery) for brief changes, cancellation and crashes. Wait for the report before claiming processes stopped.
 
+## Host view
+
+The host coordinates and is not a participant: the participant count excludes it, and it runs on the chat session's model regardless of the roster. Keep the opening brief to goal, scope, evidence and criteria so opening contributions stay independent. After the reveal, the host may add its own opinion under a `Host view (non-binding)` heading, sent as a brief revision at a round boundary or inside a follow-up file. Participants treat it as evidence to challenge; approval stays with the roster. At delivery, the host may add its own dissent as a host comment, separate from the panel outcome.
+
 ## Deliver the current answer
 
 Read `report.json` and check the deliverable against every acceptance criterion. For another skill, also verify its completion rules and deliver its required output once for the team. Agreement on an intermediate question or proposal completes only that assignment. Deliver the requested content, data or files; include frozen files, the patch and verification evidence for file changes.
