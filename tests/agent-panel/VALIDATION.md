@@ -104,3 +104,11 @@ The extension keeps the N-participant scheduler, presets, delivery records and e
 - Final command: `python3 -m unittest discover -s tests/agent-panel -v`. Result: **67 tests passed, no skips**, in 45.618 seconds. `panel.py --help`, metadata checks, 11 local documentation links and `git diff --check` passed.
 - The stock skill validator rejects the existing `disable-model-invocation` field. Its supported-field checks passed against a disposable copy omitting only that field; the real file retains it and its boolean value was checked separately.
 - These are offline checks with deterministic adapters, subprocess fixtures and disposable repositories. Live model continuation and the host's automatic routing of natural-language follow-ups were not exercised. No installed-skill update, commit or push was performed.
+
+## Live progress inside a turn, 2026-09-11
+
+- The Claude adapter now launches with `--output-format stream-json --verbose`, so native events land in the attempt's `stdout` as the turn runs; the parser accepts exactly one `result` event and still reads old single-object captures. Codex already streamed under `--json`.
+- New `scripts/progress.py RUN_DIR [--follow]` prints each participant's reasoning and messages in turn order from those captures, unwrapping protocol envelopes to their text or review decision and skipping tool activity. `--follow` exits when the runner writes `report.json`.
+- Two behavior scenarios were declared before their bodies: a completed two-harness run printing both participants' reasoning and unwrapped messages without tool events, and a live follow that prints complete lines as they land, holds a torn line, and exits on the report. The parser test gained streamed, duplicate-result and missing-result cases. Fixtures emit reasoning and tool events in both dialects.
+- Final command: `python3 -m unittest discover -s tests/agent-panel`. Result: **69 tests passed, no skips**, in 47.6 seconds. `git diff --check` passed.
+- Live evidence: one Sonnet turn through the real adapter with the full flag set returned `completed` with a matching session ID while `progress.py --follow` printed the unwrapped message before the process exited. Sonnet's thinking block arrived empty, so no reasoning line printed; the usage note records this. No full live panel was run.

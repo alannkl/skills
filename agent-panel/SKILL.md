@@ -35,9 +35,11 @@ python3 scripts/panel.py leader-members /absolute/brief.md /absolute/roster.json
   --turn-seconds 180 --run-seconds 1800
 ```
 
-The runner manages scheduling, sessions, working directories, input delivery, artifacts and final approval. Use each harness's automatic, noninteractive tool permissions within the execution boundaries; keep harness-specific flags in its adapter. Retain the process handle and relay progress from `events.jsonl`. Report missing participants or permissions as blockers and preserve the roster.
+The runner manages scheduling, sessions, working directories, input delivery, artifacts and final approval. Use each harness's automatic, noninteractive tool permissions within the execution boundaries; keep harness-specific flags in its adapter. Report missing participants or permissions as blockers and preserve the roster.
 
-For round-by-round inspection, use `--pause-between-rounds` and send host decisions through stdin. Follow [human input and recovery](references/usage.md#human-input-and-recovery) for brief changes, cancellation and crashes. Wait for the report before claiming processes stopped.
+Run the runner in the background and retain the process handle. Beside it, run `python3 scripts/progress.py RUN_DIR --follow`, which prints each participant's reasoning and messages as its turn produces them and exits when the report is written. Post each block to the chat as it lands, so the user reads the discussion as it happens instead of after the report. Relayed blocks are progress; conclusions come from the report, and the host view waits for the reveal.
+
+For round-by-round decisions, use `--pause-between-rounds` and send host decisions through stdin. Follow [human input and recovery](references/usage.md#human-input-and-recovery) for brief changes, cancellation and crashes. Wait for the report before claiming processes stopped.
 
 ## Host view
 

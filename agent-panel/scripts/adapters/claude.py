@@ -18,7 +18,7 @@ class ClaudeAdapter(ProcessAdapter):
             if capabilities.get('source_edits'):
                 tools += ['Edit', 'Write']
         permission_mode = 'auto'
-        command = [settings.get('executable', 'claude'), '-p', '--output-format', 'json',
+        command = [settings.get('executable', 'claude'), '-p', '--output-format', 'stream-json', '--verbose',
                    '--model', settings['model'], '--permission-mode', permission_mode,
                    '--permission-prompts', 'none',
                    '--allowedTools', *grants, '--tools', ','.join(tools),
@@ -40,14 +40,19 @@ class ClaudeAdapter(ProcessAdapter):
     def parse(self, output, code, session_id):
         result = Terminal(session_id, exit_status=code)
         try:
-            data = json.loads(output)
+            # stream-json writes one event per line as the turn runs; the single result event is terminal.
+            events = [json.loads(line) for line in output.splitlines() if line.strip()]
+            results = [e for e in events if isinstance(e, dict) and e.get('type') == 'result']
+            if len(results) != 1:
+                raise ValueError('expected exactly one result event')
+            data = results[0]
             result.session_id = data.get('session_id', session_id)
             result.raw_text = data.get('result', '')
             result.usage = {'tokens': data.get('usage', {}), 'cost_usd': data.get('total_cost_usd')}
             if data.get('permission_denials'):
                 result.outcome = 'blocked'
                 result.error = 'Native tool permission denied; see captured output'
-            elif code != 0 or data.get('is_error') or data.get('subtype') != 'success' or data.get('type') != 'result':
+            elif code != 0 or data.get('is_error') or data.get('subtype') != 'success':
                 result.error = 'Claude did not return a successful terminal result'
             elif result.session_id != session_id:
                 result.error = 'Claude returned a different session ID'

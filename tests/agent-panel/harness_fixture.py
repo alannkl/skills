@@ -37,11 +37,19 @@ if raw == 'WAIT_WITH_CHILD':
 if 'exec' in args:
     session = args[-2] if 'resume' in args else str(uuid.uuid4())
     for event in ({'type': 'thread.started', 'thread_id': session},
+                  {'type': 'item.completed', 'item': {'type': 'reasoning', 'text': 'Weighing the brief'}},
+                  {'type': 'item.completed', 'item': {'type': 'command_execution', 'command': 'ls', 'status': 'completed'}},
                   {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': json.dumps(block)}},
                   {'type': 'turn.completed', 'usage': {'input_tokens': 10, 'output_tokens': 3}}):
         print(json.dumps(event))
 else:
     flag = '--resume' if '--resume' in args else '--session-id'
     session = args[args.index(flag) + 1]
-    print(json.dumps({'type': 'result', 'subtype': 'success', 'session_id': session,
-                      'is_error': False, 'result': json.dumps(block), 'usage': {'input_tokens': 10}, 'total_cost_usd': 0}))
+    message = lambda *content: {'type': 'assistant', 'session_id': session, 'message': {'role': 'assistant', 'content': list(content)}}
+    for event in ({'type': 'system', 'subtype': 'init', 'session_id': session},
+                  message({'type': 'thinking', 'thinking': 'Weighing the brief'}),
+                  message({'type': 'tool_use', 'name': 'Read', 'input': {'file_path': 'evidence.txt'}}),
+                  message({'type': 'text', 'text': json.dumps(block)}),
+                  {'type': 'result', 'subtype': 'success', 'session_id': session,
+                   'is_error': False, 'result': json.dumps(block), 'usage': {'input_tokens': 10}, 'total_cost_usd': 0}):
+        print(json.dumps(event))

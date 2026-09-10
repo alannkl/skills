@@ -40,6 +40,10 @@ class AdapterBehavior(unittest.TestCase):
                        {'type': 'turn.completed', 'usage': {'input_tokens': 2}}]
         encoded = lambda events: '\n'.join(json.dumps(e) for e in events)
         self.assertEqual(adapters['claude'].parse(json.dumps(valid_claude), 0, 's1').outcome, 'completed')
+        streamed = [{'type': 'system', 'subtype': 'init'}, {'type': 'assistant', 'message': {'content': [{'type': 'text', 'text': 'draft'}]}}, valid_claude]
+        self.assertEqual(adapters['claude'].parse(encoded(streamed), 0, 's1').outcome, 'completed')
+        self.assertNotEqual(adapters['claude'].parse(encoded(streamed + [valid_claude]), 0, 's1').outcome, 'completed')
+        self.assertNotEqual(adapters['claude'].parse(encoded(streamed[:-1]), 0, 's1').outcome, 'completed')
         self.assertEqual(adapters['codex'].parse(encoded(valid_codex), 0, None).outcome, 'completed')
         for adapter in adapters.values():
             for raw in ('not-json', '[]', '{}', 'null'):
@@ -173,6 +177,58 @@ class AdapterBehavior(unittest.TestCase):
                 self.assertTrue(Path(report['candidate']).is_file())
                 self.assertTrue(Path(report['report']).is_file())
                 self.assertEqual(len(report['reviews']), 3)
+
+
+    def test_progress_reasoning_and_messages(self):
+        """Given a completed run with both harnesses, when progress is printed, then each turn's reasoning and unwrapped messages appear in turn order and tool activity does not."""
+
+        with tempfile.TemporaryDirectory() as root:
+            Path(root, 'brief.md').write_text('Design a panel')
+            roster = {'drafter': 'a', 'leader': 'a', 'participants':
+                      [{'id': pid, 'role': 'member', 'harness': harness, 'settings': {'model': 'fixture', 'executable': EXECUTABLE}}
+                       for pid, harness in [('a', 'claude'), ('b', 'codex')]]}
+            atomic_json(Path(root, 'roster.json'), roster)
+            run = subprocess.run([sys.executable, str(PACKAGE / 'scripts' / 'panel.py'), 'leader-members', str(Path(root, 'brief.md')),
+                                  str(Path(root, 'roster.json')), '--run-dir', str(Path(root, 'run'))], text=True, capture_output=True, timeout=15)
+            self.assertEqual(run.returncode, 0, run.stdout + run.stderr)
+            shown = subprocess.run([sys.executable, str(PACKAGE / 'scripts' / 'progress.py'), str(Path(root, 'run'))],
+                                   text=True, capture_output=True, timeout=15)
+            self.assertEqual(shown.returncode, 0, shown.stderr)
+            self.assertIn('[a t1 reasoning]\nWeighing the brief\n', shown.stdout)
+            self.assertIn('[a t1 message]\nBounded design proposal\n', shown.stdout)
+            self.assertIn('[b t3 reasoning]\nWeighing the brief\n', shown.stdout)
+            self.assertIn('[b t3 message]\nBounded design proposal\n', shown.stdout)
+            self.assertIn('approve\n- All criteria addressed\n', shown.stdout)
+            self.assertNotIn('tool_use', shown.stdout)
+            self.assertNotIn('command_execution', shown.stdout)
+            self.assertNotIn('{"', shown.stdout)
+            turns = [int(line.split()[1][1:]) for line in shown.stdout.splitlines() if line.startswith('[')]
+            self.assertEqual(turns, sorted(turns))
+
+
+    def test_progress_follow(self):
+        """Given a live run, when followed, then complete lines print as they land, a torn line waits, and the follower exits once the report is written."""
+
+        with tempfile.TemporaryDirectory() as root:
+            attempt = Path(root, 'run', 'participants', 'a', 't1-1')
+            attempt.mkdir(parents=True)
+            stdout = attempt / 'stdout'
+            event = lambda kind, text: json.dumps({'type': 'item.completed', 'item': {'type': kind, 'text': text}})
+            stdout.write_text(event('reasoning', 'first') + '\n' + event('agent_message', 'torn'))
+            follower = subprocess.Popen([sys.executable, str(PACKAGE / 'scripts' / 'progress.py'), str(Path(root, 'run')), '--follow'],
+                                        text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            try:
+                time.sleep(1)
+                self.assertIsNone(follower.poll())
+                with stdout.open('a') as handle:
+                    handle.write('\n' + event('agent_message', '{"text": "second"}') + '\n')
+                time.sleep(1)
+                atomic_json(Path(root, 'run', 'report.json'), {'outcome': 'agreed'})
+                out, err = follower.communicate(timeout=5)
+            finally:
+                follower.kill()
+            self.assertEqual(follower.returncode, 0, err)
+            self.assertEqual(out, '[a t1 reasoning]\nfirst\n\n[a t1 message]\ntorn\n\n[a t1 message]\nsecond\n\n')
 
 
     def test_single_writer(self):
