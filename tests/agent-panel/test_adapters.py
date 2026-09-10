@@ -86,6 +86,28 @@ class AdapterBehavior(unittest.TestCase):
                 self.assertNotIn('--bare', resumed)
 
 
+    def test_schema_enforced_envelope(self):
+        """Given a phase schema, when each adapter launches, then Claude passes it inline, Codex writes a strict copy with data as a string, and Codex output decodes that string back into an object."""
+
+        schema = {'type': 'object', 'properties': {'participant_id': {'type': 'string', 'enum': ['a']}, 'text': {'type': 'string'}, 'data': {'type': 'object'}},
+                  'required': ['participant_id', 'text', 'data'], 'additionalProperties': False}
+        with tempfile.TemporaryDirectory() as root:
+            adapters = production_adapters()
+            claude, _ = adapters['claude'].command(None, dict(settings(root), schema=schema))
+            self.assertEqual(json.loads(claude[claude.index('--json-schema') + 1]), schema)
+            codex, _ = adapters['codex'].command(None, dict(settings(root), schema=schema))
+            written = json.loads(Path(codex[codex.index('--output-schema') + 1]).read_text())
+            self.assertEqual(written['properties']['data']['type'], 'string')
+            self.assertEqual(written['required'], schema['required'])
+            self.assertEqual(schema['properties']['data'], {'type': 'object'}, 'the caller\'s schema is not mutated')
+            self.assertEqual(codex[-1], '-')
+            events = lambda text: '\n'.join(json.dumps(e) for e in [{'type': 'thread.started', 'thread_id': 's'},
+                      {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': text}}, {'type': 'turn.completed'}])
+            decoded = adapters['codex'].parse(events('{"text": "ok", "data": "{\\"k\\": 1}"}'), 0, 's')
+            self.assertEqual((decoded.outcome, decoded.block['data']), ('completed', {'k': 1}))
+            self.assertNotEqual(adapters['codex'].parse(events('{"text": "ok", "data": "not json"}'), 0, 's').outcome, 'completed')
+
+
     def test_subprocess_start_resume(self):
         """Given executable harness fixtures, when started and resumed, then return immediate handles, capture outputs and reuse each distinct session."""
 

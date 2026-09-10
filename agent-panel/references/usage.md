@@ -36,7 +36,7 @@ A roster specifies participants, coordination roles, optional evidence and execu
 }
 ```
 
-Use supported effort values. IDs must be unique; `host`, `runner` and `all` are reserved. Each participant gets a separate session, even on the same harness. `required_approvers` defaults to everyone. Set `drafter`; `leader-members` also requires `leader`, who integrates instead. Working-copy runs require an approver other than the integrator.
+Use supported effort values. IDs must be unique; `host`, `runner` and `all` are reserved. Each participant gets a separate session, even on the same harness. `required_approvers` defaults to everyone. Set `drafter`; `leader-members` also requires `leader`, who integrates instead; `flat-peers` treats `drafter` as the fallback when peers do not unanimously nominate an integrator. Working-copy runs require an approver other than the integrator.
 
 Roles are neutral labels: `member` for every participant, and `leader` for the `leader-members` leader. The brief defines the work; the preset's opening round divides it, or keeps it whole. A role that names a viewpoint or a slice of the task prejudices that round, since the runner sends each participant its own role and the full roster in every phase, including the opening. The `drafter` designation is an editing duty.
 
@@ -135,7 +135,9 @@ Both bundled harnesses stream native events to the attempt's `stdout` file while
 
 Artifacts include the saved manifest, `events.jsonl`, participant prompts/native outputs, and `revisions/REVISION/` with `result.md` and `result.json`. Working-copy results add frozen files, a patch and check evidence. `report.json` is the latest answer's report; `reports/discussion-N.json` preserves each answer's reviews, verification, failures, cancellations and usage. Link the returned `discussion_report` when presenting an answer so later follow-ups cannot change its approval record. `manifest.json` records whether the conversation is active or stopped independently of the latest answer's outcome.
 
-The protocol envelope carries contributions or deliverables in `text` and any brief-requested JSON object in optional `data`, without predefined keys. Reviews use revision/hash and approve/object/unable fields. The runner validates the envelope and identity; reviewers assess substance against the brief.
+The protocol envelope carries contributions or deliverables in `text` and any brief-requested JSON object in `data`, without predefined keys. Reviews use revision/hash and approve/object/unable fields. The runner builds a JSON schema for each dispatch and each harness enforces it natively, through Claude's `--json-schema` and Codex's `--output-schema`, so an envelope cannot arrive malformed; the review schema pins the exact revision and hash under review. Codex validates strictly, so its copy carries `data` as a JSON-encoded string that the adapter decodes. The runner still validates identity and content; reviewers assess substance against the brief.
+
+In `flat-peers`, the responsibilities round also carries an `integrator` nomination. A unanimous nomination by the required peers makes that peer the drafter for the discussion, announced to everyone as a runner message; otherwise, or when a working-copy run would leave no other approver, the roster's declared drafter integrates. The roster's `drafter` stays the saved fallback across follow-ups.
 
 Result hashes bind text and data, plus files, patch and verification for working copies. Code or data changes require fresh approval even if prose is unchanged. Each round freezes its event cutoff; directed messages affect visibility without adding turns.
 

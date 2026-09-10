@@ -32,7 +32,7 @@ class FakeAdapter:
         if action == 'transient' and key not in self.retries:
             self.retries.add(key)
             raise PreDispatchTransient('temporary unavailable before launch')
-        self.inputs.append(dict(payload, session=session))
+        self.inputs.append(dict(payload, session=session, schema=settings.get('schema')))
         handle = Handle()
         handle.pid = payload['participant_id']
         handle.directory = settings['attempt_dir']

@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 from .base import ProcessAdapter, Terminal, structured
 
 
@@ -21,6 +22,14 @@ class CodexAdapter(ProcessAdapter):
             command += ['-c', 'web_search=' + json.dumps('live' if capabilities.get('web') else 'disabled')]
         if settings.get('effort'):
             command += ['-c', 'model_reasoning_effort=' + json.dumps(settings['effort'])]
+        if settings.get('schema'):
+            # Codex validates strictly: no open objects. The free-form data object travels as an encoded string.
+            schema = json.loads(json.dumps(settings['schema']))
+            schema['properties']['data'] = {'type': 'string', 'description': 'A JSON object encoded as a string; "{}" when the brief requests no structured data'}
+            path = Path(settings['attempt_dir']) / 'schema.json'
+            path.parent.mkdir(parents=True, exist_ok=True)
+            path.write_text(json.dumps(schema))
+            command += ['--output-schema', str(path)]
         if session_id:
             command += [session_id]
         command += ['-']
@@ -61,6 +70,8 @@ class CodexAdapter(ProcessAdapter):
             if code != 0 or len(terminal) != 1 or not result.session_id or not texts:
                 raise ValueError('missing successful terminal event, session ID or final message')
             result.block = structured(result.raw_text)
+            if isinstance(result.block.get('data'), str):
+                result.block['data'] = json.loads(result.block['data'])
             result.outcome = 'completed'
         except (ValueError, KeyError, TypeError, AttributeError) as exc:
             result.error = f'Invalid Codex terminal output: {exc}'
