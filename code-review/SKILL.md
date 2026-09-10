@@ -26,7 +26,9 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
    - Gather goals and context from the repo's VCS and platform: diff and size against the merge target, for example `git diff <base>...HEAD`; PR/MR description, for example via `gh` or `glab`; commit messages and the issues they reference (`#123`, `Closes #45`); and project guidance such as `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, `CONTRIBUTING.md`, architecture docs, or linter config.
    - Determine the full review surface inside the resolved scope before deep reading: diff stat, file status changes, renames, deletes, generated files, migrations, lockfiles, and config changes. For PRs, identify the target branch or merge base, and confirm the base ref resolves and the diff is non-empty. A bad ref or empty diff fails here, not mid-review. For local-only reviews, state whether unstaged and untracked files are in scope.
    - If intent is missing, infer it and label it as an assumption, not a fact.
-   - Check the goal before the mechanics, in this order: the problem the author is solving; whether the intended behavior solves that problem and respects the wider system's contracts, features, and recorded decisions; then whether the implementation delivers that behavior. Code that perfectly retries every failed payment still double-charges after an ambiguous timeout, and the retry policy itself is the finding. Scale the check to the surface: one sentence for a rename or dependency bump, a real question with evidence for a payment, auth, or data path. Missing business context becomes an open question, never an invented requirement.
+   - Check the goal before the mechanics: identify the problem the author is solving, assess whether the intended behavior solves it and fits the wider system, then check whether the implementation delivers that behavior. Assess conflicts with existing contracts, features, and recorded decisions against the change's justification.
+   - Scale the intent check to the risk: a brief statement for a low-risk change, evidence from affected flows and contracts for payment, auth, or data paths. Missing business context becomes an open question, never an invented requirement.
+   - A correct implementation can serve a wrong goal. For example, retrying a payment after an ambiguous timeout can double-charge when the first attempt succeeded and retries lack idempotency. The retry policy itself warrants a finding.
    - If tooling is unavailable because there is no PR platform, the checkout is detached or shallow, or commands fail, degrade gracefully: review what you can access, state which context you could not gather, and treat that gap as residual risk rather than guessing.
 
 2. Read enough context, then stop.
@@ -37,7 +39,7 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
 
 3. Scan by risk, not file order.
    - Map every changed file and touched public surface to at least one risk category below, or explicitly clear it, before deciding which findings are worth reporting.
-   - Problem fit: the intent solves the stated problem rather than a symptom, sits in the right layer rather than working around one, and conflicts with no existing contract, feature, or recorded decision.
+   - Problem fit: the intent solves the stated problem rather than a symptom, sits in the right layer rather than working around one, and introduces no unjustified conflict with existing contracts, features, or recorded decisions.
    - Intent fit: the code delivers the intended behavior without scope drift or missing cases.
    - Functional correctness: boundaries, edge cases, missing branches, null/error handling, off-by-one errors, state transitions, concurrency, race conditions, lock ordering, idempotency, and resource lifecycle.
    - Breaking changes: backward and forward compatibility, mixed-version behavior, migrations, defaults, rollback, and external integrations.
@@ -79,7 +81,7 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
    - `Medium`: contained but real bug, missing validation, meaningful test gap, brittle logic likely to cause future defects, or maintainability issue with practical risk.
    - `Low`: minor cleanup with practical value; omit unless the user asks for exhaustive review.
    - If there are no findings, say so directly; do not invent low-value findings to avoid an empty review.
-   - Report a wrong goal as the first finding, naming the concrete conflict (the issue's stated problem, a sibling path left broken, a contract or decision it violates) with a next step of confirming the requirement or naming the alternative, and still review the mechanics: the user may confirm the goal.
+   - Report a wrong goal as a finding, ordered by severity alongside implementation findings. Name the concrete conflict with the stated problem, a sibling path left broken, or a contract or decision it violates. Propose an alternative or ask for a requirement decision when context is missing. Still review the mechanics, since the user may confirm the goal.
    - **Do not report:** guessed intent without concrete evidence; broad rewrites when a local fix addresses the issue; breakage that is the change's stated, scope-constrained intent (a removed flag, a deleted feature) unless its impacts look under-weighed; or issues the repo's linter, formatter, or type-checker already catches. The `Bad findings` examples below show the other shapes to reject.
 
 8. Self-check before finalizing.
