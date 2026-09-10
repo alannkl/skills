@@ -18,7 +18,7 @@ class ClaudeAdapter(ProcessAdapter):
             if capabilities.get('source_edits'):
                 tools += ['Edit', 'Write']
         permission_mode = 'auto'
-        command = [settings.get('executable', 'claude'), '-p', '--output-format', 'stream-json', '--verbose',
+        command = [settings.get('executable', 'claude'), '-p', '--output-format', 'stream-json', '--verbose', '--include-partial-messages',
                    '--model', settings['model'], '--permission-mode', permission_mode,
                    '--permission-prompts', 'none',
                    '--allowedTools', *grants, '--tools', ','.join(tools),
@@ -42,8 +42,9 @@ class ClaudeAdapter(ProcessAdapter):
     def parse(self, output, code, session_id):
         result = Terminal(session_id, exit_status=code)
         try:
-            # stream-json writes one event per line as the turn runs. A resumed session may flush a pending
-            # notification as its own result before answering, so the last result event is the terminal state.
+            # stream-json writes one event per line as the turn runs, including partial-message deltas that keep the
+            # capture growing during long reasoning. A resumed session may flush a pending notification as its own
+            # result before answering, so the last result event is the terminal state.
             events = [json.loads(line) for line in output.splitlines() if line.strip()]
             results = [e for e in events if isinstance(e, dict) and e.get('type') == 'result']
             if not results:

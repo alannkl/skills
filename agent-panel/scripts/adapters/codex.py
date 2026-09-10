@@ -25,7 +25,8 @@ class CodexAdapter(ProcessAdapter):
         if settings.get('schema'):
             # Codex validates strictly: no open objects. The free-form data object travels as an encoded string.
             schema = json.loads(json.dumps(settings['schema']))
-            schema['properties']['data'] = {'type': 'string', 'description': 'A JSON object encoded as a string; "{}" when the brief requests no structured data'}
+            if 'data' in schema['properties']:
+                schema['properties']['data'] = {'type': 'string', 'description': 'A JSON object encoded as a string; "{}" when the brief requests no structured data'}
             path = Path(settings['attempt_dir']) / 'schema.json'
             path.parent.mkdir(parents=True, exist_ok=True)
             path.write_text(json.dumps(schema))
