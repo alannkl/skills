@@ -22,12 +22,12 @@ Improve code clarity, consistency, and maintainability without changing behavior
    - Read the relevant files, local conventions, and nearby patterns before editing.
    - Understand the externally observable behavior: inputs, outputs, side effects, error handling, rendered output, accessibility semantics, persistence, public API shape, serialization, ordering, timing, and user-visible text.
    - Check nearby tests or examples before changing subtle logic; use them to anchor behavior when available.
-   - Check recorded rationale — ADRs, design docs, constraint comments — before simplifying deliberate complexity; a recorded decision is not this pass's to re-litigate.
+   - Check ADRs, design docs, and constraint comments before simplifying deliberate complexity. Preserve recorded decisions during this pass.
    - Note any ambiguity; proceed on reasonable assumptions, but stop and ask only when guessing wrong about intent could change observable behavior.
 
 2. Find meaningful simplifications.
    - Reduce unnecessary branching, nesting, duplication, and indirection.
-   - Shrink state scope with behavior-preserving moves: prefer returns over mutations, locals over fields, fields over module state; derive values instead of keeping copies in sync. The test: a new reader can answer "where does X come from?" and "what can change X?" without a search.
+   - Narrow state scope while preserving behavior. Prefer returns over mutations, locals over fields, and fields over module state. Derive values instead of keeping copies in sync. A new reader should be able to answer "where does X come from?" and "what can change X?" without a search.
    - Delete dead code: provably unreachable branches, unused symbols, unused parameters. A guard that can still fire is behavior — keep it unless proven unreachable.
    - Consolidate nearly identical branch bodies when only small payload fields differ.
    - Avoid nested ternaries; use a switch or if/else chain when there are multiple conditions.
@@ -36,7 +36,7 @@ Improve code clarity, consistency, and maintainability without changing behavior
    - Favor compact, DRY implementations when they remain clear and debuggable, but keep small one-off decisions inline when extracting a helper would add naming overhead without reuse.
    - Prefer the simplest readable form; do not expand code only to appear more explicit.
    - Improve unclear variable, function, prop, or type names when the better name reflects established project language.
-   - Add or remove an abstraction only on a real payoff — reduced complexity, isolated behavior, testability, reuse, or domain meaning; keep abstractions that carry any of these. Collapse layers that earn nothing: wrappers with one caller, adapters with no second implementation, indirection built for a future that never came. The deletion test: imagine deleting the unit — if complexity vanishes it was a pass-through; if it reappears across the callers it was earning its keep.
+   - Add or remove an abstraction only for a concrete benefit: reduced complexity, isolated behavior, testability, reuse, or domain meaning. Keep abstractions that provide any of these. Candidates for removal include wrappers with one caller, adapters with no second implementation, and indirection built for unused future capabilities. Imagine deleting the unit. If complexity vanishes, it was a pass-through; if complexity reappears across callers, keep it.
    - Reject a refactor if it increases cognitive load without a clear payoff.
    - Remove comments that explain obvious syntax or control flow, but preserve comments that explain intent, tradeoffs, invariants, or non-obvious behavior.
    - Remove commented-out code only when it is clearly stale noise and local practice supports doing so; otherwise leave it or ask.
@@ -64,13 +64,11 @@ Keep the final summary proportional to the change. For small tasks, use 1-3 conc
 
 For larger passes, use this structure:
 
-- `Files examined`: list reviewed source files.
-- `Files already good (no changes needed)`: list reviewed files that needed no changes.
-- `Files simplified`: use one point per changed file, with sub-points for each meaningful simplification:
+- `Simplifications`: one point per simplification, naming the affected files. Extracting a helper from three callers is one simplification. Include these sub-points:
   - before: the old shape or source of complexity
   - after: the new shape
-  - what changed: the concrete simplification
   - why better: readability, maintainability, lower duplication, or reduced cognitive load
 - `Validation`: list commands run and results, or state what was not run.
+- `Scope`: one line naming the files examined and which of them needed no change.
 
 Keep the summary concrete and include only significant changes that affect understanding. Do not claim behavior changed, performance improved, or bugs were fixed unless the simplification actually did that and validation supports it.
