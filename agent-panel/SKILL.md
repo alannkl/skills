@@ -17,10 +17,10 @@ For follow-ups, read [continuing the conversation](references/usage.md#continuin
 ## Prepare
 
 1. Write a brief defining the goal, scope, evidence, deliverable and acceptance criteria. Consult [brief examples](references/brief-examples.md) when useful. For collaborative execution of an existing skill, first read that skill and [skill collaboration](references/skill-collaboration.md).
-2. Read [runner usage](references/usage.md) for roster, evidence and execution settings. Use the requested preset; otherwise choose and announce one. Default interactive skills to `leader-members` with one human-facing coordinator, preserving the selected skill's mode-selection rules:
-   - `independent-discussion`: independent work, reveal, critique, integration, review.
-   - `leader-members`: a leader assigns complementary work and integrates contributions.
-   - `flat-peers`: peers propose responsibilities and contribute; a declared integrator assembles the result.
+2. Read [runner usage](references/usage.md) for roster, evidence and execution settings. Use the requested preset; otherwise choose one by how the work is shared and announce it. Default interactive skills to `leader-members` with one human-facing coordinator, preserving the selected skill's mode-selection rules:
+   - `independent-discussion`: duplicated work. Every participant produces the whole deliverable privately; the panel then compares competing results. Choose it when the value is whether participants converge unprompted: judgments, forecasts, designs, reviews.
+   - `leader-members`: split work, decided by the leader. The leader assigns complementary parts and integrates them. Choose it when one participant should own the decomposition.
+   - `flat-peers`: split work, negotiated by the peers. Identical peers propose the split, then each contributes its part; a declared integrator assembles them. Choose it when the work should be divided but nobody, host included, should decide the division in advance.
 3. Resolve the requested roster or the two-participant [default roster](references/usage.md#default-roster), including model availability and effort. Assign IDs, roles, adapters, the integrator and required approvers using the [roster file rules](references/usage.md#roster-file).
 4. Set authorized web, command and source-edit access. Choose checks with expected exit codes, or explain how review will verify completion. Preserve authentication and billing settings.
 5. Before launching, freeze the inputs and report the source revision, deliverable, participant count, each participant's harness/model/effort/role, required approvers, preset and run limits. Confirm the roster unless the user already supplied or approved it, including effort defaults or a fallback policy. Report choices within that approval without asking again; confirm changes outside it. Freeze the resolved roster for the run.
