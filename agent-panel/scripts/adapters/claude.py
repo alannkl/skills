@@ -30,6 +30,8 @@ class ClaudeAdapter(ProcessAdapter):
             command += ['--disallowedTools', 'Edit(/' + settings['cwd'] + '/**)']
         if settings.get('read_dirs'):
             command += ['--add-dir', *settings['read_dirs']]
+        if settings.get('schema'):
+            command += ['--json-schema', json.dumps(settings['schema'])]
         command += ['--resume' if session_id else '--session-id', session]
         if settings.get('effort'):
             command += ['--effort', settings['effort']]

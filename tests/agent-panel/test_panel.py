@@ -102,8 +102,51 @@ class PanelBehavior(unittest.TestCase):
             contributions = [i for i in f.adapter.inputs if i['phase'] == 'contribute']
             self.assertEqual(len({i['cutoff'] for i in contributions}), 1)
             for i in contributions:
-                self.assertEqual({e['sender'] for e in i['events']}, {'ada', 'bert', 'cy'})
+                self.assertEqual({e['sender'] for e in i['events']}, {'ada', 'bert', 'cy', 'runner'}, 'peer proposals plus the integrator announcement')
             self.assertEqual(set(report['reviews']), {'ada', 'bert', 'cy'})
+        self.run_scenario(scenario)
+
+
+    def test_flat_peers_choose_integrator(self):
+        """Given flat peers, when every required peer nominates the same integrator, then that peer drafts and the choice is announced; split nominations leave the declared drafter."""
+
+        for nominate, expected in ((lambda p: 'cy', 'cy'), (lambda p: 'cy' if p['participant_id'] == 'ada' else 'bert', 'ada'), (lambda p: None, 'ada')):
+            async def scenario(root):
+                f = Fixture(root, 'flat-peers', behavior=lambda p: {'integrator': nominate(p)} if p['phase'] == 'responsibilities' else None)
+                report = await f.run()
+                self.assertEqual(report['outcome'], 'agreed', report['reason'])
+                self.assertEqual([i['participant_id'] for i in f.adapter.inputs if i['phase'] == 'draft'], [expected])
+                announcement = next(e for e in f.panel.records.events if e['phase'] == 'integrator')
+                self.assertEqual((announcement['sender'], announcement['data']['integrator']), ('runner', expected))
+                contribute = next(i for i in f.adapter.inputs if i['phase'] == 'contribute')
+                self.assertTrue(any(e['phase'] == 'integrator' for e in contribute['events']), 'peers learn the integrator before contributing')
+                self.assertEqual(json.loads(Path(report['manifest']).read_text())['drafter'], 'ada', 'the declared drafter stays the saved fallback')
+            with self.subTest(expected=expected):
+                self.run_scenario(scenario)
+
+
+    def test_envelope_schema_follows_phase(self):
+        """Given each phase, when a participant is dispatched, then its schema pins identity, kind, the exact candidate under review, every assignment key, and the nomination field only where the preset asks for one."""
+
+        async def scenario(root):
+            f = Fixture(root, 'flat-peers')
+            report = await f.run()
+            self.assertEqual(report['outcome'], 'agreed')
+            by_phase = {i['phase']: i for i in f.adapter.inputs}
+            for i in f.adapter.inputs:
+                schema = i['schema']
+                self.assertEqual(schema['properties']['participant_id']['enum'], [i['participant_id']])
+                self.assertEqual(schema['required'], list(schema['properties']))
+                self.assertFalse(schema['additionalProperties'])
+            self.assertEqual(by_phase['review']['schema']['properties']['revision']['enum'], [f.panel.candidate['revision']])
+            self.assertEqual(by_phase['review']['schema']['properties']['content_hash']['enum'], [f.panel.candidate['content_hash']])
+            self.assertEqual(by_phase['draft']['schema']['properties']['kind']['enum'], ['candidate'])
+            self.assertIn('integrator', by_phase['responsibilities']['schema']['properties'])
+            self.assertNotIn('integrator', by_phase['contribute']['schema']['properties'])
+            g = Fixture(Path(root, 'leader'), 'leader-members') if Path(root, 'leader').mkdir() is None else None
+            await g.run()
+            assign = next(i for i in g.adapter.inputs if i['phase'] == 'assign')['schema']['properties']['assignments']
+            self.assertEqual(assign['required'], ['ada', 'bert', 'cy'])
         self.run_scenario(scenario)
 
 

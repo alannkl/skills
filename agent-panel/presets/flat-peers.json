@@ -1,11 +1,12 @@
 {
   "name": "flat-peers",
-  "authority": "Required peers share decision authority and propose responsibilities together. The declared drafter has editorial responsibility only.",
+  "authority": "Required peers share decision authority and propose responsibilities together. The integrator, chosen by unanimous nomination or else the declared drafter, has editorial responsibility only.",
   "opening": [
     {
       "phase": "responsibilities",
       "participants": "all",
-      "instruction": "As an equal peer, propose an approach and a division of responsibilities across the roster, and state which parts you would take, without claiming authority over another peer."
+      "instruction": "As an equal peer, propose an approach and a division of responsibilities across the roster, and state which parts you would take, without claiming authority over another peer. Nominate the peer who should assemble the final result in integrator; a unanimous nomination decides, otherwise the declared drafter integrates.",
+      "nominate_integrator": true
     },
     {
       "phase": "contribute",
