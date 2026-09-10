@@ -9,7 +9,7 @@ Run one round of multiple-choice questions on the target's missable behavior, th
 - No quota: the target sets the count — one question per genuinely missable behavior, done when each is covered. If the target offers none, say so and skip the quiz; never pad the round with easy questions.
 - Every option must be a plausible behavior. No symbol trivia (never "which function/file/pattern"), and for change scope no questions about unchanged behavior.
 - Shuffle the correct option's position from question to question, and keep all options similar in length and detail; a fixed slot or a longest-option-wins pattern is a tell.
-- Ask one question at a time. Use the ask-question tool when available; otherwise ask as plain numbered chat messages. Confirm right or wrong in one line after each answer; save re-teaching for the end of the round.
+- Ask the whole round at once. Use the ask-question tool when available, packing the questions into as few calls as it allows; otherwise send every question in one chat message, numbered, with lettered options, and invite all answers in one reply such as "1b 2a 3c". Hold scoring until every answer is in.
 
 ## Score and re-teach
 
