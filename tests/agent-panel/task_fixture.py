@@ -37,7 +37,7 @@ class TaskFixture:
             self.roster.update(repository=str(repo), base_revision='HEAD')
         self.panel = Panel(preset(name), self.brief, self.roster,
                            self.root / 'run', {'fake': self.adapter},
-                           **dict({'max_cycles': 1, 'turn_seconds': 5, 'run_seconds': 60}, **limits))
+                           **dict({'max_cycles': 1, 'idle_seconds': 5, 'run_seconds': 60}, **limits))
 
     def behavior(self, payload):
         if payload['phase'] != 'draft':

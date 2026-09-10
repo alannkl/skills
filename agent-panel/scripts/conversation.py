@@ -1,9 +1,8 @@
 """Continue saved panel sessions between bounded discussions, without idle processes."""
 import asyncio
 import json
-import time
 
-from engine import Panel, validate_roster
+from engine import Panel, validate_limits, validate_roster
 from execution import ExecutionPolicy
 from records import Records, digest, snapshot_hash
 from workspace import Workspaces, result_hash
@@ -34,17 +33,36 @@ def restore_panel(records, manifest, adapters, host_input=None):
     panel.rounds_used = 0
     # Turn IDs also name artifact directories and must never repeat across discussions.
     panel.turn = max((int(e['data']['turn_id'][1:]) for e in records.events if e['kind'] == 'dispatch'), default=0)
-    limits = manifest['limits']
-    panel.max_cycles, panel.max_rounds = limits['max_cycles'], limits['max_rounds']
-    panel.turn_seconds = limits['turn_seconds']
-    panel.cancel_seconds = min(4.0, limits['report_seconds'] - 1.0)
-    panel.deadline = time.monotonic() + limits['run_seconds'] - limits['report_seconds']
+    if 'idle_seconds' not in manifest['limits']:
+        # Panels saved before the idle bound keep their per-turn cap as the idle window.
+        manifest['limits']['idle_seconds'] = manifest['limits'].pop('turn_seconds')
+    set_limits(panel, manifest['limits'])
     panel.stop, panel.active = asyncio.Event(), {}
     panel.host_input, panel.phase = host_input, 'setup'
     return panel
 
 
-def continue_panel(run_dir, brief, adapters, host_input=None):
+def set_limits(panel, limits):
+    panel.max_cycles, panel.max_rounds = limits['max_cycles'], limits['max_rounds']
+    panel.idle_seconds = limits['idle_seconds']
+    panel.run_seconds, panel.report_seconds = limits['run_seconds'], limits['report_seconds']
+    panel.cancel_seconds = min(4.0, limits['report_seconds'] - 1.0)
+    panel.restart_clock()
+
+
+def revised_limits(panel, saved, overrides):
+    """Limits bound time and cycles, not evidence, so a follow-up may change them without a reset."""
+    overrides = dict(overrides or {})
+    unbounded = overrides.pop('unbounded', False)
+    limits = dict(saved, **{k: v for k, v in overrides.items() if v is not None})
+    if unbounded:
+        limits['run_seconds'] = None
+    validate_limits(limits['max_cycles'], limits['idle_seconds'], limits['run_seconds'], limits['report_seconds'])
+    limits['max_rounds'] = len(panel.preset['opening']) + limits['max_cycles'] * 3
+    return limits
+
+
+def continue_panel(run_dir, brief, adapters, host_input=None, limits=None):
     if not isinstance(brief, str) or not brief.strip():
         raise ValueError('Follow-up must contain the latest user request and acceptance criteria')
     records = Records(run_dir, existing=True)
@@ -73,6 +91,8 @@ def continue_panel(run_dir, brief, adapters, host_input=None):
         if manifest.get('candidate') and result_hash(manifest['candidate']) != manifest['candidate']['content_hash']:
             raise ValueError('Previous result changed; restore its evidence before continuing')
         panel = restore_panel(records, manifest, adapters, host_input)
+        manifest['limits'] = revised_limits(panel, manifest['limits'], limits)
+        set_limits(panel, manifest['limits'])
         archive = records.root / 'reports' / f"discussion-{manifest.get('discussion', 1)}.json"
         if not archive.exists():
             archive.parent.mkdir(exist_ok=True)
@@ -89,7 +109,8 @@ def continue_panel(run_dir, brief, adapters, host_input=None):
                         brief_revision=panel.brief_revision, brief_hash=digest(brief.encode()))
         records.save_manifest(manifest)
         records.append('discussion_start', 'setup', sender='host', visibility=['all'],
-                       discussion=manifest['discussion'], brief_revision=panel.brief_revision, text=brief)
+                       discussion=manifest['discussion'], brief_revision=panel.brief_revision, text=brief,
+                       limits=manifest['limits'])
         return panel
     except BaseException:
         records.close()

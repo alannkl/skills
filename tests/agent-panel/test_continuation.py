@@ -100,7 +100,7 @@ class ContinuationBehavior(unittest.TestCase):
         async def scenario(root):
             offset = 0
             clock = SimpleNamespace(monotonic=lambda: time.monotonic() + offset)
-            with patch('engine.time', clock), patch('conversation.time', clock):
+            with patch('engine.time', clock):
                 f = Fixture(root, max_cycles=1)
                 first = await f.run()
                 prior = {Path(first[key]): Path(first[key]).read_bytes() for key in ('candidate', 'discussion_report')}
@@ -119,6 +119,43 @@ class ContinuationBehavior(unittest.TestCase):
             for path, content in prior.items():
                 self.assertEqual(path.read_bytes(), content)
             self.assertEqual(len(second['usage']), len(adapter.inputs))
+        self.run_scenario(scenario)
+
+    def test_followup_changes_limits(self):
+        """Given a saved panel, when a follow-up passes new limits, then they replace the saved ones, the round cap follows the cycle cap, invalid values are rejected, and the discussion records the limits in force."""
+        async def scenario(root):
+            f = Fixture(root)
+            self.assertEqual((await f.run())['outcome'], 'agreed')
+            self.assertEqual(saved(root)['limits']['idle_seconds'], 2)
+            with self.assertRaisesRegex(ValueError, 'deadlines'):
+                continue_panel(Path(root) / 'run', 'Question', {'fake': FakeAdapter()}, limits={'idle_seconds': -1})
+            adapter = FakeAdapter()
+            panel = continue_panel(Path(root) / 'run', 'Question', {'fake': adapter}, limits={'idle_seconds': 7, 'max_cycles': 1, 'run_seconds': None})
+            self.assertEqual((panel.idle_seconds, panel.max_cycles, panel.max_rounds), (7, 1, 5))
+            report = await panel.run()
+            self.assertEqual(report['outcome'], 'agreed')
+            limits = saved(root)['limits']
+            self.assertEqual((limits['idle_seconds'], limits['max_cycles'], limits['max_rounds'], limits['run_seconds']), (7, 1, 5, 30))
+            start = next(e for e in panel.records.events if e['kind'] == 'discussion_start' and e['data']['discussion'] == 2)
+            self.assertEqual(start['data']['limits'], limits)
+            unchanged = continue_panel(Path(root) / 'run', 'Again', {'fake': FakeAdapter()})
+            self.assertEqual(unchanged.idle_seconds, 7)
+            unchanged.records.close()
+        self.run_scenario(scenario)
+
+    def test_saved_turn_cap_becomes_idle_window(self):
+        """Given a panel saved with a per-turn cap, when continued, then that cap becomes its idle window unless a new one is passed."""
+        async def scenario(root):
+            f = Fixture(root)
+            self.assertEqual((await f.run())['outcome'], 'agreed')
+            manifest = saved(root)
+            manifest['limits']['turn_seconds'] = manifest['limits'].pop('idle_seconds')
+            atomic_json(Path(root) / 'run' / 'manifest.json', manifest)
+            panel = continue_panel(Path(root) / 'run', 'Question', {'fake': FakeAdapter()})
+            self.assertEqual(panel.idle_seconds, 2)
+            self.assertEqual((await panel.run())['outcome'], 'agreed')
+            self.assertEqual(saved(root)['limits'].get('idle_seconds'), 2)
+            self.assertNotIn('turn_seconds', saved(root)['limits'])
         self.run_scenario(scenario)
 
     def test_working_copies_survive_followup(self):
@@ -288,9 +325,16 @@ class ContinuationBehavior(unittest.TestCase):
             self.assertEqual({pid: p['session_id'] for pid, p in saved(root)['participants'].items()}, sessions)
             prompts = [p.read_text() for p in (root / 'run' / 'participants').glob('*/*/input.txt')]
             self.assertTrue(any('Keep the explanation generic.' in p and 'Initial question' in p for p in prompts))
-            for invalid in (['--run-seconds', '20'], ['--run-dir', str(root / 'replacement')]):
-                failed = command('--continue', str(root / 'run'), '--follow-up', str(root / 'followup.md'), *invalid, expect=2)
-                self.assertIn('retain', failed['error'])
+            third = command('--continue', str(root / 'run'), '--follow-up', str(root / 'followup.md'), '--run-seconds', '20')
+            self.assertEqual((third['discussion'], saved(root)['limits']['run_seconds']), (3, 20))
+            fourth = command('--continue', str(root / 'run'), '--follow-up', str(root / 'followup.md'), '--unbounded')
+            self.assertEqual((fourth['discussion'], saved(root)['limits']['run_seconds']), (4, None))
+            fifth = command('--continue', str(root / 'run'), '--follow-up', str(root / 'followup.md'), '--run-seconds', '25')
+            self.assertEqual((fifth['discussion'], saved(root)['limits']['run_seconds']), (5, 25))
+            self.assertIn('unbounded', command('--continue', str(root / 'run'), '--follow-up', str(root / 'followup.md'), '--unbounded', '--run-seconds', '9', expect=2)['error'])
+            failed = command('--continue', str(root / 'run'), '--follow-up', str(root / 'followup.md'), '--run-dir', str(root / 'replacement'), expect=2)
+            self.assertIn('retain', failed['error'])
+            self.assertIn('limits', command('--recover', str(root / 'run'), '--run-seconds', '20', expect=2)['error'])
             self.assertEqual(command('--stop', str(root / 'run'))['conversation'], 'stopped')
             events = (root / 'run' / 'events.jsonl').read_bytes()
             command('--continue', str(root / 'run'), '--follow-up', str(root / 'followup.md'), expect=2)

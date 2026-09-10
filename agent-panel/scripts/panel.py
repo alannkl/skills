@@ -40,9 +40,13 @@ async def host_input(phase):
 
 async def execute(args):
     existing = args.continue_run or args.stop or args.recover
-    bounds = (args.max_cycles, args.turn_seconds, args.run_seconds, args.report_seconds)
-    if existing and (any((args.preset, args.brief, args.roster, args.run_dir)) or any(x is not None for x in bounds)):
-        raise ValueError('Saved panels retain their roster, preset, execution settings and limits; reset explicitly to change them')
+    bounds = (args.max_cycles, args.idle_seconds, args.run_seconds, args.report_seconds)
+    if existing and any((args.preset, args.brief, args.roster, args.run_dir)):
+        raise ValueError('Saved panels retain their roster, preset, execution settings and run directory; reset explicitly to change them')
+    if (args.stop or args.recover) and (any(x is not None for x in bounds) or args.unbounded):
+        raise ValueError('--recover and --stop take no limits; pass changed limits with --continue')
+    if args.unbounded and args.run_seconds is not None:
+        raise ValueError('--unbounded removes the discussion deadline; do not combine it with --run-seconds')
     if bool(args.follow_up) != bool(args.continue_run):
         raise ValueError('--continue RUN_DIR requires --follow-up FILE; --follow-up is only for continuation')
     if args.stop:
@@ -52,7 +56,10 @@ async def execute(args):
         return recover_run(args.recover, adapters)
     checkpoint = host_input if args.pause_between_rounds else None
     if args.continue_run:
-        panel = continue_panel(args.continue_run, Path(args.follow_up).read_text(), adapters, checkpoint)
+        panel = continue_panel(args.continue_run, Path(args.follow_up).read_text(), adapters, checkpoint,
+                               limits={'max_cycles': args.max_cycles, 'idle_seconds': args.idle_seconds,
+                                       'run_seconds': args.run_seconds, 'report_seconds': args.report_seconds,
+                                       'unbounded': args.unbounded})
     else:
         if not all((args.preset, args.brief, args.roster)):
             raise ValueError('preset, brief and roster are required for a new panel')
@@ -66,8 +73,8 @@ async def execute(args):
         run_dir = args.run_dir or str(Path(tempfile.gettempdir()) / ('agent-panel-' + str(uuid.uuid4())))
         panel = Panel(preset, Path(args.brief).read_text(), roster, run_dir, adapters,
                       max_cycles=args.max_cycles if args.max_cycles is not None else 3,
-                      turn_seconds=args.turn_seconds if args.turn_seconds is not None else 180,
-                      run_seconds=args.run_seconds if args.run_seconds is not None else 1800,
+                      idle_seconds=args.idle_seconds if args.idle_seconds is not None else 300,
+                      run_seconds=None if args.unbounded else args.run_seconds if args.run_seconds is not None else 3600,
                       report_seconds=args.report_seconds if args.report_seconds is not None else 10,
                       host_input=checkpoint)
     loop = asyncio.get_running_loop()
@@ -89,10 +96,11 @@ def main():
     parser.add_argument('--adapter', action='append', default=[], metavar='NAME=FILE',
                         help='Register a trusted Python adapter exporting create_adapter(); repeat to add harnesses')
     parser.add_argument('--run-dir', help='New directory outside source and skill; default: unique temporary directory')
-    parser.add_argument('--max-cycles', type=int, help='Draft/review cycle cap per discussion, including brief changes; default 3')
-    parser.add_argument('--turn-seconds', type=float, help='Invocation deadline; default 180')
-    parser.add_argument('--run-seconds', type=float, help='Discussion deadline, excluding idle time between answers; default 1800')
-    parser.add_argument('--report-seconds', type=float, help='Reporting reserve; default 10')
+    parser.add_argument('--max-cycles', type=int, help='Draft/review cycle cap per discussion, including brief changes; default 3, or the saved value with --continue')
+    parser.add_argument('--idle-seconds', type=float, help='Kill an invocation after this long without new output, and cap each check; default 300, or the saved value with --continue')
+    parser.add_argument('--run-seconds', type=float, help='Discussion deadline, excluding idle time between answers; default 3600, or the saved value with --continue')
+    parser.add_argument('--report-seconds', type=float, help='Reporting reserve; default 10, or the saved value with --continue')
+    parser.add_argument('--unbounded', action='store_true', help='Explicit opt-in: no discussion deadline until the next host input; idle and round caps still apply. Saved like other limits')
     parser.add_argument('--pause-between-rounds', action='store_true', help='Read one host JSON decision from stdin at each boundary')
     saved = parser.add_mutually_exclusive_group()
     saved.add_argument('--recover', metavar='RUN_DIR', help='Reconcile captured results once; report incomplete without redispatch')

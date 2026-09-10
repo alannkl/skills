@@ -42,7 +42,9 @@ class AdapterBehavior(unittest.TestCase):
         self.assertEqual(adapters['claude'].parse(json.dumps(valid_claude), 0, 's1').outcome, 'completed')
         streamed = [{'type': 'system', 'subtype': 'init'}, {'type': 'assistant', 'message': {'content': [{'type': 'text', 'text': 'draft'}]}}, valid_claude]
         self.assertEqual(adapters['claude'].parse(encoded(streamed), 0, 's1').outcome, 'completed')
-        self.assertNotEqual(adapters['claude'].parse(encoded(streamed + [valid_claude]), 0, 's1').outcome, 'completed')
+        flushed = dict(valid_claude, result='')
+        self.assertEqual(adapters['claude'].parse(encoded([flushed] + streamed), 0, 's1').outcome, 'completed', 'the last result event is terminal')
+        self.assertNotEqual(adapters['claude'].parse(encoded(streamed + [flushed]), 0, 's1').outcome, 'completed')
         self.assertNotEqual(adapters['claude'].parse(encoded(streamed[:-1]), 0, 's1').outcome, 'completed')
         self.assertEqual(adapters['codex'].parse(encoded(valid_codex), 0, None).outcome, 'completed')
         for adapter in adapters.values():

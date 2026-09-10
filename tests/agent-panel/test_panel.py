@@ -5,6 +5,9 @@ import json
 from pathlib import Path
 import sys
 import tempfile
+import time
+from types import SimpleNamespace
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'agent-panel' / 'scripts'))
 from engine import Panel, StopRun
@@ -30,7 +33,7 @@ class Fixture:
                        'participants': [{'id': pid, 'role': role, 'harness': 'fake', 'settings': {'model': 'simulation'}}
                                         for pid, role in [('ada', 'design'), ('bert', 'safety'), ('cy', 'operations')]]}
         self.panel = Panel(preset(name), 'Design a bounded runner', self.roster, Path(root) / 'run', {'fake': self.adapter},
-                           **dict({'turn_seconds': 2, 'run_seconds': 30, 'max_cycles': 2}, **limits))
+                           **dict({'idle_seconds': 2, 'run_seconds': 30, 'max_cycles': 2}, **limits))
 
     async def run(self):
         return await self.panel.run()
@@ -164,7 +167,7 @@ class PanelBehavior(unittest.TestCase):
             report = await f.run()
             self.assertEqual(report['outcome'], 'incomplete')
             self.assertIsNone(report['candidate'])
-            self.assertEqual(len(f.adapter.inputs), 3)
+            self.assertEqual(len(f.adapter.inputs), 4, 'one resume-and-finish attempt, then the turn fails')
             self.assertFalse(any(e['phase'] == 'reveal' for e in f.panel.records.events))
             self.assertEqual(len([e for e in f.panel.records.events if e['kind'] == 'message']), 2)
         self.run_scenario(scenario)
@@ -182,7 +185,67 @@ class PanelBehavior(unittest.TestCase):
             review = next(i for i in own if i['phase'] == 'review')
             self.assertTrue({e['id'] for e in critique['events']} <= {e['id'] for e in review['events']})
             self.assertEqual(len({i['session'] for i in own}), 1)
+            self.assertEqual(len(report['failures']), 2, 'both attempts of the failed critique are recorded')
+        self.run_scenario(scenario)
+
+
+    def test_active_turn_outlives_idle_window(self):
+        """Given a turn that keeps writing output for longer than the idle window, when it completes, then it is never killed and the run agrees."""
+
+        async def scenario(root):
+            f = Fixture(root, behavior=lambda p: 'busy' if p['participant_id'] == 'cy' and p['phase'] == 'initial' else None, idle_seconds=0.15)
+            report = await f.run()
+            self.assertEqual(report['outcome'], 'agreed', report['reason'])
+            self.assertEqual(report['cancellations'], [])
+            self.assertEqual(len([e for e in f.panel.records.events if e['kind'] == 'dispatch' and e['data']['participant'] == 'cy' and e['phase'] == 'initial']), 1)
+        self.run_scenario(scenario)
+
+
+    def test_deadline_turn_resumes_once(self):
+        """Given a required turn killed at its deadline, when its session is resumed once with a runner notice, then the finished result is accepted under the same turn ID and the kill stays on record."""
+
+        async def scenario(root):
+            f = Fixture(root, behavior=lambda p: 'wait' if p['participant_id'] == 'cy' and p['phase'] == 'initial' and not p['retry'] else None, idle_seconds=0.1)
+            report = await f.run()
+            self.assertEqual(report['outcome'], 'agreed', report['reason'])
+            attempts = [e['data'] for e in f.panel.records.events if e['kind'] == 'dispatch' and e['data']['participant'] == 'cy' and e['phase'] == 'initial']
+            self.assertEqual([a['attempt'] for a in attempts], [1, 2])
+            self.assertEqual(len({a['turn_id'] for a in attempts}), 1)
+            self.assertEqual([a['retry_reason'] for a in attempts], [None, 'idle deadline reached'])
+            first, second = (Path(a['attempt_dir'], 'input.txt').read_text() for a in attempts)
+            self.assertTrue(second.startswith('RUNNER NOTICE'))
+            self.assertIn('idle deadline reached', second)
+            self.assertTrue(second.endswith(first))
+            own = [i for i in f.adapter.inputs if i['participant_id'] == 'cy']
+            self.assertEqual(len({i['session'] for i in own}), 1, 'the retry resumes the killed session')
+            self.assertEqual(len(report['cancellations']), 1)
             self.assertEqual(len(report['failures']), 1)
+        self.run_scenario(scenario)
+
+
+    def test_invalid_envelope_resumes_once(self):
+        """Given a turn that exits with an invalid envelope, when resumed with the parse error, then a valid second attempt is accepted."""
+
+        async def scenario(root):
+            f = Fixture(root, behavior=lambda p: 'malformed' if p['participant_id'] == 'cy' and p['phase'] == 'review' and not p['retry'] else None)
+            report = await f.run()
+            self.assertEqual(report['outcome'], 'agreed', report['reason'])
+            attempts = [e['data'] for e in f.panel.records.events if e['kind'] == 'dispatch' and e['data']['participant'] == 'cy' and e['phase'] == 'review']
+            self.assertEqual([a['retry_reason'] for a in attempts], [None, 'Malformed JSON'])
+            self.assertIn('cy', report['reviews'])
+        self.run_scenario(scenario)
+
+
+    def test_blocked_turn_is_not_retried(self):
+        """Given a native permission denial, when the turn fails, then it is not resumed and the run stops as a blocker."""
+
+        async def scenario(root):
+            f = Fixture(root, behavior=lambda p: 'blocked' if p['participant_id'] == 'cy' and p['phase'] == 'initial' else None)
+            report = await f.run()
+            self.assertEqual(report['outcome'], 'incomplete')
+            attempts = [e for e in f.panel.records.events if e['kind'] == 'dispatch' and e['data']['participant'] == 'cy']
+            self.assertEqual(len(attempts), 1)
+            self.assertEqual(report['failures'][0]['result']['outcome'], 'blocked')
         self.run_scenario(scenario)
 
 
@@ -255,6 +318,7 @@ class PanelBehavior(unittest.TestCase):
             report = await f.run()
             self.assertEqual(report['outcome'], 'incomplete')
             self.assertNotIn('cy', report['reviews'])
+            self.assertEqual(len([i for i in f.adapter.inputs if i['participant_id'] == 'cy' and i['phase'] == 'review']), 2, 'one resume, never a third')
             review = next(i for i in f.adapter.inputs if i['participant_id'] == 'cy' and i['phase'] == 'review')
             manifest = json.loads(Path(report['manifest']).read_text())
             self.assertTrue(set(manifest['participants']['cy']['delivered']).isdisjoint({e['id'] for e in review['events']}))
@@ -328,7 +392,7 @@ class PanelBehavior(unittest.TestCase):
     def test_deadlines(self):
         """Given slow required work, when turn or run time expires, then terminate it and reserve time for an incomplete report."""
 
-        for limits in ({'turn_seconds': 0.03}, {'turn_seconds': 10, 'run_seconds': 5.05, 'report_seconds': 5}):
+        for limits in ({'idle_seconds': 0.03}, {'idle_seconds': 10, 'run_seconds': 5.05, 'report_seconds': 5}):
             async def scenario(root):
                 f = Fixture(root, behavior=lambda p: 'wait', **limits)
                 report = await asyncio.wait_for(f.run(), 2)
@@ -410,6 +474,43 @@ class AdditionalBoundaries(unittest.TestCase):
             report = await asyncio.wait_for(run, 1)
             self.assertEqual(report['outcome'], 'interrupted')
             self.assertEqual(len(f.adapter.inputs), 3)
+        self.run_scenario(scenario)
+
+    def test_host_decision_restarts_clock(self):
+        """Given a host that takes longer than the discussion deadline to decide, when it answers continue, then the wait is not charged and the run completes on a fresh clock."""
+        async def scenario(root):
+            offset = 0
+            clock = SimpleNamespace(monotonic=lambda: time.monotonic() + offset)
+            async def host(_):
+                nonlocal offset
+                offset += 100000
+                return {'action': 'continue'}
+            with patch('engine.time', clock):
+                f = Fixture(root, host_input=host, run_seconds=30)
+                report = await f.run()
+            self.assertEqual(report['outcome'], 'agreed', report['reason'])
+        self.run_scenario(scenario)
+
+    def test_unbounded_discussion_keeps_other_caps(self):
+        """Given an explicitly unbounded discussion, when the clock jumps past any deadline, then the run continues, while idle and round caps still end stalled or looping work."""
+        async def scenario(root):
+            offset = 0
+            clock = SimpleNamespace(monotonic=lambda: time.monotonic() + offset)
+            async def host(_):
+                nonlocal offset
+                offset += 10 ** 9
+                return {'action': 'continue'}
+            with patch('engine.time', clock):
+                f = Fixture(root, host_input=host, run_seconds=None)
+                self.assertEqual(json.loads(Path(root, 'run', 'manifest.json').read_text())['limits']['run_seconds'], None)
+                report = await f.run()
+                self.assertEqual(report['outcome'], 'agreed', report['reason'])
+            for name in ('stall', 'bad'):
+                Path(root, name).mkdir()
+            stalled = Fixture(Path(root, 'stall'), behavior=lambda p: 'wait' if p['participant_id'] == 'cy' else None, run_seconds=None, idle_seconds=0.05)
+            self.assertEqual((await stalled.run())['outcome'], 'incomplete')
+            with self.assertRaisesRegex(ValueError, 'deadlines'):
+                Fixture(Path(root, 'bad'), run_seconds=None, idle_seconds=-1)
         self.run_scenario(scenario)
 
     def test_repeated_brief_changes_hit_round_cap(self):

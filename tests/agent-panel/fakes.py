@@ -26,6 +26,7 @@ class FakeAdapter:
 
     def launch(self, session, input, settings):
         payload = json.loads(input.split('PANEL_INPUT\n')[1])
+        payload['retry'] = input.startswith('RUNNER NOTICE')
         key = (payload['participant_id'], payload['phase'])
         action = self.behavior(payload)
         if action == 'transient' and key not in self.retries:
@@ -35,6 +36,7 @@ class FakeAdapter:
         handle = Handle()
         handle.pid = payload['participant_id']
         handle.directory = settings['attempt_dir']
+        atomic_json(Path(settings['attempt_dir']) / 'launch.json', {'session_id': session})
 
         async def complete():
             if session in self.active:
@@ -43,6 +45,10 @@ class FakeAdapter:
             try:
                 if action == 'wait':
                     await asyncio.sleep(3600)
+                if action == 'busy':
+                    for _ in range(12):
+                        await asyncio.sleep(0.05)
+                        Path(settings['attempt_dir'], 'stdout').open('a').write('progress\n')
                 await asyncio.sleep(0.002 * (1 + len(payload['participant_id'])))
                 phase = payload['phase']
                 block = {'participant_id': payload['participant_id'],
@@ -60,6 +66,8 @@ class FakeAdapter:
                     terminal = Terminal(session, exit_status=1, error='known exited failure')
                 if action == 'malformed':
                     terminal = Terminal(session, 'not JSON', None, 0, outcome='failed', error='Malformed JSON')
+                if action == 'blocked':
+                    terminal = Terminal(session, exit_status=0, outcome='blocked', error='Native tool permission denied')
                 if action == 'uncertain':
                     raise RuntimeError('crash after dispatch, before durable completion')
                 atomic_json(Path(settings['attempt_dir']) / 'terminal.json', asdict(terminal))
@@ -86,4 +94,8 @@ class FakeAdapter:
 
     def recover(self, attempt_dir):
         path = Path(attempt_dir) / 'terminal.json'
-        return Terminal(**json.loads(path.read_text())) if path.exists() else Terminal(None, outcome='indeterminate')
+        if path.exists():
+            return Terminal(**json.loads(path.read_text()))
+        launch = Path(attempt_dir) / 'launch.json'
+        session = json.loads(launch.read_text())['session_id'] if launch.exists() else None
+        return Terminal(session, outcome='indeterminate')
