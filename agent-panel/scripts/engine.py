@@ -94,6 +94,7 @@ class Panel:
         self.max_rounds = len(preset['opening']) + max_cycles * 3
         self.brief = brief
         self.brief_revision = 1
+        self.discussion_start = 0
         self.max_cycles = max_cycles
         self.turn_seconds = turn_seconds
         self.cancel_seconds = min(4.0, report_seconds - 1.0)
@@ -105,7 +106,8 @@ class Panel:
             raise
         source_hash = self.workspaces.source_hash
         (root / 'brief-1.md').write_text(brief)
-        self.manifest = {'version': 3, 'preset': preset, 'roster': roster,
+        self.manifest = {'version': 4, 'preset': preset, 'roster': roster,
+                         'discussion': 1, 'discussion_start': 0, 'conversation': 'active',
                          'execution': self.execution.config,
                          'workspaces': self.workspaces.describe(),
                          'participants': self.people, 'required_approvers': self.required,
@@ -168,13 +170,12 @@ class Panel:
             raise BriefChanged()
 
     def eligible(self, pid, cutoff, private):
-        if private:
-            return []
         return [e for e in self.records.events[:cutoff]
                 if e['kind'] in ('message', 'candidate', 'review', 'human_decision')
                 and (pid in e['visibility'] or 'all' in e['visibility'])
                 and e['id'] not in self.people[pid]['delivered']
-                and e['data'].get('brief_revision', self.brief_revision) == self.brief_revision]
+                and (e['id'] <= self.discussion_start or
+                     (not private and e['data'].get('brief_revision', self.brief_revision) == self.brief_revision))]
 
     def prepare_access(self, pid, events):
         directories = set(self.people[pid].get('read_dirs', []))
@@ -203,6 +204,9 @@ class Panel:
                    'capabilities': self.execution.capabilities(), 'read_directories': self.people[pid].get('read_dirs', []),
                    'integration': 'competing solutions: choose a base and port improvements' if self.preset['name'] == 'independent-discussion' else 'complementary work: integrate responsibilities in dependency order',
                    'brief_revision': self.brief_revision, 'brief': self.brief,
+                   'discussion': self.manifest.get('discussion', 1),
+                   'prior_briefs': [{'revision': revision, 'text': (self.records.root / f'brief-{revision}.md').read_text()}
+                                    for revision in range(1, self.brief_revision)],
                    'source_snapshot': self.manifest['source'], 'source_hash': self.manifest['source_hash'],
                    'artifact_directory': str(self.records.root / 'participants' / pid / 'scratch'),
                    'roster': [{'id': p, 'role': self.people[p]['role']} for p in self.ids],
@@ -223,6 +227,9 @@ class Panel:
                 'For file work, write only in your own working_directory. Preserve the source snapshot, peer workspaces and frozen results. '
                 'Read peer artifacts only after the runner reveals them. '
                 'Do not commit, push, publish, change installed skills, or launch further agents. Sender identity is assigned by the runner. '
+                'This is an ongoing panel conversation. Continue from your session history and supplied prior discussion. '
+                'The current brief is the latest host request; retain prior decisions unless it revises them. '
+                'Private opening rounds withhold only current opening contributions; earlier shared discussion remains known. '
                 'Perform the work and deliver what the brief specifies. Put requested structured output in data, with keys defined by the brief. '
                 'Return exactly one JSON object matching this envelope, without surrounding prose. Approval means this exact result satisfies '
                 'the brief and task-specific review criteria. Producing the result is not approval.\n'
@@ -287,7 +294,7 @@ class Panel:
                                 valid=block is not None, error=error, result=asdict(result),
                                 input_event_ids=dispatch['data']['input_event_ids'])
         person = self.people[pid]
-        if result.session_id and not any(p != pid and self.people[p]['session_id'] == result.session_id for p in self.ids):
+        if result.session_id and person['session_id'] in (None, result.session_id) and not any(p != pid and self.people[p]['session_id'] == result.session_id for p in self.ids):
             person['session_id'] = result.session_id
         if block is not None:
             person['delivered'] = sorted(set(person['delivered']) | set(dispatch['data']['input_event_ids']))
@@ -547,6 +554,7 @@ class Panel:
     def finish(self, outcome, reason):
         if self.stop.is_set():
             outcome, reason = 'interrupted', 'Host requested stop'
+            self.manifest['conversation'] = 'stopped'
         if self.candidate:
             try:
                 if result_hash(self.candidate) != self.candidate['content_hash']:
@@ -556,6 +564,8 @@ class Panel:
         self.manifest.update(status=outcome, reason=reason, candidate=self.candidate, cycles_used=self.cycles_used)
         self.records.save_manifest(self.manifest)
         report = {'outcome': outcome, 'reason': reason, 'execution': self.execution.config,
+                  'discussion': self.manifest.get('discussion', 1),
+                  'conversation': self.manifest.get('conversation', 'active'),
                   'data': self.candidate.get('data', {}) if self.candidate else {},
                   'artifacts': self.candidate.get('artifacts') if self.candidate else None,
                   'verification': self.candidate.get('verification') if self.candidate else None,
@@ -564,11 +574,16 @@ class Panel:
                   'reviews': self.reviews, 'independence': self.manifest['independence'],
                   'usage_limits': self.manifest['usage_limits'],
                   'usage': [{'participant': e['data']['participant'], 'usage': e['data']['result']['usage']}
-                            for e in self.records.events if e['kind'] == 'terminal_result'],
+                            for e in self.records.events[self.manifest.get('discussion_start', 0):] if e['kind'] == 'terminal_result'],
                   'events': str(self.records.log), 'manifest': str(self.records.root / 'manifest.json'),
-                  'failures': [e['data'] for e in self.records.events if e['kind'] == 'terminal_result' and not e['data']['valid']],
-                  'cancellations': [e['data'] for e in self.records.events if e['kind'] == 'cancel'],
+                  'failures': [e['data'] for e in self.records.events[self.manifest.get('discussion_start', 0):] if e['kind'] == 'terminal_result' and not e['data']['valid']],
+                  'cancellations': [e['data'] for e in self.records.events[self.manifest.get('discussion_start', 0):] if e['kind'] == 'cancel'],
                   'report': str(self.records.root / 'report.json')}
+        archive = self.records.root / 'reports' / f"discussion-{report['discussion']}.json"
+        report['discussion_report'] = str(archive)
+        archive.parent.mkdir(exist_ok=True)
+        atomic_json(archive, report)
+        archive.chmod(0o444)
         atomic_json(report['report'], report)
         self.records.close()
         return report

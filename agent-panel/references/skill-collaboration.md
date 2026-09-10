@@ -23,12 +23,12 @@ Participants propose questions and analyze answers through the host, without sep
 
 Maintain one shared work product and decision record, using prescribed artifacts where applicable. The integrator combines contributions; required reviewers check the same final result against the brief and skill requirements.
 
-Complete the skill only when all required stages and decisions are resolved or explicitly deferred under its rules. Deliver one output in the required format, identifying unresolved work. Agreement on a stage artifact, such as a proposed question, does not complete the whole skill.
+Complete the skill only when all required stages and decisions are resolved or explicitly deferred under its rules. Deliver one output in the required format, identifying unresolved work. Agreement on a stage artifact, such as a proposed question, does not complete the whole skill. Completion of the selected skill leaves the panel active for later questions in this chat.
 
 ## Using the current runner
 
 The host interprets the skill and manages its stages. The runner executes bounded preset rounds; it neither schedules `SKILL.md` steps nor forwards questions to the user.
 
-Run the current bounded assignment, carrying shared instructions and decisions into subsequent briefs. Use `--pause-between-rounds` for host checkpoints. Substantive brief updates restart opening rounds within the original limits. Start a new run for stages needing new bounds or execution settings, carrying required context into its fresh sessions.
+Run the current bounded assignment, then [continue the saved panel](usage.md#continuing-the-conversation) for user answers, corrections and subsequent stages. Carry shared instructions and decisions into follow-up briefs while resuming the same participant sessions. Use `--pause-between-rounds` for checkpoints inside a discussion; brief updates there restart opening rounds within its original limits. Each follow-up renews those limits. Stages needing changed execution settings require an explicit reset under the existing authorization rules.
 
 Supply the skill instructions, current stage and output requirements through the existing brief and result envelope; do not add a skill-specific runner branch or task profile.

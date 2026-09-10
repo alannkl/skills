@@ -1,10 +1,18 @@
 ---
 name: agent-panel
-description: Coordinate N agents on a shared task or existing skill, with one combined result verified against its requirements.
+description: Keep N agents in the current chat, continuing their discussion across follow-ups and verifying each combined result.
 disable-model-invocation: true
 ---
 
 # Agent panel
+
+## Keep the panel in the chat
+
+Invocation activates the panel for the current chat until the user stops it, resets it or asks to answer solo. Route subsequent substantive questions, corrections, decisions and task changes through the same panel, even when the user does not repeat the skill name. The host may give acknowledgments and status directly; distinguish host comments from panel conclusions.
+
+Retain the active run directory, resolved roster, adapter registrations, authorization and shared decisions in the session's persistent working record and any continuation handoff. At the next message, restore that record and read the saved manifest before dispatch. After context compaction, reload this skill. A final answer completes one discussion; the panel stays active while waiting for the user.
+
+For follow-ups, read [continuing the conversation](references/usage.md#continuing-the-conversation) and resume the saved panel. Stop and answer-solo requests close it without further participant work. Reset closes the old panel and prepares a new one with fresh sessions, retaining the old artifacts. Honor an explicitly one-message solo exception, record any resulting user decisions, and return to panel routing afterward. Reuse existing authorization; resolve changes outside it before launch.
 
 ## Prepare
 
@@ -31,9 +39,11 @@ The runner manages scheduling, sessions, working directories, input delivery, ar
 
 For round-by-round inspection, use `--pause-between-rounds` and send host decisions through stdin. Follow [human input and recovery](references/usage.md#human-input-and-recovery) for brief changes, cancellation and crashes. Wait for the report before claiming processes stopped.
 
-## Finish
+## Deliver the current answer
 
 Read `report.json` and check the deliverable against every acceptance criterion. For another skill, also verify its completion rules and deliver its required output once for the team. Agreement on an intermediate question or proposal completes only that assignment. Deliver the requested content, data or files; include frozen files, the patch and verification evidence for file changes.
+
+Link this answer's `discussion_report`, retain the active panel record, and yield for the next user message. The runner exits between discussions; no background process is needed to keep participants' saved sessions. Report a failed continuation as a blocker instead of silently answering alone or starting replacement participants.
 
 Report the outcome and artifact paths:
 
