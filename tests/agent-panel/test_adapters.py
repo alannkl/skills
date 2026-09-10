@@ -219,17 +219,55 @@ class AdapterBehavior(unittest.TestCase):
             shown = subprocess.run([sys.executable, str(PACKAGE / 'scripts' / 'progress.py'), str(Path(root, 'run'))],
                                    text=True, capture_output=True, timeout=15)
             self.assertEqual(shown.returncode, 0, shown.stderr)
-            self.assertIn('[a t1 reasoning]\nWeighing the brief\n', shown.stdout)
-            self.assertIn('[a t1 message]\nBounded design proposal\n', shown.stdout)
-            self.assertIn('[b t3 reasoning]\nWeighing the brief\n', shown.stdout)
-            self.assertIn('[b t3 message]\nBounded design proposal\n', shown.stdout)
-            self.assertIn('approve\n- All criteria addressed\n', shown.stdout)
+            self.assertIn('[a t1-1 reasoning]\nWeighing the brief\n', shown.stdout)
+            self.assertIn('[a t1-1 message]\nBounded design proposal\n', shown.stdout)
+            self.assertIn('[b t3-1 reasoning]\nWeighing the brief\n', shown.stdout)
+            self.assertIn('[b t3-1 message]\nBounded design proposal\n', shown.stdout)
+            self.assertRegex(shown.stdout, r'\[a t5-1 message\]\napprove b1-r1 [0-9a-f]{64}\n- All criteria addressed\n')
             self.assertNotIn('tool_use', shown.stdout)
             self.assertNotIn('command_execution', shown.stdout)
             self.assertNotIn('{"', shown.stdout)
-            turns = [int(line.split()[1][1:]) for line in shown.stdout.splitlines() if line.startswith('[')]
+            turns = [int(line.split()[1][1:].split('-')[0]) for line in shown.stdout.splitlines() if line.startswith('[')]
             self.assertEqual(turns, sorted(turns))
 
+
+    def test_progress_current_discussion(self):
+        """Given a continued run, when progress is printed, then only turns dispatched in the current discussion appear by default, every discussion appears with --all, headers carry the attempt, and a rendered review keeps its revision and content hash."""
+
+        with tempfile.TemporaryDirectory() as root:
+            Path(root, 'brief.md').write_text('Design a panel')
+            Path(root, 'followup.md').write_text('Refine it')
+            roster = {'drafter': 'a', 'leader': 'a', 'participants':
+                      [{'id': pid, 'role': 'member', 'harness': harness, 'settings': {'model': 'fixture', 'executable': EXECUTABLE}}
+                       for pid, harness in [('a', 'claude'), ('b', 'codex')]]}
+            atomic_json(Path(root, 'roster.json'), roster)
+            panel = [sys.executable, str(PACKAGE / 'scripts' / 'panel.py')]
+            first = subprocess.run(panel + ['leader-members', str(Path(root, 'brief.md')), str(Path(root, 'roster.json')), '--run-dir', str(Path(root, 'run'))],
+                                   text=True, capture_output=True, timeout=15)
+            self.assertEqual(first.returncode, 0, first.stdout + first.stderr)
+            second = subprocess.run(panel + ['--continue', str(Path(root, 'run')), '--follow-up', str(Path(root, 'followup.md'))],
+                                    text=True, capture_output=True, timeout=15)
+            self.assertEqual(second.returncode, 0, second.stdout + second.stderr)
+            progress = [sys.executable, str(PACKAGE / 'scripts' / 'progress.py'), str(Path(root, 'run'))]
+            current = subprocess.run(progress, text=True, capture_output=True, timeout=15).stdout
+            self.assertNotIn('[a t1-1', current, 'the first discussion is not replayed')
+            self.assertIn('[a t7-1 message]\n', current)
+            self.assertRegex(current, r'approve b2-r1 [0-9a-f]{64}\n')
+            everything = subprocess.run(progress + ['--all'], text=True, capture_output=True, timeout=15).stdout
+            self.assertIn('[a t1-1 message]\n', everything)
+            self.assertIn('[a t7-1 message]\n', everything)
+
+    def test_progress_follow_exits_on_finished_run(self):
+        """Given a run that finished before the follower attached, when followed, then it prints what exists and exits instead of waiting."""
+
+        with tempfile.TemporaryDirectory() as root:
+            attempt = Path(root, 'run', 'participants', 'a', 't1-1')
+            attempt.mkdir(parents=True)
+            (attempt / 'stdout').write_text(json.dumps({'type': 'item.completed', 'item': {'type': 'agent_message', 'text': 'done'}}) + '\n')
+            atomic_json(Path(root, 'run', 'manifest.json'), {'status': 'agreed'})
+            shown = subprocess.run([sys.executable, str(PACKAGE / 'scripts' / 'progress.py'), str(Path(root, 'run')), '--follow'],
+                                   text=True, capture_output=True, timeout=5)
+            self.assertEqual((shown.returncode, shown.stdout), (0, '[a t1-1 message]\ndone\n\n'))
 
     def test_progress_follow(self):
         """Given a live run, when followed, then complete lines print as they land, a torn line waits, and the follower exits once the report is written."""
@@ -240,6 +278,7 @@ class AdapterBehavior(unittest.TestCase):
             stdout = attempt / 'stdout'
             event = lambda kind, text: json.dumps({'type': 'item.completed', 'item': {'type': kind, 'text': text}})
             stdout.write_text(event('reasoning', 'first') + '\n' + event('agent_message', 'torn'))
+            atomic_json(Path(root, 'run', 'manifest.json'), {'status': 'running'})
             follower = subprocess.Popen([sys.executable, str(PACKAGE / 'scripts' / 'progress.py'), str(Path(root, 'run')), '--follow'],
                                         text=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             try:
@@ -248,12 +287,12 @@ class AdapterBehavior(unittest.TestCase):
                 with stdout.open('a') as handle:
                     handle.write('\n' + event('agent_message', '{"text": "second"}') + '\n')
                 time.sleep(1)
-                atomic_json(Path(root, 'run', 'report.json'), {'outcome': 'agreed'})
+                atomic_json(Path(root, 'run', 'manifest.json'), {'status': 'agreed'})
                 out, err = follower.communicate(timeout=5)
             finally:
                 follower.kill()
             self.assertEqual(follower.returncode, 0, err)
-            self.assertEqual(out, '[a t1 reasoning]\nfirst\n\n[a t1 message]\ntorn\n\n[a t1 message]\nsecond\n\n')
+            self.assertEqual(out, '[a t1-1 reasoning]\nfirst\n\n[a t1-1 message]\ntorn\n\n[a t1-1 message]\nsecond\n\n')
 
 
     def test_single_writer(self):

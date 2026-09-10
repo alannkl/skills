@@ -143,6 +143,23 @@ class ContinuationBehavior(unittest.TestCase):
             unchanged.records.close()
         self.run_scenario(scenario)
 
+    def test_adapter_windows_survive_followup(self):
+        """Given a panel saved without an explicit idle limit, when continued without one, then adapters keep their own windows; a numeric limit passed once stays saved for later follow-ups."""
+        async def scenario(root):
+            f = Fixture(root, idle_seconds=None)
+            self.assertEqual((await f.run())['outcome'], 'agreed')
+            self.assertIsNone(saved(root)['limits']['idle_seconds'])
+            panel = continue_panel(Path(root) / 'run', 'Question', {'fake': FakeAdapter()})
+            self.assertIsNone(panel.idle_seconds)
+            self.assertEqual((await panel.run())['outcome'], 'agreed')
+            self.assertIsNone(saved(root)['limits']['idle_seconds'])
+            panel = continue_panel(Path(root) / 'run', 'Again', {'fake': FakeAdapter()}, limits={'idle_seconds': 7})
+            self.assertEqual((await panel.run())['outcome'], 'agreed')
+            later = continue_panel(Path(root) / 'run', 'Once more', {'fake': FakeAdapter()})
+            self.assertEqual(later.idle_seconds, 7)
+            later.records.close()
+        self.run_scenario(scenario)
+
     def test_saved_turn_cap_becomes_idle_window(self):
         """Given a panel saved with a per-turn cap, when continued, then that cap becomes its idle window unless a new one is passed."""
         async def scenario(root):

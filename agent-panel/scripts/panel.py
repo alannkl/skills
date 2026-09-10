@@ -73,7 +73,7 @@ async def execute(args):
         run_dir = args.run_dir or str(Path(tempfile.gettempdir()) / ('agent-panel-' + str(uuid.uuid4())))
         panel = Panel(preset, Path(args.brief).read_text(), roster, run_dir, adapters,
                       max_cycles=args.max_cycles if args.max_cycles is not None else 3,
-                      idle_seconds=args.idle_seconds if args.idle_seconds is not None else 300,
+                      idle_seconds=args.idle_seconds,
                       run_seconds=None if args.unbounded else args.run_seconds if args.run_seconds is not None else 3600,
                       report_seconds=args.report_seconds if args.report_seconds is not None else 10,
                       host_input=checkpoint)
@@ -97,10 +97,10 @@ def main():
                         help='Register a trusted Python adapter exporting create_adapter(); repeat to add harnesses')
     parser.add_argument('--run-dir', help='New directory outside source and skill; default: unique temporary directory')
     parser.add_argument('--max-cycles', type=int, help='Draft/review cycle cap per discussion, including brief changes; default 3, or the saved value with --continue')
-    parser.add_argument('--idle-seconds', type=float, help='Kill an invocation after this long without new output, and cap each check; default 300, or the saved value with --continue')
-    parser.add_argument('--run-seconds', type=float, help='Discussion deadline, excluding idle time between answers; default 3600, or the saved value with --continue')
+    parser.add_argument('--idle-seconds', type=float, help='Kill an invocation after this long without new output, and cap each check; default: each harness\'s own window (Claude 300, Codex 600), or the saved value with --continue')
+    parser.add_argument('--run-seconds', type=float, help='Autonomous-work allowance per discussion; waiting for a host decision pauses it and only a new --continue renews it; default 3600, or the saved value with --continue')
     parser.add_argument('--report-seconds', type=float, help='Reporting reserve; default 10, or the saved value with --continue')
-    parser.add_argument('--unbounded', action='store_true', help='Explicit opt-in: no discussion deadline until the next host input; idle and round caps still apply. Saved like other limits')
+    parser.add_argument('--unbounded', action='store_true', help='Explicit opt-in: no discussion deadline; idle and round caps still apply, so a turn that keeps writing is never killed. Saved across follow-ups until --run-seconds restores a ceiling')
     parser.add_argument('--pause-between-rounds', action='store_true', help='Read one host JSON decision from stdin at each boundary')
     saved = parser.add_mutually_exclusive_group()
     saved.add_argument('--recover', metavar='RUN_DIR', help='Reconcile captured results once; report incomplete without redispatch')
