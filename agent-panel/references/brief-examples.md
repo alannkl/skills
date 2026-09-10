@@ -2,6 +2,18 @@
 
 Adapt these examples' goals, evidence, deliverables and acceptance criteria to the user's request. They illustrate briefs; the runner neither loads them nor assigns task categories.
 
+In pair mode, the task examples describe the host's work. Include that context in the consultation brief, then ask for objections or review as below. The host carries out the task and the read-only consultant provides advice. Follow [Pair mode](../SKILL.md#pair-mode) for checkpoint timing and completion.
+
+## Pair checkpoint examples
+
+### Approach
+
+The host is comparing two queueing approaches under the supplied service constraints. It plans to assess ordering, failure recovery, throughput and operating cost, then recommend one approach. Before it starts, challenge that plan: identify missing criteria, assumptions, risks and alternatives. Acceptance: the plan can produce a recommendation supported by the supplied constraints and identify any experiments still needed.
+
+### Deliverable
+
+The host's proposed queueing recommendation and evidence are attached. Review them against the service constraints and the criteria above. Identify unsupported claims, missed failure scenarios and reasons an alternative would fit better. State explicitly if there are no material findings. Acceptance: the recommendation addresses all four criteria and identifies remaining uncertainty.
+
 ## Compare alternatives
 
 Compare two queueing approaches under the supplied service constraints. Return a recommendation with alternatives, trade-offs, assumptions and unresolved experiments. Assess ordering, failure recovery, throughput and operating cost. Include a diagram only if it explains the proposed flow.
@@ -38,4 +50,12 @@ User follow-up: "Keep this document generic; the audience-specific guidance belo
 
 User decision: the shared document addresses communication for any audience. Revise the prior recommendation accordingly, retaining other settled decisions. Return the revised recommendation and explain what changed; do not edit files. Acceptance: every proposed change respects the generic document's scope, and the answer identifies any remaining uncertainty.
 
-Send this brief through `--continue` with the active panel directory and `--follow-up` with this file. Resume the existing participants; they already took part in the earlier discussion.
+In panel mode, send this brief through `panel.py --continue` with the active panel directory and `--follow-up` with this file. Resume the existing participants; they already took part in the earlier discussion.
+
+In pair mode, include the follow-up and the host's current approach or proposed answer in the question, asking for objections or review as appropriate. Resume the saved consultation:
+
+```bash
+python3 scripts/consult.py ask /absolute/consult-dir --question /absolute/follow-up.md
+```
+
+Use [consultant usage](usage.md#consultant) for attachments and access settings. The same saved session handles both checkpoints and later follow-ups.

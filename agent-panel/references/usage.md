@@ -1,14 +1,16 @@
 # Runner usage
 
+The skill has two modes. Panel mode uses `scripts/panel.py` with one of three presets; pair mode uses `scripts/consult.py` as described under [Consultant](#consultant). Follow the skill's [mode-selection rules](../SKILL.md#prepare) before choosing either path.
+
 ## Brief and roster
 
 The brief defines the work, deliverable and acceptance criteria. The host may use [brief examples](brief-examples.md); the runner reads the brief, without a task selector, category registry or profile loader.
 
-For an existing skill, follow [skill collaboration](skill-collaboration.md). The host supplies the chosen preset to the CLI and manages interactive stages, skill loading and questions; the runner does not automate those steps.
+For an existing skill in either mode, follow [skill collaboration](skill-collaboration.md). The host manages interactive stages, skill loading and questions. In panel mode, it supplies the chosen preset to `panel.py`; the runner does not automate the skill's stages. In pair mode, the host executes those stages with the checkpoints in [Pair mode](../SKILL.md#pair-mode).
 
 ### Default roster
 
-When the user leaves the roster unspecified, use two participants:
+In panel mode, when the user leaves the roster unspecified, use two participants. Pair mode uses one consultant; its model choice and fallback follow the same per-harness defaults below:
 
 | Harness | Preferred model | Effort |
 | --- | --- | --- |
@@ -18,11 +20,11 @@ When the user leaves the roster unspecified, use two participants:
 1. Preserve explicit user choices and apply task-specific model restrictions only within their stated scope. Fill unspecified models on matching harnesses from the table; default unspecified effort to `high`.
 2. Resolve exact model identifiers for the installed harness and current account using current model listings or account availability evidence. Consult current official vendor guidance when identifiers or capability are unclear. If a preferred model is unavailable, choose that harness's most capable available model for general reasoning and coding. Use the same rule for other requested harnesses. Base the ranking on current model descriptions, not names or speed/cost defaults. Report fallbacks and reasons, or unresolved availability/ranking before launch; never invent an identifier.
 3. Set `high` explicitly where supported. If effort control exists but lacks `high`, disclose supported choices and resolve effort before launch. Report harnesses without effort control.
-4. Assign neutral roles and the integrator to fit the preset, with both default participants required to approve. Write the resolved choices into the roster file; the runner does not discover or substitute models. Spend model capability on required approvers first; the host's session model is independent of the roster.
+4. For panel mode, assign neutral roles and the integrator to fit the preset, with both default participants required to approve. Write the resolved choices into the roster file; the runner does not discover or substitute models. Spend model capability on required approvers first; the host's session model is independent of the roster.
 
 ### Roster file
 
-A roster specifies participants, coordination roles, optional evidence and execution settings. Replace the model placeholders with resolved identifiers:
+A panel roster specifies participants, coordination roles, optional evidence and execution settings. Replace the model placeholders with resolved identifiers:
 
 ```json
 {
@@ -46,7 +48,7 @@ Every opening contribution is required. Critique or clarification may skip a fai
 
 ## Execution boundaries
 
-`execution` controls access and checks, independently of the brief's subject:
+In panel mode, `execution` controls access and checks, independently of the brief's subject:
 
 | Setting | Meaning |
 | --- | --- |
@@ -59,7 +61,7 @@ Every opening contribution is required. Critique or clarification may skip a fai
 
 Access settings are independent of task instructions and output formats. Tool approval is automatic within these boundaries; final approval requires every configured reviewer.
 
-All modes permit reading supplied evidence, including bounded read-only shell inspection when needed. Permissions expose `file_reads`, not a blanket `shell` switch. Each adapter controls native tools and sandbox enforcement; read-only mode permits neither source edits nor general side effects.
+All workspace settings permit reading supplied evidence, including bounded read-only shell inspection when needed. Permissions expose `file_reads`, not a blanket `shell` switch. Each adapter controls native tools and sandbox enforcement; read-only mode permits neither source edits nor general side effects.
 
 Use Python 3.10+ on Linux or macOS, authenticated roster CLIs, and Git for `inspect` or `edit`. No Python packages are required.
 
