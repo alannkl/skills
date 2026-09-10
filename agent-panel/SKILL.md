@@ -6,30 +6,37 @@ disable-model-invocation: true
 
 # Agent panel
 
+Choose between two modes:
+
+- **Pair:** the host does the work with advice from one read-only consultant.
+- **Panel:** participants do the work while the host coordinates. A panel uses one of three presets: `independent-discussion`, `leader-members` or `flat-peers`.
+
 ## Keep the panel in the chat
 
-Invocation activates the panel for the current chat until the user stops it, resets it or asks to answer solo. Route subsequent substantive questions, corrections, decisions and task changes through the same panel, even when the user does not repeat the skill name. The host may give acknowledgments and status directly; distinguish host comments from panel conclusions.
+Invocation keeps the selected pair or panel active for the current chat until the user stops it, resets it or asks to answer solo. Route subsequent substantive questions, corrections, decisions and task changes through the same saved sessions, even when the user does not repeat the skill name. The host may give acknowledgments and status directly; distinguish host comments from panel conclusions or pair advice.
 
-Retain the active run directory, resolved roster, adapter registrations, authorization and shared decisions in the session's persistent working record and any continuation handoff. At the next message, restore that record and read the saved manifest before dispatch. After context compaction, reload this skill. A final answer completes one discussion; the panel stays active while waiting for the user.
+Use the resolved model's short name, such as `Fable` or `Astra`, to identify each member or consultant in user-facing progress, reply headings, relayed advice and final ledgers; use the model actually selected after any fallback. If names collide, append the participant ID or a stable session label, such as `Fable a` and `Fable b`, and show the mapping in the pre-launch report.
+
+Retain the active panel or consultation directory, resolved roster or model settings, adapter registrations, authorization and shared decisions in the session's persistent working record and any continuation handoff. At the next message, restore that record and read the saved manifest before dispatch. After context compaction, reload this skill. The selected mode stays active after each answer while waiting for the user.
 
 For follow-ups, read [continuing the conversation](references/usage.md#continuing-the-conversation) and resume the saved panel; in pair mode, `ask` the saved consultant. Stop and answer-solo requests close the panel, or the consultation, without further participant work. Reset closes the old panel and prepares a new one with fresh sessions, retaining the old artifacts. Honor an explicitly one-message solo exception, record any resulting user decisions, and return to panel routing afterward. Reuse existing authorization; resolve changes outside it before launch. Time and cycle limits may change on a follow-up without a reset.
 
 ## Prepare
 
 1. Write a brief defining the goal, scope, evidence, deliverable and acceptance criteria. Consult [brief examples](references/brief-examples.md) when useful. For collaborative execution of an existing skill, first read that skill and [skill collaboration](references/skill-collaboration.md).
-2. Read [runner usage](references/usage.md) for roster, evidence and execution settings. The user may name a mode by a short word: "independent" (or "independent discussion") is the `independent-discussion` preset, "leader" (or "leader and members") is `leader-members`, "peers" (or "flat peers") is `flat-peers`, and "pair" is [Pair mode](#pair-mode). Default to pair mode unless the user names a preset or asks for a panel, a discussion or more than one agent; then use the requested preset, or choose one by how the work is shared and announce it. When the user leaves allocation unspecified for an interactive skill run as a panel, fall back to `leader-members` with one human-facing coordinator, preserving the selected skill's mode-selection rules:
+2. Read [runner usage](references/usage.md) for roster, evidence and execution settings. Select pair or panel mode. Invoking `agent-panel` alone defaults to [Pair mode](#pair-mode). An explicit request for a panel, a group discussion or multiple participating agents selects panel mode. Honor an explicit mode or preset choice: "pair" selects pair mode, "independent" (or "independent discussion") selects `independent-discussion`, "leader" (or "leader and members") selects `leader-members`, and "peers" (or "flat peers") selects `flat-peers`. For panel mode without a named preset, choose by how the work should be shared and announce the reason. Apply these criteria to interactive skills too, preserving the selected skill's own mode-selection rules. If no preset clearly fits better, prefer `leader-members`:
    - `independent-discussion`: duplicated work. Every participant produces the whole deliverable privately; the panel then compares competing results. Choose it when the value is whether participants converge unprompted: judgments, forecasts, designs, reviews.
    - `leader-members`: split work, decided by the leader. The leader assigns complementary parts and integrates them. Choose it when one participant should own the decomposition.
    - `flat-peers`: split work, proposed by the peers. Peers with equal authority each propose the split, then each contributes its part and the contribute round resolves overlaps; the declared drafter assembles the result unless every required peer nominates the same other peer with a reason. Choose it when the work should be divided but nobody, host included, should decide the division in advance.
 
-   Undivided work that the host does itself, with one read-only consultant for a second opinion, is not a runner preset: skip steps 3 to 5 and follow [Pair mode](#pair-mode).
+   For pair mode, skip steps 3 to 5 and follow [Pair mode](#pair-mode). The remaining preparation steps apply to panel mode.
 3. Resolve the requested roster or the two-participant [default roster](references/usage.md#default-roster), including model availability and effort. Assign IDs, roles, adapters, the integrator and required approvers using the [roster file rules](references/usage.md#roster-file).
 4. Set authorized web, command and source-edit access. Choose checks with expected exit codes, or explain how review will verify completion. Preserve authentication and billing settings.
 5. Before launching, freeze the inputs and report the source revision, deliverable, participant count, each participant's harness/model/effort/role, required approvers, preset and run limits. Confirm the roster unless the user already supplied or approved it, including effort defaults or a fallback policy. Report choices within that approval without asking again; confirm changes outside it. Freeze the resolved roster for the run. Use `--unbounded` only when the user asks for it by name.
 
 ## Run
 
-From this skill's directory:
+For panel mode, run from this skill's directory:
 
 ```bash
 python3 scripts/panel.py leader-members /absolute/brief.md /absolute/roster.json \
@@ -46,7 +53,7 @@ For round-by-round decisions, use `--pause-between-rounds` and send host decisio
 
 ## Host view
 
-The host coordinates and is not a participant: the participant count excludes it, and it runs on the chat session's model regardless of the roster. Keep the opening brief to goal, scope, evidence and criteria so opening contributions stay independent. After the reveal, the host may add its own opinion under a `Host view (non-binding)` heading, sent as a brief revision at a round boundary or inside a follow-up file. Participants treat it as evidence to challenge; approval stays with the roster. At delivery, the host may add its own dissent as a host comment, separate from the panel outcome.
+In panel mode, the host coordinates and is not a participant: the participant count excludes it, and it runs on the chat session's model regardless of the roster. Keep the opening brief to goal, scope, evidence and criteria so opening contributions stay independent. After the reveal, the host may add its own opinion under a `Host view (non-binding)` heading, sent as a brief revision at a round boundary or inside a follow-up file. Participants treat it as evidence to challenge; approval stays with the roster. At delivery, the host may add its own dissent as a host comment, separate from the panel outcome.
 
 ## Pair mode
 
@@ -69,7 +76,7 @@ Delivery is a ledger, not a third consultation: the final message lists each con
 
 Run each `consult.py` call as a background command whose exit notifies the host, and act on that notification; a poll loop is how a reply goes unread. The turn's own `--timeout` (default 600 seconds) applies regardless, so pass a longer one for a turn that may need it. If a required consultation's turn is recorded in an open consultation but returns no usable reply, and the prior invocation is confirmed stopped, retry once through `ask` with the same question and attachments; if termination is uncertain, report the checkpoint blocked without launching another invocation. A failure before the consultation exists, such as an unknown harness or an unreadable brief, is a configuration error to fix and reopen, not a turn to retry. After a second failure of the same turn, report a failed checkpoint and leave completion pending unless the user waives it.
 
-Relay each reply under a `Second opinion` heading, separate from the host's own view, as concise advice: the points that changed or challenged the host's plan and every explicit disagreement, with the full reply available in the log; quote it verbatim only when the user asks. The consultant's advice is evidence: the host weighs it, records disagreement explicitly, and stays accountable; nothing the consultant says is approval. The consultant reads the listed directories and attachments and never edits. The user may waive the checkpoints for a task by saying so; the host may not.
+Relay each reply under a `Second opinion from MODEL` heading, such as `Second opinion from Fable`, separate from the host's own view, as concise advice: the points that changed or challenged the host's plan and every explicit disagreement, with the full reply available in the log; quote it verbatim only when the user asks. The consultant's advice is evidence: the host weighs it, records disagreement explicitly, and stays accountable; nothing the consultant says is approval. The consultant reads the listed directories and attachments and never edits. The user may waive the checkpoints for a task by saying so; the host may not.
 
 ## Deliver the current answer
 
