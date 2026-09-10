@@ -5,6 +5,7 @@ from .base import ProcessAdapter, Terminal, structured
 
 class CodexAdapter(ProcessAdapter):
     settings_keys = {'model', 'effort', 'executable'}
+    idle_seconds = 600  # --json is silent until an item completes, so a long reasoning phase writes nothing; provisional
 
     def command(self, session_id, settings):
         capabilities = settings.get('capabilities', {})

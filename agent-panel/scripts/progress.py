@@ -32,13 +32,14 @@ def render(line):
 
 
 def unwrap(text):
-    """Show a protocol envelope's substance instead of its JSON."""
+    """Show a protocol envelope's substance instead of its JSON. A review keeps the revision and hash it names."""
     try:
         block = structured(text)
     except ValueError:
         return text
     if block.get('decision'):
-        return '\n'.join([str(block['decision'])] + [f'- {r}' for r in block.get('reasons', []) + block.get('blocking_objections', [])])
+        head = ' '.join(str(block[k]) for k in ('decision', 'revision', 'content_hash') if block.get(k))
+        return '\n'.join([head] + [f'- {r}' for r in block.get('reasons', []) + block.get('blocking_objections', [])])
     return block.get('text') or text
 
 
@@ -47,24 +48,51 @@ def turn_key(path):
     return int(turn), int(attempt)
 
 
-def stream(run_dir, follow, out):
-    report = run_dir / 'report.json'
-    baseline = report.stat().st_mtime_ns if report.exists() else None
+def first_current_turn(run_dir):
+    """Turns dispatched after the latest discussion_start belong to the current discussion."""
+    floor = latest = 0
+    try:
+        lines = (run_dir / 'events.jsonl').read_text().splitlines()
+    except OSError:
+        return 0
+    for line in lines:
+        try:
+            event = json.loads(line)
+        except ValueError:
+            continue
+        if event.get('kind') == 'discussion_start':
+            floor = latest
+        elif event.get('kind') == 'dispatch':
+            latest = max(latest, int(event['data']['turn_id'][1:]))
+    return floor + 1
+
+
+def finished(run_dir):
+    try:
+        return json.loads((run_dir / 'manifest.json').read_text()).get('status') != 'running'
+    except (OSError, ValueError):
+        return False
+
+
+def stream(run_dir, follow, out, every_discussion=False):
     offsets = {}
     while True:
-        finished = report.exists() and report.stat().st_mtime_ns != baseline
+        done = finished(run_dir)
+        first = 1 if every_discussion else first_current_turn(run_dir)
         for path in sorted(run_dir.glob('participants/*/t*-*/stdout'), key=turn_key):
+            if turn_key(path)[0] < first:
+                continue
             with path.open('rb') as handle:
                 handle.seek(offsets.get(path, 0))
                 raw = handle.read()
             complete = raw.rfind(b'\n') + 1
             offsets[path] = offsets.get(path, 0) + complete
-            participant, turn = path.parent.parent.name, path.parent.name.split('-')[0]
+            participant, attempt = path.parent.parent.name, path.parent.name
             for line in raw[:complete].decode(errors='replace').splitlines():
                 for kind, text in render(line):
-                    out.write(f'[{participant} {turn} {kind}]\n{text}\n\n')
+                    out.write(f'[{participant} {attempt} {kind}]\n{text}\n\n')
                     out.flush()
-        if not follow or finished:
+        if not follow or done:
             return
         time.sleep(0.5)
 
@@ -72,9 +100,10 @@ def stream(run_dir, follow, out):
 def main(argv=None):
     parser = argparse.ArgumentParser(description='Print each participant\'s reasoning and messages from a panel run directory.')
     parser.add_argument('run_dir', help='Panel run directory')
-    parser.add_argument('--follow', action='store_true', help='Keep printing until the runner writes report.json')
+    parser.add_argument('--follow', action='store_true', help='Keep printing until the runner records a finished discussion')
+    parser.add_argument('--all', action='store_true', help='Print every discussion, not only the current one')
     args = parser.parse_args(argv)
-    stream(Path(args.run_dir).resolve(), args.follow, sys.stdout)
+    stream(Path(args.run_dir).resolve(), args.follow, sys.stdout, args.all)
 
 
 if __name__ == '__main__':

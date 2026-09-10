@@ -4,6 +4,7 @@ from .base import ProcessAdapter, Terminal, session_uuid, structured
 
 class ClaudeAdapter(ProcessAdapter):
     settings_keys = {'model', 'effort', 'max_turns', 'max_budget_usd', 'executable'}
+    idle_seconds = 300  # partial-message deltas keep the capture growing while the model thinks
 
     def command(self, session_id, settings):
         session = session_id or session_uuid()

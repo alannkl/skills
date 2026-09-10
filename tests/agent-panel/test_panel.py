@@ -112,12 +112,18 @@ class PanelBehavior(unittest.TestCase):
 
         for nominate, expected in ((lambda p: 'cy', 'cy'), (lambda p: 'cy' if p['participant_id'] == 'ada' else 'bert', 'ada'), (lambda p: None, 'ada')):
             async def scenario(root):
-                f = Fixture(root, 'flat-peers', behavior=lambda p: {'integrator': nominate(p)} if p['phase'] == 'responsibilities' else None)
+                def block(p):
+                    who = nominate(p)
+                    return {'integrator': who, 'integrator_reason': f'{who} owns the largest part' if who else ''}
+                f = Fixture(root, 'flat-peers', behavior=lambda p: block(p) if p['phase'] == 'responsibilities' else None)
                 report = await f.run()
                 self.assertEqual(report['outcome'], 'agreed', report['reason'])
                 self.assertEqual([i['participant_id'] for i in f.adapter.inputs if i['phase'] == 'draft'], [expected])
                 announcement = next(e for e in f.panel.records.events if e['phase'] == 'integrator')
                 self.assertEqual((announcement['sender'], announcement['data']['integrator']), ('runner', expected))
+                if expected == 'cy':
+                    self.assertEqual(announcement['data']['reasons'], {p: 'cy owns the largest part' for p in ('ada', 'bert', 'cy')})
+                    self.assertIn('cy owns the largest part', announcement['data']['text'])
                 contribute = next(i for i in f.adapter.inputs if i['phase'] == 'contribute')
                 self.assertTrue(any(e['phase'] == 'integrator' for e in contribute['events']), 'peers learn the integrator before contributing')
                 self.assertEqual(json.loads(Path(report['manifest']).read_text())['drafter'], 'ada', 'the declared drafter stays the saved fallback')
@@ -142,6 +148,7 @@ class PanelBehavior(unittest.TestCase):
             self.assertEqual(by_phase['review']['schema']['properties']['content_hash']['enum'], [f.panel.candidate['content_hash']])
             self.assertEqual(by_phase['draft']['schema']['properties']['kind']['enum'], ['candidate'])
             self.assertIn('integrator', by_phase['responsibilities']['schema']['properties'])
+            self.assertIn('integrator_reason', by_phase['responsibilities']['schema']['properties'])
             self.assertNotIn('integrator', by_phase['contribute']['schema']['properties'])
             g = Fixture(Path(root, 'leader'), 'leader-members') if Path(root, 'leader').mkdir() is None else None
             await g.run()
@@ -519,19 +526,100 @@ class AdditionalBoundaries(unittest.TestCase):
             self.assertEqual(len(f.adapter.inputs), 3)
         self.run_scenario(scenario)
 
-    def test_host_decision_restarts_clock(self):
-        """Given a host that takes longer than the discussion deadline to decide, when it answers continue, then the wait is not charged and the run completes on a fresh clock."""
+    def test_host_wait_pauses_clock(self):
+        """Given autonomous time already spent, when the host takes longer than the discussion deadline to answer continue or brief, then the wait is not charged, the allowance left afterwards equals the allowance before it, and the run completes."""
+        async def scenario(root):
+            offset, launches, seen = 0, 0, []
+            clock = SimpleNamespace(monotonic=lambda: time.monotonic() + offset)
+            def behavior(_):
+                nonlocal offset, launches
+                offset += 3  # each launch spends three seconds of autonomous time
+                launches += 1
+                return None
+            async def host(phase):
+                nonlocal offset
+                seen.append((f.panel.deadline - clock.monotonic(), launches))
+                offset += 100000  # the host takes far longer than the whole allowance to decide
+                return {'action': 'brief', 'text': 'Revised brief'} if len(seen) == 1 else {'action': 'continue'}
+            with patch('engine.time', clock):
+                f = Fixture(root, behavior=behavior, host_input=host, run_seconds=1000)
+                report = await f.run()
+            self.assertEqual(report['outcome'], 'agreed', report['reason'])
+            self.assertGreater(len(seen), 2)
+            for (before, spent_before), (after, spent_after) in zip(seen, seen[1:]):
+                self.assertAlmostEqual(after, before - 3 * (spent_after - spent_before), delta=0.5, msg='the allowance resumes where it paused')
+        self.run_scenario(scenario)
+
+    def test_boundary_decisions_never_renew_allowance(self):
+        """Given host decisions at every boundary, when the autonomous time between them adds up past the discussion limit, then the run ends incomplete at the deadline."""
         async def scenario(root):
             offset = 0
             clock = SimpleNamespace(monotonic=lambda: time.monotonic() + offset)
-            async def host(_):
+            def behavior(_):
                 nonlocal offset
-                offset += 100000
+                offset += 3
+                return None
+            async def host(_):
                 return {'action': 'continue'}
             with patch('engine.time', clock):
-                f = Fixture(root, host_input=host, run_seconds=30)
+                f = Fixture(root, behavior=behavior, host_input=host, run_seconds=30)
                 report = await f.run()
-            self.assertEqual(report['outcome'], 'agreed', report['reason'])
+            self.assertEqual(report['outcome'], 'incomplete')
+            self.assertIn('deadline', report['reason'])
+        self.run_scenario(scenario)
+
+    def test_adapter_idle_window(self):
+        """Given an adapter that declares its own idle window and no explicit idle limit, when a turn stalls, then it is cancelled between one and two adapter windows later; an explicit idle limit governs instead when given, and the saved limit records which applied."""
+        class Streaming(FakeAdapter):
+            idle_seconds = 0.1
+
+        async def stalled(root, **limits):
+            f = Fixture(root, behavior=lambda p: 'wait' if p['participant_id'] == 'cy' else None, **limits)
+            f.panel.adapters['fake'] = Streaming(f.adapter.behavior)
+            started = time.monotonic()
+            report = await f.run()
+            self.assertEqual(report['outcome'], 'incomplete')
+            self.assertEqual(len(report['cancellations']), 2, 'the stalled turn and its one retry')
+            return time.monotonic() - started, json.loads(Path(report['manifest']).read_text())['limits']['idle_seconds']
+
+        async def scenario(root):
+            elapsed, saved = await stalled(Path(root, 'own'), idle_seconds=None)
+            self.assertIsNone(saved)
+            self.assertGreaterEqual(elapsed, 0.2)
+            self.assertLess(elapsed, 1.0, 'two attempts, each killed within two adapter windows')
+            elapsed, saved = await stalled(Path(root, 'explicit'), idle_seconds=0.6)
+            self.assertEqual(saved, 0.6)
+            self.assertGreaterEqual(elapsed, 1.2, 'the explicit limit overrides the adapter window')
+            plain = Fixture(Path(root, 'plain'), idle_seconds=None).panel
+            self.assertEqual(plain.idle_window(FakeAdapter()), 300, 'adapters without a window get the fallback')
+            plain.records.close()
+        with tempfile.TemporaryDirectory() as root:
+            for name in ('own', 'explicit', 'plain'):
+                Path(root, name).mkdir()
+            asyncio.run(scenario(root))
+
+    def test_invalid_adapter_window_never_launches(self):
+        """Given an adapter whose idle window is not a positive number, when its participant is dispatched, then nothing is launched, no handle is left running, and the run ends incomplete naming the window."""
+        class Broken(FakeAdapter):
+            idle_seconds = 0
+
+        async def scenario(root):
+            f = Fixture(root, idle_seconds=None)
+            f.panel.adapters['fake'] = broken = Broken()
+            report = await f.run()
+            self.assertEqual(report['outcome'], 'incomplete')
+            self.assertIn('idle window', report['reason'])
+            self.assertEqual((broken.inputs, broken.cancelled, f.panel.active), ([], [], {}))
+        self.run_scenario(scenario)
+
+    def test_nomination_needs_reason_and_declared_drafter(self):
+        """Given flat peers told the declared drafter, when nominations are null they keep the declared drafter; a unanimous nomination with reasons moves integration and the announcement carries the reasons; a nomination without a reason is an invalid contribution."""
+        async def scenario(root):
+            f = Fixture(root, 'flat-peers', behavior=lambda p: {'integrator': 'cy'} if p['participant_id'] == 'ada' and p['phase'] == 'responsibilities' else None)
+            report = await f.run()
+            self.assertEqual(f.adapter.inputs[0]['declared_drafter'], 'ada', 'peers are told whom a nomination would replace')
+            self.assertEqual(report['outcome'], 'incomplete')
+            self.assertIn('integrator_reason', report['failures'][0]['error'])
         self.run_scenario(scenario)
 
     def test_unbounded_discussion_keeps_other_caps(self):

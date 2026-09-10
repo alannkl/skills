@@ -5,7 +5,7 @@
     {
       "phase": "responsibilities",
       "participants": "all",
-      "instruction": "As an equal peer, propose an approach and a division of responsibilities across the roster, and state which parts you would take, without claiming authority over another peer. Nominate the peer who should assemble the final result in integrator; a unanimous nomination decides, otherwise the declared drafter integrates.",
+      "instruction": "As an equal peer, propose an approach and a division of responsibilities across the roster, and state which parts you would take, without claiming authority over another peer. The declared drafter assembles the final result; set integrator to null unless you have a concrete reason to move that duty to another peer, and give the reason in integrator_reason. Only a unanimous nomination moves it.",
       "nominate_integrator": true
     },
     {
