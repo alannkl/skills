@@ -14,6 +14,10 @@ from workspace import Workspaces, result_hash, worktree_files
 from checks import CheckAdapter
 
 
+def activity_stamp(directory):
+    return max((p.stat().st_mtime_ns for p in Path(directory).iterdir() if p.is_file()), default=0)
+
+
 class StopRun(Exception):
     def __init__(self, outcome, reason):
         self.outcome, self.reason = outcome, reason
@@ -55,16 +59,26 @@ def validate_roster(roster, adapters, preset):
     return ids, list(required)
 
 
+def validate_limits(max_cycles, idle_seconds, run_seconds, report_seconds):
+    """run_seconds None means an explicitly unbounded discussion; idle and round caps still apply."""
+    if type(max_cycles) is not int or max_cycles < 1:
+        raise ValueError('max_cycles must be a positive integer')
+    bounded = (idle_seconds, report_seconds) + (() if run_seconds is None else (run_seconds,))
+    if any(not math.isfinite(x) or x <= 0 for x in bounded) or report_seconds < 5 or (run_seconds is not None and run_seconds <= report_seconds):
+        raise ValueError('deadlines must be finite and positive, with at least 5 seconds reserved for reporting')
+
+
+RETRY_NOTICE = ('RUNNER NOTICE: your previous attempt at this turn ended without a valid result ({reason}). '
+                'Continue from the work already in your session instead of restarting it, and return the requested JSON now.\n')
+
+
 class Panel:
     def __init__(self, preset, brief, roster, run_dir, adapters, *, max_cycles=3,
-                 turn_seconds=180, run_seconds=1800, report_seconds=10, host_input=None):
+                 idle_seconds=300, run_seconds=3600, report_seconds=10, host_input=None):
         roster = json.loads(json.dumps(roster))
         preset = json.loads(json.dumps(preset))
         self.ids, self.required = validate_roster(roster, adapters, preset)
-        if type(max_cycles) is not int or max_cycles < 1:
-            raise ValueError('max_cycles must be a positive integer')
-        if any(not math.isfinite(x) or x <= 0 for x in (turn_seconds, run_seconds, report_seconds)) or report_seconds < 5 or run_seconds <= report_seconds:
-            raise ValueError('deadlines must be finite and positive, with at least 5 seconds reserved for reporting')
+        validate_limits(max_cycles, idle_seconds, run_seconds, report_seconds)
         root = Path(run_dir).resolve()
         package = Path(__file__).resolve().parent.parent
         source = Path(roster.get('source') or roster.get('repository')).resolve() if roster.get('source') or roster.get('repository') else None
@@ -96,9 +110,10 @@ class Panel:
         self.brief_revision = 1
         self.discussion_start = 0
         self.max_cycles = max_cycles
-        self.turn_seconds = turn_seconds
+        self.idle_seconds = idle_seconds
+        self.run_seconds, self.report_seconds = run_seconds, report_seconds
         self.cancel_seconds = min(4.0, report_seconds - 1.0)
-        self.deadline = time.monotonic() + run_seconds - report_seconds
+        self.restart_clock()
         try:
             self.workspaces = Workspaces(root, roster, self.execution, self.ids)
         except Exception:
@@ -114,7 +129,7 @@ class Panel:
                          'drafter': self.drafter, 'brief_revision': 1,
                          'brief_hash': digest(brief.encode()), 'source': str(root / 'source'),
                          'source_hash': source_hash, 'independence': 'procedural; filesystem isolation is absent',
-                         'limits': {'max_cycles': max_cycles, 'max_rounds': self.max_rounds, 'turn_seconds': turn_seconds,
+                         'limits': {'max_cycles': max_cycles, 'max_rounds': self.max_rounds, 'idle_seconds': idle_seconds,
                                     'run_seconds': run_seconds, 'report_seconds': report_seconds},
                          'usage_limits': 'Claude turn/budget limits where supplied; Codex has a wall deadline only. Usage is reported after turns, not a guaranteed token ceiling.',
                          'status': 'running'}
@@ -123,6 +138,10 @@ class Panel:
 
     def request_stop(self):
         self.stop.set()
+
+    def restart_clock(self):
+        """The discussion deadline bounds autonomous work only; every host input starts it afresh."""
+        self.deadline = math.inf if self.run_seconds is None else time.monotonic() + self.run_seconds - self.report_seconds
 
     def check_limits(self):
         if self.stop.is_set():
@@ -139,12 +158,10 @@ class Panel:
         decision_task = asyncio.create_task(self.host_input(self.phase))
         stop_task = asyncio.create_task(self.stop.wait())
         try:
-            done, _ = await asyncio.wait([decision_task, stop_task],
-                                         timeout=max(0, self.deadline - time.monotonic()),
-                                         return_when=asyncio.FIRST_COMPLETED)
+            # Waiting for the host is not autonomous work, so it is not charged to the deadline.
+            await asyncio.wait([decision_task, stop_task], return_when=asyncio.FIRST_COMPLETED)
+            self.restart_clock()
             self.check_limits()
-            if decision_task not in done:
-                raise StopRun('incomplete', 'Deadline reached waiting for host input')
             decision = decision_task.result()
         finally:
             decision_task.cancel()
@@ -277,6 +294,10 @@ class Panel:
             raise ValueError('data must be a JSON object')
         return block
 
+    def terminal_error(self, dispatch):
+        return next((e['data']['error'] for e in reversed(self.records.events)
+                     if e['kind'] == 'terminal_result' and e['data'].get('dispatch_id') == dispatch['id']), '')
+
     def ingest(self, pid, result, dispatch, private=False):
         recorded = next((e for e in self.records.events if e['kind'] == 'terminal_result'
                          and e['data'].get('dispatch_id') == dispatch['id']), None)
@@ -330,6 +351,7 @@ class Panel:
         self.turn += 1
         turn_id = f't{self.turn}'
         adapter = self.adapters[self.people[pid]['harness']]
+        retry_reason = None
         for attempt in (1, 2):
             self.check_limits()
             directory = self.records.root / 'participants' / pid / f'{turn_id}-{attempt}'
@@ -339,7 +361,7 @@ class Panel:
                                            input_event_ids=[e['id'] for e in selected], cutoff=cutoff,
                                            brief_revision=self.brief_revision,
                                            candidate=self.candidate, attempt=attempt,
-                                           attempt_dir=str(directory), private=private)
+                                           attempt_dir=str(directory), private=private, retry_reason=retry_reason)
             settings = dict(self.people[pid]['settings'], cwd=self.workspaces.directories[pid],
                             capabilities=self.execution.capabilities(), read_dirs=self.people[pid].get('read_dirs', []),
                             scratch_dir=str(self.records.root / 'participants' / pid / 'scratch'),
@@ -361,10 +383,8 @@ class Panel:
             self.active[pid] = (adapter, handle)
             stop_task = asyncio.create_task(self.stop.wait())
             try:
-                done, _ = await asyncio.wait([handle.completion, stop_task],
-                                             timeout=min(self.turn_seconds, max(0, self.deadline - time.monotonic())),
-                                             return_when=asyncio.FIRST_COMPLETED)
-                if handle.completion in done:
+                finished = await self.wait_while_active(handle.completion, stop_task, directory)
+                if finished:
                     try:
                         result = handle.completion.result()
                     except (Exception, asyncio.CancelledError) as exc:
@@ -377,17 +397,38 @@ class Panel:
                     result = Terminal(recovered.session_id, raw_text=recovered.raw_text,
                                       exit_status=recovered.exit_status, usage=recovered.usage,
                                       outcome='failed' if confirmed else 'indeterminate',
-                                      error='cancelled' if self.stop.is_set() else 'turn deadline reached')
+                                      error='cancelled' if self.stop.is_set() else 'idle deadline reached')
                     self.records.append('cancel', self.phase, participant=pid, confirmed_inactive=confirmed,
                                         uncertain_effects=recovered.outcome != 'completed')
                 block = self.ingest(pid, result, dispatch, private)
                 if result.outcome == 'indeterminate':
                     raise StopRun('incomplete', f'Indeterminate delivery for {pid}; no redispatch')
+                # A killed or invalid turn keeps its session; resume it once to finish rather than dropping the work.
+                if block is None and attempt == 1 and result.outcome != 'blocked' and self.people[pid]['session_id'] and not self.stop.is_set():
+                    retry_reason = self.terminal_error(dispatch) or 'no valid result'
+                    prompt = RETRY_NOTICE.format(reason=retry_reason) + prompt
+                    continue
                 return block
             finally:
                 stop_task.cancel()
                 self.active.pop(pid, None)
         return None
+
+    async def wait_while_active(self, completion, stop_task, directory):
+        """Bound stalls, not work: a turn keeps its time while anything is written under its attempt directory."""
+        seen = activity_stamp(directory)
+        while True:
+            done, _ = await asyncio.wait([completion, stop_task],
+                                         timeout=min(self.idle_seconds, max(0, self.deadline - time.monotonic())),
+                                         return_when=asyncio.FIRST_COMPLETED)
+            if completion in done:
+                return True
+            if stop_task in done or time.monotonic() >= self.deadline:
+                return False
+            stamp = activity_stamp(directory)
+            if stamp == seen:
+                return False
+            seen = stamp
 
     async def round(self, phase, participants, instruction, *, private=False, optional=False):
         self.phase = phase
@@ -452,8 +493,9 @@ class Panel:
             self.active['@verification'] = (adapter, handle)
             stop_task = asyncio.create_task(self.stop.wait())
             try:
+                # Checks keep a plain wall-clock bound; test runners print as they go and idle silence is rare.
                 done, _ = await asyncio.wait([handle.completion, stop_task],
-                                             timeout=min(self.turn_seconds, max(0, self.deadline - time.monotonic())),
+                                             timeout=min(self.idle_seconds, max(0, self.deadline - time.monotonic())),
                                              return_when=asyncio.FIRST_COMPLETED)
                 if handle.completion in done:
                     result = handle.completion.result()
@@ -543,8 +585,6 @@ class Panel:
                 outcome, reason = 'incomplete', 'Executable verification did not pass within the cycle cap'
         except StopRun as stop:
             outcome, reason = stop.outcome, stop.reason
-        except asyncio.TimeoutError:
-            outcome, reason = 'incomplete', 'Deadline reached while waiting for host input'
         except Exception as exc:
             outcome, reason = 'incomplete', f'{type(exc).__name__}: {exc}'
         finally:

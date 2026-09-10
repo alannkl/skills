@@ -40,12 +40,13 @@ class ClaudeAdapter(ProcessAdapter):
     def parse(self, output, code, session_id):
         result = Terminal(session_id, exit_status=code)
         try:
-            # stream-json writes one event per line as the turn runs; the single result event is terminal.
+            # stream-json writes one event per line as the turn runs. A resumed session may flush a pending
+            # notification as its own result before answering, so the last result event is the terminal state.
             events = [json.loads(line) for line in output.splitlines() if line.strip()]
             results = [e for e in events if isinstance(e, dict) and e.get('type') == 'result']
-            if len(results) != 1:
-                raise ValueError('expected exactly one result event')
-            data = results[0]
+            if not results:
+                raise ValueError('no result event')
+            data = results[-1]
             result.session_id = data.get('session_id', session_id)
             result.raw_text = data.get('result', '')
             result.usage = {'tokens': data.get('usage', {}), 'cost_usd': data.get('total_cost_usd')}

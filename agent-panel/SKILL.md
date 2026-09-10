@@ -12,7 +12,7 @@ Invocation activates the panel for the current chat until the user stops it, res
 
 Retain the active run directory, resolved roster, adapter registrations, authorization and shared decisions in the session's persistent working record and any continuation handoff. At the next message, restore that record and read the saved manifest before dispatch. After context compaction, reload this skill. A final answer completes one discussion; the panel stays active while waiting for the user.
 
-For follow-ups, read [continuing the conversation](references/usage.md#continuing-the-conversation) and resume the saved panel. Stop and answer-solo requests close it without further participant work. Reset closes the old panel and prepares a new one with fresh sessions, retaining the old artifacts. Honor an explicitly one-message solo exception, record any resulting user decisions, and return to panel routing afterward. Reuse existing authorization; resolve changes outside it before launch.
+For follow-ups, read [continuing the conversation](references/usage.md#continuing-the-conversation) and resume the saved panel. Stop and answer-solo requests close it without further participant work. Reset closes the old panel and prepares a new one with fresh sessions, retaining the old artifacts. Honor an explicitly one-message solo exception, record any resulting user decisions, and return to panel routing afterward. Reuse existing authorization; resolve changes outside it before launch. Time and cycle limits may change on a follow-up without a reset.
 
 ## Prepare
 
@@ -23,7 +23,7 @@ For follow-ups, read [continuing the conversation](references/usage.md#continuin
    - `flat-peers`: split work, negotiated by the peers. Identical peers propose the split, then each contributes its part; a declared integrator assembles them. Choose it when the work should be divided but nobody, host included, should decide the division in advance.
 3. Resolve the requested roster or the two-participant [default roster](references/usage.md#default-roster), including model availability and effort. Assign IDs, roles, adapters, the integrator and required approvers using the [roster file rules](references/usage.md#roster-file).
 4. Set authorized web, command and source-edit access. Choose checks with expected exit codes, or explain how review will verify completion. Preserve authentication and billing settings.
-5. Before launching, freeze the inputs and report the source revision, deliverable, participant count, each participant's harness/model/effort/role, required approvers, preset and run limits. Confirm the roster unless the user already supplied or approved it, including effort defaults or a fallback policy. Report choices within that approval without asking again; confirm changes outside it. Freeze the resolved roster for the run.
+5. Before launching, freeze the inputs and report the source revision, deliverable, participant count, each participant's harness/model/effort/role, required approvers, preset and run limits. Confirm the roster unless the user already supplied or approved it, including effort defaults or a fallback policy. Report choices within that approval without asking again; confirm changes outside it. Freeze the resolved roster for the run. Use `--unbounded` only when the user asks for it by name.
 
 ## Run
 
@@ -32,7 +32,7 @@ From this skill's directory:
 ```bash
 python3 scripts/panel.py leader-members /absolute/brief.md /absolute/roster.json \
   --run-dir /absolute/new-run-directory --max-cycles 3 \
-  --turn-seconds 180 --run-seconds 1800
+  --idle-seconds 300 --run-seconds 3600
 ```
 
 The runner manages scheduling, sessions, working directories, input delivery, artifacts and final approval. Use each harness's automatic, noninteractive tool permissions within the execution boundaries; keep harness-specific flags in its adapter. Report missing participants or permissions as blockers and preserve the roster.
