@@ -82,6 +82,7 @@ class AdapterBehavior(unittest.TestCase):
             else:
                 self.assertEqual(resumed[resumed.index('--permission-mode') + 1], 'auto')
                 self.assertIn('--resume', resumed)
+                self.assertIn('--include-partial-messages', resumed, 'thinking deltas keep the idle bound honest')
                 self.assertIn('Read,Grep,Glob', resumed)
                 self.assertNotIn('--bare', resumed)
 

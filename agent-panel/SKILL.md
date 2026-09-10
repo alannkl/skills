@@ -1,6 +1,6 @@
 ---
 name: agent-panel
-description: Keep N agents in the current chat, continuing their discussion across follow-ups and verifying each combined result.
+description: Keep N agents in the current chat, continuing their discussion across follow-ups and verifying each combined result, or one read-only consultant for second opinions while the host does the work itself.
 disable-model-invocation: true
 ---
 
@@ -20,6 +20,7 @@ For follow-ups, read [continuing the conversation](references/usage.md#continuin
 2. Read [runner usage](references/usage.md) for roster, evidence and execution settings. Use the requested preset; otherwise choose one by how the work is shared and announce it. Default interactive skills to `leader-members` with one human-facing coordinator, preserving the selected skill's mode-selection rules:
    - `independent-discussion`: duplicated work. Every participant produces the whole deliverable privately; the panel then compares competing results. Choose it when the value is whether participants converge unprompted: judgments, forecasts, designs, reviews.
    - `leader-members`: split work, decided by the leader. The leader assigns complementary parts and integrates them. Choose it when one participant should own the decomposition.
+   - `pair`: undivided work, done by the host. One read-only consultant reviews at fixed checkpoints; see [Pair mode](#pair-mode). Choose it when the host should do the task itself and the value is a second opinion from another model, not a shared deliverable.
    - `flat-peers`: split work, negotiated by the peers. Identical peers propose the split and nominate an integrator, then each contributes its part; a unanimous nominee assembles them, otherwise the declared drafter does. Choose it when the work should be divided but nobody, host included, should decide the division in advance.
 3. Resolve the requested roster or the two-participant [default roster](references/usage.md#default-roster), including model availability and effort. Assign IDs, roles, adapters, the integrator and required approvers using the [roster file rules](references/usage.md#roster-file).
 4. Set authorized web, command and source-edit access. Choose checks with expected exit codes, or explain how review will verify completion. Preserve authentication and billing settings.
@@ -44,6 +45,25 @@ For round-by-round decisions, use `--pause-between-rounds` and send host decisio
 ## Host view
 
 The host coordinates and is not a participant: the participant count excludes it, and it runs on the chat session's model regardless of the roster. Keep the opening brief to goal, scope, evidence and criteria so opening contributions stay independent. After the reveal, the host may add its own opinion under a `Host view (non-binding)` heading, sent as a brief revision at a round boundary or inside a follow-up file. Participants treat it as evidence to challenge; approval stays with the roster. At delivery, the host may add its own dissent as a host comment, separate from the panel outcome.
+
+## Pair mode
+
+In `pair`, the host does the task itself and keeps one read-only consultant on another harness for the whole task. Resolve its model by the default roster rules, open it once with a brief that states the goal, scope and acceptance criteria, keep the consultation directory in the session's working record, and close it at delivery. See [consultant usage](references/usage.md#consultant).
+
+```bash
+python3 scripts/consult.py open /absolute/consult-dir --harness codex --model MODEL --effort high \
+  --brief /absolute/brief.md --read /absolute/repo
+python3 scripts/consult.py ask /absolute/consult-dir --question /absolute/question.md --attach /absolute/diff.patch
+python3 scripts/consult.py close /absolute/consult-dir
+```
+
+Three consultations are required per task, plus any the host wants in between:
+
+1. **Plan.** Before the first edit, send the plan and ask for objections, risks and alternatives. Done when the reply is relayed and each objection has a recorded decision.
+2. **Deliverable.** After each draft, diff or result, send it with the acceptance criteria and ask for a review. Done when the reply is relayed and each finding is fixed, or rejected with a reason.
+3. **Delivery.** The final message lists every consultation turn with its verdict and what the host did with each point, disagreements included. A delivery whose list does not match `log.jsonl` in the consultation directory is incomplete.
+
+Relay each reply verbatim in the chat under a `Second opinion` heading, separate from the host's own view. The consultant's advice is evidence: the host weighs it, records disagreement explicitly, and stays accountable; nothing the consultant says is approval. The consultant reads the listed directories and attachments and never edits. The user may waive the checkpoints for a task by saying so; the host may not.
 
 ## Deliver the current answer
 

@@ -143,3 +143,15 @@ The extension keeps the N-participant scheduler, presets, delivery records and e
 - Three behavior scenarios were declared before their bodies: unanimous, split and absent nominations; per-phase schema contents; adapter flag handling and Codex `data` decoding. The existing flat-peers test now expects the runner's integrator announcement among contribute inputs.
 - Final command: `python3 -m unittest discover -s tests/agent-panel`. Result: **80 tests passed, no skips**, in 68 seconds. `git diff --check` passed.
 - Live evidence: one Sonnet and one GPT Luna turn through the real adapters with a contribution schema both returned `completed` with valid envelopes, directed messages, `data` as an object and the nomination field set. No full live panel was run.
+
+## Consultant for second opinions, 2026-09-11
+
+- `scripts/consult.py` keeps one read-only participant outside any panel: `open` with a brief, `ask` with a question and optional attachments and readable directories, `close`. Replies are schema-enforced text; a turn that never returns is cancelled at `--timeout` and the session stays open. The host relays replies verbatim under a `Second opinion` heading and stays accountable.
+- Two behavior scenarios were declared before their bodies: open, ask with an attachment and close on both bundled harnesses through the subprocess fixture, checking one session, granted read directories, schema flags and no edit tool; and a consultant that never answers, cancelled and reported without closing the consultation. The Codex adapter now rewrites `data` only when the schema has that field.
+- Final command: `python3 -m unittest discover -s tests/agent-panel`. Result: **82 tests passed, no skips**. `git diff --check` passed.
+- Live evidence: a two-turn GPT Luna consultation with read access to the runner's scripts directory answered the brief and a follow-up in one session. Its second opinion on the idle bound was substantive: file-activity is a noisy liveness signal, a runner-written heartbeat would be stronger, and it argued for a 600-second default over 300 because a false kill costs more than five minutes of waiting.
+
+## Partial-message streaming for the idle bound, 2026-09-11
+
+- The Claude adapter now passes `--include-partial-messages`, so reasoning and text deltas land in the capture as they are generated. A long thinking call no longer looks idle. The parser and the progress script ignore `stream_event` lines; the resume test pins the flag.
+- Live evidence: a Haiku probe with the flag emitted `thinking_delta` and `text_delta` events alongside the full `assistant` messages and a single `result`; the adapter parsed the capture as `completed`. An earlier probe under a one-turn cap ended `error_max_turns` because the model needed a second turn for structured output, unrelated to the flag.
