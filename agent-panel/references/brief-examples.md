@@ -31,3 +31,11 @@ Write finished copy for the requested audience, purpose, tone, format and length
 Allocate observation slots for a fictional moon. Return the allocation and reasoning needed to verify it. Give each requested observer one slot, without overlaps, and satisfy every stated visibility constraint.
 
 For any subject, specify the deliverable and checks in the brief and choose the required access; no new runtime type is needed.
+
+## Continue after an answer
+
+User follow-up: "Keep this document generic; the audience-specific guidance belongs in the individual skills. Which recommendations change?"
+
+User decision: the shared document addresses communication for any audience. Revise the prior recommendation accordingly, retaining other settled decisions. Return the revised recommendation and explain what changed; do not edit files. Acceptance: every proposed change respects the generic document's scope, and the answer identifies any remaining uncertainty.
+
+Send this brief through `--continue` with the active panel directory and `--follow-up` with this file. Resume the existing participants; they already took part in the earlier discussion.

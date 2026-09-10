@@ -4,20 +4,26 @@ from engine import Panel
 from records import Records
 from execution import ExecutionPolicy
 from workspace import Workspaces
-from adapters.base import Terminal, recover_terminal
+from adapters.base import Terminal, atomic_json, recover_terminal
 
 
 def recover_run(run_dir, adapters):
     records = Records(run_dir, existing=True)
     manifest = json.loads((records.root / 'manifest.json').read_text())
-    if manifest['status'] != 'running' and (records.root / 'report.json').exists():
-        records.close()
-        return json.loads((records.root / 'report.json').read_text())
+    if manifest['status'] != 'running':
+        archive = records.root / 'reports' / f"discussion-{manifest.get('discussion', 1)}.json"
+        report_path = archive if archive.exists() else records.root / 'report.json'
+        if report_path.exists():
+            report = json.loads(report_path.read_text())
+            if report.get('discussion', 1) == manifest.get('discussion', 1):
+                atomic_json(records.root / 'report.json', report)
+                records.close()
+                return report
     panel = Panel.__new__(Panel)
     panel.records, panel.manifest, panel.adapters = records, manifest, adapters
     panel.people = manifest['participants']
     panel.ids, panel.required = list(panel.people), manifest['required_approvers']
-    if manifest.get('version') != 3:
+    if manifest.get('version') not in (3, 4):
         records.close()
         raise ValueError('This unfinished run uses an earlier format; retain its artifacts and start a new run')
     panel.execution = ExecutionPolicy(manifest.get('execution'), panel.required, manifest['drafter'])
@@ -34,7 +40,7 @@ def recover_run(run_dir, adapters):
     import asyncio
     panel.stop = asyncio.Event()
     uncertain = []
-    for event in list(records.events):
+    for event in list(records.events)[manifest.get('discussion_start', 0):]:
         if event['kind'] == 'candidate':
             panel.candidate = {k: value for k, value in event['data'].items() if k != 'brief_revision'}
         if event['kind'] != 'dispatch':
