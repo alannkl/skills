@@ -100,4 +100,6 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - When surfacing findings, weigh substance over taste: a divergence from the repo's own norms is a strong finding; a mere difference from your preferred style is not.
    - Confirm every scaffolded scenario has an executable test body or a documented reason for remaining skipped.
    - When offering to commit, include the proposed commit message in the offer so one approval covers both.
-   - Summarize the handoff: passed success criteria; what changed and why; assumptions and plan deviations; skipped tests or revised scaffold outcomes with reasons; intentional exclusions; and remaining gaps or risks.
+   - Write the handoff for the engineer who will maintain the code. Explain what now behaves differently for callers, operators, or stored data. For consequential changes, explain the mechanism and the invariant future edits must preserve.
+   - State which success criteria passed and what the checks did not establish. A passing test covers only the behavior it exercised. Include assumptions, plan deviations, skipped tests or revised scaffold outcomes with reasons, intentional exclusions, and any real pending action.
+   - Scale the handoff to the consequences. A rename gets one sentence; a changed transaction boundary needs a causal explanation. Even a one-sentence handoff names the behavior and what was checked.

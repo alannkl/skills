@@ -81,10 +81,9 @@ Return a concise summary proportional to the change. For small tasks, use a shor
 
 For larger documentation passes, include only the sections that add useful signal:
 
-- `Files reviewed`: list reviewed source files.
-- `Comments/docstrings added`: list changed files or nearest symbols.
-- `Docs added`: list new or updated documentation files.
+- `Recorded`: what a reader can now learn that the code did not say — the invariant, tradeoff, or constraint — and where it lives (nearest symbol or doc file), not a list of files that gained comments.
 - `Needs refactor, but not changed`: list unclear areas where the real fix is simplification, naming, or structure.
 - `Validation`: list commands run and results, or state why none were run.
+- `Scope`: one line naming the files reviewed.
 
 Do not claim behavior changed, bugs were fixed, or code was simplified. The deliverable is better understanding with unchanged behavior.

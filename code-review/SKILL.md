@@ -71,7 +71,7 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
    - Report findings as one batch: complete the read-only scan (Steps 1–6) across the whole review surface before presenting any finding, then deliver the full set in a single report. Findings accumulate during the scan; stop mid-scan only when the review premise is invalid — wrong branch or target, unusable scope — or continuing would be unsafe, such as exposed live credentials needing immediate action.
    - Merge findings that share a root cause into one finding listing every affected location.
    - Give each finding a short id (`F1`, `F2`, ...) so later discussion and triage can reference it, and state confidence (high/med/low) alongside severity.
-   - Calibrate severity by impact, likelihood, and confidence. Do not escalate severe but unproven risk without evidence; report it at a lower severity with the assumption or uncertainty stated.
+   - Calibrate severity by impact, likelihood, and confidence. Report severe but unproven risks at a lower severity, and state the assumption or uncertainty in the finding itself, not only under `Residual risks`.
    - `Critical`: exploitable security issue, data loss or corruption, system-breaking regression, broken public contract, or complete logic failure.
    - `High`: likely user-visible bug, severe regression, broken migration or rollback path, major performance issue, or explicit project-rule violation.
    - `Medium`: contained but real bug, missing validation, meaningful test gap, brittle logic likely to cause future defects, or maintainability issue with practical risk.
@@ -87,7 +87,7 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
 
 Start with findings ordered by severity. Keep scope concise and place it after findings unless the user explicitly asks for a different format. If there are no findings, start with `No findings in the reviewed scope.`
 
-For small reviews (a narrow diff with one or few findings), `Findings`, `Scope`, and `Tests / checks` are sufficient; omit the other sections unless they carry real information. Always include `Tests / checks`; include `Residual risks` when checks were not run or context was unavailable.
+For small reviews with a narrow diff and few findings, `Findings`, `Scope`, and `Tests / checks` are sufficient. Include other sections only when they carry real information. Always include `Tests / checks`; include `Residual risks` when checks were not run or context was unavailable.
 
 Use this structure:
 
@@ -122,6 +122,8 @@ Use this structure:
 - <smallest actionable review follow-ups for the code author>
 ```
 
+A small finding whose problem sentence already includes the evidence may use one short paragraph instead of labeled bullets. Keep all four parts in the specified order and retain the heading format.
+
 ## Finding quality
 
 Before reporting a finding, check that it has:
@@ -132,16 +134,18 @@ Before reporting a finding, check that it has:
 - a severity that matches impact, likelihood, and confidence;
 - a specific fix or next step.
 
-Write each finding for a reader who may not have written or even read the code: open with the context needed to situate it — what the code is responsible for, in a line — then state the wrong behavior in one plain sentence before the mechanism, and let the evidence trace the path from trigger to wrong outcome so the reader follows it instead of re-deriving it. When the defect survives because the code invites a natural-but-wrong reading, name that reading and correct it — dislodging the wrong model beats stating the fact beside it. When the mechanism is too tangled to hold in prose — ordering, concurrency, state transitions — shrink the failing case to a minimal toy world (two writers, a three-slot queue) or draw a small mermaid diagram; never illustrate what a sentence covers.
+Write for a reader who may never have seen the code. Open with one line on the code's responsibility, then state the wrong behavior in a plain sentence before explaining the mechanism. Use the evidence to trace the path from trigger to wrong outcome.
+
+If a plausible misreading of the code hides the defect, name and correct it. When ordering, concurrency, or state transitions are too tangled to follow in prose, reduce the failing case to a minimal example, such as two writers or a three-slot queue, or draw a small mermaid diagram. Use prose alone when a sentence suffices.
 
 Review in the language and conventions present in the diff. The example below illustrates the shape of a strong finding, not its domain.
 
 Good finding:
 
 > **F1 [High/high] Pagination drops the partial last page** - `src/lib/paginate.ts:24`
-> **Problem:** `const pageCount = Math.floor(total / pageSize)` undercounts pages when there is a remainder. With `total = 101` and `pageSize = 25`, it yields `4`, but the caller loops `page < pageCount`, pages `0..3`, so the final item is never returned.
-> **Evidence:** The remainder case `total = 101`, `pageSize = 25` needs five pages, `0..4`, but `Math.floor(101 / 25)` produces `4`.
-> **Why it matters:** Consumers silently lose the final partial page, breaking the documented "returns all items" contract.
+> **Problem:** `paginate` tells callers how many pages to fetch to retrieve every item. It undercounts by one whenever the total is not a multiple of the page size.
+> **Evidence:** `const pageCount = Math.floor(total / pageSize)` at line 24 drops the remainder. With `total = 101` and `pageSize = 25`, it yields `4`. The caller in `listAll` loops `page < pageCount`, fetches pages `0..3`, and never returns item 101.
+> **Why it matters:** Losing the final partial page breaks the documented "returns all items" contract. Exports and sync jobs built on it lose data without an error.
 > **Proposed fix:** Use `Math.ceil(total / pageSize)` and add a boundary test for the remainder case.
 
 Bad findings:
