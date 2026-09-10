@@ -2,11 +2,27 @@
 
 ## Brief and roster
 
-The brief defines what participants must do, what to deliver, and how to judge success. There is no task selector, category registry or profile loader. Optional [brief examples](brief-examples.md) help the host write a brief; the runner does not consume them.
+The brief defines the work, deliverable and acceptance criteria. The host may use [brief examples](brief-examples.md); the runner reads the brief, without a task selector, category registry or profile loader.
 
-For collaborative execution of an existing skill, follow [skill collaboration](skill-collaboration.md). The host selects a preset when the user leaves it unspecified and supplies it to the CLI. The host also manages interactive skill stages; there is no automatic skill loader, stage scheduler or question-forwarding mechanism in this runner.
+For an existing skill, follow [skill collaboration](skill-collaboration.md). The host supplies the chosen preset to the CLI and manages interactive stages, skill loading and questions; the runner does not automate those steps.
 
-A roster contains participants, coordination roles, optional evidence and explicit execution settings:
+### Default roster
+
+When the user leaves the roster unspecified, use two participants:
+
+| Harness | Preferred model | Effort |
+| --- | --- | --- |
+| Claude Code | Claude Fable 5.1 | `high` |
+| Codex | GPT-6 Astra | `high` |
+
+1. Preserve explicit user choices and apply task-specific model restrictions only within their stated scope. Fill unspecified models on matching harnesses from the table; default unspecified effort to `high`.
+2. Resolve exact model identifiers for the installed harness and current account using current model listings or account availability evidence. Consult current official vendor guidance when identifiers or capability are unclear. If a preferred model is unavailable, choose that harness's most capable available model for general reasoning and coding. Use the same rule for other requested harnesses. Base the ranking on current model descriptions, not names or speed/cost defaults. Report fallbacks and reasons, or unresolved availability/ranking before launch; never invent an identifier.
+3. Set `high` explicitly where supported. If effort control exists but lacks `high`, disclose supported choices and resolve effort before launch. Report harnesses without effort control.
+4. Assign roles and the integrator to fit the brief and preset, with both default participants required to approve. Write the resolved choices into the roster file; the runner does not discover or substitute models.
+
+### Roster file
+
+A roster specifies participants, coordination roles, optional evidence and execution settings. Replace the model placeholders with resolved identifiers:
 
 ```json
 {
@@ -15,17 +31,16 @@ A roster contains participants, coordination roles, optional evidence and explic
   "drafter": "a",
   "participants": [
     {"id": "a", "role": "Develop the approach and integrate", "harness": "claude", "settings": {"model": "YOUR_CLAUDE_MODEL", "effort": "high"}},
-    {"id": "b", "role": "Challenge assumptions and verify evidence", "harness": "codex", "settings": {"model": "YOUR_CODEX_MODEL", "effort": "high"}},
-    {"id": "c", "role": "Check the complete deliverable against the brief", "harness": "codex", "settings": {"model": "YOUR_CODEX_MODEL", "effort": "high"}}
+    {"id": "b", "role": "Challenge assumptions and verify evidence", "harness": "codex", "settings": {"model": "YOUR_CODEX_MODEL", "effort": "high"}}
   ]
 }
 ```
 
-Replace model placeholders with available models and select a supported effort value; the examples use `high`. IDs are unique; `host`, `runner` and `all` are reserved. Every participant gets a separate session, including repeated use of one harness. `required_approvers` defaults to everyone. `leader-members` also requires `leader`; that participant integrates. Other presets use `drafter`.
+Use supported effort values. IDs must be unique; `host`, `runner` and `all` are reserved. Each participant gets a separate session, even on the same harness. `required_approvers` defaults to everyone. Set `drafter`; `leader-members` also requires `leader`, who integrates instead. Working-copy runs require an approver other than the integrator.
 
-The host confirms the proposed roster before launching live agents unless the user already supplied or approved it. Show each participant's harness, model, reasoning effort and role, plus the required approvers and run limits. Resolve effort explicitly where supported, or state that the harness has no effort control. A user-approved effort default can be reused. Changes to participant count, harnesses, models, effort or required approvers need renewed confirmation. Collaboration presets determine coordination, not roster composition. A direct CLI call with an explicit roster file remains noninteractive.
+Follow the [skill's roster-confirmation step](../SKILL.md#prepare) before launch. Presets determine coordination, not roster composition. Direct CLI calls with explicit roster files remain noninteractive.
 
-Every opening contribution is required. Critique or clarification can skip a confirmed inactive, reconciled failure, while retaining that participant for required final approval. A failed participant never silently changes the approval policy.
+Every opening contribution is required. Critique or clarification may skip a failed participant after confirming inactivity and reconciling the failure. That participant remains required for final approval.
 
 ## Execution boundaries
 
@@ -40,15 +55,15 @@ Every opening contribution is required. Critique or clarification can skip a con
 | `checks` | Commands to verify the assembled result, with expected exit codes. |
 | `verification_note` | Explain the review method when working-copy verification cannot use executable checks. |
 
-These settings do not select instructions or output formats. The same access settings can serve unrelated briefs. Tool approval is automatic within these boundaries; final result approval still requires every configured reviewer.
+Access settings are independent of task instructions and output formats. Tool approval is automatic within these boundaries; final approval requires every configured reviewer.
 
-All modes permit reading the supplied evidence. Use the harness's available file-reading mechanism, including bounded read-only shell inspection when that is how it accesses files. The permission description exposes `file_reads`, not a blanket `shell` switch. Native tool availability and sandbox enforcement remain with each adapter; this does not enable source edits or general side-effecting commands in read-only mode.
+All modes permit reading supplied evidence, including bounded read-only shell inspection when needed. Permissions expose `file_reads`, not a blanket `shell` switch. Each adapter controls native tools and sandbox enforcement; read-only mode permits neither source edits nor general side effects.
 
-Use Python 3.10+ on Linux or macOS and the authenticated CLIs selected in the roster. No Python packages are required. Git is required for `inspect` and `edit`.
+Use Python 3.10+ on Linux or macOS, authenticated roster CLIs, and Git for `inspect` or `edit`. No Python packages are required.
 
 ## Evidence and working copies
 
-For read-only evidence, optionally set `source` to a directory of selected files. Relative paths resolve against the roster file. The runner copies it to a read-only snapshot. Omitting source creates an empty evidence directory for work that only needs the brief or web retrieval.
+For read-only evidence, set optional `source` to a directory of selected files. Relative paths resolve against the roster file. The runner creates a read-only snapshot, or an empty evidence directory when source is omitted for brief-only or web work.
 
 For repository evidence or working copies, select `repository` and an explicit `base_revision` instead of `source`:
 
@@ -68,19 +83,19 @@ For repository evidence or working copies, select `repository` and an explicit `
 }
 ```
 
-The runner resolves the revision once and creates a private local clone without hardlinks or remotes. Participants get separate worktrees at that commit. Their Git metadata and changes stay in the run directory. Working-copy runs require a final approver other than the integrator.
+The runner resolves the revision once, creates a private local clone without hardlinks or remotes, and gives participants separate worktrees at that commit. Git metadata and changes stay in the run directory.
 
-`HEAD` means the committed revision. Dirty changes are not included. For a review of dirty work, export the exact diff and supporting files as evidence; preserve the requested scope rather than replacing it with HEAD.
+`HEAD` includes only committed work. To review dirty work, export the exact diff and supporting files as evidence, preserving the requested scope.
 
-Each participant keeps its working directory across resume. Contributions are captured as patches and read-only file snapshots. After reveal, peer references point to those snapshots so later working-copy edits cannot alter the round's evidence. The integrator assembles the result in its own worktree. A separate verification worktree reconstructs the final patch before checks run.
+Participants retain working directories across resume. Contributions are captured as patches and read-only snapshots, which peers receive after reveal; later edits cannot alter that evidence. The integrator assembles the result in its worktree. A separate verification worktree reconstructs the final patch before checks run.
 
 Choose a new run directory outside the source, caller repository and skill package. Regular files, executable modes and internal relative symlinks are supported. Escaping symlinks, special files and uninitialized submodule entries are rejected. Git-ignored files are not patch deliverables.
 
-Processes share an operating-system account and may inherit local instructions, hooks and extensions. The runner separates edits and withholds initial peer inputs; filesystem access controls do not enforce independence. Use a controlled account or container when stronger isolation is needed.
+Processes share an operating-system account and may inherit instructions, hooks and extensions. The runner separates edits and withholds initial peer inputs but does not enforce filesystem isolation. Use a controlled account or container for stronger isolation.
 
 ## Checks and tool permissions
 
-Working-copy runs require `checks` or an explicit `verification_note`. Checks are argument arrays, never shell strings, and run against the assembled result. Exit zero is expected unless specified otherwise:
+Working-copy runs require `checks` or an explicit `verification_note`. Checks run against the assembled result as argument arrays, never shell strings. Expected exit defaults to zero:
 
 ```json
 {
@@ -89,17 +104,17 @@ Working-copy runs require `checks` or an explicit `verification_note`. Checks ar
 }
 ```
 
-Checks record their command, expected and actual exit code, stdout, stderr and hashes. They must leave reviewed source files unchanged. Generated check outputs stay in the verification worktree. A failing check prevents agreement even if every participant approves. Bounded rework receives that failure evidence; unresolved verification at the cap returns incomplete.
+Checks record commands, expected/actual exit codes, stdout, stderr and hashes. They must preserve reviewed source files; generated outputs stay in the verification worktree. Failed checks block agreement despite unanimous approval. Rework receives failure evidence; unresolved verification at the cap returns incomplete.
 
-For acceptance tests participants must not edit, point the command at a script in the immutable source snapshot and make it test the verification working directory.
+For acceptance tests participants must not edit, run a script from the immutable source snapshot against the verification working directory.
 
-The two bundled adapters are the initial integrations. Both accept `model`, `effort` and optional trusted `executable`. Claude also accepts `max_turns` and `max_budget_usd`; Codex rejects unsupported bounds. Existing authentication and billing settings are retained.
+Both bundled adapters accept `model`, `effort` and optional trusted `executable`. Claude also accepts `max_turns` and `max_budget_usd`; Codex rejects unsupported bounds. Both retain existing authentication and billing settings.
 
-Claude uses native `auto` with interactive permission prompts disabled. Available tools follow execution settings; its native policy assesses shell operations without a runner-maintained command allowlist. Source/check directories are declared with `--add-dir`, and peer snapshot access is added after reveal and retained on resume. Complex or Unicode-bearing shell programs belong in scratch script files to avoid fragile command parsing. The directory grants follow the [Claude permission rules](https://code.claude.com/docs/en/permissions#working-directories).
+Claude uses native `auto` without interactive permission prompts. Tools follow execution settings; native policy assesses shell operations without a runner command allowlist. Declare source/check directories with `--add-dir`; add peer snapshot access after reveal and retain it on resume. Put complex or Unicode-bearing shell programs in scratch script files to avoid parsing errors. Directory grants follow [Claude permission rules](https://code.claude.com/docs/en/permissions#working-directories).
 
-Codex uses `approval_policy="never"` with a read-only or workspace-write sandbox. Web retrieval follows explicit `execution.web`, using the [documented configuration setting](https://learn.chatgpt.com/docs/config-file/config-reference). Neither adapter uses an unrestricted bypass. Native denials remain visible blockers.
+Codex uses `approval_policy="never"` with a read-only or workspace-write sandbox. Web retrieval follows explicit `execution.web` through the [documented setting](https://learn.chatgpt.com/docs/config-file/config-reference). Neither adapter uses unrestricted bypass; native denials remain visible blockers.
 
-Claude defaults to eight internal turns per invocation. Its native budget flag applies where supported by the account. Codex has no equivalent generation bound here. Both have wall-clock limits, and reported usage is retained; a hard whole-run token or monetary ceiling is not promised.
+Claude defaults to eight internal turns per invocation; its budget flag applies where the account supports it. Codex has no equivalent generation bound here. Both retain reported usage and have wall-clock limits, without a guaranteed whole-run token or monetary ceiling.
 
 ## Run and inspect
 
@@ -108,29 +123,29 @@ python3 scripts/panel.py independent-discussion /absolute/brief.md /absolute/ros
   --run-dir /absolute/new-run-directory
 ```
 
-Defaults are three integration/review cycles, 180 seconds per invocation or check, and 1,800 seconds for the run. Ten seconds are reserved for cancellation/reporting, with a minimum reserve of five seconds. Participant rounds are capped at the opening phase count plus three times the cycle cap, including restarts after brief changes. See `--help` for options.
+Defaults: three integration/review cycles, 180 seconds per invocation or check, and 1,800 seconds per run. Cancellation/reporting reserves ten seconds, with a five-second minimum. The round cap is the opening phase count plus three times the cycle cap, including restarts after brief changes. See `--help` for options.
 
-Stderr reports the run directory at startup. Stdout contains the final JSON report. Exit codes are 0 for agreed, 1 for disagreement, 2 for incomplete, and 130 for interrupted. Startup errors return 2 with null artifact paths when no report could be created.
+Stderr reports the run directory at startup; stdout contains the final JSON report. Exit codes: 0 agreed, 1 disagreement, 2 incomplete, 130 interrupted. Startup errors return 2 with null artifact paths if no report could be created.
 
-Artifacts include the frozen manifest, `events.jsonl`, participant prompts/native outputs, and `revisions/REVISION/` containing `result.md` and `result.json`. Working-copy results also include frozen files, a patch and check evidence. `report.json` points to the result and records reviews, verification, failures, cancellations and usage.
+Artifacts include the frozen manifest, `events.jsonl`, participant prompts/native outputs, and `revisions/REVISION/` with `result.md` and `result.json`. Working-copy results add frozen files, a patch and check evidence. `report.json` links the result and records reviews, verification, failures, cancellations and usage.
 
-The participant protocol is a transport envelope. `text` holds the contribution or final deliverable; optional `data` is any JSON object requested by the brief. Its keys are not predefined. Reviews use the common revision/hash and approve/object/unable fields. The runner validates the envelope and identity; reviewers assess substance against the brief.
+The protocol envelope carries contributions or deliverables in `text` and any brief-requested JSON object in optional `data`, without predefined keys. Reviews use revision/hash and approve/object/unable fields. The runner validates the envelope and identity; reviewers assess substance against the brief.
 
-Result hashes bind text and structured data, plus files, patch and verification for working copies. Changing code or structured output requires fresh approval even when the prose is unchanged. Each round freezes its event cutoff; directed messages affect visibility without scheduling extra turns.
+Result hashes bind text and data, plus files, patch and verification for working copies. Code or data changes require fresh approval even if prose is unchanged. Each round freezes its event cutoff; directed messages affect visibility without adding turns.
 
 ## Human input and recovery
 
 With `--pause-between-rounds`, stderr announces `awaiting_host_decision`. Write one JSON line to stdin: `{"action":"continue"}`, `{"action":"stop"}`, or `{"action":"brief","text":"The full revised brief and acceptance criteria."}`.
 
-A revised brief restarts opening rounds within the original limits and invalidates approvals. Sessions and working copies retain history and work. Start a new run for fresh independence, a changed roster, or changed execution boundaries. SIGINT/SIGTERM stops scheduling and cancels active agent and verification process groups. Reports distinguish confirmed exit from uncertain termination.
+A revised brief invalidates approvals and restarts opening rounds within the original limits. Sessions retain history; working copies retain work. Start a new run for fresh independence or changed roster/execution boundaries. SIGINT/SIGTERM stops scheduling and cancels active agent and verification process groups. Reports distinguish confirmed exit from uncertain termination.
 
-Use `python3 scripts/panel.py --recover /absolute/run-directory` after a crash. Recovery acquires the writer lock, reconciles persisted output/exit evidence, and applies valid results once. It returns incomplete without redispatch or rerunning verification. A torn final append is retained as `torn-event`. Saved PIDs are never signalled because they may have been reused.
+After a crash, use `python3 scripts/panel.py --recover /absolute/run-directory`. Recovery takes the writer lock, reconciles persisted output/exit evidence and applies valid results once. It returns incomplete without redispatch or re-verification. A torn final append is retained as `torn-event`. Saved PIDs are never signalled because they may have been reused.
 
-The previous experimental `task` configuration is no longer accepted. Put its objective and result requirements in the brief and its access/check requirements in `execution`. Completed older reports remain readable; unfinished older-format runs require a new run.
+The experimental `task` configuration is no longer accepted. Put objectives and result requirements in the brief, access/check requirements in `execution`. Completed older reports remain readable; unfinished older-format runs need a new run.
 
 ## Additional harnesses
 
-The collaboration engine works with adapter instances, not fixed harness names. Claude Code and Codex are bundled initially; another CLI needs an adapter that translates its launch, resume, permission and output conventions.
+The engine uses adapter instances. Claude Code and Codex are bundled; other CLIs need adapters translating their launch, resume, permission and output conventions.
 
 Register a trusted local adapter module without editing the runner:
 
@@ -139,14 +154,14 @@ python3 scripts/panel.py flat-peers /absolute/brief.md /absolute/roster.json \
   --adapter other=/absolute/other_adapter.py
 ```
 
-The roster can then use `"harness": "other"` for one or several participants, alongside any other registered adapters. Repeat `--adapter NAME=FILE` for more harnesses. Names must be unique and cannot replace a bundled adapter. Each module exports `create_adapter()`, returning an instance implementing the contract below. The module is executable code selected by the host; participant output cannot register adapters.
+Use `"harness": "other"` for one or more participants alongside other adapters. Repeat `--adapter NAME=FILE` to add harnesses. Names must be unique and cannot replace bundled adapters. Each module exports `create_adapter()`, returning an instance with the contract below. Modules are executable code selected by the host; participant output cannot register adapters.
 
-Supply the same registrations when using `--recover`. Recovery does not import modules named in saved participant output or run state. Registration makes a harness available; it does not establish that its authentication, permissions or capabilities work in the current environment. Validate the adapter before claiming live support.
+Supply the same registrations with `--recover`; recovery does not import modules named in saved output or run state. Validate the adapter's authentication, permissions and capabilities in the current environment before claiming live support; registration alone is insufficient.
 
 ## Verification and extension
 
-Repository tests and validation records live in `tests/agent-panel/`, outside the installed skill. They cover unrelated briefs, arbitrary structured output, external adapters, all presets with N participants, execution boundaries, exact approval, worktree integration, recovery and cancellation.
+Tests and validation records live in `tests/agent-panel/`, outside the installed skill. Coverage includes unrelated briefs, arbitrary data, external adapters, all presets with N participants, execution boundaries, exact approval, worktree integration, recovery and cancellation.
 
-A harness adapter implements immediate `start`/`resume` handles, an asyncio completion task returning `Terminal`, bounded asynchronous cancellation, and recovery from persisted evidence. Export it through `create_adapter()` for CLI registration, or pass it directly in the mapping to `Panel`; the collaboration engine does not change. The adapter must implement automatic, noninteractive tool permissions within the declared execution boundaries, or report the unsupported capability. Runtime settings include the working directory, scratch directory, attempt directory and explicit capabilities.
+A harness adapter provides immediate `start`/`resume` handles, an asyncio completion task returning `Terminal`, bounded asynchronous cancellation and recovery from persisted evidence. Export it through `create_adapter()` for CLI registration or pass it in the `Panel` mapping, without changing the engine. Implement automatic, noninteractive tool permissions within execution boundaries or report the unsupported capability. Runtime settings include working, scratch and attempt directories, plus explicit capabilities.
 
 An unfamiliar subject requires a brief, not a new adapter or task type. External tools still need support and authorization in the selected harness. Comparative quality experiments remain separate from operational acceptance.
