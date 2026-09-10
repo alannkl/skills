@@ -1,0 +1,18 @@
+{
+  "name": "independent-discussion",
+  "authority": "Every required approver must agree after independent work and reveal.",
+  "opening": [
+    {
+      "phase": "initial",
+      "participants": "all",
+      "private": true,
+      "instruction": "Work independently from the same brief and source evidence. Initial contributions and artifacts stay private until every required contribution is collected."
+    },
+    {
+      "phase": "critique",
+      "participants": "all",
+      "instruction": "Examine the revealed work. Identify concrete objections, evidence, alternatives and proposed improvements."
+    }
+  ],
+  "drafter": "declared"
+}
