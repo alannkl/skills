@@ -18,7 +18,7 @@ When the user leaves the roster unspecified, use two participants:
 1. Preserve explicit user choices and apply task-specific model restrictions only within their stated scope. Fill unspecified models on matching harnesses from the table; default unspecified effort to `high`.
 2. Resolve exact model identifiers for the installed harness and current account using current model listings or account availability evidence. Consult current official vendor guidance when identifiers or capability are unclear. If a preferred model is unavailable, choose that harness's most capable available model for general reasoning and coding. Use the same rule for other requested harnesses. Base the ranking on current model descriptions, not names or speed/cost defaults. Report fallbacks and reasons, or unresolved availability/ranking before launch; never invent an identifier.
 3. Set `high` explicitly where supported. If effort control exists but lacks `high`, disclose supported choices and resolve effort before launch. Report harnesses without effort control.
-4. Assign roles and the integrator to fit the brief and preset, with both default participants required to approve. Write the resolved choices into the roster file; the runner does not discover or substitute models.
+4. Assign roles and the integrator to fit the brief and preset, with both default participants required to approve. Write the resolved choices into the roster file; the runner does not discover or substitute models. Spend model capability on required approvers first; the host's session model is independent of the roster.
 
 ### Roster file
 
@@ -135,7 +135,7 @@ Result hashes bind text and data, plus files, patch and verification for working
 
 ## Continuing the conversation
 
-The host keeps this panel active in the current chat after delivering an answer. For each substantive follow-up, write a file containing the user's message, new decisions or evidence, the current skill stage when applicable, and the requested deliverable and acceptance criteria. Include relevant host-only exchanges since the last discussion, identifying user decisions separately from host recommendations. Then resume the same run directory:
+The host keeps this panel active in the current chat after delivering an answer. For each substantive follow-up, write a file containing the user's message, new decisions or evidence, the current skill stage when applicable, and the requested deliverable and acceptance criteria. Include relevant host-only exchanges since the last discussion, identifying user decisions separately from host recommendations. Put the host's own opinion under the [host view](../SKILL.md#host-view) heading. Then resume the same run directory:
 
 ```bash
 python3 scripts/panel.py --continue /absolute/panel-directory \
