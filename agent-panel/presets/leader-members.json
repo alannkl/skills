@@ -1,16 +1,16 @@
 {
   "name": "leader-members",
-  "authority": "The leader chooses the proposed approach within the brief and integrates members' assigned evidence. Final agreement still requires every configured approver.",
+  "authority": "The leader chooses the proposed approach within the brief and integrates members' assigned evidence. Every configured approver must accept the final result.",
   "opening": [
     {
       "phase": "assign",
       "participants": "drafter",
-      "instruction": "As leader, propose the approach within the brief and assign each participant a concrete responsibility. Return assignments keyed by every roster ID."
+      "instruction": "As leader, propose an approach within the brief and assign each participant a concrete responsibility, keyed by every roster ID."
     },
     {
       "phase": "contribute",
       "participants": "all",
-      "instruction": "Carry out your leader-assigned responsibility. Produce actual task output and identify constraints or objections that affect integration."
+      "instruction": "Perform your leader-assigned responsibility. Produce task output and identify constraints or objections affecting integration."
     }
   ],
   "drafter": "leader"

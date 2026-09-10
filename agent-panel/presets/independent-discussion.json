@@ -1,12 +1,12 @@
 {
   "name": "independent-discussion",
-  "authority": "Agreement among every required approver after independent work and reveal.",
+  "authority": "Every required approver must agree after independent work and reveal.",
   "opening": [
     {
       "phase": "initial",
       "participants": "all",
       "private": true,
-      "instruction": "Perform the task independently using the same brief and source evidence. Initial contributions and artifacts remain private until every required contribution is collected."
+      "instruction": "Work independently from the same brief and source evidence. Initial contributions and artifacts stay private until every required contribution is collected."
     },
     {
       "phase": "critique",

@@ -72,8 +72,8 @@ def main():
     parser.add_argument('brief', nargs='?', help='UTF-8 task brief')
     parser.add_argument('roster', nargs='?', help='JSON roster; source is relative to this file')
     parser.add_argument('--adapter', action='append', default=[], metavar='NAME=FILE',
-                        help='Register a trusted Python adapter module exporting create_adapter(); repeat for additional harnesses')
-    parser.add_argument('--run-dir', help='New directory outside source and the skill; defaults to a unique temporary directory')
+                        help='Register a trusted Python adapter exporting create_adapter(); repeat to add harnesses')
+    parser.add_argument('--run-dir', help='New directory outside source and skill; default: unique temporary directory')
     parser.add_argument('--max-cycles', type=int, default=3, help='Hard cap on draft/review cycles, including brief changes')
     parser.add_argument('--turn-seconds', type=float, default=180)
     parser.add_argument('--run-seconds', type=float, default=1800)

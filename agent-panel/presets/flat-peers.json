@@ -1,11 +1,11 @@
 {
   "name": "flat-peers",
-  "authority": "All required peers share decision authority. Propose responsibilities together; the declared drafter has editorial responsibility only.",
+  "authority": "Required peers share decision authority and propose responsibilities together. The declared drafter has editorial responsibility only.",
   "opening": [
     {
       "phase": "responsibilities",
       "participants": "all",
-      "instruction": "Propose responsibilities and an approach as an equal peer. Explain how your role contributes; do not claim authority over another peer."
+      "instruction": "As an equal peer, propose responsibilities and an approach. Explain your role's contribution without claiming authority over another peer."
     },
     {
       "phase": "contribute",
