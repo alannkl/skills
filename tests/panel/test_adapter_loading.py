@@ -6,10 +6,10 @@ import subprocess
 import sys
 import tempfile
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'agent-panel' / 'scripts'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'panel' / 'scripts'))
 from adapters import production_adapters
 
-PACKAGE = Path(__file__).resolve().parents[2] / 'agent-panel'
+PACKAGE = Path(__file__).resolve().parents[2] / 'panel'
 
 
 

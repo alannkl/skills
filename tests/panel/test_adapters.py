@@ -9,12 +9,12 @@ import sys
 import tempfile
 import time
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'agent-panel' / 'scripts'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'panel' / 'scripts'))
 from adapters import production_adapters
 from adapters.base import atomic_json
 from records import Records
 
-PACKAGE = Path(__file__).resolve().parents[2] / 'agent-panel'
+PACKAGE = Path(__file__).resolve().parents[2] / 'panel'
 EXECUTABLE = str(Path(__file__).resolve().with_name('harness_fixture.py'))
 
 

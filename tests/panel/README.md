@@ -3,10 +3,10 @@
 Run from the repository root:
 
 ```bash
-python3 -m unittest discover -s tests/agent-panel -v
+python3 -m unittest discover -s tests/panel -v
 ```
 
-The suite uses local fixtures, including disposable Git repositories and subprocesses. It does not call live model services. Tests and their fixtures stay outside the installable `agent-panel/` skill.
+The suite uses local fixtures, including disposable Git repositories and subprocesses. It does not call live model services. Tests and their fixtures stay outside the installable `panel/` skill.
 
 `test_continuation.py` covers repeated questions with the same three participants across all presets, shared history, fresh approvals and limits, retained workspaces, stop/reset, failed resumes, crash recovery, version-3 continuation and separate CLI invocations. Chat-message routing and the stop/solo interpretation are host instructions; the offline suite verifies the runner commands they use.
 

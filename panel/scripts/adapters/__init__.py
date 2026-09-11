@@ -19,7 +19,7 @@ def production_adapters(specifications=()):
         path = Path(filename).resolve()
         if not path.is_file() or path.suffix != '.py':
             raise ValueError(f'Adapter must be an existing Python module: {path}')
-        module_name = '_agent_panel_adapter_' + name
+        module_name = '_panel_adapter_' + name
         spec = importlib.util.spec_from_file_location(module_name, path)
         if spec is None or spec.loader is None:
             raise ValueError(f'Cannot load adapter module: {path}')

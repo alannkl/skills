@@ -1,10 +1,10 @@
 ---
-name: agent-panel
+name: panel
 description: Keep N agents in the current chat, continuing their discussion across follow-ups and verifying each combined result, or one read-only consultant for second opinions while the host does the work itself.
 disable-model-invocation: true
 ---
 
-# Agent panel
+# Panel
 
 Choose between two modes:
 
@@ -24,7 +24,7 @@ For follow-ups, read [continuing the conversation](references/usage.md#continuin
 ## Prepare
 
 1. Write a brief defining the goal, scope, evidence, deliverable and acceptance criteria. Consult [brief examples](references/brief-examples.md) when useful. For collaborative execution of an existing skill, first read that skill and [skill collaboration](references/skill-collaboration.md).
-2. Read [runner usage](references/usage.md) for roster, evidence and execution settings. Select pair or panel mode. Invoking `agent-panel` alone defaults to [Pair mode](#pair-mode). An explicit request for a panel, a group discussion or multiple participating agents selects panel mode. Honor an explicit mode or preset choice: "pair" selects pair mode, "independent" (or "independent discussion") selects `independent-discussion`, "leader" (or "leader and members") selects `leader-members`, and "peers" (or "flat peers") selects `flat-peers`. For panel mode without a named preset, choose by how the work should be shared and announce the reason. Apply these criteria to interactive skills too, preserving the selected skill's own mode-selection rules. If no preset clearly fits better, prefer `leader-members`:
+2. Read [runner usage](references/usage.md) for roster, evidence and execution settings. Select pair or panel mode. Invoking `panel` alone defaults to [Pair mode](#pair-mode). An explicit request for a panel, a group discussion or multiple participating agents selects panel mode. Honor an explicit mode or preset choice: "pair" selects pair mode, "independent" (or "independent discussion") selects `independent-discussion`, "leader" (or "leader and members") selects `leader-members`, and "peers" (or "flat peers") selects `flat-peers`. For panel mode without a named preset, choose by how the work should be shared and announce the reason. Apply these criteria to interactive skills too, preserving the selected skill's own mode-selection rules. If no preset clearly fits better, prefer `leader-members`:
    - `independent-discussion`: duplicated work. Every participant produces the whole deliverable privately; the panel then compares competing results. Choose it when the value is whether participants converge unprompted: judgments, forecasts, designs, reviews.
    - `leader-members`: split work, decided by the leader. The leader assigns complementary parts and integrates them. Choose it when one participant should own the decomposition.
    - `flat-peers`: split work, proposed by the peers. Peers with equal authority each propose the split, then each contributes its part and the contribute round resolves overlaps; the declared drafter assembles the result unless every required peer nominates the same other peer with a reason. Choose it when the work should be divided but nobody, host included, should decide the division in advance.
