@@ -199,7 +199,7 @@ Supply the same registrations with `--recover`; recovery does not import modules
 
 ## Verification and extension
 
-Tests and validation records live in `tests/agent-panel/`, outside the installed skill. Coverage includes unrelated briefs, arbitrary data, external adapters, all presets with N participants, execution boundaries, exact approval, worktree integration, recovery and cancellation.
+Tests and validation records live in `tests/panel/`, outside the installed skill. Coverage includes unrelated briefs, arbitrary data, external adapters, all presets with N participants, execution boundaries, exact approval, worktree integration, recovery and cancellation.
 
 A harness adapter provides immediate `start`/`resume` handles, an asyncio completion task returning `Terminal`, bounded asynchronous cancellation and recovery from persisted evidence. Export it through `create_adapter()` for CLI registration or pass it in the `Panel` mapping, without changing the engine. Implement automatic, noninteractive tool permissions within execution boundaries or report the unsupported capability. Runtime settings include working, scratch and attempt directories, plus explicit capabilities.
 

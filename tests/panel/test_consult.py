@@ -6,7 +6,7 @@ import sys
 import tempfile
 import unittest
 
-PACKAGE = Path(__file__).resolve().parents[2] / 'agent-panel'
+PACKAGE = Path(__file__).resolve().parents[2] / 'panel'
 SCRIPT = str(PACKAGE / 'scripts' / 'consult.py')
 EXECUTABLE = str(Path(__file__).resolve().with_name('harness_fixture.py'))
 

@@ -70,7 +70,7 @@ async def execute(args):
         for key in ('source', 'repository'):
             if roster.get(key):
                 roster[key] = str((roster_path.parent / roster[key]).resolve())
-        run_dir = args.run_dir or str(Path(tempfile.gettempdir()) / ('agent-panel-' + str(uuid.uuid4())))
+        run_dir = args.run_dir or str(Path(tempfile.gettempdir()) / ('panel-' + str(uuid.uuid4())))
         panel = Panel(preset, Path(args.brief).read_text(), roster, run_dir, adapters,
                       max_cycles=args.max_cycles if args.max_cycles is not None else 3,
                       idle_seconds=args.idle_seconds,

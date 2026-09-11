@@ -9,14 +9,14 @@ import time
 from types import SimpleNamespace
 from unittest.mock import patch
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'agent-panel' / 'scripts'))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'panel' / 'scripts'))
 from engine import Panel, StopRun
 from recovery import recover_run
 from records import Records
 from adapters.base import Terminal
 from fakes import FakeAdapter
 
-PACKAGE = Path(__file__).resolve().parents[2] / 'agent-panel'
+PACKAGE = Path(__file__).resolve().parents[2] / 'panel'
 
 
 def preset(name):

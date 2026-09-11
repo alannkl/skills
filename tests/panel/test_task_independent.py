@@ -27,7 +27,7 @@ class BriefContract(unittest.TestCase):
                 self.assertEqual(set(report['reviews']), {'ada', 'bert', 'cy'})
                 self.assertTrue(all(p['brief'] == brief and 'task' not in p for p in f.adapter.inputs))
                 self.assertNotIn('task_profile', f.panel.manifest)
-                self.assertFalse((Path(__file__).resolve().parents[2] / 'agent-panel' / 'tasks').exists())
+                self.assertFalse((Path(__file__).resolve().parents[2] / 'panel' / 'tasks').exists())
             self.run_scenario(scenario)
 
 
