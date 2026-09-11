@@ -47,8 +47,9 @@ Each skill lives in its own directory and follows the [agentskills.io specificat
 | [`spawn-agent`](spawn-agent/SKILL.md)               | Spawn a headless coding-agent CLI run (`agy -p`, `claude -p`, `agent -p`, or `codex exec`) for one scoped subtask, with a shared workflow and one reference per supported harness.                                          |
 | [`agent-panel`](agent-panel/SKILL.md)               | Keep N agents across different harnesses in the current chat, resume their discussion on follow-ups, and verify each combined result; or pair the host with one read-only consultant for second opinions. User-invoked. |
 | [`handoff`](handoff/SKILL.md)                       | Create a compact temporary handoff so another agent can continue the current conversation.                                                                                                                                  |
+| [`constitution`](constitution/SKILL.md)             | The Collaboration Constitution as an installable skill: universal rules for how the agent leads the collaboration. Mirrors [`AGENTS.md`](AGENTS.md); see [Using it yourself](#using-it-yourself).                        |
 
-Four skills are user-invoked (`disable-model-invocation: true`): they load only when you type `/<name>`, and cost no always-loaded context. Thirteen are model-invoked so agents reach them on their own when the ask arrives in natural language: `coding-discipline` (auto-loads before code work), `code-review`, `adversarial-review`, `review-triage`, `commit-message`, `simplify-code`, `document-code`, `explain-code`, `create-agent-skill`, `spawn-agent`, `refine-it`, `shorten-it`, and `handoff`.
+Four skills are user-invoked (`disable-model-invocation: true`): they load only when you type `/<name>`, and cost no always-loaded context. Fourteen are model-invoked so agents reach them on their own when the ask arrives in natural language: `coding-discipline` (auto-loads before code work), `constitution` (loads when an instruction file asks for it), `code-review`, `adversarial-review`, `review-triage`, `commit-message`, `simplify-code`, `document-code`, `explain-code`, `create-agent-skill`, `spawn-agent`, `refine-it`, `shorten-it`, and `handoff`.
 
 ## Installation
 
@@ -111,18 +112,29 @@ External skills that pair well with this repo:
 
 ## AGENTS.md
 
-Besides skills, this repo includes [`AGENTS.md`](AGENTS.md), the Collaboration Constitution. Its task-agnostic rules tell the agent how to lead the collaboration: surface assumptions, define done, hold scope, and push back on real issues. It is the agent-side counterpart to [Working with Agents](docs/working-with-agents.md). The file is active in this repo, with `CLAUDE.md` symlinked to it, so agents working here already follow it.
+Besides skills, this repo includes [`AGENTS.md`](AGENTS.md), the Collaboration Constitution. Its task-agnostic rules tell the agent how to lead the collaboration: surface assumptions, define done, hold scope, and push back on real issues. It is the agent-side counterpart to [Working with Agents](docs/working-with-agents.md). The file is active in this repo, with `CLAUDE.md` importing it via `@AGENTS.md`, so agents working here already follow it.
 
 ### Using it yourself
 
-Unlike skills, the constitution is not installed. It is meant to be always loaded. Copy all of [AGENTS.md](AGENTS.md) into an always-loaded instruction file:
+The constitution is meant to be always loaded. Install it as the [`constitution`](constitution/SKILL.md) skill, a copy of `AGENTS.md`, then wire it with one line at the top of your project's `AGENTS.md`:
 
-| Scope   | File                                              |
-| ------- | ------------------------------------------------- |
-| Global  | `~/.claude/CLAUDE.md`                             |
-| Project | `CLAUDE.md` or `AGENTS.md` at the repository root |
+```bash
+npx skills add alannkl/skills --skill constitution -g -y   # drop -g for a project-level install
+```
 
-Then fill in the **Project-specific instructions** section at the end. Add to the universal rules only when the addition pays off in every session. Anything more specific belongs in a skill, a doc, or the project section.
+```markdown
+Read and apply the `constitution` skill before starting work; if it is missing, say so and stop. The instructions below are local customizations and take precedence over it.
+
+## Project-specific instructions
+
+<!-- build/test commands, conventions, domain context, gotchas -->
+```
+
+Your `AGENTS.md` stays yours: `npx skills update -g` (or `-p` for a project-level install) refreshes the constitution without touching it. An update follows the source's current revision; the skills lock file records a content hash, not a version, and pinning to a specific revision is unverified. For Claude Code, which reads `CLAUDE.md` rather than `AGENTS.md`, add a `CLAUDE.md` containing the single line `@AGENTS.md`; a plain file needs no symlink support, which some Windows setups and archive workflows lack.
+
+Copying all of [AGENTS.md](AGENTS.md) into an always-loaded instruction file still works, but every copy then has to be updated by hand.
+
+Add to the universal rules only when the addition pays off in every session. Anything more specific belongs in a skill, a doc, or the project section.
 
 ### Linking the coding-discipline skill
 
