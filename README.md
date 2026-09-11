@@ -123,39 +123,34 @@ Besides skills, this repo includes [`AGENTS.md`](AGENTS.md), the Collaboration C
 
 ### Using it yourself
 
-The constitution is meant to be always loaded. Install it as the [`constitution`](constitution/SKILL.md) skill, a copy of `AGENTS.md`, then wire it with one line at the top of your project's `AGENTS.md`:
+The constitution is meant to be always loaded. Install it as the [`constitution`](constitution/SKILL.md) skill, a copy of `AGENTS.md`. For coding projects, also install [`coding-discipline`](coding-discipline/SKILL.md):
 
 ```bash
-npx skills add alannkl/skills --skill constitution -g -y   # drop -g for a project-level install
+npx skills add alannkl/skills --skill constitution -y
+npx skills add alannkl/skills --skill coding-discipline -y
 ```
 
+Run these commands from your project directory. Add `-g` to install globally for use across projects.
+
+Add the following at the top of your project's `AGENTS.md`. Each skill has its own line so you can omit either one if you do not use it:
+
 ```markdown
-Read and apply the `constitution` skill before starting work; if it is missing, say so and stop. The instructions below are local customizations and take precedence over it.
+Read and apply the `constitution` skill before starting work.
+Read and apply the `coding-discipline` skill before code work, except trivial formatting, pure prose edits, or explicitly throwaway prototypes.
+
+If a required skill is missing, say so and stop the affected work.
+Project-specific instructions below take precedence over the skills above.
 
 ## Project-specific instructions
 
 <!-- build/test commands, conventions, domain context, gotchas -->
 ```
 
-Your `AGENTS.md` stays yours: `npx skills update -g` (or `-p` for a project-level install) refreshes the constitution without touching it. An update follows the source's current revision; the skills lock file records a content hash, not a version, and pinning to a specific revision is unverified. For Claude Code, which reads `CLAUDE.md` rather than `AGENTS.md`, add a `CLAUDE.md` containing the single line `@AGENTS.md`; a plain file needs no symlink support, which some Windows setups and archive workflows lack.
+Your `AGENTS.md` stays yours: `npx skills update -p` (or `-g` for a global install) refreshes the constitution without touching it. An update follows the source's current revision; the skills lock file records a content hash, not a version, and pinning to a specific revision is unverified. For Claude Code, which reads `CLAUDE.md` rather than `AGENTS.md`, add a `CLAUDE.md` containing the single line `@AGENTS.md`; a plain file needs no symlink support, which some Windows setups and archive workflows lack.
 
 Copying all of [AGENTS.md](AGENTS.md) into an always-loaded instruction file still works, but every copy then has to be updated by hand.
 
 Add to the universal rules only when the addition pays off in every session. Anything more specific belongs in a skill, a doc, or the project section.
-
-### Linking the coding-discipline skill
-
-For coding projects with the [`coding-discipline`](coding-discipline/SKILL.md) skill installed, point the project-specific section at it so every session loads it before code work:
-
-```markdown
-## Project-specific instructions
-
-### Coding Discipline
-
-Before any code work, load the `coding-discipline` skill first and follow it.
-Skip only for trivial formatting, pure prose edits, or explicitly throwaway
-prototypes.
-```
 
 Referencing the skill by name works for any install scope. If your agent does not resolve skills by name, link the installed `SKILL.md` path instead (e.g. `.agents/skills/coding-discipline/SKILL.md` for a project-local install).
 
