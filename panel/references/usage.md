@@ -118,7 +118,7 @@ Claude uses native `auto` without interactive permission prompts. Tools follow e
 
 Codex uses `approval_policy="never"` with a read-only or workspace-write sandbox. Web retrieval follows explicit `execution.web` through the [documented setting](https://learn.chatgpt.com/docs/config-file/config-reference). Neither adapter uses unrestricted bypass; native denials remain visible blockers.
 
-Claude defaults to eight internal turns per invocation; its budget flag applies where the account supports it. Codex has no equivalent generation bound here. Both retain reported usage and have wall-clock limits, without a guaranteed whole-run token or monetary ceiling.
+Claude's `max_turns` caps the agentic loop (model responses with tool calls) within one invocation and is unset by default, so a participant takes as many steps as the task needs and the idle window and discussion allowance end runaway work; its budget flag applies where the account supports it. Codex has no equivalent generation bound here. Both retain reported usage and have wall-clock limits, without a guaranteed whole-run token or monetary ceiling.
 
 ## Run and inspect
 
