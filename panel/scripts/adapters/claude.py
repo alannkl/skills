@@ -23,7 +23,6 @@ class ClaudeAdapter(ProcessAdapter):
                    '--model', settings['model'], '--permission-mode', permission_mode,
                    '--permission-prompts', 'none',
                    '--allowedTools', *grants, '--tools', ','.join(tools),
-                   '--max-turns', str(settings.get('max_turns', 8)),
                    '--append-system-prompt', 'Work within declared capabilities. Modify only your own working copy when authorized; preserve source evidence and peer artifacts. After reveal, read peer evidence through runner-captured artifacts.files and artifacts.patch references. Bash starts in your working_directory; run commands there. Use file tools for inspection and edits. Keep Bash commands simple: put multiline code, loops or Unicode test data in a script in your artifact_directory and run it with a task-appropriate executable, never in Bash -c arguments or heredocs. Do not commit, push, publish, or launch further agents. Return only the requested JSON.']
         if capabilities.get('workspace_write') and not capabilities.get('source_edits') and settings.get('scratch_dir'):
             # Scratch scripts may be written while the source worktree stays read-only.
@@ -36,6 +35,8 @@ class ClaudeAdapter(ProcessAdapter):
         command += ['--resume' if session_id else '--session-id', session]
         if settings.get('effort'):
             command += ['--effort', settings['effort']]
+        if settings.get('max_turns') is not None:
+            command += ['--max-turns', str(settings['max_turns'])]
         if settings.get('max_budget_usd') is not None:
             command += ['--max-budget-usd', str(settings['max_budget_usd'])]
         return command, session
