@@ -19,4 +19,4 @@ Use this overlay when a change affects APIs, config, CLI flags, schemas, migrati
 - A migration assumes all application nodes deploy simultaneously.
 - A CLI or API error shape changes in a way existing automation cannot parse.
 
-Treat contract breakage as more severe than local implementation defects when it affects external users, persisted data, or rollout safety.
+Grade contract breakage by its impact and likelihood, including affected callers, persisted data, and rollout safety.
