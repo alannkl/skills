@@ -4,10 +4,10 @@ Use this overlay when a change affects reliability, background jobs, queues, sch
 
 ## Review Focus
 
-- Failure modes: check partial failure, dependency outage, network errors, retry storms, duplicate delivery, poison messages, clock skew, and resource exhaustion.
-- Timeouts and retries: verify explicit timeouts, bounded retries, backoff, jitter, cancellation, idempotency, and whether retry behavior amplifies load.
+- Failure modes: check partial failure, dependency outage, network errors, retry storms, duplicate delivery, poison messages, clock skew, and resource exhaustion. For a batch or loop, trace a case where one item succeeds and a later item fails: what happens to the first item's retry, delivery, loss, or duplication.
+- Timeouts and retries: verify explicit timeouts, bounded retries, backoff, jitter, cancellation, idempotency, and whether retry behavior amplifies load. Compose the serial calls, retries, and fallback endpoints along the critical path and compare the worst case against the enclosing deadline, lease, lock, or freshness window.
 - Data volume and scaling: check query shape, pagination, batching, N+1 calls, memory growth, file size assumptions, cache pressure, and hot-path complexity.
-- Background work: check job uniqueness, deduplication, locking, ordering, concurrency limits, dead-letter handling, and resume behavior after crash or deploy.
+- Background work: check job uniqueness, deduplication, locking, ordering, concurrency limits, dead-letter handling, and resume behavior after crash or deploy. For a shared resource, construct two operations that overlap between validation and action. For a proof assembled from several reads, verify that the reads come from sources and states that can validly support the combined conclusion, and that the code revalidates when an intervening change can invalidate it.
 - Observability: verify logs, metrics, traces, audit events, correlation IDs, and error context are enough to diagnose failures without leaking sensitive data.
 - Rollout and rollback: check feature flags, config defaults, migration sequencing, mixed-version behavior, and whether rollback leaves data or queues in a usable state.
 - Degraded behavior: check fallbacks, circuit breakers, rate limits, backpressure, user-visible errors, and cleanup of temporary resources.

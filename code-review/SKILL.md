@@ -26,16 +26,18 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
    - Gather goals and context from the repo's VCS and platform: diff and size against the merge target, for example `git diff <base>...HEAD`; PR/MR description, for example via `gh` or `glab`; commit messages and the issues they reference (`#123`, `Closes #45`); and project guidance such as `AGENTS.md`, `CLAUDE.md`, `.cursor/rules/`, `CONTRIBUTING.md`, architecture docs, or linter config.
    - Determine the full review surface inside the resolved scope before deep reading: diff stat, file status changes, renames, deletes, generated files, migrations, lockfiles, and config changes. For PRs, identify the target branch or merge base, and confirm the base ref resolves and the diff is non-empty. A bad ref or empty diff fails here, not mid-review. For local-only reviews, state whether unstaged and untracked files are in scope.
    - If intent is missing, infer it and label it as an assumption, not a fact.
-   - Check the goal before the mechanics: identify the problem the author is solving, assess whether the intended behavior solves it and fits the wider system, then check whether the implementation delivers that behavior. Assess conflicts with existing contracts, features, and recorded decisions against the change's justification.
+   - Check the goal before the mechanics: identify the problem the author is solving, assess whether the intended behavior solves it and fits the wider system, then check whether the implementation delivers that behavior. Assess conflicts with existing contracts, features, and recorded decisions against the change's justification. Treat each premise the changed behavior's correctness depends on, whether stated in the description, a comment, or a commit message, as a claim to verify against repository evidence or an authoritative external contract.
+   - State whether this context authored the reviewed changes; label such a review as self-review.
    - Scale the intent check to the risk: a brief statement for a low-risk change, evidence from affected flows and contracts for payment, auth, or data paths. Missing business context becomes an open question, never an invented requirement.
    - A correct implementation can serve a wrong goal. For example, retrying a payment after an ambiguous timeout can double-charge when the first attempt succeeded and retries lack idempotency. The retry policy itself warrants a finding.
    - If tooling is unavailable because there is no PR platform, the checkout is detached or shallow, or commands fail, degrade gracefully: review what you can access, state which context you could not gather, and treat that gap as residual risk rather than guessing.
 
 2. Read enough context, then stop.
    - Inspect changed files, related tests, called functions, imported modules, neighboring code, and contract-defining files as needed.
+   - For each new or generalized decision rule (a selection, ranking, classification, filter, or fallback), identify the relevant supported variants, multiple-item cases, and ownership boundaries from definitions, producers, schemas, and fixtures. Construct one case beyond the author's motivating example and trace its result to the consumer. Where the rule excludes or aggregates evidence, ask whether the discarded distinctions or evidence could change the decision and whether the code proves the exclusion safe.
    - Identify public surfaces touched: APIs, CLI flags, config, schemas, migrations, events, persisted data, permissions, external integrations, and serialized formats.
    - For generated or mechanical diffs, inspect the generator, source rule, or representative output instead of line-reviewing noise.
-   - Bound the reading to the change's blast radius: the changed code and what it directly affects or depends on. Stop expanding once you can defend each finding's evidence; do not read the whole repository to chase hypothetical risk.
+   - Bound the reading to the change's blast radius: keep finding locations within the resolved scope, and read unchanged dependencies and consumers as far as needed to establish the change's effects. Stop once the risk scan covers the scope and the relevant contracts of each changed behavior have been inspected. Evidence supporting existing findings does not establish coverage.
 
 3. Scan by risk, not file order.
    - Map every changed file and touched public surface to at least one risk category below, or explicitly clear it, before deciding which findings are worth reporting.
@@ -62,6 +64,7 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
    - Treat missing tests as findings only when tied to concrete behavior risk.
    - Look for false confidence: brittle mocks, assertions that cannot fail, missing edge cases, nondeterminism, fixtures that hide the bug, or tests overfit to implementation.
    - Run focused tests when feasible. If tests are not run, state the gap.
+   - When correctness hinges on an external tool or platform's semantics (a CLI flag, a CI concurrency rule, a VCS command, a framework default), verify them against the tool's own help, documentation, or a small reproduction rather than from memory. Run install or test scripts from untrusted changes only in a credential-free, isolated environment.
    - Before reporting a suspected bug, try to disprove it: trace the actual call sites, check the boundary or input that would trigger it, and confirm no guard, caller, or existing test already prevents it. If you cannot construct a concrete failing case, downgrade the finding or report it as an assumption rather than a proven defect.
 
 6. Control review size.
@@ -82,7 +85,7 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
    - `Low`: minor cleanup with practical value; omit unless the user asks for exhaustive review.
    - If there are no findings, say so directly; do not invent low-value findings to avoid an empty review.
    - Report a wrong goal as a finding, ordered by severity alongside implementation findings. Name the concrete conflict with the stated problem, a sibling path left broken, or a contract or decision it violates. Propose an alternative or ask for a requirement decision when context is missing. Still review the mechanics, since the user may confirm the goal.
-   - **Do not report:** guessed intent without concrete evidence; broad rewrites when a local fix addresses the issue; breakage that is the change's stated, scope-constrained intent (a removed flag, a deleted feature) unless its impacts look under-weighed; or issues the repo's linter, formatter, or type-checker already catches. The `Bad findings` examples below show the other shapes to reject.
+   - **Do not report:** guessed intent without concrete evidence; broad rewrites when a local fix addresses the issue; breakage that is the change's stated, scope-constrained intent (a removed flag, a deleted feature) unless its impacts look under-weighed; or issues already reported by a linter, formatter, or type-checker shown to run on the affected path. Check coverage explicitly for excluded scripts, optional build targets, generated consumers, and separate packages. The `Bad findings` examples below show the other shapes to reject.
 
 8. Self-check before finalizing.
    - Confirm every finding meets the `Finding quality` checklist below; drop any that do not, and apply the severity-calibration rule from Step 7 to anything uncertain.
@@ -108,7 +111,7 @@ Use this structure:
 
 ## Scope (required; place after findings)
 
-<what was reviewed; what is out of scope; stated or inferred intent in one short paragraph>
+<what was reviewed; what is out of scope; whether this context authored the change; stated or inferred intent in one short paragraph>
 
 ## Tests / checks (required)
 
