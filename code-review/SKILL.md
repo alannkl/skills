@@ -85,6 +85,7 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
    - `Low`: minor cleanup with practical value; omit unless the user asks for exhaustive review.
    - If there are no findings, say so directly; do not invent low-value findings to avoid an empty review.
    - Report a wrong goal as a finding, ordered by severity alongside implementation findings. Name the concrete conflict with the stated problem, a sibling path left broken, or a contract or decision it violates. Propose an alternative or ask for a requirement decision when context is missing. Still review the mechanics, since the user may confirm the goal.
+   - Report defects introduced by the change, including existing defects it makes newly reachable, demonstrably more likely, or more severe; identify the regression the change causes. A pre-existing defect unaffected by the change may be noted under `Next steps` when it warrants a concrete follow-up, labeled pre-existing.
    - **Do not report:** guessed intent without concrete evidence; broad rewrites when a local fix addresses the issue; breakage that is the change's stated, scope-constrained intent (a removed flag, a deleted feature) unless its impacts look under-weighed; or issues already reported by a linter, formatter, or type-checker shown to run on the affected path. Check coverage explicitly for excluded scripts, optional build targets, generated consumers, and separate packages. The `Bad findings` examples below show the other shapes to reject.
 
 8. Self-check before finalizing.
