@@ -23,7 +23,7 @@ When staged changes win while unstaged edits exist, name the excluded files in t
 
 ## 2. Brief
 
-Collect the acceptance criteria from the conversation, ticket, or commit messages. Write the **review brief** to the scratchpad. Include the intent, requirements satisfied, deliberate trade-offs, known limitations, and declared non-goals. Keep it to one page. The brief is done when a stranger could reject an out-of-scope finding by citing it.
+Collect the acceptance criteria from the conversation, ticket, or commit messages. Write the **review brief** to the scratchpad. Include the intent, requirements satisfied, deliberate trade-offs, known limitations, and declared non-goals, stating trade-offs and non-goals as claims with their basis. Keep it to one page. Scope exclusions belong in the brief; verdicts do not: never tell a voice what not to flag or cap a severity — triage decides. The brief is done when a stranger could reject an out-of-scope finding by citing it.
 
 ## 3. Panel
 
@@ -61,14 +61,14 @@ Rules:
 - Every panel includes at least one `adversarial-review` voice in a fresh context; `adversarial-review` never runs in the parent context. A member named twice runs as two separate fresh contexts.
 - **Effort.** Under `standard`, fresh voices run at high reasoning effort. Under `max` and `ultra`, they default to xhigh; fable and kimi k3 stay at high. Terra always runs at max. The parent voice keeps the session's own effort. The user can override any voice's effort.
 - **Missing member.** When a preset or user-named member is unavailable, stop and recommend a composition built from the available members. Proceed only after the user chooses. The prescribed rival fallback chain needs no confirmation.
-- Route a voice whose model runs on the parent's own harness through the harness's builtin subagent tool if it has one; route every other voice through `spawn-agent`. Either way, pass the reviewing skill's `SKILL.md` path in the prompt as its charter.
+- Route a voice whose model runs on the parent's own harness through the harness's builtin subagent tool if it has one; route every other voice through `spawn-agent`. Either way, pass the reviewing skill's `SKILL.md` path in the prompt as its charter. Tell the voice to perform the review itself, without spawning agents or invoking `review-panel`.
 - The user may name members beyond the roster: any harness or model the environment can run. For a harness `spawn-agent` has no reference for, run a headless CLI session by that harness's own conventions (its `--help` is the source of truth); if it cannot be run, treat it as a missing member.
 - Before launching, report the resolved scope, the intent from the brief, and the panel composition to the user. Report and continue; do not wait for approval.
-- Send every voice the same scope and brief verbatim. Launch the fresh voices in parallel and run the parent pass while they work. Collect every report unedited; do not soften or pre-judge findings.
+- Send every voice the same scope and brief verbatim. Launch the fresh voices in parallel and run the parent pass while they work. Collect every report unedited; do not soften or pre-judge findings. On a re-run over the same scope, pass the previous run's final report to every voice as prior findings.
 
 ## 4. Merge
 
-Merge the reports into one findings list. Collapse findings that name the same defect at the same location. Keep the highest severity, the most concrete failure scenario, and a **concurrence** tag (`flagged by 2/3 voices`). Origin carries no weight. The parent voice's findings count like any other, while concurrence signals credibility and feeds triage's confidence. Merging is done when no two findings claim the same defect.
+Merge the reports into one findings list. Collapse findings with the same root cause and remedy into one, listing every affected location; keep independently actionable defects separate. Keep the highest severity, the most concrete failure scenario, and a **concurrence** tag (`flagged by 2/3 voices`). Origin carries no weight. The parent voice's findings count like any other, while concurrence signals credibility and feeds triage's confidence. Merging is done when no two findings share a root cause and remedy.
 
 ## 5. Triage
 
@@ -86,9 +86,9 @@ A **fix** finding offers **approve fix** (marked recommended), **defer**, and **
 
 In auto-fix mode, proceed with every **fix** disposition after presenting the report; if the report contains an **escalate** disposition, stop before any fix work and put its fork to the user through the same decision-round format. A `/review-panel` invocation without `auto-fix` authorizes review, triage, and the decision round; only the round's answers authorize fixes.
 
-**Record durable decisions in the artifact native to each kind.** A rejection whose reason is local and non-obvious gets a comment at the finding's site stating the code's rationale — the confusion that produced the finding is itself a defect, and the comment is its fix. A deferral with a site gets a `TODO` comment carrying its defer-until condition. A decided escalation gets an ADR when the repo keeps an ADR log. Scope rejections live in the final report only. Write each comment as the code's own voice ("validated at the parse boundary"), not as review history. Report the planned recording edits and continue; apply them with step 6's batch, or on their own when no fixes were approved. They need no step 7 ruling.
+**Record durable decisions in the artifact native to each kind.** A rejection whose reason is local and non-obvious gets a comment at the finding's site stating the code's rationale — the confusion that produced the finding is itself a defect, and the comment is its fix. For a deferral, follow triage's planned comment or ticket; evidence-pending deferrals stay in the report only. A decided escalation gets an ADR when the repo keeps an ADR log. Scope rejections live in the final report only. Write each comment as the code's own voice ("validated at the parse boundary"), not as review history. Report the proposed recording edits and continue. Apply them only when the user's authorization covers those specific edits; approval of an unrelated fix does not authorize them. Otherwise leave them proposed in the report. They need no step 7 ruling.
 
-If no finding has a **fix** or **escalate** disposition, the triage report and any recording edits complete the pipeline.
+If no finding has a **fix** or **escalate** disposition, the triage report and any recording edits the user approved complete the pipeline.
 
 ## 6. Fix
 
