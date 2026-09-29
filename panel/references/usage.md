@@ -22,6 +22,12 @@ In panel mode, when the user leaves the roster unspecified, use two participants
 3. Set `high` explicitly where supported. If effort control exists but lacks `high`, disclose supported choices and resolve effort before launch. Report harnesses without effort control.
 4. For panel mode, assign neutral roles and the integrator to fit the preset, with both default participants required to approve. Write the resolved choices into the roster file; the runner does not discover or substitute models. Spend model capability on required approvers first; the host's session model is independent of the roster.
 
+### Default drafter
+
+Unless the user specifies a drafter, choose from the resolved roster in this order: **Codex > Claude Code**. Use roster order to break ties within a harness. If neither is present, choose a participant suited to the deliverable and report the choice. This preference selects among existing participants; it does not add or replace models.
+
+Write the selected participant ID into `drafter`. The preset rules still apply: `leader-members` uses its assigned leader to integrate, and `flat-peers` may unanimously nominate another integrator.
+
 ### Roster file
 
 A panel roster specifies participants, coordination roles, optional evidence and execution settings. Replace the model placeholders with resolved identifiers:
@@ -30,7 +36,7 @@ A panel roster specifies participants, coordination roles, optional evidence and
 {
   "source": "evidence",
   "execution": {"web": true},
-  "drafter": "a",
+  "drafter": "b",
   "participants": [
     {"id": "a", "role": "member", "harness": "claude", "settings": {"model": "YOUR_CLAUDE_MODEL", "effort": "high"}},
     {"id": "b", "role": "member", "harness": "codex", "settings": {"model": "YOUR_CODEX_MODEL", "effort": "high"}}
@@ -79,7 +85,7 @@ For repository evidence or working copies, select `repository` and an explicit `
     "workspace": "edit",
     "checks": [["python3", "-m", "unittest", "discover", "-s", "tests"]]
   },
-  "drafter": "a",
+  "drafter": "b",
   "participants": [
     {"id": "a", "role": "member", "harness": "claude", "settings": {"model": "YOUR_CLAUDE_MODEL", "effort": "high", "max_turns": 12}},
     {"id": "b", "role": "member", "harness": "codex", "settings": {"model": "YOUR_CODEX_MODEL", "effort": "high"}}
