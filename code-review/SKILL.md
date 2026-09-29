@@ -94,14 +94,20 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
 
 ## Output format
 
-Start with findings ordered by severity. Keep scope concise and place it after findings unless the user explicitly asks for a different format. If there are no findings, start with `No findings in the reviewed scope.`
+Open with one line counting the findings in the reviewed scope by severity and naming the principal consequence with any uncertainty it carries, for example `3 findings: 1 high (F1, pagination drops the last page), 2 medium.` When a finding needs a requirement decision, name the choice in that line. When a limitation changes how the whole review should be read — checks could not run, load-bearing context was unavailable — state it in the opening line or the next. With no findings, the line is `No findings in the reviewed scope.` With a single short finding, skip the tally rather than repeat its title, but still open with any requirement decision, whole-review limitation, or caveat on its consequence.
+
+The line counts findings and never grades safety: "safe", "approved", or "non-blocking" would make it the merge verdict this report does not give.
+
+Then the findings ordered by severity. Keep scope concise and place it after findings unless the user explicitly asks for a different format. Keep uncertainty specific to a finding beside that finding; other review limitations belong in `Residual risks`.
 
 For small reviews with a narrow diff and few findings, `Findings`, `Scope`, and `Tests / checks` are sufficient. Include other sections only when they carry real information. Always include `Tests / checks`; include `Residual risks` when checks were not run or context was unavailable.
 
 Use this structure:
 
 ```markdown
-## Findings (required; if none, replace this section with "No findings in the reviewed scope.")
+<opening line: findings by severity with the principal consequence, or "No findings in the reviewed scope."; plus any requirement decision or whole-review limitation>
+
+## Findings (required when there are findings)
 
 ### <id> [<severity>/<confidence>] <short title> — path/to/file.ext:42
 

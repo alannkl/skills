@@ -94,6 +94,41 @@ Mostly already encoded in "Evidence over assertion" (While working #1) and "Repo
 
 The meta-finding that shaped how much of this went into AGENTS.md: "skills that fight verbosity fail by growing: a four-hundred-line concision skill still leaves the model verbose, because the model reads the volume, not the plea" (mattpocock wait-what docs). Same from writing-for-agents: attention thins across sprawl, and a no-op sentence — one the model already obeys by default — pays context load to say nothing. A communication section that is itself long, padded, or vague fails its own test. Hence: seven rules in the constitution, everything else here.
 
+## 9. Reporting upward
+
+The user is the accountable owner of the result (Over time #2), so every report to them is a report upward: they read it to decide what to do, what to tell others, and whether to worry. #2 carries the compact default (outcome, ask, impact, recommendation, supporting detail); this section is the full framework behind it.
+
+**Default order.** Lead with what makes the message intelligible and actionable: for a known issue, the headline itself; for something new to the reader, one line of context, then the headline. Decision-critical impact or risk can move above the ask, and a part that adds nothing is dropped. → #2 ("put context first when the reader needs it", "omit parts that add nothing"), with #3's "background needed to follow it".
+
+1. **Headline.** One sentence: what happened or what state things are in, easy for the reader to relay accurately. → #2 ("outcome").
+2. **The ask.** Information only, or a decision. For a decision: what depends on it, when it is needed, and whether dependent work waits or an authorized fallback proceeds. Silence never authorizes; "nothing needed" only when true. → #7, with While working #4.
+3. **Impact in the reader's terms.** What it does to the things they own: dates, cost, commitments to others, other teams, risk. Against the agreed baseline (scope, acceptance criteria, plan), not a status label: "Friday remains achievable; testing is two days behind plan" says what "in progress" hides. → While working #5, #7.
+4. **Recommendation, explicit and justified.** Which option and why. Alternatives when they expose a real trade-off, as many as the decision needs, none for routine asks. When priorities, authority, or the problem itself are unclear, ask for direction with your current judgment and the specific uncertainty attached, instead of manufacturing a finished plan. → "Recommend, don't enumerate"; Before starting #2.
+5. **What you already did or will do without them.** Bounds what they need to worry about. Doc-only: #7 names what you will do next; what is already done is the report's own addition.
+6. **Context and detail, briefly.** Enough to trust the recommendation; the rest in an appendix or link. → #2 ("supporting detail"), #4.
+7. **Risks and what you will know when.** Doc-only: While working #1 covers stating uncertainty; the date by which it resolves is the report's own addition.
+
+**Confidence beside the claim it qualifies.** A caveat that changes the decision sits next to the headline or recommendation, not in a closing section read after the reader has acted. → #2.
+
+**By message type:**
+
+- Status update: headline, on or off baseline, what changed, whether anything is needed from them. → While working #5.
+- Decision request: headline, decision and when it is needed, recommendation, trade-off, context. → #7.
+- Bad news: the news first, then its impact, what you are already doing, what you need. → "Report failures faithfully"; While working #5's "surprises as they happen".
+
+**Outside the report itself:**
+
+- Agree reporting preferences once: what to flag immediately, what waits for the report, which channel, recommendation-first or framing-first. For an agent: before a long autonomous stretch, when the mandate leaves it unclear. → the constitution's intro (unattended stretches).
+- Match the medium: written and asynchronous for routine updates and reviewable decisions; a conversation for urgent, ambiguous, or disputed issues, private for sensitive disagreement, with a written record of the outcome after. Doc-only: an agent's medium is mostly fixed, and #2's "not behind a pointer" covers chat versus file.
+- Close the loop: confirm decision, owner, deadline, and next checkpoint. A clear report is not shared understanding. Doc-only: Over time #2 protects understanding but does not prescribe this checklist; grill-to-plan and brainstorm record decisions in their session artifacts.
+
+**Test before sending:** if the reader stopped after the first sentence and the ask, would they do the right thing? → #2's "stopping early costs the reader the least important part".
+**Skill-level landing:**
+
+- code-review opens with a one-line tally of findings by severity and the principal consequence (the outcome), plus any requirement decision or whole-review limitation, then the findings; finding-specific uncertainty stays beside its finding. Per-finding order stays Problem, Evidence, Why it matters, Fix: a finding is a contestable claim, so evidence comes before impact, and the title carries the observable consequence.
+- explain-code's change scope leads with what observably changed and why it matters, then the mechanism. The rest of the explainer keeps #3's order (background, intuition, one example, details) because its reader needs comprehension; it already opens by confirming or correcting the user's embedded belief, states the resolved scope first, covers what to watch after merge, and doubles as a PR description.
+- Already following the order: review-triage (tally first, recommendation on every fork), brainstorm and grill-to-plan (outcome first, decisions likely to change first), review-panel (verdict first).
+
 ## Source map
 
 | Source | Most load-bearing files |
@@ -102,3 +137,4 @@ The meta-finding that shaped how much of this went into AGENTS.md: "skills that 
 | unslop | the 31 rules + "adding soul" |
 | pstack (cursor/plugins) | poteto-mode ("Writing the reply", playbook reply contracts), bro, technical-writing, teach, why/epistemics, interrogate/lead-judgment, recall, show-me-your-work, principle-never-block-on-the-human |
 | mattpocock/skills | wait-what (+ docs page), grilling, writing-for-agents, .agents/writing-docs.md, HTML-REPORT.md, teach, writing-shape/writing-beats, docs/engineering/wayfinder.md |
+| Pair consultation, 2026-09-29 | reporting-upward framework (section 9): host draft reviewed by GPT-6 Astra; practitioner advice, not measured evidence |
