@@ -12,7 +12,7 @@ The reviewer must bring fresh eyes. A context that authored the code tends to de
 ## Inputs
 
 1. **Scope.** The code under review: a diff, a branch against its base, or named files. If the invoker did not specify the scope, review the current branch's changes against its merge base.
-2. **Brief.** The author's review brief, if one exists: intent, requirements satisfied, deliberate trade-offs, known limitations, and declared non-goals. Do not write findings that contradict its declared trade-offs.
+2. **Brief.** The author's review brief, if one exists: intent, requirements satisfied, deliberate trade-offs, known limitations, and declared non-goals. Respect explicit non-goals and deliberate trade-offs, but verify their factual premises and scope; report a supported consequence that violates an existing contract or exceeds the acknowledged trade-off.
 
 ## Charter
 
