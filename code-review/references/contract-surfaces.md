@@ -5,7 +5,7 @@ Use this overlay when a change affects APIs, config, CLI flags, schemas, migrati
 ## Review Focus
 
 - Contract ownership: identify which callers, clients, services, jobs, users, or external systems depend on the changed surface.
-- Compatibility: check backward compatibility, forward compatibility, mixed-version deployments, default values, optional versus required fields, enum expansion, and behavior when old clients meet new servers or new clients meet old servers.
+- Compatibility: check backward compatibility, forward compatibility, mixed-version deployments, default values, optional versus required fields, enum expansion, and behavior when old clients meet new servers or new clients meet old servers. For separately deployed producers and consumers, establish from the deploy configuration whether they ship independently, then evaluate each supported rollout order.
 - Rollout and rollback: verify migration order, feature flags, dual-read/write needs, reversibility, and behavior after partial deployment or failed deployment.
 - Schema and data shape: check nullability, validation, coercion, field renames, removed fields, precision loss, time zones, ordering, pagination, and stable identifiers.
 - Error contracts: check status codes, error names, response bodies, CLI exit codes, retryability, and whether callers can distinguish expected from exceptional failures.
