@@ -6,6 +6,7 @@
 - Use `--cd <path>` for the primary workspace and repeat `--add-dir <path>` only for extra writable roots the task needs.
 - Pass `--model <model-id>` explicitly. Use the model the caller requested or one known to be available in the target environment; do not copy an ID from an example.
 - Add `--strict-config` so unknown configuration fields fail before the run starts.
+- Lean start: add `--disable memories` and `-c skills.include_instructions=false` so the run loads no memories and no skill listing. No per-run flag skips MCP or built-in tool definitions.
 - Use `--ignore-user-config` or `--ignore-rules` only in controlled automation that must exclude those inputs. `--ignore-rules` excludes execpolicy `.rules` files, not project instructions.
 
 ## Permissions

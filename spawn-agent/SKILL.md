@@ -29,7 +29,7 @@ If the user names a harness with no reference here, such as Gemini CLI, say it i
 
 4. Make the subtask self-contained. Assume the spawned run has no conversation history. Put the goal, relevant paths, constraints, and exact expected output in the prompt. Pass large inputs as file paths, not inline text.
 
-5. Pass behavior-affecting settings explicitly: model, permission mode, and directory access, per the reference. Headless runs inherit local settings, extensions, and project memory, so an identical command can behave differently across machines.
+5. Pass behavior-affecting settings explicitly: model, permission mode, and directory access, per the reference. Headless runs inherit local settings, extensions, and project memory, so an identical command can behave differently across machines. When the caller or user requests lean mode, use the reference's lean-start flags and load an MCP server, skill, or extra tool only if the subtask names it.
 
 6. Pre-authorize every tool the subtask needs with the reference's permission flags. A headless run cannot ask for approval. It may deny or skip an unapproved tool call and still report success, so under-granting can look like success. A fully unattended bypass grant also allows unrestricted shell and network access. Use one only in a sandbox, container, or disposable worktree, and say so.
 
