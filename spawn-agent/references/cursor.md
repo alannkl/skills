@@ -6,6 +6,7 @@
 - Use `--workspace <path>` for the primary working directory and repeat `--add-dir <path>` only for extra roots the task needs. Pass `--trust` only after the caller has decided the workspace is trusted.
 - Pass `--model <model-id>` explicitly. Discover account-specific IDs with `agent models`; do not assume an example ID is available.
 - `--plugin-dir` adds local plugins. MCP servers may still require approval. Use `--approve-mcps` only when the task needs every configured MCP server and the caller trusts the workspace.
+- Lean start: leave out `--approve-mcps` and `--plugin-dir`. No per-run flag skips rules, skills, or tool definitions.
 
 ## Permissions
 

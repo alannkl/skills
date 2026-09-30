@@ -7,6 +7,7 @@
 - Pass `--model <model-id>` and `--effort low|medium|high` explicitly. Discover model IDs with `agy models`; do not copy an ID from an example.
 - Pass `--agent <name>` only when the caller requests a configured agent. List configured agents with `agy agents`.
 - Print mode expands slash commands and skills by default. Add `--disable-slash-commands` when automation must treat the prompt literally.
+- Lean start: add `--disable-slash-commands`. No per-run flag skips MCP servers, plugins, or tool definitions.
 
 ## Permissions
 

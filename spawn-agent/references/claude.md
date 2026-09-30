@@ -5,6 +5,7 @@
 - A plain `claude -p` run discovers hooks, skills, plugins, MCP servers, auto memory, and `CLAUDE.md` from the working directory and `~/.claude`. It uses the existing interactive login. Do not add `--bare`. That skips OAuth and keychain reads, so authentication then needs a separate API key.
 - Pass every task-critical setting explicitly, including `--permission-mode`, `--append-system-prompt`, `--add-dir`, and `--model`.
 - Add `--strict-mcp-config` with `--mcp-config` when the run must see only the MCP servers you name.
+- Lean start: add `--strict-mcp-config` without `--mcp-config` to load no MCP servers, `--disable-slash-commands` to load no skills, and `--tools "<tool list>"` to load only the named tools. `--tools` limits which tools exist; `--allowedTools` still grants their permissions.
 - Piped stdin is capped at 10MB; reference a file instead of piping beyond that.
 
 ## Permissions
