@@ -21,6 +21,7 @@ Loaded before the work starts rather than for a task. Wire both into your instru
 | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | [`create-agent-skill`](create-agent-skill/SKILL.md) | Create agent skills from reusable workflows, domain expertise, or project conventions. Aligned with [`writing-for-agents`](https://github.com/mattpocock/skills/blob/main/skills/productivity/writing-for-agents/SKILL.md). |
 | [`spawn-agent`](spawn-agent/SKILL.md)               | Spawn a headless coding-agent CLI run (`agy -p`, `claude -p`, `agent -p`, or `codex exec`) for one scoped subtask, with a shared workflow and one reference per supported harness.                                          |
+| [`delegate`](delegate/SKILL.md)                     | Delegate bounded steps when cheaper than doing them inline. Weigh the cost, choose a collector, runner, or digester, write the work order, and check the returned record.                                                   |
 | [`panel`](panel/SKILL.md)                           | Keep N agents across different harnesses in the current chat, resume their discussion on follow-ups, and verify each combined result; or pair the host with one read-only consultant for second opinions. User-invoked.     |
 | [`handoff`](handoff/SKILL.md)                       | Create a compact temporary handoff so another agent can continue the current conversation.                                                                                                                                  |
 
@@ -56,7 +57,7 @@ Loaded before the work starts rather than for a task. Wire both into your instru
 | [`refine-it`](refine-it/SKILL.md)   | Refine written artifacts for clarity and readiness while preserving intent and scope. |
 | [`shorten-it`](shorten-it/SKILL.md) | Shorten text while preserving meaning, tone, and important details.                   |
 
-Four skills are user-invoked (`disable-model-invocation: true`): they load only when you type `/<name>`, and cost no always-loaded context. Fourteen are model-invoked so agents reach them on their own when the ask arrives in natural language: `coding-discipline` (auto-loads before code work), `constitution` (loads when an instruction file asks for it), `code-review`, `adversarial-review`, `review-triage`, `commit-message`, `simplify-code`, `document-code`, `explain-code`, `create-agent-skill`, `spawn-agent`, `refine-it`, `shorten-it`, and `handoff`.
+Four skills are user-invoked (`disable-model-invocation: true`): they load only when you type `/<name>`, and cost no always-loaded context. Fifteen are model-invoked so agents reach them on their own when the ask arrives in natural language: `coding-discipline` (auto-loads before code work), `constitution` (loads when an instruction file asks for it), `code-review`, `adversarial-review`, `review-triage`, `commit-message`, `simplify-code`, `document-code`, `explain-code`, `create-agent-skill`, `spawn-agent`, `delegate`, `refine-it`, `shorten-it`, and `handoff`.
 
 ## Installation
 
