@@ -62,7 +62,7 @@ def revised_limits(panel, saved, overrides):
     return limits
 
 
-def continue_panel(run_dir, brief, adapters, host_input=None, limits=None):
+def continue_panel(run_dir, brief, adapters, host_input=None, limits=None, *, reopen=False):
     if not isinstance(brief, str) or not brief.strip():
         raise ValueError('Follow-up must contain the latest user request and acceptance criteria')
     records = Records(run_dir, existing=True)
@@ -70,8 +70,11 @@ def continue_panel(run_dir, brief, adapters, host_input=None, limits=None):
         manifest = json.loads((records.root / 'manifest.json').read_text())
         if manifest['status'] == 'running':
             raise ValueError('Panel has unfinished work; use --recover first, without redispatch')
-        if manifest.get('conversation') == 'stopped':
-            raise ValueError('Panel is stopped; reset explicitly with a new run directory')
+        stopped = manifest.get('conversation') == 'stopped'
+        if stopped and not reopen:
+            raise ValueError('Panel is stopped; use --reopen with a follow-up to resume its saved sessions')
+        if reopen and not stopped:
+            raise ValueError('Panel is already active; use --continue')
         if not (records.root / 'report.json').exists():
             raise ValueError('Panel has no completed report; use --recover first')
         report = json.loads((records.root / 'report.json').read_text())
@@ -110,7 +113,7 @@ def continue_panel(run_dir, brief, adapters, host_input=None, limits=None):
         records.save_manifest(manifest)
         records.append('discussion_start', 'setup', sender='host', visibility=['all'],
                        discussion=manifest['discussion'], brief_revision=panel.brief_revision, text=brief,
-                       limits=manifest['limits'])
+                       limits=manifest['limits'], reopened=reopen)
         return panel
     except BaseException:
         records.close()

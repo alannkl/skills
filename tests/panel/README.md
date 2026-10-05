@@ -8,7 +8,9 @@ python3 -m unittest discover -s tests/panel -v
 
 The suite uses local fixtures, including disposable Git repositories and subprocesses. It does not call live model services. Tests and their fixtures stay outside the installable `panel/` skill.
 
-`test_continuation.py` covers repeated questions with the same three participants across all presets, shared history, fresh approvals and limits, retained workspaces, stop/reset, failed resumes, crash recovery, version-3 continuation and separate CLI invocations. Chat-message routing and the stop/solo interpretation are host instructions; the offline suite verifies the runner commands they use.
+`test_continuation.py` covers repeated questions with the same three participants across all presets, shared history, fresh approvals and limits, retained workspaces, stop/reopen/reset, terminal session replacement, failed resumes, crash recovery, version-3 continuation and separate CLI invocations. Chat-message routing and the stop/solo interpretation are host instructions; the offline suite verifies the runner commands they use.
+
+`test_consult.py` covers consultation reopening, retained settings and history, writer exclusion, unfinished records and terminal session replacement. Adapter fixtures distinguish definitive session loss from transient errors, denied permissions and misleading successful content.
 
 For live testing, use only Claude Sonnet (`sonnet`) and GPT Luna (`gpt-5.6-luna`). Include reasoning effort in the proposed roster before launching. This testing constraint does not restrict models available for normal panel work.
 

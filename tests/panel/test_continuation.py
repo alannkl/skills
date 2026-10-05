@@ -16,7 +16,8 @@ from fakes import FakeAdapter
 from engine import Panel, StopRun
 from conversation import continue_panel, stop_panel
 from recovery import recover_run
-from adapters.base import atomic_json
+from records import Records
+from adapters.base import Terminal, atomic_json
 
 
 def saved(root):
@@ -25,6 +26,132 @@ def saved(root):
 
 class ContinuationBehavior(unittest.TestCase):
     run_scenario = test_panel.PanelBehavior.run_scenario
+
+    def test_reopen_preserves_sessions_and_prior_results(self):
+        """Stopped panels retain participants, history, workspaces and prior results and require fresh approval."""
+        for name in ('independent-discussion', 'leader-members', 'flat-peers'):
+            async def scenario(root):
+                f = Fixture(root, name)
+                first = await f.run()
+                prior = {Path(first[k]): Path(first[k]).read_bytes() for k in ('candidate', 'discussion_report')}
+                original = saved(root)
+                stop_panel(Path(root) / 'run')
+                adapter = FakeAdapter()
+                panel = continue_panel(Path(root) / 'run', 'Decision while stopped: retain the API.', {'fake': adapter}, reopen=True)
+                result = await panel.run()
+                self.assertEqual(result['outcome'], 'agreed')
+                self.assertEqual(result['discussion'], 2)
+                self.assertEqual(adapter.sessions, 0)
+                for pid, person in original['participants'].items():
+                    own = [v for v in adapter.inputs if v['participant_id'] == pid]
+                    self.assertEqual({v['session'] for v in own}, {person['session_id']})
+                    self.assertEqual(own[0]['prior_briefs'][0]['text'], 'Design a bounded runner')
+                    self.assertTrue(any(e['kind'] == 'review' for e in own[0]['events']))
+                    self.assertEqual(own[0]['working_directory'], original['workspaces']['working_directories'][pid])
+                self.assertEqual(set(result['reviews']), set(original['required_approvers']))
+                self.assertTrue(all(v['revision'] == 'b2-r1' for v in result['reviews'].values()))
+                self.assertEqual(saved(root)['roster'], original['roster'])
+                self.assertEqual(saved(root)['execution'], original['execution'])
+                for path, content in prior.items():
+                    self.assertEqual(path.read_bytes(), content)
+                with self.assertRaisesRegex(ValueError, 'already active'):
+                    continue_panel(Path(root) / 'run', 'Duplicate reopen', {'fake': adapter}, reopen=True)
+            with self.subTest(preset=name):
+                self.run_scenario(scenario)
+
+    def test_reopen_keeps_continuation_guards(self):
+        """Unavailable identity, changed evidence, unfinished work and uncertainty refuse reopening without dispatch."""
+        for case in ('missing-session', 'source', 'candidate', 'running', 'report', 'uncertain', 'dispatch', 'writer'):
+            async def scenario(root):
+                f = Fixture(root)
+                first = await f.run()
+                run_dir = Path(root) / 'run'
+                stop_panel(run_dir)
+                manifest = saved(root)
+                lock = None
+                if case == 'missing-session':
+                    manifest['participants']['ada']['session_id'] = None
+                elif case == 'source':
+                    path = Path(manifest['source']) / 'contract.txt'
+                    path.chmod(0o644)
+                    path.write_text('Changed evidence')
+                elif case == 'candidate':
+                    path = Path(first['candidate'])
+                    path.chmod(0o644)
+                    path.write_text('Changed result')
+                elif case == 'running':
+                    manifest['status'] = 'running'
+                elif case == 'report':
+                    (run_dir / 'report.json').unlink()
+                elif case in ('uncertain', 'dispatch'):
+                    records = Records(run_dir, existing=True)
+                    if case == 'uncertain':
+                        records.append('cancel', 'initial', confirmed_inactive=False)
+                    else:
+                        records.append('dispatch', 'initial', participant='ada', turn_id='t999')
+                    records.close()
+                else:
+                    lock = Records(run_dir, existing=True)
+                atomic_json(run_dir / 'manifest.json', manifest)
+                before = (run_dir / 'manifest.json').read_bytes()
+                events = (run_dir / 'events.jsonl').read_bytes()
+                adapter = FakeAdapter()
+                try:
+                    with self.assertRaises(ValueError):
+                        continue_panel(run_dir, 'Reopen safely', {'fake': adapter}, reopen=True)
+                finally:
+                    if lock:
+                        lock.close()
+                self.assertEqual(adapter.inputs, [])
+                self.assertEqual((run_dir / 'manifest.json').read_bytes(), before)
+                self.assertEqual((run_dir / 'events.jsonl').read_bytes(), events)
+            with self.subTest(case=case):
+                self.run_scenario(scenario)
+
+    def test_terminal_resume_failure_starts_fresh_with_visible_history(self):
+        """Definitive session loss replaces only that participant and restores permitted context, never private peer contributions."""
+        class MissingSession(FakeAdapter):
+            def __init__(self, missing):
+                super().__init__()
+                self.missing = missing
+
+            def resume(self, session_id, input, settings):
+                handle = super().resume(session_id, input, settings)
+                if session_id == self.missing:
+                    original = handle.completion
+                    async def missing():
+                        await original
+                        return Terminal(session_id, exit_status=1, outcome='session_unavailable', error='Session expired')
+                    handle.completion = test_panel.asyncio.create_task(missing())
+                return handle
+
+        async def scenario(root):
+            f = Fixture(root)
+            first = await f.run()
+            before = saved(root)
+            old = before['participants']['ada']['session_id']
+            stop_panel(Path(root) / 'run')
+            adapter = MissingSession(old)
+            panel = continue_panel(Path(root) / 'run', 'Reopen with the previous decision.', {'fake': adapter}, reopen=True)
+            result = await panel.run()
+            self.assertEqual(result['outcome'], 'agreed')
+            self.assertEqual(adapter.sessions, 1)
+            after = saved(root)
+            new = after['participants']['ada']['session_id']
+            self.assertNotEqual(new, old)
+            self.assertEqual(after['participants']['ada']['retired_sessions'], [old])
+            for pid in ('bert', 'cy'):
+                self.assertEqual(after['participants'][pid]['session_id'], before['participants'][pid]['session_id'])
+            fresh = next(v for v in adapter.inputs if v['session'] == new)
+            self.assertIn('previous decision', fresh['brief'])
+            self.assertTrue(any(e['kind'] == 'review' for e in fresh['events']))
+            self.assertTrue(all(e['data'].get('brief_revision', 1) < 2 for e in fresh['events']))
+            self.assertEqual(fresh['working_directory'], before['workspaces']['working_directories']['ada'])
+            self.assertEqual(result['session_replacements'][0]['previous_session'], old)
+            self.assertEqual(result['session_replacements'][0]['new_session'], new)
+            self.assertEqual(set(result['reviews']), {'ada', 'bert', 'cy'})
+            self.assertTrue(Path(first['discussion_report']).exists())
+        self.run_scenario(scenario)
 
     def test_crash_during_report_publication(self):
         """Given a follow-up crash while publishing its report, when continuing or recovering, then never archive the previous answer as the new one or lose its original report."""
@@ -319,7 +446,7 @@ class ContinuationBehavior(unittest.TestCase):
             self.assertEqual(saved(root)['version'], 4)
         self.run_scenario(scenario)
 
-    def test_cli_continuation_and_stop(self):
+    def test_cli_reopen_requires_followup_and_preserves_sessions(self):
         """Given a panel run through the CLI, when continuing in another process and then stopping, then preserve sessions, deliver follow-up context, and reject later continuation without model calls."""
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -357,3 +484,11 @@ class ContinuationBehavior(unittest.TestCase):
             command('--continue', str(root / 'run'), '--follow-up', str(root / 'followup.md'), expect=2)
             self.assertEqual((root / 'run' / 'events.jsonl').read_bytes(), events)
             self.assertTrue(Path(first['candidate']).exists())
+            self.assertIn('follow-up', command('--reopen', str(root / 'run'), expect=2)['error'])
+            self.assertIn('retain', command('--reopen', str(root / 'run'), '--follow-up', str(root / 'followup.md'),
+                                          '--run-dir', str(root / 'replacement'), expect=2)['error'])
+            reopened = command('--reopen', str(root / 'run'), '--follow-up', str(root / 'followup.md'), '--run-seconds', '40')
+            self.assertEqual((reopened['discussion'], reopened['conversation']), (6, 'active'))
+            self.assertEqual(saved(root)['limits']['run_seconds'], 40)
+            self.assertEqual({pid: p['session_id'] for pid, p in saved(root)['participants'].items()}, sessions)
+            self.assertEqual(command('--continue', str(root / 'run'), '--follow-up', str(root / 'followup.md'))['discussion'], 7)

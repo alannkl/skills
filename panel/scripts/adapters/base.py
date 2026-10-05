@@ -52,6 +52,9 @@ class PreDispatchTransient(Exception):
 
 
 class ProcessAdapter:
+    def session_unavailable(self, stderr, session_id):
+        return False
+
     def start(self, input, settings):
         return self._start(None, input, settings)
 
@@ -89,7 +92,12 @@ class ProcessAdapter:
                 os.fsync(stdout.fileno())
                 os.fsync(stderr.fileno())
             atomic_json(attempt / 'exit.json', {'exit_status': code, 'session_id': expected_session})
-            result = self.parse((attempt / 'stdout').read_text(errors='replace'), code, expected_session)
+            output = (attempt / 'stdout').read_text(errors='replace')
+            result = self.parse(output, code, expected_session)
+            if session_id and code != 0 and not output.strip() and result.outcome == 'failed' and self.session_unavailable(
+                    (attempt / 'stderr').read_text(errors='replace'), session_id):
+                result.outcome = 'session_unavailable'
+                result.error = 'Saved session is no longer available for resume'
         except (OSError, ValueError, KeyError, TypeError) as exc:
             result.error = f'{type(exc).__name__}: {exc}'
             if handle.process is not None and handle.process.returncode is None:

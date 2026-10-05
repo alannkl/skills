@@ -421,7 +421,8 @@ class Panel:
         adapter = self.adapters[self.people[pid]['harness']]
         window = self.idle_window(adapter)  # validated before any launch, so a bad adapter value never leaks a handle
         retry_reason = None
-        for attempt in (1, 2):
+        restarted = False
+        for attempt in (1, 2, 3):
             self.check_limits()
             directory = self.records.root / 'participants' / pid / f'{turn_id}-{attempt}'
             directory.mkdir()
@@ -473,6 +474,21 @@ class Panel:
                 block = self.ingest(pid, result, dispatch, private)
                 if result.outcome == 'indeterminate':
                     raise StopRun('incomplete', f'Indeterminate delivery for {pid}; no redispatch')
+                if (result.outcome == 'session_unavailable' and session and result.session_id == session
+                        and result.exit_status not in (None, 0) and not restarted and not self.stop.is_set()):
+                    restarted = True
+                    self.people[pid].setdefault('retired_sessions', []).append(session)
+                    self.people[pid]['session_id'] = None
+                    self.people[pid]['delivered'] = []
+                    self.records.append('session_replacement', self.phase, participant=pid,
+                                        previous_session=session, reason=result.error)
+                    self.records.save_manifest(self.manifest)
+                    selected = self.eligible(pid, cutoff, private)
+                    self.prepare_access(pid, selected)
+                    instruction = json.loads(prompt.split('PANEL_INPUT\n', 1)[1])['instruction']
+                    prompt = self.prompt(pid, instruction, selected, cutoff)
+                    retry_reason = 'Saved session unavailable; starting fresh with visible history'
+                    continue
                 # A killed or invalid turn keeps its session; resume it once to finish rather than dropping the work.
                 if block is None and attempt == 1 and result.outcome != 'blocked' and self.people[pid]['session_id'] and not self.stop.is_set():
                     retry_reason = self.terminal_error(dispatch) or 'no valid result'
@@ -693,6 +709,9 @@ class Panel:
                   'events': str(self.records.log), 'manifest': str(self.records.root / 'manifest.json'),
                   'failures': [e['data'] for e in self.records.events[self.manifest.get('discussion_start', 0):] if e['kind'] == 'terminal_result' and not e['data']['valid']],
                   'cancellations': [e['data'] for e in self.records.events[self.manifest.get('discussion_start', 0):] if e['kind'] == 'cancel'],
+                  'session_replacements': [dict(e['data'], new_session=self.people[e['data']['participant']]['session_id'])
+                                           for e in self.records.events[self.manifest.get('discussion_start', 0):]
+                                           if e['kind'] == 'session_replacement'],
                   'report': str(self.records.root / 'report.json')}
         archive = self.records.root / 'reports' / f"discussion-{report['discussion']}.json"
         report['discussion_report'] = str(archive)

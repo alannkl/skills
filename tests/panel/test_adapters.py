@@ -25,6 +25,23 @@ def settings(root, attempt='turn'):
 
 
 class AdapterBehavior(unittest.TestCase):
+    def test_missing_session_is_distinct_from_other_failures(self):
+        """Given a failed native resume, when its diagnostic identifies the requested session as missing, then report session_unavailable; other errors and successful content must not trigger replacement."""
+        async def scenario(root):
+            for name, adapter in production_adapters().items():
+                for message, expected in [('RESUME_MISSING', 'session_unavailable'),
+                                          ('RESUME_WRONG_ID', 'failed'), ('RESUME_TRANSIENT', 'failed'),
+                                          ('RESUME_BLOCKED', 'blocked'), ('RESUME_WITH_ACTIVITY', 'failed')]:
+                    result = await adapter.resume('known-session', message, settings(root, name + message)).completion
+                    self.assertEqual(result.outcome, expected, result.error)
+                    self.assertEqual(result.session_id, 'known-session')
+                    self.assertEqual(adapter.recover(Path(root) / (name + message)).outcome, expected)
+                diagnostic = ('No conversation found with session ID: known-session' if name == 'claude' else
+                              'Error: no rollout found for thread id known-session')
+                result = await adapter.resume('known-session', diagnostic, settings(root, name + '-success')).completion
+                self.assertEqual(result.outcome, 'completed', 'Success text is not a resume diagnostic')
+        self.run_scenario(scenario)
+
     def run_scenario(self, scenario):
         with tempfile.TemporaryDirectory() as root:
             asyncio.run(scenario(root))

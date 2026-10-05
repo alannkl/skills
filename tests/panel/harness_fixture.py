@@ -11,6 +11,22 @@ import uuid
 
 args = sys.argv[1:]
 raw = sys.stdin.read()
+if raw in ('RESUME_MISSING', 'RESUME_WRONG_ID', 'RESUME_TRANSIENT', 'RESUME_BLOCKED', 'RESUME_WITH_ACTIVITY'):
+    is_codex = 'exec' in args
+    session = args[-2] if is_codex else args[args.index('--resume' if '--resume' in args else '--session-id') + 1]
+    if raw == 'RESUME_WRONG_ID':
+        session = 'different-session'
+    message = ('Error: no rollout found for thread id ' if is_codex else 'No conversation found with session ID: ') + session
+    if raw == 'RESUME_TRANSIENT':
+        message = 'Connection timed out while loading session ' + session
+    if raw == 'RESUME_BLOCKED':
+        event = ({'type': 'error', 'error': {'code': 'permission_denied'}} if is_codex else
+                 {'type': 'result', 'session_id': session, 'permission_denials': [{'tool_name': 'Read'}]})
+        print(json.dumps(event))
+    if raw == 'RESUME_WITH_ACTIVITY':
+        print(json.dumps({'type': 'item.completed', 'item': {'type': 'command_execution', 'status': 'completed'}}))
+    print(message, file=sys.stderr)
+    sys.exit(1)
 if 'PANEL_INPUT\n' in raw:
     payload = json.loads(raw.split('PANEL_INPUT\n')[1])
     pid, phase = payload['participant_id'], payload['phase']
