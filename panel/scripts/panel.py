@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run or continue a saved panel discussion; stdout is one JSON report."""
+"""Run, continue or reopen a saved panel discussion; stdout is one JSON report."""
 import argparse
 import asyncio
 import json
@@ -39,27 +39,28 @@ async def host_input(phase):
 
 
 async def execute(args):
-    existing = args.continue_run or args.stop or args.recover
+    followup_run = args.continue_run or args.reopen
+    existing = followup_run or args.stop or args.recover
     bounds = (args.max_cycles, args.idle_seconds, args.run_seconds, args.report_seconds)
     if existing and any((args.preset, args.brief, args.roster, args.run_dir)):
         raise ValueError('Saved panels retain their roster, preset, execution settings and run directory; reset explicitly to change them')
     if (args.stop or args.recover) and (any(x is not None for x in bounds) or args.unbounded):
-        raise ValueError('--recover and --stop take no limits; pass changed limits with --continue')
+        raise ValueError('--recover and --stop take no limits; pass changed limits with --continue or --reopen')
     if args.unbounded and args.run_seconds is not None:
         raise ValueError('--unbounded removes the discussion deadline; do not combine it with --run-seconds')
-    if bool(args.follow_up) != bool(args.continue_run):
-        raise ValueError('--continue RUN_DIR requires --follow-up FILE; --follow-up is only for continuation')
+    if bool(args.follow_up) != bool(followup_run):
+        raise ValueError('--continue and --reopen require --follow-up FILE; --follow-up is only for these operations')
     if args.stop:
         return stop_panel(args.stop)
     adapters = production_adapters(args.adapter)
     if args.recover:
         return recover_run(args.recover, adapters)
     checkpoint = host_input if args.pause_between_rounds else None
-    if args.continue_run:
-        panel = continue_panel(args.continue_run, Path(args.follow_up).read_text(), adapters, checkpoint,
+    if followup_run:
+        panel = continue_panel(followup_run, Path(args.follow_up).read_text(), adapters, checkpoint,
                                limits={'max_cycles': args.max_cycles, 'idle_seconds': args.idle_seconds,
                                        'run_seconds': args.run_seconds, 'report_seconds': args.report_seconds,
-                                       'unbounded': args.unbounded})
+                                       'unbounded': args.unbounded}, reopen=bool(args.reopen))
     else:
         if not all((args.preset, args.brief, args.roster)):
             raise ValueError('preset, brief and roster are required for a new panel')
@@ -96,17 +97,18 @@ def main():
     parser.add_argument('--adapter', action='append', default=[], metavar='NAME=FILE',
                         help='Register a trusted Python adapter exporting create_adapter(); repeat to add harnesses')
     parser.add_argument('--run-dir', help='New directory outside source and skill; default: unique temporary directory')
-    parser.add_argument('--max-cycles', type=int, help='Draft/review cycle cap per discussion, including brief changes; default 3, or the saved value with --continue')
-    parser.add_argument('--idle-seconds', type=float, help='Kill an invocation after this long without new output, and cap each check; default: each harness\'s own window (Claude 300, Codex 600), or the saved value with --continue')
-    parser.add_argument('--run-seconds', type=float, help='Autonomous-work allowance per discussion; waiting for a host decision pauses it and only a new --continue renews it; default 3600, or the saved value with --continue')
-    parser.add_argument('--report-seconds', type=float, help='Reporting reserve; default 10, or the saved value with --continue')
+    parser.add_argument('--max-cycles', type=int, help='Draft/review cycle cap per discussion, including brief changes; default 3, or the saved value with --continue or --reopen')
+    parser.add_argument('--idle-seconds', type=float, help='Kill an invocation after this long without new output, and cap each check; default: each harness\'s own window (Claude 300, Codex 600), or the saved value with --continue or --reopen')
+    parser.add_argument('--run-seconds', type=float, help='Autonomous-work allowance per discussion; waiting for a host decision pauses it and only --continue or --reopen renews it; default 3600, or the saved value with --continue or --reopen')
+    parser.add_argument('--report-seconds', type=float, help='Reporting reserve; default 10, or the saved value with --continue or --reopen')
     parser.add_argument('--unbounded', action='store_true', help='Explicit opt-in: no discussion deadline; idle and round caps still apply, so a turn that keeps writing is never killed. Saved across follow-ups until --run-seconds restores a ceiling')
     parser.add_argument('--pause-between-rounds', action='store_true', help='Read one host JSON decision from stdin at each boundary')
     saved = parser.add_mutually_exclusive_group()
     saved.add_argument('--recover', metavar='RUN_DIR', help='Reconcile captured results once; report incomplete without redispatch')
     saved.add_argument('--continue', dest='continue_run', metavar='RUN_DIR', help='Resume the same participants for another discussion')
+    saved.add_argument('--reopen', metavar='RUN_DIR', help='Reopen a stopped panel and resume its saved participants for a new discussion')
     saved.add_argument('--stop', metavar='RUN_DIR', help='End an idle panel conversation without launching participants')
-    parser.add_argument('--follow-up', metavar='FILE', help='Latest user request, decisions and acceptance criteria for --continue')
+    parser.add_argument('--follow-up', metavar='FILE', help='Latest user request, decisions and acceptance criteria for --continue or --reopen')
     args = parser.parse_args()
     try:
         report = asyncio.run(execute(args))

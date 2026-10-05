@@ -15,7 +15,7 @@ In panel mode, the preset determines allocation for the current stage: the leade
 
 The host executes the selected skill and maintains its work product. Follow [Pair mode](../SKILL.md#pair-mode) for the required approach and deliverable consultations, reconsultation rules and turn ledger. These checkpoints apply to the skill task; a stage boundary alone adds no consultation requirement. Advice is evidence for the host to weigh and never supplies approval.
 
-Continue the same saved consultation with [`consult.py ask`](usage.md#consultant). Include relevant user answers, corrections, stage context and updated evidence in subsequent questions. Keep the consultation open after delivering the skill's result; close it only on stop or reset.
+Continue the same saved consultation with [`consult.py ask`](usage.md#consultant). Include relevant user answers, corrections, stage context and updated evidence in subsequent questions. Keep the consultation open after delivering the skill's result; close it only on stop or reset. If the user explicitly resumes it later, use `consult.py reopen` with the new question and decisions made while stopped.
 
 ## When the skill needs user input
 

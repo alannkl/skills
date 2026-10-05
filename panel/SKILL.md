@@ -19,7 +19,9 @@ Use the resolved model's short name, such as `Fable` or `Astra`, to identify eac
 
 Retain the active panel or consultation directory, resolved roster or model settings, adapter registrations, authorization and shared decisions in the session's persistent working record and any continuation handoff. At the next message, restore that record and read the saved manifest before dispatch. After context compaction, reload this skill. The selected mode stays active after each answer while waiting for the user.
 
-For follow-ups, read [continuing the conversation](references/usage.md#continuing-the-conversation) and resume the saved panel; in pair mode, `ask` the saved consultant. Stop and answer-solo requests close the panel, or the consultation, without further participant work. Reset closes the old panel and prepares a new one with fresh sessions, retaining the old artifacts. Honor an explicitly one-message solo exception, record any resulting user decisions, and return to panel routing afterward. Reuse existing authorization; resolve changes outside it before launch. Time and cycle limits may change on a follow-up without a reset.
+For follow-ups, read [continuing the conversation](references/usage.md#continuing-the-conversation) and resume the saved panel; in pair mode, `ask` the saved consultant. Stop and answer-solo requests close the panel, or the consultation, without further participant work. Retain its directory and saved settings. An explicit request to resume or reopen uses `--reopen` for a stopped panel or `consult.py reopen` for a closed consultation, with the new question and decisions made while stopped. Reset closes the old panel and prepares a new one with fresh sessions, retaining the old artifacts. Honor an explicitly one-message solo exception, record any resulting user decisions, and return to panel routing afterward. Reuse existing authorization; resolve changes outside it before launch. Time and cycle limits may change on a follow-up without a reset.
+
+When a resume fails terminally because the saved session is unavailable, the runner starts a fresh session with the recorded context and the same settings. Report that replacement in either mode. Transient errors, permission denials and uncertain termination do not permit replacement.
 
 ## Prepare
 
@@ -65,7 +67,7 @@ python3 scripts/consult.py open /absolute/consult-dir --harness codex --model MO
 python3 scripts/consult.py ask /absolute/consult-dir --question /absolute/question.md --attach /absolute/diff.patch
 ```
 
-Only a stop or reset closes it: `python3 scripts/consult.py close /absolute/consult-dir`.
+Only a stop or reset closes it: `python3 scripts/consult.py close /absolute/consult-dir`. To resume after a stop, use `python3 scripts/consult.py reopen /absolute/consult-dir --question /absolute/question.md`. Reopening retains the saved model, effort, permissions and session history.
 
 Two consultations are required per task, plus any the host wants in between:
 
@@ -82,7 +84,7 @@ Relay each reply under a `Second opinion from MODEL` heading, such as `Second op
 
 Check the deliverable against every acceptance criterion; for a panel run, read `report.json` first, and in pair mode deliver through the ledger instead of a report. For another skill, also verify its completion rules and deliver its required output once for the team. Agreement on an intermediate question or proposal completes only that assignment. Deliver the requested content, data or files; include frozen files, the patch and verification evidence for file changes.
 
-For a panel, link this answer's `discussion_report`, retain the active panel record, and yield for the next user message. The runner exits between discussions; no background process is needed to keep participants' saved sessions. Report a failed continuation as a blocker instead of silently answering alone or starting replacement participants.
+For a panel, link this answer's `discussion_report`, retain the active panel record, and yield for the next user message. The runner exits between discussions; no background process is needed to keep participants' saved sessions. Report unresolved continuation failures as blockers instead of silently answering alone.
 
 For a panel, report the outcome and artifact paths:
 

@@ -1,5 +1,7 @@
 """Consultant behavior, pinned before implementation: one read-only session for second opinions."""
 import json
+from contextlib import contextmanager
+import time
 from pathlib import Path
 import subprocess
 import sys
@@ -17,7 +19,170 @@ def run(*args, expect=0):
     return json.loads(result.stdout)
 
 
+@contextmanager
+def consultation(harness='claude'):
+    with tempfile.TemporaryDirectory() as directory:
+        root = Path(directory)
+        (root / 'brief.md').write_text('Remember the original decision: keep the API stable.')
+        (root / 'question.md').write_text('Apply the new user decision.')
+        (root / 'attachment.md').write_text('Original attached evidence: retain the response schema.')
+        (root / 'repo').mkdir()
+        plugin = root / 'adapter.py'
+        plugin.write_text('import asyncio, json, sys\nfrom pathlib import Path\n'
+                          'sys.path.insert(0, ' + repr(str(PACKAGE / 'scripts')) + ')\n'
+                          'from adapters.' + harness + ' import ' + harness.capitalize() + 'Adapter\n'
+                          'from adapters.base import Handle, Terminal\n'
+                          'class Fixture(' + harness.capitalize() + 'Adapter):\n'
+                          '    def note(self, kind, session, prompt, settings):\n'
+                          '        root = Path(settings["cwd"]).parent\n'
+                          '        with (root / "calls.jsonl").open("a") as stream:\n'
+                          '            stream.write(json.dumps(dict(kind=kind, session=session, prompt=prompt)) + "\\n")\n'
+                          '        return (root / "mode").read_text() if (root / "mode").exists() else ""\n'
+                          '    def start(self, prompt, settings):\n'
+                          '        self.note("start", None, prompt, settings)\n'
+                          '        return super().start(prompt, settings)\n'
+                          '    def resume(self, session, prompt, settings):\n'
+                          '        mode = self.note("resume", session, prompt, settings)\n'
+                          '        if mode:\n'
+                          '            async def reply():\n'
+                          '                if mode == "wait":\n                    await asyncio.sleep(3600)\n'
+                          '                if mode == "different":\n'
+                          '                    return Terminal("other", block={"text":"wrong session"}, exit_status=0, outcome="completed")\n'
+                          '                return Terminal(session, exit_status=1, outcome=mode, error=mode)\n'
+                          '            return Handle(completion=asyncio.create_task(reply()))\n'
+                          '        return super().resume(session, prompt, settings)\n'
+                          '    def command(self, session, settings):\n'
+                          '        return super().command(session, dict(settings, executable=' + repr(EXECUTABLE) + '))\n'
+                          'def create_adapter():\n    return Fixture()\n')
+        base = ['--adapter', f'fixture={plugin}']
+        run(*base, 'open', str(root / 'c'), '--harness', 'fixture', '--model', 'fixture', '--effort', 'high',
+            '--brief', str(root / 'brief.md'), '--read', str(root / 'repo'), '--attach', str(root / 'attachment.md'))
+        yield root, base
+
+
 class ConsultBehavior(unittest.TestCase):
+    def test_reopen_preserves_session_settings_and_history(self):
+        """A closed consultation explicitly reopens into its saved session without losing records or settings."""
+        for harness in ('claude', 'codex'):
+            with consultation(harness) as (root, base), self.subTest(harness=harness):
+                c = root / 'c'
+                original = json.loads((c / 'consult.json').read_text())
+                previous = (c / 'log.jsonl').read_bytes()
+                run(*base, 'close', str(c))
+                closed = (c / 'consult.json').read_bytes()
+                run(*base, 'ask', str(c), '--question', str(root / 'question.md'), expect=2)
+                self.assertEqual((c / 'consult.json').read_bytes(), closed)
+                missing = run(*base, 'reopen', str(c), '--question', str(root / 'missing.md'), expect=2)
+                self.assertFalse(missing['ok'])
+                self.assertEqual((c / 'consult.json').read_bytes(), closed)
+                result = run(*base, 'reopen', str(c), '--question', str(root / 'question.md'))
+                self.assertTrue(result['reopened'])
+                self.assertEqual(result['turn'], 2)
+                self.assertIn('new user decision', result['text'])
+                manifest = json.loads((c / 'consult.json').read_text())
+                self.assertEqual(manifest['status'], 'open')
+                for key in ('session_id', 'settings', 'harness', 'read_dirs', 'web'):
+                    self.assertEqual(manifest[key], original[key])
+                self.assertTrue((c / 'log.jsonl').read_bytes().startswith(previous))
+                self.assertIn('already open', run(*base, 'reopen', str(c), '--question', str(root / 'question.md'), expect=2)['error'])
+                self.assertEqual(run(*base, 'ask', str(c), '--question', str(root / 'question.md'))['turn'], 3)
+
+    def test_reopen_rejects_unavailable_or_unfinished_state(self):
+        """Missing identity and incomplete or uncertain records cannot reopen or dispatch."""
+        for case in ('no-session', 'pending', 'unrecorded', 'uncertain', 'missing-log'):
+            with consultation() as (root, base), self.subTest(case=case):
+                c = root / 'c'
+                run(*base, 'close', str(c))
+                manifest = json.loads((c / 'consult.json').read_text())
+                if case == 'no-session':
+                    manifest['session_id'] = None
+                elif case == 'pending':
+                    manifest['pending_turn'] = 2
+                elif case == 'unrecorded':
+                    (c / 'turns' / 't2').mkdir()
+                elif case == 'uncertain':
+                    last = json.loads((c / 'log.jsonl').read_text())
+                    last.update(ok=False, error='consultant timed out; process may still be running')
+                    (c / 'log.jsonl').write_text(json.dumps(last) + '\n')
+                else:
+                    (c / 'log.jsonl').unlink()
+                (c / 'consult.json').write_text(json.dumps(manifest))
+                before = (c / 'consult.json').read_bytes()
+                calls = (c / 'calls.jsonl').read_bytes()
+                result = run(*base, 'reopen', str(c), '--question', str(root / 'question.md'), expect=2)
+                self.assertFalse(result['ok'])
+                self.assertEqual((c / 'consult.json').read_bytes(), before)
+                self.assertEqual((c / 'calls.jsonl').read_bytes(), calls)
+
+    def test_reopen_failure_never_starts_a_replacement(self):
+        """Unclassified failure, wrong identity and uncertain delivery never trigger a fresh session."""
+        for mode in ('failed', 'different', 'indeterminate'):
+            with consultation() as (root, base), self.subTest(mode=mode):
+                c = root / 'c'
+                run(*base, 'close', str(c))
+                original = json.loads((c / 'consult.json').read_text())['session_id']
+                (c / 'mode').write_text(mode)
+                result = run(*base, 'reopen', str(c), '--question', str(root / 'question.md'), expect=2)
+                self.assertFalse(result['ok'])
+                manifest = json.loads((c / 'consult.json').read_text())
+                self.assertEqual(manifest['session_id'], original)
+                calls = [json.loads(line) for line in (c / 'calls.jsonl').read_text().splitlines()]
+                self.assertEqual([v['kind'] for v in calls], ['start', 'resume'])
+                if mode == 'indeterminate':
+                    self.assertEqual(manifest['pending_turn'], 2)
+                    run(*base, 'close', str(c), expect=2)
+                    run(*base, 'ask', str(c), '--question', str(root / 'question.md'), expect=2)
+                    self.assertEqual((c / 'calls.jsonl').read_text().count('"kind"'), 2)
+
+    def test_terminal_resume_failure_starts_fresh_with_saved_context(self):
+        """A definitively unavailable saved session starts fresh once with prior questions and replies."""
+        with consultation() as (root, base):
+            c = root / 'c'
+            original = json.loads((c / 'consult.json').read_text())
+            previous = (c / 'log.jsonl').read_bytes()
+            run(*base, 'close', str(c))
+            (c / 'mode').write_text('session_unavailable')
+            result = run(*base, 'reopen', str(c), '--question', str(root / 'question.md'))
+            self.assertTrue(result['ok'])
+            replacement = result['replacement']
+            self.assertEqual(replacement['previous_session'], original['session_id'])
+            self.assertNotEqual(replacement['new_session'], original['session_id'])
+            manifest = json.loads((c / 'consult.json').read_text())
+            self.assertEqual(manifest['session_id'], replacement['new_session'])
+            self.assertEqual(manifest['retired_sessions'], [original['session_id']])
+            self.assertNotIn('pending_turn', manifest)
+            self.assertTrue((c / 'log.jsonl').read_bytes().startswith(previous))
+            calls = [json.loads(line) for line in (c / 'calls.jsonl').read_text().splitlines()]
+            self.assertEqual([v['kind'] for v in calls], ['start', 'resume', 'start'])
+            self.assertIn('keep the API stable', calls[-1]['prompt'])
+            self.assertIn('Original attached evidence: retain the response schema.', calls[-1]['prompt'])
+            self.assertIn('new user decision', calls[-1]['prompt'])
+            self.assertIn('reply', calls[-1]['prompt'])
+            (c / 'mode').unlink()
+            self.assertEqual(run(*base, 'ask', str(c), '--question', str(root / 'question.md'))['turn'], 3)
+
+    def test_inflight_consultation_rejects_other_writers(self):
+        """An in-flight turn rejects competing asks, closes and reopens; a host crash leaves a blocking marker."""
+        with consultation() as (root, base):
+            c = root / 'c'
+            (c / 'mode').write_text('wait')
+            child = subprocess.Popen([sys.executable, SCRIPT, *base, 'ask', str(c), '--question', str(root / 'question.md')],
+                                     stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            try:
+                deadline = time.monotonic() + 5
+                while 'pending_turn' not in json.loads((c / 'consult.json').read_text()):
+                    self.assertLess(time.monotonic(), deadline)
+                    time.sleep(.01)
+                for command in ('ask', 'close', 'reopen'):
+                    extra = [] if command == 'close' else ['--question', str(root / 'question.md')]
+                    result = run(*base, command, str(c), *extra, expect=2)
+                    self.assertIn('active writer', result['error'])
+            finally:
+                child.terminate()
+                child.communicate(timeout=5)
+            result = run(*base, 'ask', str(c), '--question', str(root / 'question.md'), expect=2)
+            self.assertIn('unfinished or uncertain', result['error'])
+
     def test_open_ask_close_keeps_one_session(self):
         """Given a brief, when opened then asked with an attachment, then both harnesses answer from one session that sees the readable directories and attachment, and a closed consultation refuses further questions."""
         for harness in ('claude', 'codex'):

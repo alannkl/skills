@@ -1,10 +1,15 @@
 import json
+import re
 from .base import ProcessAdapter, Terminal, session_uuid, structured
 
 
 class ClaudeAdapter(ProcessAdapter):
     settings_keys = {'model', 'effort', 'max_turns', 'max_budget_usd', 'executable'}
     idle_seconds = 300  # partial-message deltas keep the capture growing while the model thinks
+
+    def session_unavailable(self, stderr, session_id):
+        return bool(re.fullmatch(r'(?:Error: )?No conversation found with session ID: ' + re.escape(session_id) + r'\.?',
+                                 stderr.strip(), re.IGNORECASE))
 
     def command(self, session_id, settings):
         session = session_id or session_uuid()

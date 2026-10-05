@@ -1,4 +1,5 @@
 import json
+import re
 from pathlib import Path
 from .base import ProcessAdapter, Terminal, structured
 
@@ -6,6 +7,10 @@ from .base import ProcessAdapter, Terminal, structured
 class CodexAdapter(ProcessAdapter):
     settings_keys = {'model', 'effort', 'executable'}
     idle_seconds = 600  # --json is silent until an item completes, so a long reasoning phase writes nothing; provisional
+
+    def session_unavailable(self, stderr, session_id):
+        return bool(re.fullmatch(r'(?:Error: )?no rollout found for thread id[: ]+' + re.escape(session_id) + r'\.?',
+                                 stderr.strip(), re.IGNORECASE))
 
     def command(self, session_id, settings):
         capabilities = settings.get('capabilities', {})
