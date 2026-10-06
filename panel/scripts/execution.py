@@ -39,7 +39,7 @@ class ExecutionPolicy:
             raise ValueError('Working-copy tasks need executable checks or an explicit verification_note')
         if self.worktree and not any(pid != integrator for pid in required):
             raise ValueError('Working-copy tasks require an approver other than the integrator')
-        web = config.get('web', False)
+        web = config.get('web', True)
         if type(web) is not bool:
             raise ValueError('execution.web must be a boolean')
         self.config = dict(config, workspace=workspace, checks=checks, web=web, verification_note=note)

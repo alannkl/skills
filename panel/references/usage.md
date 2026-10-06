@@ -61,7 +61,7 @@ In panel mode, `execution` controls access and checks independently of the brief
 | `workspace: "read-only"` | Default. Read frozen evidence and return a deliverable through the runner. |
 | `workspace: "inspect"` | Use isolated worktrees and run commands; source edits are rejected. Scratch scripts are permitted. |
 | `workspace: "edit"` | Edit separate worktrees and integrate a result for verification. |
-| `web: true` | Enable web retrieval. Default is false. |
+| `web: false` | Disable web retrieval, which is on by default. |
 | `checks` | Commands to verify the assembled result, with expected exit codes. |
 | `verification_note` | Explain the review method when working-copy verification cannot use executable checks. |
 
@@ -122,7 +122,7 @@ Both bundled adapters accept `model`, `effort` and an optional trusted `executab
 
 Claude uses native `auto` without interactive permission prompts. Tools follow execution settings; native policy assesses shell operations without a runner command allowlist. Declare source and check directories with `--add-dir`; add peer snapshot access after reveal and retain it on resume. Put complex or Unicode-bearing shell programs in scratch script files to avoid parsing errors. Directory grants follow [Claude permission rules](https://code.claude.com/docs/en/permissions#working-directories).
 
-Codex uses `approval_policy="never"` with a read-only or workspace-write sandbox. Web retrieval follows explicit `execution.web` through the [documented setting](https://learn.chatgpt.com/docs/config-file/config-reference). Neither adapter uses unrestricted bypass; native denials remain visible blockers.
+Codex uses `approval_policy="never"` with a read-only or workspace-write sandbox. Web retrieval follows `execution.web` through the [documented setting](https://learn.chatgpt.com/docs/config-file/config-reference). Neither adapter uses unrestricted bypass; native denials remain visible blockers.
 
 Claude's `max_turns` caps the agentic loop (model responses with tool calls) within one invocation and is unset by default, so a participant takes as many steps as the task needs and the idle window and discussion allowance end runaway work; its budget flag applies where the account supports it. Codex has no equivalent generation bound here. Both retain reported usage and have wall-clock limits, without a guaranteed whole-run token or monetary ceiling.
 
@@ -205,7 +205,7 @@ Completed version-3 panels can be continued explicitly with their saved sessions
 
 | Command | Behavior |
 | --- | --- |
-| `open DIR --harness H --model M [--effort E] [--web] --brief FILE [--read DIR ...]` | Start a session and answer the brief. A fresh consultation requires a new directory. |
+| `open DIR --harness H --model M [--effort E] [--web \| --no-web] --brief FILE [--read DIR ...]` | Start a session and answer the brief. Web retrieval defaults to enabled; `--no-web` disables it. A fresh consultation requires a new directory. |
 | `ask DIR --question FILE [--attach FILE ...] [--read DIR ...]` | Resume the saved session. Also the retry path for a failed opening turn once the consultation exists, since a second `open` rejects that directory. Rejects closed consultations. |
 | `close DIR` | Close the consultation on stop or reset. |
 | `reopen DIR --question FILE [--attach FILE ...] [--read DIR ...]` | Reopen a closed consultation and answer the new question with the saved session, model, effort and permissions. Include decisions made while stopped. |

@@ -11,6 +11,8 @@ Choose between two modes:
 - **Pair:** the host does the work with advice from one read-only consultant.
 - **Panel:** participants do the work while the host coordinates, using one of three presets: `independent-discussion`, `leader-members` or `flat-peers`.
 
+Web retrieval is enabled by default in both modes. For tasks restricted to supplied evidence, set `execution.web: false` in the panel roster or pass `--no-web` when opening a consultant.
+
 ## Keep the panel in the chat
 
 Invocation, by slash command or an explicit request in chat, routes the first request through the selected pair or panel under that mode's consultation and review rules. Every later message is a follow-up: the host routes it to the saved participants when independent input would improve the result enough to justify the tokens and time, and otherwise answers directly.
@@ -90,9 +92,13 @@ Choose consultations by their purpose, without a fixed count per task:
 
 A follow-up does not restart completed reviews.
 
+Before each consultation, save the host's prior assessment (its provisional answer, main reasons and uncertainties) in a host note beside `consult.json`, kept out of the consultant's prompt. Where the evidence supports no conclusion, record what is missing. On a follow-up, assess the new question or changed evidence first; earlier advice is already known, so the assessment is informed, not blind. After the reply, add what the advice changed and why, including any disagreement, leaving the prior assessment intact.
+
+What the consultant receives depends on the purpose. A focused question sends the question, evidence and constraints without the host's provisional conclusion; compare positions after the reply. An approach or deliverable review sends the proposed direction or artifact, since that is the object under review; for a deliverable, the prior assessment checks it against the acceptance criteria and lists known weaknesses.
+
 Relay each reply under a `Second opinion from MODEL` heading, such as `Second opinion from Fable`, separate from the host's own view, as concise advice: the points that changed or challenged the host's plan and every explicit disagreement, with the full reply available in the log; quote it verbatim only when the user asks. The consultant's advice is evidence: the host weighs it, records disagreement explicitly and stays accountable; nothing the consultant says is approval. The consultant reads the listed directories and attachments and never edits.
 
-At delivery, list the current task's consultation turns by turn number, each with its verdict, how the host handled its points and every disagreement, and link `log.jsonl`. The ledger must match the log; writing it requires no further consultation. A focused question may fold the ledger into its second-opinion relay.
+At delivery, list the current task's consultation turns by turn number, each with the host's prior assessment, the consultant's verdict, what changed and why, and every disagreement; link `log.jsonl`. The ledger must match the log; writing it requires no further consultation. A focused question may fold the ledger into its second-opinion relay.
 
 Run each `consult.py` call as a background command whose exit notifies the host, and act on that notification rather than polling. The turn's `--timeout` defaults to 600 seconds; pass a longer one when needed.
 

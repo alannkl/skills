@@ -1,16 +1,16 @@
 # Dispatch
 
-## Role and defaults
+## Roles
 
-| Role        | Work                                                                                                  | Capability                                                                          | Claude Code agent type and model                       | Codex CLI model, effort |
-| ----------- | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ------------------------------------------------------ | ----------------------- |
-| `collector` | Bounded retrieval, inventory, and extraction with an explicit search scope                            | Read, search, list; web search and fetch when the work order grants them; no writes | Explore, `sonnet` (expect `claude-sonnet-5-5`)         | `gpt-6.1-sol`, `low`    |
-| `runner`    | Execute a specified procedure and report observed outcomes; stop on any unexpected branch             | Shell plus read; writes only those the procedure allows                             | general-purpose, `sonnet` (expect `claude-sonnet-5-5`) | `gpt-6.1-sol`, `low`    |
-| `digester`  | Provisional summaries, structured transformations, and drafts from facts you have already established | Read; returns its product for you to save                                           | general-purpose, `opus` (expect `claude-opus-5-5`)     | `gpt-6.1-sol`, `medium` |
+| Role | Work | Capability | Claude Code agent type |
+| --- | --- | --- | --- |
+| `collector` | Bounded retrieval, inventory, and extraction with an explicit search scope | Read, search, list; web search and fetch when the work order grants them; no writes | Explore |
+| `runner` | Execute a specified procedure and report observed outcomes; stop on any unexpected branch | Shell plus read; writes only those the procedure allows | general-purpose |
+| `digester` | Provisional summaries, structured transformations, and drafts from facts you have already established | Read; returns its product for you to save | general-purpose |
 
 Use the digester only when you can quickly check its product against the evidence. If a digest determines which requirements you see, write it yourself.
 
-- Use the harness's native subagent tool by default, with the table's agent type and model, or the nearest available tier when that model is unavailable. Compare any expected model with the record's runtime-confirmed model. Pass the effort where supported. Claude Code's Agent tool takes none: the subagent inherits the session's effort unless a custom agent definition sets one, so estimate and record with the inherited effort.
+- Use the harness's native subagent tool by default, with the table's agent type and the model and effort from [Model tiers](models.md), following its availability fallbacks. Compare the expected model with the record's runtime-confirmed model.
 - On Claude Code, state every rule the collector needs in its work order and name the files it must read in full.
 - Use the harness's headless CLI only when it has no native subagent tool. Load `spawn-agent` and request lean mode. Pass the role's model and effort, limit tools to its listed capability, and use read-only mode for collectors and digesters where available. Put the full work order in the prompt.
 

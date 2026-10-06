@@ -4,12 +4,33 @@ from pathlib import Path
 import test_panel
 from task_fixture import TaskFixture
 from execution import ExecutionPolicy
+from conversation import continue_panel
+from fakes import FakeAdapter
 
 
 
 
 class BriefContract(unittest.TestCase):
     run_scenario = test_panel.PanelBehavior.run_scenario
+
+    def test_web_default_and_opt_out_persist(self):
+        """Given omitted, true or false web settings, a new panel enables web unless false and retains that choice on continuation."""
+        for config, expected in (({}, True), ({'web': True}, True), ({'web': False}, False)):
+            async def scenario(root):
+                fixture = TaskFixture(root, execution=config)
+                self.assertEqual((await fixture.run())['outcome'], 'agreed')
+                self.assertTrue(fixture.adapter.inputs)
+                for payload in fixture.adapter.inputs:
+                    self.assertIs(payload['capabilities']['web'], expected)
+                adapter = FakeAdapter()
+                panel = continue_panel(Path(root) / 'run', 'Retain the same evidence scope.', {'fake': adapter})
+                self.assertEqual((await panel.run())['outcome'], 'agreed')
+                self.assertTrue(adapter.inputs)
+                for payload in adapter.inputs:
+                    self.assertIs(payload['capabilities']['web'], expected)
+            with self.subTest(config=config):
+                self.run_scenario(scenario)
+
     def test_unregistered_work_and_arbitrary_data(self):
         """Given an unfamiliar task and custom result data, when three agents run each preset, then the brief and data are preserved without selecting a task profile."""
 
@@ -59,7 +80,7 @@ class BriefContract(unittest.TestCase):
         """Given any brief, when explicit access settings change, then only those settings determine web, command and file access."""
 
         readonly = ExecutionPolicy({}, ['a', 'b'], 'a')
-        self.assertFalse(readonly.capabilities()['web'])
+        self.assertTrue(readonly.capabilities()['web'])
         self.assertTrue(readonly.capabilities()['file_reads'])
         self.assertFalse(readonly.capabilities()['workspace_write'])
         inspect = ExecutionPolicy({'workspace': 'inspect', 'web': True, 'checks': [['python3', 'check.py']]}, ['a', 'b'], 'a')

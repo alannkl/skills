@@ -20,7 +20,7 @@ def run(*args, expect=0):
 
 
 @contextmanager
-def consultation(harness='claude'):
+def consultation(harness='claude', web_args=()):
     with tempfile.TemporaryDirectory() as directory:
         root = Path(directory)
         (root / 'brief.md').write_text('Remember the original decision: keep the API stable.')
@@ -56,11 +56,36 @@ def consultation(harness='claude'):
                           'def create_adapter():\n    return Fixture()\n')
         base = ['--adapter', f'fixture={plugin}']
         run(*base, 'open', str(root / 'c'), '--harness', 'fixture', '--model', 'fixture', '--effort', 'high',
-            '--brief', str(root / 'brief.md'), '--read', str(root / 'repo'), '--attach', str(root / 'attachment.md'))
+            '--brief', str(root / 'brief.md'), '--read', str(root / 'repo'), '--attach', str(root / 'attachment.md'), *web_args)
         yield root, base
 
 
 class ConsultBehavior(unittest.TestCase):
+    def test_web_default_and_opt_out_persist(self):
+        """Given no web flag, --web or --no-web, both harnesses enable web unless opted out and retain that choice on ask and reopen."""
+        for harness in ('claude', 'codex'):
+            for flags, expected in (((), True), (('--web',), True), (('--no-web',), False)):
+                with consultation(harness, flags) as (root, base), self.subTest(harness=harness, flags=flags):
+                    directory = root / 'c'
+                    run(*base, 'ask', str(directory), '--question', str(root / 'question.md'))
+                    run(*base, 'close', str(directory))
+                    run(*base, 'reopen', str(directory), '--question', str(root / 'question.md'))
+                    manifest = json.loads((directory / 'consult.json').read_text())
+                    self.assertIs(manifest['web'], expected)
+                    commands = [json.loads((directory / 'turns' / f't{turn}' / 'command.json').read_text())['argv']
+                                for turn in (1, 2, 3)]
+                    for command in commands:
+                        if harness == 'claude':
+                            tools = command[command.index('--tools') + 1].split(',')
+                            self.assertEqual('WebSearch' in tools, expected)
+                            self.assertEqual('WebFetch' in tools, expected)
+                            self.assertNotIn('Edit', tools)
+                            self.assertNotIn('Write', tools)
+                        else:
+                            setting = 'web_search="live"' if expected else 'web_search="disabled"'
+                            self.assertIn(setting, command)
+
+
     def test_reopen_preserves_session_settings_and_history(self):
         """A closed consultation explicitly reopens into its saved session without losing records or settings."""
         for harness in ('claude', 'codex'):
