@@ -23,6 +23,8 @@ description: Delegate bounded steps to subagents when that costs less than doing
 
 3. Delegate every candidate whose result is cheaper to check than to produce and whose delegated path costs less. Do the rest yourself. For each delegation, follow [Dispatch](references/dispatch.md) to pick the role, write the work order, dispatch, wait, and accept or escalate. Finish by accepting the record or taking over the step.
 
+4. At delivery, report every delegation in one table: role, agent type, requested and runtime-confirmed model, effort, duration, and tokens. Write "not reported" where the harness gives no value, and "requested" where the runtime model is unconfirmed.
+
 ## Cost inputs
 
 Cold start-up per spawn. For an unlisted harness, use the corresponding Codex CLI figure: native subagent or headless lean.
