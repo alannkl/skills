@@ -41,8 +41,8 @@ Requires Git, Node.js, and an authenticated `gh` CLI. Supports `github.com`. Tes
 
 6. Present the report described in step 9, including proposed comments for deferred or rejected findings, before offering a next action. Escalated decisions require the user's input.
    - When the viewer owns the PR and changes are proposed, offer the fix batch and wait for approval unless already authorized.
-   - When another author owns the PR and unresolved actionable findings remain, offer to submit a Request changes review or to fix in the review worktree, and wait for the user's choice unless already authorized. To request changes, follow [Submitting a review](#submitting-a-review); to fix, continue at step 7 with the approved batch.
-   - Finish with the report when no changes are proposed or the user declines further action.
+   - When another author owns the PR and unresolved actionable findings remain, offer to submit a Request changes review or to fix in the review worktree, and wait for the user's choice unless already authorized. To request changes, follow [Submitting a review](#submitting-a-review), then continue at step 9; to fix, continue at step 7 with the approved batch.
+   - When no changes are proposed or the user declines further action, continue at step 9.
 
 7. Record the approved file list. Files outside the PR's changed-file list require approval by name. Apply the approved batch within that boundary in the review worktree, verify each original failure scenario with focused checks, and report unresolved findings.
 
