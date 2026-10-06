@@ -78,7 +78,7 @@ const prViewArgs = [
 ];
 if (values.repo) prViewArgs.push("--repo", values.repo);
 const prView = await gh(prViewArgs).catch((error) => {
-  console.error(`Cannot read the PR: ${error.stderr?.trim() || error.message}`);
+  console.error(`Cannot read the PR: ${ghError(error)}`);
   process.exit(2);
 });
 if (prView.state !== "OPEN") {
@@ -96,7 +96,7 @@ const viewer = await gh(["api", "user"])
   })
   .catch((error) => {
     console.error(
-      `Cannot read the viewer: ${error.stderr?.trim() || error.message}`,
+      `Cannot read the viewer: ${ghError(error)}`,
     );
     process.exit(2);
   });
@@ -161,6 +161,21 @@ console.error(
 console.log(outFile);
 process.exit(failures.length === 0 ? 0 : 1);
 
+// gh prints HTTP status on stderr but GitHub's reason in the response body on
+// stdout; keep both so a permanent failure reads differently from a transient one.
+function ghError(error) {
+  const status = error.stderr?.trim() || error.message;
+  try {
+    const { message, errors } = JSON.parse(error.stdout);
+    const reasons = (errors ?? []).map((item) => item?.message ?? item);
+    return [status, ...(reasons.length ? reasons : [message])]
+      .filter(Boolean)
+      .join(": ");
+  } catch {
+    return status;
+  }
+}
+
 async function gh(args) {
   const { stdout } = await execFileAsync("gh", args, {
     maxBuffer: GH_MAX_BUFFER,
@@ -185,7 +200,7 @@ async function attempt(collection, collect) {
     return { count: items.length, pages, error: null, items };
   } catch (error) {
     failures.push(collection);
-    const detail = error.stderr?.trim() || error.message;
+    const detail = ghError(error);
     console.error(`${collection}: retrieval failed: ${detail}`);
     return { count: 0, pages: 0, error: detail, items: [] };
   }

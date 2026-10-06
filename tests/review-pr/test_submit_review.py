@@ -94,5 +94,67 @@ class SubmitReviewAnchors(unittest.TestCase):
         self.assertIn("`other.txt:1` note 1", body)
 
 
+class SubmitReviewOutcomes(unittest.TestCase):
+    def setUp(self):
+        self.sandbox = Sandbox()
+        self.addCleanup(self.sandbox.close)
+
+    def submit(self, author, reviews=(), post=None):
+        accepted = {"id": 7, "html_url": f"{PR_URL}#r7", "state": "COMMENTED", "commit_id": HEAD}
+        self.sandbox.set_gh({
+            "pr": {"number": 1, "url": PR_URL, "state": "OPEN", "headRefOid": HEAD,
+                   "author": {"login": author}},
+            "viewer": "reviewer",
+            f"{PULL}/reviews": list(reviews),
+            f"{PULL}/files": [{"filename": "src/app.txt", "patch": PATCH}],
+            "post": post or {"stdout": json.dumps(accepted)},
+        })
+        review = self.sandbox.root / "review.json"
+        review.write_text(json.dumps({
+            "commit_id": HEAD, "event": "REQUEST_CHANGES", "body": "Summary",
+            "comments": [{"path": "src/app.txt", "line": 3, "side": "RIGHT", "body": "F1"}],
+        }))
+        return self.sandbox.node("submit-review.mjs", "1", "--in", str(review))
+
+    def posted(self):
+        return [json.loads(call["stdin"]) for call in self.sandbox.gh_calls() if "POST" in call["args"]]
+
+    def test_own_pr_request_changes_posts_a_comment_review(self):
+        """Given the viewer authored the PR, when Request changes is submitted, then one Comment review is posted with the inline comment intact."""
+        result = self.submit(author="reviewer")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        [payload] = self.posted()
+        self.assertEqual(payload["event"], "COMMENT")
+        self.assertEqual(payload["comments"], [{"path": "src/app.txt", "body": "F1", "line": 3, "side": "RIGHT"}])
+
+    def test_other_authors_pr_keeps_request_changes(self):
+        """Given someone else authored the PR, when Request changes is submitted, then the posted review requests changes."""
+        result = self.submit(author="someone")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        [payload] = self.posted()
+        self.assertEqual(payload["event"], "REQUEST_CHANGES")
+
+    def test_fallback_review_is_not_duplicated(self):
+        """Given the viewer authored the PR and already left a Comment review on the head, when Request changes is submitted, then it exits 4 without posting."""
+        existing = {"user": {"login": "reviewer"}, "state": "COMMENTED", "commit_id": HEAD,
+                    "html_url": f"{PR_URL}#r6"}
+        result = self.submit(author="reviewer", reviews=[existing])
+        self.assertEqual(result.returncode, 4)
+        self.assertEqual(self.posted(), [])
+
+    def test_rejection_reports_githubs_reason(self):
+        """Given GitHub rejects the review with a 422 and a reason, when submitted, then it exits 1 and stderr carries both the status and the reason."""
+        rejection = {
+            "stdout": json.dumps({"message": "Unprocessable Entity",
+                                  "errors": ["Review Can not request changes on your own pull request"]}),
+            "stderr": "gh: Unprocessable Entity (HTTP 422)\n",
+            "exit": 1,
+        }
+        result = self.submit(author="someone", post=rejection)
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("HTTP 422", result.stderr)
+        self.assertIn("Review Can not request changes on your own pull request", result.stderr)
+
+
 if __name__ == "__main__":
     unittest.main()

@@ -78,6 +78,8 @@ After authorization to request changes:
 - Refresh the PR state and head. If the head changed, revalidate the findings and their line locations, and include only findings that still warrant changes.
 - Write the review as a JSON file: `commit_id` (the reviewed head), `event: REQUEST_CHANGES`, a short summary `body`, and `comments[]` with `path`, `body`, `line`, `side`, plus `start_line` and `start_side` for ranges. Give each finding one inline comment on the smallest relevant diff line or range, preserving its ID, evidence, impact, and proposed fix.
 - Submit with `node <skill-dir>/scripts/submit-review.mjs <pr> --in <file>`. `--repo <owner/name>` selects the repository when using a PR number; otherwise it follows the PR URL or current repository. `--dry-run` prints the payload without posting. `--allow-duplicate` permits another review of the same kind by the same viewer on the same commit; pass it only when that additional review is intended and authorized, not for a routine retry.
+- When the viewer authored the PR, the script submits the review as a Comment review, because GitHub rejects Request changes on your own PR. The Request changes authorization covers this fallback, so it needs no further approval.
+- Exit 0 prints the review state and URL. Exit 1 means submission failed, with GitHub's reason on stderr; check the PR for a partially recorded review before retrying. Exit 2 means invalid input or an unreadable or closed PR, exit 3 means the head moved (revalidate the findings), and exit 4 means the same review already exists on that commit.
 - Report the printed review state and URL, or the failure and any required follow-up.
 
 ## Gotchas

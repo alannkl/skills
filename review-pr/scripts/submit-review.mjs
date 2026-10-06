@@ -3,9 +3,10 @@
 // Submits one pull-request review from a JSON file. Before posting it checks
 // that the reviewed commit is still the PR head, moves inline comments whose
 // anchor is not in the PR diff (GitHub would reject the whole review) into the
-// review body, and refuses to post a second review of the same kind on the
-// same commit by the same viewer, so a retry after an ambiguous failure cannot
-// duplicate it.
+// review body, submits Request changes on the viewer's own PR as a Comment
+// review (GitHub rejects the former), and refuses to post a second review of
+// the same kind on the same commit by the same viewer, so a retry after an
+// ambiguous failure cannot duplicate it.
 
 import { execFile } from "node:child_process";
 import { readFile } from "node:fs/promises";
@@ -27,7 +28,8 @@ The JSON file holds the create-review payload: commit_id, event
 (REQUEST_CHANGES | COMMENT | APPROVE), body, and comments[] with path, body,
 line, side (LEFT | RIGHT), and optionally start_line and start_side. commit_id
 must equal the current PR head. Comments anchored outside the PR diff are moved
-into the review body. Prints the submitted review as JSON on stdout; with
+into the review body. REQUEST_CHANGES on a PR the viewer authored is submitted
+as COMMENT. Prints the submitted review as JSON on stdout; with
 --dry-run, prints the payload that would be posted instead. Exits 1
 when submission fails, 2 for invalid input or an unreadable PR, 3 when the head
 moved, and 4 when the same review already exists on that commit. Requires an
@@ -51,8 +53,9 @@ if (values.help || positionals.length !== 1 || !values.in) {
 const review = await readFile(values.in, "utf8")
   .then(JSON.parse)
   .catch((error) => fail(2, `Cannot read the review file: ${error.message}`));
-const state = EVENTS[review.event];
-if (!state) fail(2, `event must be one of ${Object.keys(EVENTS).join(", ")}`);
+if (!EVENTS[review.event]) {
+  fail(2, `event must be one of ${Object.keys(EVENTS).join(", ")}`);
+}
 if (!/^[0-9a-f]{40}$/i.test(review.commit_id ?? "")) {
   fail(2, "commit_id must be a full commit SHA");
 }
@@ -76,11 +79,11 @@ const prViewArgs = [
   "view",
   positionals[0],
   "--json",
-  "number,url,state,headRefOid",
+  "number,url,state,headRefOid,author",
 ];
 if (values.repo) prViewArgs.push("--repo", values.repo);
 const prView = await gh(prViewArgs).catch((error) =>
-  fail(2, `Cannot read the PR: ${error.stderr?.trim() || error.message}`),
+  fail(2, `Cannot read the PR: ${ghError(error)}`),
 );
 const repoMatch = /github\.com\/([^/]+)\/([^/]+)\/pull\/\d+/.exec(prView.url);
 if (!repoMatch) {
@@ -98,6 +101,16 @@ if (prView.headRefOid.toLowerCase() !== review.commit_id.toLowerCase()) {
 }
 
 const viewer = await gh(["api", "user", "--jq", ".login"], { raw: true });
+const event =
+  review.event === "REQUEST_CHANGES" && prView.author?.login === viewer
+    ? "COMMENT"
+    : review.event;
+if (event !== review.event) {
+  console.error(
+    `${viewer} authored the PR; submitting ${review.event} as ${event}.`,
+  );
+}
+const state = EVENTS[event];
 const existing = (await collectRest(`${pullPath}/reviews`)).find(
   (item) =>
     item.user?.login === viewer &&
@@ -130,13 +143,13 @@ if (unanchored.length > 0) {
   );
 }
 const body = bodyParts.filter(Boolean).join("\n\n");
-if (!body && review.event !== "APPROVE") {
-  fail(2, `${review.event} needs a review body`);
+if (!body && event !== "APPROVE") {
+  fail(2, `${event} needs a review body`);
 }
 
 const payload = {
   commit_id: review.commit_id,
-  event: review.event,
+  event,
   body,
   comments: anchored.map((comment) => ({
     path: comment.path,
@@ -169,7 +182,7 @@ const submitted = await gh(
 ).catch((error) =>
   fail(
     1,
-    `Submission failed: ${error.stderr?.trim() || error.message}. Check ${prView.url} for a partially recorded review before retrying.`,
+    `Submission failed: ${ghError(error)}. Check ${prView.url} for a partially recorded review before retrying.`,
   ),
 );
 
@@ -191,6 +204,21 @@ console.log(
 function fail(code, message) {
   console.error(message);
   process.exit(code);
+}
+
+// gh prints HTTP status on stderr but GitHub's reason in the response body on
+// stdout; keep both so a permanent rejection reads differently from a transient one.
+function ghError(error) {
+  const status = error.stderr?.trim() || error.message;
+  try {
+    const { message, errors } = JSON.parse(error.stdout);
+    const reasons = (errors ?? []).map((item) => item?.message ?? item);
+    return [status, ...(reasons.length ? reasons : [message])]
+      .filter(Boolean)
+      .join(": ");
+  } catch {
+    return status;
+  }
 }
 
 async function gh(args, { raw = false, input } = {}) {
