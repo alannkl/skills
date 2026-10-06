@@ -1,6 +1,6 @@
 ---
 name: study
-description: Investigate how a system is built from its own sources, or survey how several comparable systems solve one job, into an evidence-graded report. Use when the user asks how a tool, product, or agent system works under the hood, what the landscape of an area is, how others handle a problem, or for a survey or comparison of tools, prompts, or practices; also loaded by learn-from. Not for explaining code in the working tree, conceptual explanations, or a single fact lookup.
+description: Research a question from sources into an evidence-graded report, either one subject in depth or how several sources and approaches answer one question. Use when the answer must be built from sources rather than from what the agent already knows: how a tool, product, or system works under the hood, what the landscape of an area is, how others handle a problem, what the literature or the market says, or a survey or comparison of tools, prompts, or practices; also loaded by learn-from. Not for explaining code in the working tree, explaining a concept the agent already knows, or a single fact lookup.
 ---
 
 # Study
@@ -9,7 +9,7 @@ description: Investigate how a system is built from its own sources, or survey h
 
 1. Frame the study.
    - When the question's shape or sub-questions are ambiguous, ask once, at most a few questions, before framing. Unattended, frame on the safest reading and say so.
-   - Write the question in one sentence and name its shape: **subject**, how one system works, or **field**, how several systems solve the same job. The shape is fixed here; thin discovery later is a coverage gap, never a reason to change it.
+   - Write the question in one sentence and name its shape: **subject**, one thing and how it works or what is known about it, or **field**, how several sources or approaches answer one question. The shape is fixed here; thin discovery later is a coverage gap, never a reason to change it.
    - List the sub-questions the report must answer; for a field, the dimensions to compare. The stop test in step 4 runs against this list.
    - Set the budget: source count estimate, time, tokens, and whether web access is granted.
    - Read [the evidence contract](references/evidence-contract.md). Every record in the study follows it.
@@ -17,7 +17,7 @@ description: Investigate how a system is built from its own sources, or survey h
 2. Choose sources. Follow [Research](references/research.md) for the scout and collector work orders.
    - Sources the user named are in and seed the scout. Skip scouting only when the user limits the study to the named sources.
    - Scout: a shallow sweep from the seeds that returns candidate sources, one line each, with no close reading.
-   - Select collection units. A unit is one system at one version or surface, or one author's source family. For a field, group candidates by family, a system or author rather than a URL, and take one representative per family with the best primary access, plus every outlier that solves the job differently and every user-named source. Expect three to six units; take the whole field when it is small. For a subject, take the surfaces and versions the sub-questions need. Record each dropped candidate and the reason in the study header.
+   - Select collection units. A unit is one system, work, or author's source family at one version or surface. For a field, group candidates by family, a system, author, or school rather than a URL, and take one representative per family with the best primary access, plus every outlier that answers the question differently and every user-named source. Expect three to six units; take the whole field when it is small. For a subject, take the surfaces and versions the sub-questions need. Record each dropped candidate and the reason in the study header.
    - Before dispatching collectors, report the frame and the selected units in chat, then continue; a correction from the user re-selects before any further dispatch.
 
 3. Collect.
@@ -27,10 +27,10 @@ description: Investigate how a system is built from its own sources, or survey h
    - Decide which claims will carry weight in the synthesis, then open each cited location and confirm it says what the record says. When the claim count makes it cheaper, hand the check to a subagent as a fixed procedure over the claims and locations; the choice of claims stays yours.
 
 4. Synthesize and stop.
-   - Stop when every sub-question is answered or its remaining uncertainty is explained. For a field, also require: every selected family covered; for each shared practice, a counterexample search documented across the records and the dropped candidates' scout lines, with its result; and every disagreement documented, resolved or not. A family nobody checked is a coverage gap, not a confirmation. Reaching the source estimate is not a stop.
+   - Stop when every sub-question is answered or its remaining uncertainty is explained. For a field, also require: every selected family covered; for each agreement, a counterexample search documented across the records and the dropped candidates' scout lines, with its result; and every disagreement documented, resolved or not. A family nobody checked is a coverage gap, not a confirmation. Reaching the source estimate is not a stop.
    - When the budget expires with consequential gaps, stop and deliver **partial**.
    - Write the synthesis yourself; check every cited claim in a subagent's draft against its record before keeping it.
-   - A counterexample is a family that documents the opposite, or a surface of the same vendor that differs. Build the disagreement list from `contradicts` links and from practices with a counterexample.
+   - A counterexample is a family that documents the opposite, or a surface of the same source that differs. Build the disagreement list from `contradicts` links and from agreements with a counterexample.
    - Carry every record's `gaps` and `limitations` into the header's coverage gaps.
 
 5. Deliver.

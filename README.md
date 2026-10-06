@@ -45,10 +45,10 @@ Loaded before the work starts rather than for a task. Wire both into your instru
 
 ### Research
 
-| Skill                               | Description                                                                                                                                                                                                                                                                                           |
-| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`study`](study/SKILL.md)           | Research how one system works, or how several comparable systems solve one job, into an evidence-graded report, shown in chat and saved on request. Collectors fill source records under a versioned evidence contract; the host selects sources, synthesizes, and stops on coverage, not on a count. |
-| [`learn-from`](learn-from/SKILL.md) | Improve your own skill, doc, plan, or config from how others do the same job. Runs `study` on the sources, grades each idea by evidence and fit, proposes adopt, reject, or defer with reasons, and applies the changes you pick. User-invoked.                                                       |
+| Skill                               | Description                                                                                                                                                                                                                                                                                                             |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`study`](study/SKILL.md)           | Research a question from sources into an evidence-graded report, one subject in depth or how several sources answer one question, shown in chat and saved on request. Collectors fill source records under a versioned evidence contract; the host selects sources, synthesizes, and stops on coverage, not on a count. |
+| [`learn-from`](learn-from/SKILL.md) | Improve anything you maintain, from a skill or doc to a codebase or process, using how others do the same job. Runs `study` on the sources, grades each idea by evidence and fit, proposes adopt, reject, or defer with reasons, and applies the changes you pick. User-invoked.                                        |
 
 ### Planning
 

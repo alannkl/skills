@@ -1,6 +1,6 @@
 ---
 name: learn-from
-description: Improve your own skill, doc, plan, or config from how others do the same job. Studies the sources, grades each idea by evidence and fit, proposes adopt, reject, or defer, and applies the changes the user picks.
+description: Improve anything you maintain, such as a skill, doc, config, codebase, plan, or process, from how others do the same job. Studies the sources, grades each idea by evidence and fit, proposes adopt, reject, or defer, and applies the changes the user picks.
 disable-model-invocation: true
 argument-hint: <sources or study report> [into <target>]
 ---
@@ -10,7 +10,7 @@ argument-hint: <sources or study report> [into <target>]
 ## Workflow
 
 1. Resolve the target. It is one of:
-   - **artifact**: a skill, doc, or config the user maintains;
+   - **artifact**: anything the user maintains and can change, such as a skill, doc, config, codebase module, or process;
    - **idea**: a plan, notes, or brainstorm output with no artifact yet;
    - **none**: the user says there is nothing of their own yet. The job is then the user's stated question.
    - When the user named none of these, follow [Target discovery](references/integration.md#target-discovery). One clear match: name it as an assumption and continue with analysis only; edit authority is unchanged. Several candidates: ask. No candidate: say so and offer to create a new artifact from the study or to stop at the study. Unattended: recommend the strongest candidate and stop before any edit.
@@ -32,7 +32,7 @@ argument-hint: <sources or study report> [into <target>]
 4. Deliver the proposals, grouped by disposition and ranked by expected improvement: each adopt as its full proposal record, each other disposition as one line with its reason and location or reconsideration condition. Proceed to step 5 only within existing authorization; otherwise stop for the user's pick, including unattended.
 
 5. Apply the picked changes.
-   - Make one coherent, independently valid change per edit set; coupled ideas may share one.
+   - Make one coherent, independently valid change per edit set; coupled ideas may share one. A target that is not a file, such as a process, ends at the recommendation.
    - Run the target's own checks. For a skill, apply `create-agent-skill` as a checklist on the finished file.
    - Approval to edit is not approval to commit. Commit only when asked, with the source, the gap, and the claim IDs in the commit body.
    - Place provenance where a reader needs it: a README credit line when the artifact is substantially built on one source; inside the artifact only when a license requires it, when naming the source makes a surprising rule credible, or when correct application depends on knowing the origin.

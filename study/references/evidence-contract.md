@@ -24,7 +24,7 @@ One per collection unit.
 | --- | --- |
 | `id` | Short slug used as the claim ID prefix, such as `codex-rubric`. |
 | `identity` | Name, family, surface or version, URL or path, revision or retrieval date. |
-| `access` | `primary` (the system's own code, prompts, docs, or engineering writing), `secondary` (third-party coverage), or `none`. |
+| `access` | `primary` (the source's own code, prompts, docs, data, or writing), `secondary` (third-party coverage), or `none`. |
 | `claims` | Claim records below. |
 | `limitations` | What this unit cannot show: hosted product with unpublished prompts, documentation newer than the deployed version, and the like. |
 | `gaps` | Sub-questions this unit left unanswered. |
@@ -62,7 +62,7 @@ Every report opens with a TL;DR: the question, the terminal outcome (complete, p
 Field study:
 
 1. Question and trust: the header, with how far each source can be trusted and the coverage gaps.
-2. Shared practices: each counted by independent families, citing claim IDs, with the counterexample search's result.
+2. Agreements: each counted by independent families, citing claim IDs, with the counterexample search's result.
 3. Disagreements: who differs, on what, and which basis each side rests on.
 4. Open questions.
 5. Per-source detail: one section per source record.

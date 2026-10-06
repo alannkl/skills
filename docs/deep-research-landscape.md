@@ -31,7 +31,7 @@ contract: 1
 
 Trust by family: Anthropic and open_deep_research are the strongest (published prompts and code, observed implementation). The two skills are primary but prompt-only, so behavior is model-dependent and unmeasured. Gemini and OpenAI API are documented behavior from vendor docs. Perplexity is secondary throughout and its teardown is analyst inference.
 
-## 2. Shared practices
+## 2. Agreements
 
 Counts are independent families out of seven. Counterexample searches covered all seven records and the dropped candidates' scout lines.
 
