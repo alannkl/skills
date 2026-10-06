@@ -22,7 +22,7 @@ Loaded before the work starts rather than for a task. Wire both into your instru
 | [`create-agent-skill`](create-agent-skill/SKILL.md) | Create agent skills from reusable workflows, domain expertise, or project conventions. Aligned with [`writing-for-agents`](https://github.com/mattpocock/skills/blob/main/skills/productivity/writing-for-agents/SKILL.md). |
 | [`spawn-agent`](spawn-agent/SKILL.md)               | Spawn a headless coding-agent CLI run (`agy -p`, `claude -p`, `agent -p`, or `codex exec`) for one scoped subtask, with a shared workflow and one reference per supported harness.                                          |
 | [`delegate`](delegate/SKILL.md)                     | Delegate bounded steps when cheaper than doing them inline. Weigh the cost, choose a collector, runner, or digester, write the work order, and check the returned record.                                                   |
-| [`panel`](panel/SKILL.md)                           | Keep N agents across different harnesses in the current chat, resume their discussion on follow-ups, and verify each combined result; or pair the host with one read-only consultant for second opinions. User-invoked.     |
+| [`panel`](panel/SKILL.md)                           | Keep a multi-agent panel across harnesses, or one read-only consultant, available in the current chat; consult it when independent input is worth the cost and complete requested or promised reviews. User-invoked.        |
 | [`handoff`](handoff/SKILL.md)                       | Create a compact temporary handoff so another agent can continue the current conversation.                                                                                                                                  |
 
 ### Coding
