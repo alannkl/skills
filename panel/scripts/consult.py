@@ -183,7 +183,8 @@ def main(argv=None):
     opener.add_argument('--harness', required=True)
     opener.add_argument('--model', required=True)
     opener.add_argument('--effort')
-    opener.add_argument('--web', action='store_true', help='Allow web retrieval')
+    opener.add_argument('--web', action=argparse.BooleanOptionalAction, default=True,
+                        help='Allow web retrieval (default: enabled; --no-web disables it)')
     opener.add_argument('--brief', required=True, help='File with the task context and the first question')
     asker = commands.add_parser('ask', help='Ask the same session another question')
     asker.add_argument('directory')

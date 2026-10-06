@@ -32,7 +32,7 @@ class ReadonlyEvidence(unittest.TestCase):
 
 
     def test_native_readonly_boundaries_survive_resume(self):
-        """Given corrected file-read permissions, when native adapters start and resume, then Codex keeps its read-only sandbox and Claude keeps only read tools."""
+        """Given default permissions, when native adapters start and resume, then Codex keeps its read-only sandbox and Claude permits only file and web reads."""
         capabilities = ExecutionPolicy({}, ['a', 'b'], 'a').capabilities()
         settings = {'model': 'fixture', 'cwd': '/tmp/evidence', 'capabilities': capabilities}
         for name, adapter in production_adapters().items():
@@ -43,5 +43,6 @@ class ReadonlyEvidence(unittest.TestCase):
                 self.assertIn('sandbox_mode="read-only"', resume)
                 self.assertTrue(all('approval_policy="never"' in argv for argv in (start, resume)))
             else:
-                self.assertTrue(all(argv[argv.index('--tools') + 1] == 'Read,Grep,Glob' for argv in (start, resume)))
+                self.assertTrue(all(set(argv[argv.index('--tools') + 1].split(',')) ==
+                                    {'Read', 'Grep', 'Glob', 'WebSearch', 'WebFetch'} for argv in (start, resume)))
             self.assertFalse(any('bypass' in argument for argument in start + resume))

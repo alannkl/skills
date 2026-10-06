@@ -168,7 +168,7 @@ class TaskBehavior(unittest.TestCase):
         """Given research or implementation participants, when resuming, then preserve web/read/write/command grants and each participant's working directory."""
 
         for kind in ('research', 'implementation'):
-            task = ExecutionPolicy({'workspace': 'edit', 'checks': [[sys.executable, '-m', 'unittest']]} if kind == 'implementation' else {'web': True}, ['a', 'b'], 'a')
+            task = ExecutionPolicy({'workspace': 'edit', 'web': False, 'checks': [[sys.executable, '-m', 'unittest']]} if kind == 'implementation' else {'web': True}, ['a', 'b'], 'a')
             for name, adapter in production_adapters().items():
                 settings = {'model': 'fixture', 'cwd': '/tmp/workspace', 'capabilities': task.capabilities()}
                 first, session = adapter.command(None, settings)
