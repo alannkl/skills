@@ -29,7 +29,7 @@ One per candidate idea. For target `none`, `current behavior` and `gap` read "no
 ## Output by target
 
 - **Artifact**: a gap analysis, delivered as step 4 describes.
-- **Idea**: a sharpened design. The idea restated part by part; for each part, what the sources did, which of the user's choices the shared practices back or contradict, and the decisions still open. Proposals attach to parts.
+- **Idea**: a sharpened design. The idea restated part by part; for each part, what the sources did, which of the user's choices the agreements back or contradict, and the decisions still open. Proposals attach to parts.
 - **None**: a recommendation. The approach to take, the alternatives considered and why each was rejected, and a starting draft when the user asked for one or the approach is clear enough that the draft is cheaper than a description.
 
 ## Session evidence
