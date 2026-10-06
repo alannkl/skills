@@ -167,7 +167,11 @@ function ghError(error) {
   const status = error.stderr?.trim() || error.message;
   try {
     const { message, errors } = JSON.parse(error.stdout);
-    const reasons = (errors ?? []).map((item) => item?.message ?? item);
+    const reasons = (errors ?? []).map((item) =>
+      typeof item === "string"
+        ? item
+        : (item?.message ?? JSON.stringify(item)),
+    );
     return [status, ...(reasons.length ? reasons : [message])]
       .filter(Boolean)
       .join(": ");

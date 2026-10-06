@@ -156,5 +156,20 @@ class SubmitReviewOutcomes(unittest.TestCase):
         self.assertIn("Review Can not request changes on your own pull request", result.stderr)
 
 
+    def test_object_shaped_rejection_reports_its_fields(self):
+        """Given GitHub rejects the review with an error object that has no message, when submitted, then stderr names the object's field and code."""
+        rejection = {
+            "stdout": json.dumps({"message": "Validation Failed",
+                                  "errors": [{"resource": "PullRequestReview", "field": "body",
+                                              "code": "missing_field"}]}),
+            "stderr": "gh: Validation Failed (HTTP 422)\n",
+            "exit": 1,
+        }
+        result = self.submit(author="someone", post=rejection)
+        self.assertEqual(result.returncode, 1)
+        self.assertNotIn("[object Object]", result.stderr)
+        self.assertIn('"field":"body"', result.stderr)
+        self.assertIn('"code":"missing_field"', result.stderr)
+
 if __name__ == "__main__":
     unittest.main()
