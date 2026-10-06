@@ -4,41 +4,43 @@ Use these instructions when running an existing skill in either pair or panel mo
 
 ## Prepare one shared execution
 
-1. Read the selected `SKILL.md` and every reference needed for the work. Freeze shared instructions and evidence, including the goal, settled decisions and acceptance criteria, in the brief or references all participants can read.
+1. Read the selected `SKILL.md` and every reference needed for the work. Freeze shared instructions and evidence, including the goal, settled decisions and acceptance criteria, in the brief or in references all participants can read.
 2. The host owns the skill's sequence, human interaction, approval gates and decision record in both modes.
 3. Preserve the skill's dependencies, serial steps, role separation and verification requirements. Parallelize only where allowed; resolve the skill's own modes by its instructions.
 4. State the current stage and expected contribution in each brief or consultation question. Share one decision record distinguishing user decisions, verified facts, agent recommendations and open questions.
 
-In panel mode, the preset determines allocation for the current stage: the leader assigns complementary parts in `leader-members`, peers propose the split in `flat-peers`, and every participant independently produces the current stage's whole deliverable in `independent-discussion`. The host writes neither assignments nor viewpoint roles.
+In panel mode, the preset allocates the current stage: the leader assigns complementary parts in `leader-members`, peers propose the split in `flat-peers`, and every participant independently produces the stage's whole deliverable in `independent-discussion`. The host writes neither assignments nor viewpoint roles.
 
 ## Pair mode
 
-The host executes the selected skill and maintains its work product. Follow [Pair mode](../SKILL.md#pair-mode) for the required approach and deliverable consultations, reconsultation rules and turn ledger. These checkpoints apply to the skill task; a stage boundary alone adds no consultation requirement. Advice is evidence for the host to weigh and never supplies approval.
+The host executes the selected skill and maintains its work product. Follow [Pair mode](../SKILL.md#pair-mode) for consultations, required review and the turn ledger. Apply the [routing rule](../SKILL.md#keep-the-panel-in-the-chat) after the first delivered answer; a stage boundary alone adds no consultation requirement. Advice informs the host's decisions and never supplies approval.
 
-Continue the same saved consultation with [`consult.py ask`](usage.md#consultant). Include relevant user answers, corrections, stage context and updated evidence in subsequent questions. Keep the consultation open after delivering the skill's result; close it only on stop or reset. If the user explicitly resumes it later, use `consult.py reopen` with the new question and decisions made while stopped.
+For routed follow-ups, use [`consult.py ask`](usage.md#consultant) with the saved consultation, including relevant user answers, corrections, stage context and new evidence. Keep it open after delivery and close it only on stop or reset. On an explicit request to resume after stopping, use `consult.py reopen` with the new question and the decisions made while stopped.
 
 ## When the skill needs user input
 
 Use this loop when the skill requires a user decision or missing context; otherwise continue its stages.
 
-In pair mode, the host checks the evidence, asks the needed questions and examines the answers while following the checkpoints above. In panel mode, use the participant discussion below.
+In pair mode, the host checks the evidence, asks the needed questions and examines the answers, consulting under the rules above. In panel mode, apply the [routing rule](../SKILL.md#keep-the-panel-in-the-chat) and use the participant discussion below when independent input is needed.
 
-Before asking, have participants propose and discuss the next question: whether evidence already answers it, which uncertainty matters most, what depends on the answer, and which options and trade-offs the user needs. The host consolidates their discussion and asks one question at a time unless the skill permits batching independent questions.
+When a question to the user is routed, have participants propose and discuss it before the host asks: whether evidence already answers it, which uncertainty matters most, what depends on the answer, and which options and trade-offs the user needs. The host consolidates their discussion and asks one question at a time unless the skill permits batching independent questions.
 
-Record and share the answer. Have participants examine its implications, conflicts with settled decisions and remaining ambiguity. Resolve those issues before dependent decisions, asking follow-up questions for material gaps. Agent agreement cannot supply an unstated user preference or authorization.
+Record the answer. If the question was routed, have participants examine the answer's implications, conflicts with settled decisions and remaining ambiguity; otherwise the host examines it and applies the routing rule to any new issue. Either way, resolve material gaps before dependent decisions. Agent agreement cannot supply an unstated user preference or authorization.
 
 Panel participants propose questions and analyze answers through the host, without separate user conversations. In both modes, keep required questions pending until answered; silence is not a decision.
 
 ## Deliver one result
 
-Maintain one shared work product and decision record, using prescribed artifacts where applicable. In pair mode, the host delivers the reviewed result and the current task's consultation ledger. In panel mode, the integrator combines contributions; required reviewers check the same final result against the brief and skill requirements.
+Maintain one shared work product and decision record, using prescribed artifacts where applicable. In pair mode, the host completes any required review and delivers the result with the consultation ledger. For a routed panel assignment, the integrator combines contributions and required reviewers check the same final result against the brief and skill requirements. Direct follow-ups use the host's normal answer format.
 
-Complete the skill only when all required stages and decisions are resolved or explicitly deferred under its rules. Deliver one output in the required format, identifying unresolved work. Agreement on a stage artifact, such as a proposed question, does not complete the whole skill. Completion of the selected skill leaves the pair or panel active for later questions in this chat.
+Complete the skill only when all required stages and decisions are resolved or explicitly deferred under its rules. Deliver one output in the required format, identifying unresolved work. Agreement on a stage artifact, such as a proposed question, does not complete the whole skill. Completing the selected skill leaves the pair or panel active for later questions in this chat.
 
 ## Using the current runner
 
 This section applies to panel mode. The host interprets the skill and manages its stages. The runner executes bounded preset rounds; it neither schedules `SKILL.md` steps nor forwards questions to the user.
 
-Run the current bounded assignment, then [continue the saved panel](usage.md#continuing-the-conversation) for user answers, corrections and subsequent stages. Carry shared instructions and decisions into follow-up briefs while resuming the same participant sessions. Use `--pause-between-rounds` for checkpoints inside a discussion; brief updates there restart opening rounds within its original limits. Each follow-up renews those limits. Stages needing changed execution settings require an explicit reset under the existing authorization rules.
+Run the current bounded assignment, then apply the [routing rule](../SKILL.md#keep-the-panel-in-the-chat) to user answers, corrections and subsequent stages. For routed work, [continue the saved panel](usage.md#continuing-the-conversation), carrying shared instructions and decisions into the follow-up brief.
 
-Supply the skill instructions, current stage and output requirements through the existing brief and result envelope; do not add a skill-specific runner branch or task profile.
+Use `--pause-between-rounds` for host decisions inside a discussion; brief updates restart opening rounds within that discussion's original limits. A continued discussion renews those limits. Changed execution settings require an explicit reset under the existing authorization rules.
+
+Supply the skill instructions, current stage and output requirements through the existing brief and result envelope.
