@@ -8,7 +8,7 @@ Work order:
 
 - The question and its shape, and the sub-questions.
 - Where to look: the user-named seeds, the ecosystems in scope, and whether web search is granted.
-- Return per candidate: name; system family; surface or version; whether primary material is reachable and where; one line on how it differs from the other candidates.
+- Return per candidate: name; family; surface or version; whether primary material is reachable and where; one line on how it differs from the other candidates.
 - Budget in turns, and the instruction to do the work directly, without further delegation.
 
 ## Collect
