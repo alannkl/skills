@@ -42,6 +42,7 @@ Loaded before the work starts rather than for a task. Wire both into your instru
 | [`adversarial-review`](adversarial-review/SKILL.md) | Hunt material failures in a diff, branch, or files. Return structured findings with failure scenarios, but never apply fixes.                                                                                                                                                 |
 | [`review-triage`](review-triage/SKILL.md)           | Triage review findings as the code's owner. Validate each, weigh fix cost against deployed complexity, and return dispositions instead of fixing everything.                                                                                                                  |
 | [`review-panel`](review-panel/SKILL.md)             | Run a parallel panel of reviewer models, then merge and triage findings. Fixes are user-gated by default; `/review-panel auto-fix` approves them upfront. Spawns several agent sessions (cost scales with preset); strongest with multiple harnesses installed. User-invoked. |
+| [`review-pr`](review-pr/SKILL.md)                   | Review an open GitHub pull request in its own worktree, with its comments collected by a bundled script, then request changes (via a bundled submitter) or apply approved fixes and follow the project's commit and push conventions. User-invoked.                                               |
 
 ### Research
 
@@ -64,7 +65,7 @@ Loaded before the work starts rather than for a task. Wire both into your instru
 | [`refine-it`](refine-it/SKILL.md)   | Refine written artifacts for clarity and readiness while preserving intent and scope. |
 | [`shorten-it`](shorten-it/SKILL.md) | Shorten text while preserving meaning, tone, and important details.                   |
 
-Five skills are user-invoked (`disable-model-invocation: true`): they load only when you type `/<name>`, and cost no always-loaded context. Sixteen are model-invoked so agents reach them on their own when the ask arrives in natural language: `coding-discipline` (auto-loads before code work), `constitution` (loads when an instruction file asks for it), `code-review`, `adversarial-review`, `review-triage`, `commit-message`, `simplify-code`, `document-code`, `explain-code`, `create-agent-skill`, `spawn-agent`, `delegate`, `study`, `refine-it`, `shorten-it`, and `handoff`.
+Six skills are user-invoked (`disable-model-invocation: true`): they load only when you type `/<name>`, and cost no always-loaded context. Sixteen are model-invoked so agents reach them on their own when the ask arrives in natural language: `coding-discipline` (auto-loads before code work), `constitution` (loads when an instruction file asks for it), `code-review`, `adversarial-review`, `review-triage`, `commit-message`, `simplify-code`, `document-code`, `explain-code`, `create-agent-skill`, `spawn-agent`, `delegate`, `study`, `refine-it`, `shorten-it`, and `handoff`.
 
 ## Installation
 
