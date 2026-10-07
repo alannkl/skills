@@ -8,6 +8,8 @@ _Intent lives in humans._
 
 AI will probably solve coding. Engineering is a different bet, because the hardest bug was never in the code. It's in what humans thought they had explained clearly.
 
+Model capability is no longer the bottleneck. Articulating intent, constraints, and goals is, and it splits in two. What we already know, we can articulate. What we don't know yet, we have to discover.
+
 We don't know what we want until we see something that isn't it. Requirements are discovered through iteration. That's not a communication failure to fix. It's how humans figure out their own intent.
 
 The human isn't an imperfect spec-writer to be routed around. They're a load-bearing part of the loop, the only source of "that's not what I meant."

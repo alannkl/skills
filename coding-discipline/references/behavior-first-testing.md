@@ -29,4 +29,4 @@
 ## Gotchas
 
 - Do not make tests assert incidental counts, logs, ordering, timing, or payload shape unless those details are the contract.
-- Do not let the implementation grade itself: never derive expected test values by running the code and asserting whatever it produces, or by recomputing them in the test with the same logic. Expected outcomes are independent — known-good literals or worked examples from stated intent.
+- Avoid tautological tests: never derive expected values from the implementation's output or recompute them in the test with the same logic. Use independent expected outcomes, such as known-good literals or worked examples from stated intent.
