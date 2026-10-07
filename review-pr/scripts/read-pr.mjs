@@ -181,6 +181,8 @@ function ghError(error) {
 }
 
 async function gh(args) {
+  // PR URLs select github.com; API calls must ignore any ambient GH_HOST.
+  if (args[0] === "api") args = [...args, "--hostname", "github.com"];
   const { stdout } = await execFileAsync("gh", args, {
     maxBuffer: GH_MAX_BUFFER,
   });

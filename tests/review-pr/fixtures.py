@@ -20,12 +20,25 @@ with open(os.environ["FAKE_GH_LOG"], "a") as log:
     log.write(json.dumps({"args": args, "stdin": stdin}) + "\\n")
 with open(os.environ["FAKE_GH_RESPONSES"]) as source:
     responses = json.load(source)
+if args[0] == "api":
+    host = os.environ.get("GH_HOST", "github.com")
+    if "--hostname" in args:
+        index = args.index("--hostname")
+        host = args[index + 1]
+        del args[index:index + 2]
+    if host != "github.com":
+        sys.exit(f"fake gh: API routed to {host}, expected github.com")
 if args[:2] == ["pr", "view"]:
     print(json.dumps(responses["pr"]))
 elif args[:2] == ["api", "user"]:
-    print(responses["viewer"])
+    print(responses["viewer"] if "--jq" in args else json.dumps({"login": responses["viewer"]}))
+elif args[:2] == ["api", "graphql"]:
+    with open(os.environ["FAKE_GH_LOG"]) as log:
+        page = sum("graphql" in json.loads(line)["args"] for line in log) - 1
+    print(json.dumps(responses["graphql"][page]))
 elif args[0] == "api" and "--method" not in args:
-    print(json.dumps(responses[args[1].split("?")[0]]))
+    endpoint = args[1] if args[1] in responses else args[1].split("?")[0]
+    print(json.dumps(responses[endpoint]))
 elif args[:3] == ["api", "--method", "POST"]:
     post = responses["post"]
     sys.stdout.write(post.get("stdout", ""))

@@ -1,7 +1,8 @@
 #!/usr/bin/env node
 
 // Submits one pull-request review from a JSON file. Before posting it checks
-// that the reviewed commit is still the PR head, moves inline comments whose
+// that the reviewed commit is still the PR head, converts ranges to text with
+// a single-line ending anchor, moves inline comments whose
 // anchor is not in the PR diff (GitHub would reject the whole review) into the
 // review body, submits Request changes on the viewer's own PR as a Comment
 // review (GitHub rejects the former), and refuses to post a second review of
@@ -26,8 +27,9 @@ const usage = `Usage: node submit-review.mjs <pr-number|pr-url> --in <review.jso
 
 The JSON file holds the create-review payload: commit_id, event
 (REQUEST_CHANGES | COMMENT | APPROVE), body, and comments[] with path, body,
-line, side (LEFT | RIGHT), and optionally start_line and start_side. commit_id
-must equal the current PR head. Comments anchored outside the PR diff are moved
+line, side (LEFT | RIGHT), and optionally start_line and start_side. Ranges are
+preserved as comment text; only line and side anchor the comment. commit_id
+must equal the current PR head. Comments ending outside the PR diff are moved
 into the review body. REQUEST_CHANGES on a PR the viewer authored is submitted
 as COMMENT. Prints the submitted review as JSON on stdout; with
 --dry-run, prints the payload that would be posted instead. Exits 1
@@ -153,13 +155,11 @@ const payload = {
   body,
   comments: anchored.map((comment) => ({
     path: comment.path,
-    body: comment.body,
+    body: Number.isInteger(comment.start_line)
+      ? `${comment.body}\n\nApplies to lines ${anchorLabel(comment)}.`
+      : comment.body,
     line: comment.line,
     side: comment.side ?? "RIGHT",
-    ...(Number.isInteger(comment.start_line) && {
-      start_line: comment.start_line,
-      start_side: comment.start_side ?? comment.side ?? "RIGHT",
-    }),
   })),
 };
 if (values["dry-run"]) {
@@ -226,6 +226,8 @@ function ghError(error) {
 }
 
 async function gh(args, { raw = false, input } = {}) {
+  // PR URLs select github.com; API calls must ignore any ambient GH_HOST.
+  if (args[0] === "api") args = [...args, "--hostname", "github.com"];
   const child = execFileAsync("gh", args, { maxBuffer: GH_MAX_BUFFER });
   if (input !== undefined) child.child.stdin.end(input);
   const { stdout } = await child;
@@ -275,13 +277,7 @@ async function collectDiffLines() {
 
 function anchorIsInDiff(comment) {
   const sides = diffLines.get(comment.path);
-  if (!sides) return false;
-  const end = sides[comment.side ?? "RIGHT"]?.has(comment.line);
-  if (!Number.isInteger(comment.start_line)) return Boolean(end);
-  const start = sides[comment.start_side ?? comment.side ?? "RIGHT"]?.has(
-    comment.start_line,
-  );
-  return Boolean(end && start && comment.start_line < comment.line);
+  return Boolean(sides?.[comment.side ?? "RIGHT"]?.has(comment.line));
 }
 
 function anchorLabelWithPath(comment) {
@@ -289,7 +285,10 @@ function anchorLabelWithPath(comment) {
 }
 
 function anchorLabel(comment) {
-  return Number.isInteger(comment.start_line)
-    ? `${comment.start_line}-${comment.line}`
-    : String(comment.line);
+  if (!Number.isInteger(comment.start_line)) return String(comment.line);
+  const side = comment.side ?? "RIGHT";
+  const startSide = comment.start_side ?? side;
+  return startSide === side
+    ? `${comment.start_line}-${comment.line} (${side})`
+    : `${comment.start_line} (${startSide}) to ${comment.line} (${side})`;
 }
