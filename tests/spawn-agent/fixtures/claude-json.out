@@ -1,0 +1,1 @@
+{"session_id": "056d4838-d2fc-4d9a-b6f5-68c283ef5641", "total_cost_usd": 1.0504950000000002, "usage": {"input_tokens": 2, "output_tokens": 4}, "permission_denials": [], "terminal_reason": "completed", "is_error": false, "num_turns": 1, "subtype": "success", "result": "OK", "type": "result"}
