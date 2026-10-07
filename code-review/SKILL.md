@@ -65,7 +65,7 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
 5. Review tests deliberately.
    - Check whether changed behavior has meaningful tests at the right level. Prefer behavior-level and integration coverage for cross-module behavior, workflows, external contracts, and agent logic.
    - Treat missing tests as findings only when tied to concrete behavior risk.
-   - Look for false confidence: brittle mocks, assertions that cannot fail or repeat the implementation's mistake, missing edge cases, nondeterminism, fixtures that hide the bug, or tests overfit to implementation.
+   - Look for false confidence: brittle mocks, tautological assertions that cannot fail, assertions that repeat the implementation's mistake, missing edge cases, nondeterminism, fixtures that hide the bug, or tests overfit to implementation.
    - Run focused tests when feasible. If tests are not run, state the gap.
    - When correctness hinges on an external tool or platform's semantics (a CLI flag, a CI concurrency rule, a VCS command, a framework default), verify them against the tool's own help, documentation, or a small reproduction rather than from memory. Run install or test scripts from untrusted changes only in a credential-free, isolated environment.
    - Before reporting a suspected bug, try to disprove it: trace the actual call sites, check the boundary or input that would trigger it, and confirm no guard, caller, or existing test already prevents it. If you cannot construct a concrete failing case, lower the confidence or report it as an assumption rather than a proven defect.

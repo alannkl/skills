@@ -83,11 +83,11 @@ description: ... Use when the user asks to review, check, audit, inspect, examin
 
 ## Scripts
 
-- Script a mechanical step when it replaces several tool rounds with one, handles ordering, exact flags, or cleanup the agent would otherwise get wrong, shapes output for the next step, or enforces a rule the skill would otherwise state in prose.
+- Script a mechanical step when it replaces several tool rounds with one, handles ordering, exact flags, or cleanup the agent would otherwise get wrong, condenses verbose output to what the next decision needs, or enforces a rule the skill would otherwise state in prose.
 - Call a step directly when a script would not pay off: the agent can run it correctly as one shell line from the skill text, including a call to an existing tool, or flags for workflow variants would cost more than the direct calls they replace.
 - Keep judgment and authorization with the agent. Scripts must expose failures that affect the next decision.
 - If bundling scripts, make them self-contained, non-interactive, idempotent, and runnable from the skill root with relative paths.
-- Give scripts concise `--help`, helpful errors, meaningful exit codes, safe defaults, and structured stdout with diagnostics on stderr.
+- Give scripts concise `--help`, helpful errors, meaningful exit codes, safe defaults, and structured stdout limited to what the next decision needs. Write full logs to a file and print its path. Keep full logs out of stderr, which also consumes context.
 - For destructive or stateful operations, include dry-run or explicit confirmation flags.
 - At each bundled-script call site, describe the required and optional arguments, defaults, outputs, and exit behavior the agent needs to run it without a separate help lookup. Keep these summaries aligned with the scripts; leave implementation details in code.
 - Run bundled scripts and exact commands end to end once before delivery. Exercise destructive or stateful operations through their dry-run, help, or confirmation paths or against disposable fixtures, never against real targets.
