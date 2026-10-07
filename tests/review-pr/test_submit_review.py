@@ -49,6 +49,10 @@ class SubmitReviewAnchors(unittest.TestCase):
         self.assertEqual(result.returncode, 0, result.stderr)
         self.assertFalse(any("POST" in call["args"] for call in self.sandbox.gh_calls()))
         output = json.loads(result.stdout)
+        self.payload = output["payload"]
+        for comment in self.payload["comments"]:
+            self.assertNotIn("start_line", comment)
+            self.assertNotIn("start_side", comment)
         inline = {(c["path"], c.get("start_line"), c["line"], c["side"]) for c in output["payload"]["comments"]}
         return inline, set(output["movedToBody"]), output["payload"]["body"]
 
@@ -72,14 +76,47 @@ class SubmitReviewAnchors(unittest.TestCase):
         self.assertEqual(inline, {("src/app.txt", None, 23, "RIGHT")})
         self.assertEqual(moved, {"src/app.txt:20"})
 
-    def test_ranges_need_both_ends_in_the_diff(self):
-        """Given a range inside hunk 1 and a range starting between hunks, when submitted, then the first stays inline and the second moves to the body."""
-        inline, moved, _ = self.dry_run(
-            {"path": "src/app.txt", "start_line": 1, "line": 4, "side": "RIGHT"},
-            {"path": "src/app.txt", "start_line": 10, "line": 22, "side": "RIGHT"},
+    def test_ranges_anchor_only_the_end_and_preserve_the_range_as_text(self):
+        """Given contiguous, cross-hunk, outside-start, equal and reversed ranges with valid ends, when submitted, then each stays inline at its end with range text and no range fields."""
+        for start, end in [(1, 4), (1, 22), (10, 22), (4, 4), (22, 4)]:
+            with self.subTest(start=start, end=end):
+                inline, moved, body = self.dry_run(
+                    {"path": "src/app.txt", "start_line": start, "line": end},
+                )
+                self.assertEqual(inline, {("src/app.txt", None, end, "RIGHT")})
+                self.assertEqual(moved, set())
+                self.assertEqual(body, "Summary")
+                self.assertEqual(self.payload["comments"], [{
+                    "path": "src/app.txt", "line": end, "side": "RIGHT",
+                    "body": f"note 0\n\nApplies to lines {start}-{end} (RIGHT).",
+                }])
+
+    def test_range_text_preserves_sides(self):
+        """Given left-side and mixed-side ranges, when submitted, then each anchors its ending side and preserves both endpoint sides in its text."""
+        inline, moved, body = self.dry_run(
+            {"path": "src/app.txt", "start_line": 1, "line": 2, "side": "LEFT"},
+            {"path": "src/app.txt", "start_line": 2, "start_side": "LEFT", "line": 4, "side": "RIGHT"},
         )
-        self.assertEqual(inline, {("src/app.txt", 1, 4, "RIGHT")})
-        self.assertEqual(moved, {"src/app.txt:10-22"})
+        self.assertEqual(inline, {("src/app.txt", None, 2, "LEFT"), ("src/app.txt", None, 4, "RIGHT")})
+        self.assertEqual(moved, set())
+        self.assertEqual(body, "Summary")
+        self.assertEqual([c["body"] for c in self.payload["comments"]], [
+            "note 0\n\nApplies to lines 1-2 (LEFT).",
+            "note 1\n\nApplies to lines 2 (LEFT) to 4 (RIGHT).",
+        ])
+
+    def test_invalid_range_end_moves_the_finding_and_location_to_the_body(self):
+        """Given a mixed-side range ending outside the diff, when submitted, then its text, path, endpoints and sides appear once in the review body."""
+        inline, moved, body = self.dry_run(
+            {"path": "src/app.txt", "start_line": 2, "start_side": "LEFT", "line": 10, "side": "RIGHT"},
+            {"path": "src/app.txt", "line": 3, "body": "valid single line"},
+        )
+        self.assertEqual(inline, {("src/app.txt", None, 3, "RIGHT")})
+        self.assertEqual(moved, {"src/app.txt:2 (LEFT) to 10 (RIGHT)"})
+        self.assertEqual(body, "Summary\n\n### Findings outside the diff\n- `src/app.txt:2 (LEFT) to 10 (RIGHT)` note 0")
+        self.assertEqual(self.payload["comments"], [{
+            "path": "src/app.txt", "line": 3, "side": "RIGHT", "body": "valid single line",
+        }])
 
     def test_files_without_a_patch_or_outside_the_pr_move_to_the_body(self):
         """Given comments on a binary file and on a file the PR does not change, when submitted, then both move to the body with their text."""
