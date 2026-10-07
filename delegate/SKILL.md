@@ -1,6 +1,6 @@
 ---
 name: delegate
-description: Delegates bounded steps to subagents when that costs less than doing them inline. Use on your own initiative before searching broadly, reading a long reference, running a verbose command, or starting independent parallel batches, and when accepting a delegate's returned record. When another workflow requires an agent or reviewer, follow its delegation rules.
+description: Delegates bounded steps to subagents when that costs less than doing them inline. Use before searching broadly, reading a long reference, running a verbose command, or starting independent parallel batches, and when accepting a delegate's returned record. When another workflow requires an agent or reviewer, follow its delegation rules.
 ---
 
 # Delegate

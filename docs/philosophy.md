@@ -19,3 +19,13 @@ The job title might change. The human stays.
 ## Attention is the scarce resource
 
 _For humans and models alike. More input degrades focus and understanding._
+
+## Context is our new job
+
+_Feed it to agents, and teach agents to get it on their own._
+
+Feeding doesn't compound. Every task reopens the gap. It's the right move for context that exists nowhere but in a human's head.
+
+Teaching compounds. A skill moves a fact from "said every time" to "fetched when needed". The cheapest teaching is writing the fact down where the agent will look.
+
+Both should stay narrow. Knowing which context matters is the expertise.
