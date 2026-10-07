@@ -37,11 +37,16 @@ If the user names a harness with no reference here, such as Gemini CLI, say it i
 
 8. Pick the output format the caller can parse: JSON for programmatic use, streaming for progress on long runs.
 
-9. Run it. If authentication fails, stop and give the reference's login command. Never authenticate on the user's behalf or inline credentials in a command, settings file, or committed script.
+9. Run it with stdout and stderr captured to files and the exit code recorded, for example `timeout 600 <cli> ... > run.out 2> run.err; echo $?`. If authentication fails, stop and give the reference's login command. Never authenticate on the user's behalf or inline credentials in a command, settings file, or committed script.
 
-10. Verify the outcome instead of trusting the response. Exit 0 or plausible text is not proof. Before reporting success, confirm the artifact with `git status`, `git diff`, the relevant tests, or direct file inspection. Treat every non-zero status, including a timeout kill, as failure and report stderr with the exit code. If a tool lacked approval, correct the grant from step 6 and rerun. Do not switch to a bypass mode to silence the error.
+10. Check the output protocol with the bundled verifier (Python 3, no dependencies), run by absolute path with `<skill-dir>` for this skill's installed directory: `python3 <skill-dir>/scripts/verify-run.py --harness <claude|codex|antigravity|cursor> --stdout run.out --stderr run.err --exit-code <code>`. It detects json or stream-json output, applies the reference's acceptance rules, writes the final response text to `<stdout>.result.txt` or `--result <file>`, and prints one JSON object: `status`, `reason`, `session_id`, `result_file`, `structured_output`, `permission_notices`, `stderr_tail`, and `usage`. For a run requested with text output, pass `--format text`, which checks only the exit code and non-empty output and yields no session id.
+    - Exit 0 means the protocol completed. Inspect any `permission_notices` before trusting the run.
+    - Exit 1 means the run failed, with the cause in `reason`: a non-zero or timeout exit code, malformed or incomplete output, a non-success status, a missing session or result, a denied tool call, or a Cursor sandbox startup error. A denied tool call means a grant from step 6 was missing: correct it and rerun instead of switching to a bypass mode.
+    - Exit 2 means unusable input; an argument error prints usage instead of JSON.
 
-11. Continue a spawned conversation only through the reference's documented session-resume mechanism.
+11. Verify the task itself: a run can complete its protocol after doing no work. Before reporting success, confirm the artifact with `git status`, `git diff`, the relevant tests, or direct file inspection.
+
+12. Continue a spawned conversation only through the reference's documented session-resume mechanism, with the `session_id` the verifier printed.
 
 ## Gotchas
 

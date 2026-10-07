@@ -1,0 +1,4 @@
+{"type":"system","subtype":"init","apiKeySource":"login","cwd":"/home/alan/.tmp/spawn-fixtures","session_id":"4a9466e7-407c-4bc6-a543-0eab2e9377e7","model":"Kimi K3 Max","permissionMode":"default"}
+{"type":"user","message":{"role":"user","content":[{"type":"text","text":"Reply with exactly the word OK"}]},"session_id":"4a9466e7-407c-4bc6-a543-0eab2e9377e7"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"OK"}]},"session_id":"4a9466e7-407c-4bc6-a543-0eab2e9377e7"}
+{"type":"result","subtype":"success","duration_ms":6605,"duration_api_ms":6605,"is_error":false,"result":"OK","session_id":"4a9466e7-407c-4bc6-a543-0eab2e9377e7","request_id":"92cb33b9-61f6-4269-a2ec-f6ebc47fc44d","usage":{"inputTokens":11014,"outputTokens":55,"cacheReadTokens":0,"cacheWriteTokens":0}}

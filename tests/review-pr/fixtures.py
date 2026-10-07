@@ -48,9 +48,17 @@ else:
     sys.exit(f"fake gh: unexpected call {args}")
 """
 
-# Serves every SSH fetch from the local bare repository.
+# Serves SSH fetches and pushes from local bare repositories: github.com/f/r
+# maps to $FAKE_FORK when set, everything else to $FAKE_REMOTE.
 FAKE_SSH = """#!/bin/sh
-exec git upload-pack "$FAKE_REMOTE"
+case "$*" in
+  *"'f/r.git'"*|*"'/f/r.git'"*|*"'f/r'"*) target="${FAKE_FORK:?no fork repository}" ;;
+  *) target="$FAKE_REMOTE" ;;
+esac
+case "$*" in
+  *receive-pack*) exec git receive-pack "$target" ;;
+  *) exec git upload-pack "$target" ;;
+esac
 """
 
 
@@ -127,13 +135,16 @@ class PreparedReview(Sandbox):
         self.remote = self.root / "remote.git"
         self.git(self.root, "init", "-q", "--bare", "-b", "main", str(self.remote))
         self.git(seed, "push", "-q", str(self.remote), f"{base}:refs/heads/main",
-                 f"{self.pr_head}:refs/pull/1/head")
+                 f"{self.pr_head}:refs/pull/1/head", f"{self.pr_head}:refs/heads/feature")
         self.checkout = self.root / "checkout"
         self.git(self.root, "clone", "-q", str(self.remote), str(self.checkout))
         self.git(self.checkout, "remote", "set-url", "origin", f"ssh://git@github.com/{REPO}.git")
 
         pr = {"number": 1, "url": PR_URL, "repo": REPO, "state": "OPEN",
-              "headRefOid": self.pr_head, "baseRefName": "main"}
+              "headRefOid": self.pr_head, "baseRefName": "main", "headRefName": "feature",
+              "headRepositoryOwner": {"login": "o"}, "headRepository": {"name": "r"},
+              "isCrossRepository": False}
+        self.pr = pr
         self.set_gh({"pr": pr})
         read_pr = self.root / "read-pr.json"
         read_pr.write_text(json.dumps({"pr": pr}))
@@ -155,3 +166,17 @@ class PreparedReview(Sandbox):
         (self.worktree / "a.txt").write_text("one\ntwo\nthree\n")
         self.git(self.worktree, "commit", "-q", "-am", "fix")
         return self.git(self.worktree, "rev-parse", "HEAD")
+
+    def remote_branch(self, name="feature", repository=None):
+        return self.git(self.root, "--git-dir", str(repository or self.remote), "rev-parse", f"refs/heads/{name}")
+
+    def add_fork(self):
+        """A separate bare repository reachable as github.com/f/r, holding the same feature branch."""
+        fork = self.root / "fork.git"
+        self.git(self.root, "clone", "-q", "--bare", str(self.remote), str(fork))
+        self.env["FAKE_FORK"] = str(fork)
+        return fork
+
+    def push_fixes(self, *flags):
+        result = self.node("push-fixes.mjs", "--in", self.record, *flags, cwd=self.checkout)
+        return result.returncode, json.loads(result.stdout)

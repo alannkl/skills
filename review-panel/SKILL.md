@@ -12,14 +12,7 @@ Set the **approval mode** when the run starts. The default is **gated**. `/revie
 
 ## 1. Scope
 
-Resolve one review scope for the whole panel. A user-named scope may be a pull request, commit or range, branch against a base, diff, staged or unstaged work, or named files. Use it exactly and do not add adjacent changes. If the user supplies no scope, use the first non-empty scope below:
-
-1. staged changes
-2. unstaged and untracked changes
-3. commits ahead of the upstream (`@{upstream}..HEAD`)
-4. the current branch against its merge base with the default branch
-
-When staged changes win while unstaged edits exist, name the excluded files in the brief so no voice flags code that is mid-edit.
+Resolve one review scope for the whole panel with `code-review`'s bundled resolver, run by absolute path from inside the repository, with `<code-review-dir>` for that skill's installed directory: `python3 <code-review-dir>/scripts/resolve-scope.py [--scope <spec>]`. Use a user-named scope exactly, without adjacent changes: pass a commit, a range, `staged`, or `worktree` (unstaged and untracked) as `--scope`; a branch as `<base>...<branch>`, since a bare branch name is its tip commit only; and a pull request as `<base>...<head>` after fetching both refs. A supplied diff file or named files are the scope as given. Without `--scope`, the resolver takes the first non-empty of staged changes; unstaged and untracked changes; commits ahead of the upstream; or the current branch against its merge base with the default branch. Exit 1 means nothing to review: stop and say so. Exit 2 means a bad ref, multiple merge bases, an unreadable file, or an unwritable output directory: fix the cause or resolve the scope by hand. Give every voice the printed `scope` and `diff` path, and put the printed `excluded` files in the brief so no voice flags code that is mid-edit.
 
 ## 2. Brief
 

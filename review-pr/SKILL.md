@@ -44,15 +44,18 @@ Requires Git, Node.js, and an authenticated `gh` CLI. Supports `github.com`. Tes
    - When another author owns the PR and unresolved actionable findings remain, offer to submit a Request changes review or to fix in the review worktree, and wait for the user's choice unless already authorized. To request changes, follow [Submitting a review](#submitting-a-review), then continue at step 9; to fix, continue at step 7 with the approved batch.
    - When no changes are proposed or the user declines further action, continue at step 9.
 
-7. Record the approved file list. Files outside the PR's changed-file list require approval by name. Apply the approved batch within that boundary in the review worktree, verify each original failure scenario with focused checks, and report unresolved findings.
+7. Write the approved file list to a file, one path per line relative to the worktree root. Files outside the PR's changed-file list require approval by name. Apply the approved batch in the review worktree within that list, verify each original failure scenario with focused checks, and report unresolved findings. Then run `node <skill-dir>/scripts/check-approved-paths.mjs --in <worktree-record.json> --approved <file>`, which prints the `changed`, `unexpected` (changed but not listed), `approved_unchanged`, and `outside_pr` paths. Exit 1 means unexpected changes exist: revert each one or get it approved before staging. Exit 2 means invalid input.
 
-8. If no fixes changed files, say so and skip this step. Otherwise follow the project's conventions for required checks, staging, commit messages, and pushing fixes to the PR's source branch. Keep staged files within the approved scope and honor the [authorization boundary](#authorization-boundary).
-   - Resolve the source repository from `headRepositoryOwner.login` and `headRepository.name`, including renamed forks when `isCrossRepository` is true, and verify the push remote matches it. From detached `HEAD`, push with the refspec `HEAD:refs/heads/<headRefName>`. If source metadata is missing, resolve it before pushing rather than guessing from the base repository.
+8. If no fixes changed files, say so and skip this step. Otherwise follow the project's conventions for required checks, staging, and commit messages, keeping staged files within the approved list and honoring the [authorization boundary](#authorization-boundary). Run `node <skill-dir>/scripts/push-fixes.mjs --in <worktree-record.json> --dry-run`, which prints the source repository, remote, branch, refspec, and commits without pushing, then rerun it without `--dry-run` once pushing is authorized. The script pushes `HEAD:refs/heads/<headRefName>` to the PR's source repository, forks included, through a remote whose every push URL points there, from a clean detached worktree, and only when the PR's current head is the reviewed head or a fix commit already pushed from the worktree, so the push neither overwrites the author's new commits nor restores ones they removed. It never publishes tags or submodule commits.
+   - Exit 0 means pushed, or ready after a dry run. Exit 4 means nothing to push.
+   - Exit 1 means Git rejected the push (a protected branch, a hook, authentication, or transport): report its reason and never force-push.
+   - Exit 2 means invalid input, missing source metadata, no matching remote, or a dirty worktree. For missing metadata, rerun `read-pr.mjs` and pass its file as `--pr` on every later run; the record is not updated.
+   - Exit 3 means the author or another reviewer pushed to or rewrote the PR branch during the review: report it and revalidate the fixes against the new head rather than forcing the push.
 
 9. Apply [Worktree cleanup](#worktree-cleanup), then report in chat:
    - Findings and actionable comments with dispositions, evidence, source links, and proposed fixes or escalated decisions. Include already-addressed issues.
    - Scope, comment coverage, applied fixes, commit and push status, unresolved findings, checks run or skipped, results, and verification gaps.
-   - The starting directory and branch, worktree record path, review worktree path and commit, any commit made there, and whether cleanup removed or retained the worktree. For a retained worktree, explain why and give the cleanup command with the conditions that must hold first. For unpushed fix commits on detached `HEAD`, give a push command to run from that worktree, targeting the PR's verified source repository and branch; pushing still requires authorization.
+   - The starting directory and branch, worktree record path, review worktree path and commit, any commit made there, and whether cleanup removed or retained the worktree. For a retained worktree, explain why and give the cleanup command with the conditions that must hold first. For unpushed fix commits on detached `HEAD`, give the `push-fixes.mjs` command with the record path; pushing still requires authorization.
    - Any submitted review's state and URL.
    - If there are no findings, say so. Report an empty diff and its comment assessment separately.
 
@@ -85,4 +88,3 @@ After authorization to request changes:
 ## Gotchas
 
 - Leave a PR branch that is behind its base as it is and report the gap; never merge or rebase the base into it.
-- A non-fast-forward push rejection means the author or another reviewer pushed to the PR branch during the review. Report it rather than forcing the push.

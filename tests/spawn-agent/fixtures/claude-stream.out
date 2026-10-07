@@ -1,0 +1,3 @@
+{"type": "system", "subtype": "init", "session_id": "d429315a-9e34-485a-980f-fff1346f54c6"}
+{"type": "assistant", "session_id": "d429315a-9e34-485a-980f-fff1346f54c6", "message": {"role": "assistant", "content": [{"type": "text", "text": "OK"}]}}
+{"session_id": "d429315a-9e34-485a-980f-fff1346f54c6", "total_cost_usd": 1.050445, "usage": {"input_tokens": 2, "output_tokens": 4}, "permission_denials": [], "terminal_reason": "completed", "is_error": false, "num_turns": 1, "subtype": "success", "result": "OK", "type": "result"}
