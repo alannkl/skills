@@ -17,7 +17,7 @@ description: Writes or reviews agent skills and slash commands built from reusab
 1. Confirm scope.
    - Identify the concrete artifact to create or update: skill directory, `SKILL.md`, references, scripts, assets, or inventory docs.
    - Identify the task, workflow, project convention, or domain the skill covers.
-   - For a shortcut that packages instructions the user retypes, write it directly and skip the remaining steps: name it per step 3, give it user-invoked frontmatter with a one-line description, and put the instructions in the body.
+   - For a shortcut that packages instructions the user retypes, skip steps 2–5 and 7: name it per step 3, give it user-invoked frontmatter with a one-line description, put the instructions in the body, then apply step 6.
    - Capture the prompts, contexts, files, and workflows that should trigger the skill, plus adjacent requests and near-misses that should not.
 
 2. Gather and allocate the material.
@@ -48,7 +48,11 @@ description: Writes or reviews agent skills and slash commands built from reusab
    - A narrow instruction-only skill needs no supporting files: a single `SKILL.md` with the shortest workflow that covers the decisions the agent would get wrong, plus gotchas, examples, and validation only where they prevent likely mistakes.
    - Move detailed documentation into `references/`, and reusable templates, images, sample files, or static data into `assets/`; the Scripts section governs `scripts/`. Keep supporting resources one level deep, relative to the skill directory.
 
-6. Review the result.
+6. Polish the instruction prose.
+   - Load `refine-it`, then `shorten-it`, and run each over the whole of every instruction file created or edited.
+   - Compare the polished text with the pre-polish version and restore any change to triggers, requirements, permissions, workflow order, or other operational meaning. Leave wording unchanged where neither pass improves it.
+
+7. Review the result.
    - Present the draft when scope is uncertain or the skill encodes domain-specific preferences. Ask whether it covers the use cases, what is missing or unclear, and what should be more or less detailed.
    - Keep terminology consistent across `SKILL.md` and supporting files.
    - Check each mechanical step against [Scripts](#scripts). Verify documented arguments and outputs against the bundled scripts.
