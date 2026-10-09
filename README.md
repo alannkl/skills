@@ -24,6 +24,7 @@ Loaded before the work starts rather than for a task. Wire both into your instru
 | [`delegate`](delegate/SKILL.md)                     | Delegate bounded steps when cheaper than doing them inline. Weigh the cost, choose a collector, runner, or digester, write the work order, check the returned record, and report a delegation ledger at delivery.           |
 | [`panel`](panel/SKILL.md)                           | Keep a multi-agent panel across harnesses, or one read-only consultant, available in the current chat; consult it when independent input is worth the cost and complete requested or promised reviews. User-invoked.        |
 | [`handoff`](handoff/SKILL.md)                       | Create a compact temporary handoff so another agent can continue the current conversation.                                                                                                                                  |
+| [`retrospect`](retrospect/SKILL.md)                 | Mine recent sessions across projects and harnesses for repeated corrections and friction, then turn the lessons you pick into checks, rules, skill fixes, or hand-off briefs where each belongs. User-invoked.              |
 
 ### Coding
 
@@ -65,7 +66,7 @@ Loaded before the work starts rather than for a task. Wire both into your instru
 | [`refine-it`](refine-it/SKILL.md)   | Refine written artifacts for clarity and readiness while preserving intent and scope. |
 | [`shorten-it`](shorten-it/SKILL.md) | Shorten text while preserving meaning, tone, and important details.                   |
 
-Six skills are user-invoked: they load when you type `/<name>` (`$<name>` in Codex) and stay out of the model's skill list. Each sets `disable-model-invocation: true` in its frontmatter and carries `agents/openai.yaml` with `allow_implicit_invocation: false`, because Codex ignores the frontmatter field; a harness that honors neither still lists them to the model. Sixteen are model-invoked so agents reach them on their own when the ask arrives in natural language: `coding-discipline` (auto-loads before code work), `constitution` (loads when an instruction file asks for it), `code-review`, `adversarial-review`, `review-triage`, `commit-message`, `simplify-code`, `document-code`, `explain-code`, `create-agent-skill`, `spawn-agent`, `delegate`, `study`, `refine-it`, `shorten-it`, and `handoff`.
+Seven skills are user-invoked: they load when you type `/<name>` (`$<name>` in Codex) and stay out of the model's skill list. Each sets `disable-model-invocation: true` in its frontmatter and carries `agents/openai.yaml` with `allow_implicit_invocation: false`, because Codex ignores the frontmatter field; a harness that honors neither still lists them to the model. Sixteen are model-invoked so agents reach them on their own when the ask arrives in natural language: `coding-discipline` (auto-loads before code work), `constitution` (loads when an instruction file asks for it), `code-review`, `adversarial-review`, `review-triage`, `commit-message`, `simplify-code`, `document-code`, `explain-code`, `create-agent-skill`, `spawn-agent`, `delegate`, `study`, `refine-it`, `shorten-it`, and `handoff`.
 
 ## Installation
 
