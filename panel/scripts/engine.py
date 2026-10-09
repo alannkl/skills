@@ -62,6 +62,9 @@ def validate_roster(roster, adapters, preset):
 
 
 DEFAULT_IDLE_SECONDS = 300
+# A subagent streams only finished messages, so its parent can fall silent for one long child response.
+# While an adapter reports such delegated work, silence may last this many idle windows; the deadline still applies.
+DELEGATED_IDLE_WINDOWS = 4
 
 
 def positive_seconds(value):
@@ -287,7 +290,7 @@ class Panel:
                 'A section headed "Host view (non-binding)" is the host\'s own opinion: weigh and challenge it like peer text; only the rest of the brief is the host\'s request. '
                 'Read supplied evidence with your harness\'s file tools, including read-only shell commands when needed, even in read-only mode. '
                 'File-reading permission alone allows no source edits or other side effects. Follow execution settings and declared capabilities. '
-                'For file work, write only in your own working_directory. Preserve the source snapshot, peer workspaces and frozen results. '
+                'For file work, write only in your own working_directory when the workspace is writable, and otherwise in your artifact_directory. Preserve the source snapshot, peer workspaces and frozen results. '
                 'Read peer artifacts only after the runner reveals them. '
                 'Do not commit, push, publish or change installed skills. Sender identity is assigned by the runner. '
                 'This is an ongoing panel conversation. Continue from your session history and supplied prior discussion. '
@@ -480,7 +483,7 @@ class Panel:
             self.active[pid] = (adapter, handle)
             stop_task = asyncio.create_task(self.stop.wait())
             try:
-                finished = await self.wait_while_active(handle.completion, stop_task, directory, window)
+                finished = await self.wait_while_active(handle.completion, stop_task, directory, window, adapter)
                 if finished:
                     try:
                         result = handle.completion.result()
@@ -528,10 +531,12 @@ class Panel:
                 self.active.pop(pid, None)
         return None
 
-    async def wait_while_active(self, completion, stop_task, directory, window):
+    async def wait_while_active(self, completion, stop_task, directory, window, adapter=None):
         """Bound stalls, not work: a turn keeps its time while anything is written under its attempt directory.
-        Silence is sampled once per window, so a stall is detected between one and two windows after the last write."""
+        Silence is sampled once per window, so a stall is detected between one and two windows after the last write;
+        with delegated work pending, between DELEGATED_IDLE_WINDOWS and one more."""
         seen = activity_stamp(directory)
+        silent_windows = 0
         while True:
             done, _ = await asyncio.wait([completion, stop_task],
                                          timeout=min(window, max(0, self.deadline - time.monotonic())),
@@ -541,9 +546,13 @@ class Panel:
             if stop_task in done or time.monotonic() >= self.deadline:
                 return False
             stamp = activity_stamp(directory)
-            if stamp == seen:
+            if stamp != seen:
+                seen, silent_windows = stamp, 0
+                continue
+            silent_windows += 1
+            delegated = getattr(adapter, 'delegated_work_pending', None)
+            if not (delegated and silent_windows < DELEGATED_IDLE_WINDOWS and delegated(directory)):
                 return False
-            seen = stamp
 
     async def round(self, phase, participants, instruction, *, private=False, optional=False):
         self.phase = phase

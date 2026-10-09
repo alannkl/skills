@@ -66,6 +66,38 @@ class PanelBehavior(unittest.TestCase):
             self.assertTrue(all(e['data']['text'] == report_text(e) for e in stored))
         self.run_scenario(scenario)
 
+    def test_pending_subagent_extends_the_idle_bound(self):
+        """Given a participant silent for longer than its idle window, when its adapter reports a pending subagent, then the turn is not cancelled; without one, it is."""
+        class Silent(FakeAdapter):
+            def __init__(self, pending):
+                super().__init__()
+                self.pending, self.slowed = pending, False
+
+            def delegated_work_pending(self, directory):
+                return self.pending
+
+            def launch(self, session, input, settings):
+                handle = super().launch(session, input, settings)
+                if not self.slowed and handle.pid == 'ada':
+                    self.slowed = True
+                    original = handle.completion
+                    async def slow():
+                        await asyncio.sleep(2.5)
+                        return await original
+                    handle.completion = asyncio.create_task(slow())
+                return handle
+
+        for pending, cancelled in ((True, False), (False, True)):
+            async def scenario(root):
+                fixture = Fixture(root, idle_seconds=1)
+                fixture.adapter = Silent(pending)
+                fixture.panel.adapters = {'fake': fixture.adapter}
+                await fixture.run()
+                cancels = [e for e in fixture.panel.records.events if e['kind'] == 'cancel']
+                self.assertEqual(bool(cancels), cancelled)
+            with self.subTest(pending=pending):
+                self.run_scenario(scenario)
+
     def test_independent_rounds(self):
         """Given three designers sharing an adapter, when discussing, then initial inputs exclude peers, critique uses one cutoff, sessions stay separate and all approve."""
         async def scenario(root):

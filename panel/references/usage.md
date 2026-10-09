@@ -54,7 +54,7 @@ Every opening contribution is required. Critique or clarification may skip a fai
 
 ## Execution boundaries
 
-In panel mode, `execution` controls access and checks independently of the brief's subject and output format:
+In panel mode, `execution` declares what participants may change and how results are checked, independently of the brief's subject and output format:
 
 | Setting | Meaning |
 | --- | --- |
@@ -65,9 +65,7 @@ In panel mode, `execution` controls access and checks independently of the brief
 | `checks` | Commands to verify the assembled result, with expected exit codes. |
 | `verification_note` | Explain the review method when working-copy verification cannot use executable checks. |
 
-Tool approval is automatic within these boundaries; final approval requires every configured reviewer.
-
-All workspace settings permit reading supplied evidence, including bounded read-only shell inspection when needed. Permissions expose `file_reads` rather than a blanket `shell` switch; each adapter controls native tools and sandbox enforcement, and read-only mode permits neither source edits nor general side effects.
+Participants get their harness's full tool set in every mode, including shell, file writes, skills and subagents, with automatic approval; final approval requires every configured reviewer. The workspace setting is declared intent the participant follows, not a tool restriction. The runner enforces what it can check: the frozen source snapshot is read-only on disk and a changed snapshot ends the run incomplete, and an `inspect` round that leaves a source patch ends incomplete. In read-only runs, participants write scratch files in their artifact directory.
 
 Use Python 3.10+ on Linux or macOS, authenticated roster CLIs, and Git for `inspect` or `edit`. No Python packages are required.
 
@@ -120,9 +118,9 @@ For acceptance tests participants must not edit, run a script from the immutable
 
 Both bundled adapters accept `model`, `effort` and an optional trusted `executable`. Claude also accepts `max_turns`, `max_budget_usd` and `prompt_cache_ttl` (`5m` or `1h`), which sets `CLAUDE_CODE_PROMPT_CACHE_TTL` for that participant's process only. `FORCE_PROMPT_CACHING_5M` in the runner's environment overrides it, and the adapter then prints a warning to stderr; a one-hour cache costs more to write and pays off when a participant's turns are more than five minutes apart. Codex rejects unsupported bounds. Both retain existing authentication and billing settings.
 
-Claude uses native `auto` without interactive permission prompts. Tools follow execution settings, plus the Skill and Agent tools; subagents inherit the participant's tool set, so they widen no boundary; native policy assesses shell operations without a runner command allowlist. Declare source and check directories with `--add-dir`; add peer snapshot access after reveal and retain it on resume. Put complex or Unicode-bearing shell programs in scratch script files to avoid parsing errors. Directory grants follow [Claude permission rules](https://code.claude.com/docs/en/permissions#working-directories).
+Claude uses native `auto` without interactive permission prompts and no `--tools` restriction; `web: false` disallows the web tools. Subagents inherit the participant's tool set. Native policy assesses shell operations without a runner command allowlist. Consultants keep a read-only set: file reads, skills, subagents and web when enabled. Declare source and check directories with `--add-dir`; add peer snapshot access after reveal and retain it on resume. Put complex or Unicode-bearing shell programs in scratch script files to avoid parsing errors. Directory grants follow [Claude permission rules](https://code.claude.com/docs/en/permissions#working-directories).
 
-Codex uses `approval_policy="never"` with a read-only or workspace-write sandbox. Web retrieval follows `execution.web` through the [documented setting](https://learn.chatgpt.com/docs/config-file/config-reference). Neither adapter uses unrestricted bypass; native denials remain visible blockers.
+Codex uses `approval_policy="never"` with a workspace-write sandbox whose writable roots add the participant's scratch directory; consultants run read-only. Web retrieval follows `execution.web` through the [documented setting](https://learn.chatgpt.com/docs/config-file/config-reference). Neither adapter uses unrestricted bypass; native denials remain visible blockers.
 
 Claude's `max_turns` caps the agentic loop (model responses with tool calls) within one invocation and is unset by default, so a participant takes as many steps as the task needs and the idle window and discussion allowance end runaway work; its budget flag applies where the account supports it. Codex has no equivalent generation bound here. Both retain reported usage and have wall-clock limits, without a guaranteed whole-run token or monetary ceiling.
 
@@ -147,7 +145,7 @@ The round cap is the opening phase count plus three times the cycle cap, includi
 
 The discussion allowance caps unattended work. Waiting for a host decision at a round boundary pauses it and the remainder resumes afterwards. A `continue` or `brief` decision never renews it, because the runner cannot tell a person's decision from the host agent's own; only a new discussion started by `--continue` or `--reopen` starts it afresh. Elapsed time between human interventions can therefore exceed the allowance by the time spent waiting, never by autonomous work. `--unbounded` is an explicit opt-in that removes the discussion deadline: the idle bound and round cap still end stalled or looping work, but a turn that keeps writing is never killed. It is saved across follow-ups until a later `--run-seconds` restores a ceiling.
 
-The idle window bounds stalls. A turn is killed only after that long with nothing new written under its attempt directory, which both bundled harnesses stream to as they work. Silence is sampled once per window, so a stalled turn is killed between one and two windows after its last write. Claude streams partial-message deltas, including reasoning, so a long thinking call keeps the capture growing and captures are correspondingly larger. Codex emits an event per completed item, so a long reasoning phase writes nothing, which is why its window is longer. `--idle-seconds` overrides every harness with one value and is saved like other limits.
+The idle window bounds stalls. A turn is killed only after that long with nothing new written under its attempt directory, which both bundled harnesses stream to as they work. Silence is sampled once per window, so a stalled turn is killed between one and two windows after its last write. Claude streams partial-message deltas, including reasoning, so a long thinking call keeps the capture growing and captures are correspondingly larger. Codex emits an event per completed item, so a long reasoning phase writes nothing, which is why its window is longer. A subagent streams only its finished messages, so its parent can fall silent during one long subagent response; while a Claude participant has a subagent call without a result, silence may last four windows before the turn is killed. `--idle-seconds` overrides every harness with one value and is saved like other limits.
 
 A turn that is killed for idling or exits without a valid envelope is resumed once in the same session, with a runner notice naming the reason and asking it to finish from the work already done; the second attempt has the same idle window. Both attempts are recorded under the same turn ID, and the dispatch event carries `retry_reason`. Native permission denials and indeterminate deliveries are not retried.
 
