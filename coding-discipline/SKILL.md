@@ -31,11 +31,11 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - If multiple materially different interpretations exist, present them with a clear recommendation instead of picking silently.
    - When a materially simpler or more capable design exists, present it with the tradeoff and a recommendation; build it only if the user takes the bet.
    - For a bug fix, treat the report as a symptom, not the cause: trace the callers of the code you touch and fix the shared cause once, rather than patching only the path the report names and leaving sibling callers broken — the smallest change in the wrong place is a second bug.
-   - When the cause is not already evident, read [Diagnosing Bugs](references/diagnosing-bugs.md) and diagnose before fixing.
+   - When the cause is not already evident, read `references/diagnosing-bugs.md` and diagnose before fixing.
 
 2. Define the smallest verifiable plan.
    - Convert the request into concrete success criteria, each written as an observable check: a command to run, an expected output, or an assertion — not a vague goal. ("`GET /users/:id` returns 404 for unknown ids" beats "handle missing users".)
-   - For new or changed behavior, reproducible regressions, test work, or reviews of test adequacy, read [Behavior-First Testing](references/behavior-first-testing.md) before implementation or executable test bodies and follow its workflow.
+   - For new or changed behavior, reproducible regressions, test work, or reviews of test adequacy, read `references/behavior-first-testing.md` before implementation or executable test bodies and follow its Behavior-First Testing workflow.
    - Stay surgical: the narrowest change that satisfies the criteria without worsening system shape.
    - Ask when ambiguity would materially change the solution, create risk, or leave success criteria too weak to verify.
    - If no one is available to answer, choose the most reversible interpretation, state the assumption prominently in the handoff, and proceed.

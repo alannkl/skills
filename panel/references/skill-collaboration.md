@@ -1,6 +1,6 @@
 # Collaborating on an existing skill
 
-Use these instructions when running an existing skill in either pair or panel mode. The selected skill defines the process and output. Choose the collaboration mode and any panel preset through [Prepare](../SKILL.md#prepare).
+Use these instructions when running an existing skill in either pair or panel mode. The selected skill defines the process and output. Choose the collaboration mode and any panel preset through Prepare in `SKILL.md`.
 
 ## Prepare one shared execution
 
@@ -13,15 +13,15 @@ In panel mode, the preset allocates the current stage: the leader assigns comple
 
 ## Pair mode
 
-The host executes the selected skill and maintains its work product. Follow [Pair mode](../SKILL.md#pair-mode) for consultations, required review and the turn ledger. Apply the [routing rule](../SKILL.md#keep-the-panel-in-the-chat) after the first delivered answer; a stage boundary alone adds no consultation requirement. Advice informs the host's decisions and never supplies approval.
+The host executes the selected skill and maintains its work product. Follow Pair mode in `SKILL.md` for consultations, required review and the turn ledger. Apply the routing rule under Keep the panel in the chat in `SKILL.md` after the first delivered answer; a stage boundary alone adds no consultation requirement. Advice informs the host's decisions and never supplies approval.
 
-For routed follow-ups, use [`consult.py ask`](usage.md#consultant) with the saved consultation, including relevant user answers, corrections, stage context and new evidence. Keep it open after delivery and close it only on stop or reset. On an explicit request to resume after stopping, use `consult.py reopen` with the new question and the decisions made while stopped.
+For routed follow-ups, use `consult.py ask`, described under Consultant in `references/usage.md`, with the saved consultation, including relevant user answers, corrections, stage context and new evidence. Keep it open after delivery and close it only on stop or reset. On an explicit request to resume after stopping, use `consult.py reopen` with the new question and the decisions made while stopped.
 
 ## When the skill needs user input
 
 Use this loop when the skill requires a user decision or missing context; otherwise continue its stages.
 
-In pair mode, the host checks the evidence, asks the needed questions and examines the answers, consulting under the rules above. In panel mode, apply the [routing rule](../SKILL.md#keep-the-panel-in-the-chat) and use the participant discussion below when independent input is needed.
+In pair mode, the host checks the evidence, asks the needed questions and examines the answers, consulting under the rules above. In panel mode, apply the routing rule and use the participant discussion below when independent input is needed.
 
 When a question to the user is routed, have participants propose and discuss it before the host asks: whether evidence already answers it, which uncertainty matters most, what depends on the answer, and which options and trade-offs the user needs. The host consolidates their discussion and asks one question at a time unless the skill permits batching independent questions.
 
@@ -39,7 +39,7 @@ Complete the skill only when all required stages and decisions are resolved or e
 
 This section applies to panel mode. The host interprets the skill and manages its stages. The runner executes bounded preset rounds; it neither schedules `SKILL.md` steps nor forwards questions to the user.
 
-Run the current bounded assignment, then apply the [routing rule](../SKILL.md#keep-the-panel-in-the-chat) to user answers, corrections and subsequent stages. For routed work, [continue the saved panel](usage.md#continuing-the-conversation), carrying shared instructions and decisions into the follow-up brief.
+Run the current bounded assignment, then apply the routing rule to user answers, corrections and subsequent stages. For routed work, continue the saved panel per Continuing the conversation in `references/usage.md`, carrying shared instructions and decisions into the follow-up brief.
 
 Use `--pause-between-rounds` for host decisions inside a discussion; brief updates restart opening rounds within that discussion's original limits. A continued discussion renews those limits. Changed execution settings require an explicit reset under the existing authorization rules.
 

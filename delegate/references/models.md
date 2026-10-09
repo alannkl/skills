@@ -1,6 +1,6 @@
 # Model tiers and cost inputs
 
-Opinionated working preferences as of 2026-10-07, not benchmark results. When the supported models change, review the tier placements against observed results on each role's tasks, update the defaults, fallback order and [cost weights](#cost-inputs), then refresh the date. A model's name alone does not establish its tier.
+Opinionated working preferences as of 2026-10-07, not benchmark results. When the supported models change, review the tier placements against observed results on each role's tasks, update the defaults, fallback order and the cost weights under Cost inputs, then refresh the date. A model's name alone does not establish its tier.
 
 ## Capability tiers
 
@@ -26,7 +26,7 @@ Pass the effort where supported. Claude Code's native Agent tool inherits the se
 
 Cursor encodes Grok's effort in the model ID; pass the listed selector to its CLI's `--model`. Composer 2.5 has no separate effort setting. When availability changes, refresh Cursor selectors with `agent --list-models`, outside the per-candidate cost estimate.
 
-Start with the role default: a suitable starting choice, not a minimum. For harder synthesis within the same scope, a stronger listed model or higher supported effort is fine while the result stays cheap to check and the revised estimate still favors delegation. A demonstrated reasoning failure follows [Escalate by cause](dispatch.md#escalate-by-cause), which returns the step to the host.
+Start with the role default: a suitable starting choice, not a minimum. For harder synthesis within the same scope, a stronger listed model or higher supported effort is fine while the result stays cheap to check and the revised estimate still favors delegation. A demonstrated reasoning failure follows Escalate by cause in `references/dispatch.md`, which returns the step to the host.
 
 ## Availability fallbacks
 
@@ -35,7 +35,7 @@ Honor the user's explicit model and effort choices; fall back only within the fl
 When the role default is unavailable:
 
 1. From the same harness's roster, choose the available model you already judge sufficient for the task with the lowest expected total cost, verification and retry risk included. A lower tier qualifies when known task requirements support it; record that reason. Judge from existing context, without exploratory calls.
-2. If suitability is uncertain, try the higher populated [capability tiers](#capability-tiers), nearest first. On Cursor the order is Composer 2.5, Grok 4.7 Medium, then Grok 4.7 High, continuing after the unavailable model.
+2. If suitability is uncertain, try the higher populated capability tiers, nearest first. On Cursor the order is Composer 2.5, Grok 4.7 Medium, then Grok 4.7 High, continuing after the unavailable model.
 3. If the chain reaches the host's own model, stop and do the step inline, reporting it as inline because the fallback reached the host model. Match model identity, not tier: aliases, context-window suffixes and effort variants count as the same model, so Grok 4.7 Medium and High match. Use the host's runtime-confirmed model, or its requested model if unconfirmed. This stop applies only to fallbacks; the initial role-default dispatch uses the ordinary cost comparison.
 4. Before dispatch, rerun the cost comparison with the fallback's weights. If no selectable choice still pays, do the step inline.
 
@@ -67,7 +67,7 @@ Token weights, in units of one Claude Sonnet 5.5 input token. Use the selected m
 
 A dash in cache write means bill new context at the input weight. The Grok 4.7 row covers `grok-4.7-low`, `grok-4.7-medium`, `grok-4.7-high`, and `grok-4.7-xhigh`; double it when input exceeds 256k tokens, up to 500k.
 
-Estimate each unknown rate from the model's [capability tier](#capability-tiers) with the table below, rather than doing the step inline only because a rate is unknown. Mark estimated rates in the dispatch record. Each row is the Sonnet 5.5 weights times the tier's multiplier. These are estimation weights, not provider prices; effort changes the expected token count, not the multiplier.
+Estimate each unknown rate from the model's capability tier with the table below, rather than doing the step inline only because a rate is unknown. Mark estimated rates in the dispatch record. Each row is the Sonnet 5.5 weights times the tier's multiplier. These are estimation weights, not provider prices; effort changes the expected token count, not the multiplier.
 
 | Tier     | Multiplier | Input | Cache write | Cache read | Output |
 | -------- | ---------- | ----- | ----------- | ---------- | ------ |

@@ -12,9 +12,9 @@ description: Research a question from sources into an evidence-graded report, ei
    - Write the question in one sentence and name its shape: **subject**, one thing and how it works or what is known about it, or **field**, how several sources or approaches answer one question. The shape is fixed here; thin discovery later is a coverage gap, never a reason to change it.
    - List the sub-questions the report must answer; for a field, the dimensions to compare. The stop test in step 4 runs against this list.
    - Set the budget: source count estimate, time, tokens, and whether web access is granted.
-   - Read [the evidence contract](references/evidence-contract.md). Every record in the study follows it.
+   - Read `references/evidence-contract.md`, the evidence contract. Every record in the study follows it.
 
-2. Choose sources. Follow [Research](references/research.md) for the scout and collector work orders.
+2. Choose sources. Follow `references/research.md` for the scout and collector work orders.
    - Sources the user named are in and seed the scout. Skip scouting only when the user limits the study to the named sources.
    - Scout: a shallow sweep from the seeds that returns candidate sources, one line each, with no close reading.
    - Select collection units. A unit is one system, work, or author's source family at one version or surface. For a field, group candidates by family, a system, author, or school rather than a URL, and take one representative per family with the best primary access, plus every outlier that answers the question differently and every user-named source. Expect three to six units; take the whole field when it is small. For a subject, take the surfaces and versions the sub-questions need. Record each dropped candidate and the reason in the study header.
@@ -35,7 +35,7 @@ description: Research a question from sources into an evidence-graded report, ei
    - Carry every record's `gaps` and `limitations` into the header's coverage gaps.
 
 5. Deliver.
-   - In chat, deliver the report body per the contract's [Report shape](references/evidence-contract.md#report-shape), and offer to save it.
+   - In chat, deliver the report body per the contract's Report shape section, and offer to save it.
    - Save when the user names a path or accepts the offer: one file, the body followed by the `Evidence records` appendix, at the named path or else at `<dir>/study/<slug>.md` in the current project, where `<dir>` is the project's established research-report location, or `docs` when it has none.
    - Terminal outcomes: **complete**; **partial**, naming the sub-questions still open and why; **blocked**, when the sources that decide the question are inaccessible.
 

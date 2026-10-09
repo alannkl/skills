@@ -2,7 +2,7 @@
 
 Adapt these examples' goals, evidence, deliverables and acceptance criteria to the user's request. The runner does not load them.
 
-In pair mode, the host does the work and the read-only consultant advises. Include the task context in the brief, then ask for objections or review. Follow [Pair mode](../SKILL.md#pair-mode) to choose the consultations and completion criteria.
+In pair mode, the host does the work and the read-only consultant advises. Include the task context in the brief, then ask for objections or review. Follow Pair mode in `SKILL.md` to choose the consultations and completion criteria.
 
 ## Pair consultation examples
 
@@ -54,7 +54,7 @@ User follow-up: "Keep this document generic; the audience-specific guidance belo
 
 User decision: the shared document addresses communication for any audience. Revise the prior recommendation accordingly, retaining other settled decisions. Return the revised recommendation and explain what changed; do not edit files. Acceptance: every proposed change respects the generic document's scope, and the answer identifies any remaining uncertainty.
 
-First apply the [routing rule](../SKILL.md#keep-the-panel-in-the-chat). An explanation of an earlier recommendation can stay with the host; a changed assumption that undermines it needs fresh consultation. In panel mode, resume the saved participants with `panel.py`, passing the active directory to `--continue` and this brief file to `--follow-up`.
+First apply the routing rule under Keep the panel in the chat in `SKILL.md`. An explanation of an earlier recommendation can stay with the host; a changed assumption that undermines it needs fresh consultation. In panel mode, resume the saved participants with `panel.py`, passing the active directory to `--continue` and this brief file to `--follow-up`.
 
 In pair mode, put the routed follow-up and the host's current approach or proposed answer in the question, asking for objections or review as appropriate, and resume the saved consultation:
 
@@ -62,4 +62,4 @@ In pair mode, put the routed follow-up and the host's current approach or propos
 python3 scripts/consult.py ask /absolute/consult-dir --question /absolute/follow-up.md
 ```
 
-See [consultant usage](usage.md#consultant) for attachments and access settings. Reuse the saved session for each consultation.
+See Consultant in `references/usage.md` for attachments and access settings. Reuse the saved session for each consultation.

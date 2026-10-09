@@ -409,4 +409,18 @@ Full records for the adopted proposals. Paths use the locations mapping in the s
 | P5 benchmark-checklist recommendation | declined | |
 | P6 review-panel model refresh | declined | |
 | P7 to-questionnaire recommendation | declined | |
-| P8 to P55 | not recorded | |
+| P8 to P22, P53 to P55 | already satisfied; no decision needed | |
+| P23 to P38 rejected proposals | closed | |
+| P39 Codex invocation-policy companions | add | planned 2026-10-10 |
+| P40 eval blinding | watch: a comparative eval setup where candidates can read the cases or grader notes | |
+| P41 app-verification generation | closed; install the external skill when a project needs it | |
+| P42 router | watch: you or users report picking the wrong skill or not knowing which to invoke | |
+| P43 fresh delegates over resuming | add | planned 2026-10-10 |
+| P44 receiving-side pickup rule | closed | |
+| P45 decision-trail format | closed with P50 | |
+| P46 retrospective workflow | add | planned 2026-10-10 |
+| P47 reference validator | watch: a broken link or line citation ships in a skill or doc. A 2026-10-10 probe found no real breaks among 94 relative links. Preferred home if built: a script in `create-agent-skill/scripts/` run from its review checklist, checking relative targets, `#L` line anchors and heading anchors, skipping fenced code and external URLs | |
+| P48 pilot before large fan-out | add | planned 2026-10-10 |
+| P49 split code-review by size | closed | |
+| P50 standing automation (with P32 and P51) | closed | |
+| P52 specialist skills | closed; install externally when needed | |

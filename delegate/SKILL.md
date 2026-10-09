@@ -12,7 +12,7 @@ description: Delegates bounded steps to subagents when that costs less than doin
    - Delegate before reading bulky inputs yourself; an orientation read first is fine.
    - Read the instructions that govern your own work yourself, including any skill you load; delegate task material only.
 
-2. If not already loaded, read [Model tiers and cost inputs](references/models.md) for model defaults, availability fallbacks and cost inputs, then weigh each candidate from what you already know. Spend no calls on the weighing and never check the estimate afterward.
+2. If not already loaded, read `references/models.md` for model defaults, availability fallbacks and cost inputs, then weigh each candidate from what you already know. Spend no calls on the weighing and never check the estimate afterward.
    - Verification: can you check the result more cheaply than you can produce it? Use an exit status, diff, count, source-linked record, or quick comparison with the evidence. Would you catch a wrong result before it matters? If not, do the step yourself.
    - Authority: does the step require the user's answer? Get it yourself. Delegate only work within existing authority.
    - Cost: estimate both paths in weighted tokens from the same start to the same end, excluding calls common to both. Count tokens only; wall-clock time counts only when the user set a deadline.
@@ -21,6 +21,6 @@ description: Delegates bounded steps to subagents when that costs less than doin
      - On both paths, include every later re-read of the retained context, during and after the step. Count reasoning only where you expect the harness to retain it.
      - Weight tokens by model and kind: reasoning and replies as output; cached context as cache read; new context, including cold start-up, as cache write where billed, otherwise as input. Assume no cache sharing between you and the delegate.
 
-3. Delegate every candidate whose result is cheaper to check than to produce and whose delegated path costs less. Do the rest yourself. For each delegation, follow [Dispatch](references/dispatch.md) to pick the role, write the work order, dispatch, wait, and accept or escalate. Finish by accepting the record or taking over the step.
+3. Delegate every candidate whose result is cheaper to check than to produce and whose delegated path costs less. Do the rest yourself. For each delegation, follow `references/dispatch.md` to pick the role, write the work order, dispatch, wait, and accept or escalate. Finish by accepting the record or taking over the step.
 
 4. At delivery, report every delegation in one table: role, agent type, requested and runtime-confirmed model, effort, duration, and tokens. Write "not reported" where the harness gives no value, and "requested" where the runtime model is unconfirmed.

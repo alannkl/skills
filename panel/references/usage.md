@@ -1,12 +1,12 @@
 # Runner usage
 
-The skill has two modes. Panel mode runs `scripts/panel.py` with one of three presets; pair mode runs `scripts/consult.py` as described under [Consultant](#consultant). Choose between them with the skill's [mode-selection rules](../SKILL.md#prepare).
+The skill has two modes. Panel mode runs `scripts/panel.py` with one of three presets; pair mode runs `scripts/consult.py` as described under Consultant. Choose between them with the mode-selection rules under Prepare in `SKILL.md`.
 
 ## Brief and roster
 
-The brief defines the work, deliverable and acceptance criteria, and the runner reads it as written. The host may adapt the [brief examples](brief-examples.md).
+The brief defines the work, deliverable and acceptance criteria, and the runner reads it as written. The host may adapt `references/brief-examples.md`.
 
-For an existing skill in either mode, follow [skill collaboration](skill-collaboration.md). The host manages interactive stages, skill loading and questions. In panel mode it supplies the chosen preset to `panel.py`; the runner does not automate the skill's stages. In pair mode the host executes those stages under the consultation and review rules in [Pair mode](../SKILL.md#pair-mode).
+For an existing skill in either mode, follow `references/skill-collaboration.md`. The host manages interactive stages, skill loading and questions. In panel mode it supplies the chosen preset to `panel.py`; the runner does not automate the skill's stages. In pair mode the host executes those stages under the Pair mode consultation and review rules in `SKILL.md`.
 
 ### Default roster
 
@@ -48,7 +48,7 @@ Use supported effort values. IDs must be unique; `host`, `runner` and `all` are 
 
 Roles are neutral labels: `member` for every participant, and `leader` for the `leader-members` leader. The brief defines the work; the preset's opening round divides it, or keeps it whole. A role that names a viewpoint or a slice of the task prejudices that round, since the runner sends each participant its own role and the full roster in every phase, including the opening. The `drafter` designation is an editing duty.
 
-Follow the [skill's roster-confirmation step](../SKILL.md#prepare) before launch. Direct CLI calls with explicit roster files remain noninteractive.
+Follow the roster-confirmation step under Prepare in `SKILL.md` before launch. Direct CLI calls with explicit roster files remain noninteractive.
 
 Every opening contribution is required. Critique or clarification may skip a failed participant after confirming inactivity and reconciling the failure; that participant remains required for final approval.
 
@@ -163,7 +163,7 @@ Result hashes bind text and data, plus files, patch and verification for working
 
 ## Continuing the conversation
 
-After delivering an answer, keep the panel available and apply the [routing rule](../SKILL.md#keep-the-panel-in-the-chat). For each routed follow-up, write a file with the user's message, new decisions or evidence, the current skill stage if applicable, and the requested deliverable and acceptance criteria. Include relevant host-only exchanges since the last discussion, separating user decisions from host recommendations. Put the host's opinion under the [host view](../SKILL.md#host-view) heading. Resume the same run directory:
+After delivering an answer, keep the panel available and apply the routing rule under Keep the panel in the chat in `SKILL.md`. For each routed follow-up, write a file with the user's message, new decisions or evidence, the current skill stage if applicable, and the requested deliverable and acceptance criteria. Include relevant host-only exchanges since the last discussion, separating user decisions from host recommendations. Put the host's opinion under a `Host view (non-binding)` heading, per Host view in `SKILL.md`. Resume the same run directory:
 
 ```bash
 python3 scripts/panel.py --continue /absolute/panel-directory \
@@ -201,7 +201,7 @@ Completed version-3 panels can be continued explicitly with their saved sessions
 
 ## Consultant
 
-`scripts/consult.py` runs one read-only participant while the host does the work. Pair mode uses it under the [consultation and review rules](../SKILL.md#pair-mode), keeping the session available across follow-ups.
+`scripts/consult.py` runs one read-only participant while the host does the work. Pair mode uses it under the Pair mode consultation and review rules in `SKILL.md`, keeping the session available across follow-ups.
 
 | Command | Behavior |
 | --- | --- |
