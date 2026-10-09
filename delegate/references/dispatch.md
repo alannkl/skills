@@ -27,7 +27,7 @@ Include:
 
 ## Wait
 
-Batch independent dispatches and collect them together where supported. Do independent work while delegates run. Otherwise, use completion notifications or a bounded blocking wait instead of frequent polling. Resume after partial completion or timeout. Bound each wait by the remaining deadline and the next required progress update.
+Batch independent dispatches and collect them together where supported. Before fanning one work order out over many inputs, or dispatching an expensive unit of a kind not run before, pilot it when a defect in the work order would cost more than the pilot's delay: dispatch it on one input or a small slice, accept the record, fix the work order, then dispatch the rest. Do independent work while delegates run. Otherwise, use completion notifications or a bounded blocking wait instead of frequent polling. Resume after partial completion or timeout. Bound each wait by the remaining deadline and the next required progress update.
 
 ## Record
 
@@ -66,6 +66,7 @@ Before any retry or takeover, confirm the delegate has finished or stop it, then
 - Missing input, access, or a transient tool failure: resolve or report the dependency; a bounded same-tier retry is fine when you know the cause and replay is safe.
 - Demonstrated reasoning failure, consequential omission, or unresolved contradiction: take the step over, using the returned evidence and failure record.
 - Uncertain execution outcome: decide from the inspected state, not the record.
+- Correction or added scope: dispatch a fresh delegate with one consolidated work order instead of sending incremental corrections. It carries the original order, the corrections, and the previous record's completed work, failures, and ruled-out paths; pass completed work the corrections leave valid as input rather than redoing it. Continue the same delegate only when the next step depends on context its record does not carry.
 - Ambiguous authority, acceptance criteria, or a needed user judgment: resolve what you can within your authority and ask the user for decisions only they can make.
 
 ## Report
