@@ -1,10 +1,12 @@
 import json
+import os
 import re
+import sys
 from .base import ProcessAdapter, Terminal, session_uuid, structured
 
 
 class ClaudeAdapter(ProcessAdapter):
-    settings_keys = {'model', 'effort', 'max_turns', 'max_budget_usd', 'executable'}
+    settings_keys = {'model', 'effort', 'max_turns', 'max_budget_usd', 'executable', 'prompt_cache_ttl'}
     idle_seconds = 300  # partial-message deltas keep the capture growing while the model thinks
 
     def session_unavailable(self, stderr, session_id):
@@ -14,8 +16,9 @@ class ClaudeAdapter(ProcessAdapter):
     def command(self, session_id, settings):
         session = session_id or session_uuid()
         capabilities = settings.get('capabilities', {})
-        tools = ['Read', 'Grep', 'Glob']
-        grants = ['Read,Grep,Glob']
+        # Subagents inherit this session's tool set, so Agent and Skill widen no execution boundary.
+        tools = ['Read', 'Grep', 'Glob', 'Skill', 'Agent']
+        grants = ['Read,Grep,Glob,Skill,Agent']
         if capabilities.get('web'):
             tools += ['WebSearch', 'WebFetch']
             grants += ['WebSearch', 'WebFetch']
@@ -28,7 +31,7 @@ class ClaudeAdapter(ProcessAdapter):
                    '--model', settings['model'], '--permission-mode', permission_mode,
                    '--permission-prompts', 'none',
                    '--allowedTools', *grants, '--tools', ','.join(tools),
-                   '--append-system-prompt', 'Work within declared capabilities. Modify only your own working copy when authorized; preserve source evidence and peer artifacts. After reveal, read peer evidence through runner-captured artifacts.files and artifacts.patch references. Bash starts in your working_directory; run commands there. Use file tools for inspection and edits. Keep Bash commands simple: put multiline code, loops or Unicode test data in a script in your artifact_directory and run it with a task-appropriate executable, never in Bash -c arguments or heredocs. Do not commit, push, publish, or launch further agents. Return only the requested JSON.']
+                   '--append-system-prompt', 'Work within declared capabilities. Modify only your own working copy when authorized; preserve source evidence and peer artifacts. After reveal, read peer evidence through runner-captured artifacts.files and artifacts.patch references. Bash starts in your working_directory; run commands there. Use file tools for inspection and edits. Keep Bash commands simple: put multiline code, loops or Unicode test data in a script in your artifact_directory and run it with a task-appropriate executable, never in Bash -c arguments or heredocs. Do not commit, push or publish. Return only the requested JSON.']
         if capabilities.get('workspace_write') and not capabilities.get('source_edits') and settings.get('scratch_dir'):
             # Scratch scripts may be written while the source worktree stays read-only.
             command[command.index('--tools') + 1] += ',Write'
@@ -45,6 +48,15 @@ class ClaudeAdapter(ProcessAdapter):
         if settings.get('max_budget_usd') is not None:
             command += ['--max-budget-usd', str(settings['max_budget_usd'])]
         return command, session
+
+    def environment(self, settings):
+        ttl = settings.get('prompt_cache_ttl')
+        if not ttl:
+            return None
+        if ttl != '5m' and os.environ.get('FORCE_PROMPT_CACHING_5M'):
+            print(json.dumps({'warning': f'prompt_cache_ttl {ttl} requested, but FORCE_PROMPT_CACHING_5M is set in the '
+                                         'runner environment and may hold the cache at 5 minutes'}), file=sys.stderr, flush=True)
+        return dict(os.environ, CLAUDE_CODE_PROMPT_CACHE_TTL=ttl)
 
     def parse(self, output, code, session_id):
         result = Terminal(session_id, exit_status=code)

@@ -153,6 +153,99 @@ class ContinuationBehavior(unittest.TestCase):
             self.assertTrue(Path(first['discussion_report']).exists())
         self.run_scenario(scenario)
 
+    def test_fresh_sessions_supply_history_by_reference(self):
+        """Given a finished discussion, when continued with fresh sessions, then every participant starts a new session, gets no prior events inline, and can read its own visible history from a file."""
+        async def scenario(root):
+            f = Fixture(root)
+            await f.run()
+            before = saved(root)
+            adapter = FakeAdapter()
+            panel = continue_panel(Path(root) / 'run', 'Answer the follow-up.', {'fake': adapter}, fresh_sessions=True)
+            report = await panel.run()
+            self.assertEqual(report['outcome'], 'agreed', report['reason'])
+            self.assertEqual(adapter.sessions, 3)
+            after = saved(root)
+            for pid in ('ada', 'bert', 'cy'):
+                old = before['participants'][pid]['session_id']
+                self.assertEqual(after['participants'][pid]['retired_sessions'], [old])
+                self.assertNotEqual(after['participants'][pid]['session_id'], old)
+                first = next(p for p in adapter.inputs if p['participant_id'] == pid)
+                self.assertTrue(all(e['data'].get('brief_revision') == 2 for e in first['events']))
+                self.assertEqual(first['prior_briefs'], [])
+                history_file = Path(first['history_file'])
+                self.assertEqual(history_file.parent, Path(root) / 'run' / 'participants' / pid / 'scratch')
+                self.assertIn(str(history_file.parent), first['read_directories'])
+                history = json.loads(history_file.read_text())
+                self.assertEqual([b['text'] for b in history['prior_briefs']], ['Design a bounded runner'])
+                self.assertTrue(any(e['kind'] == 'review' for e in history['events']))
+                self.assertTrue(all(pid in e['visibility'] or 'all' in e['visibility'] for e in history['events']))
+            self.assertEqual({r['participant'] for r in report['session_replacements']}, {'ada', 'bert', 'cy'})
+            again = FakeAdapter()
+            report = await continue_panel(Path(root) / 'run', 'One more question.', {'fake': again}).run()
+            self.assertEqual(report['outcome'], 'agreed', report['reason'])
+            self.assertEqual(again.sessions, 0, 'A plain follow-up resumes the new sessions')
+            self.assertTrue(all(p['history_file'] is None for p in again.inputs))
+            self.assertEqual([b['text'] for b in again.inputs[0]['prior_briefs']], ['Design a bounded runner', 'Answer the follow-up.'])
+        self.run_scenario(scenario)
+
+    def test_interrupted_fresh_start_can_continue(self):
+        """Given a fresh-session follow-up interrupted before any participant started, when recovered and continued, then the pending participants start fresh instead of blocking, and no empty session is retired."""
+        async def scenario(root):
+            f = Fixture(root)
+            await f.run()
+            before = saved(root)
+            panel = continue_panel(Path(root) / 'run', 'Interrupted follow-up.', {'fake': FakeAdapter()}, fresh_sessions=True)
+            panel.records.close()
+            recovered = recover_run(Path(root) / 'run', {'fake': FakeAdapter()})
+            self.assertEqual(recovered['outcome'], 'incomplete')
+            adapter = FakeAdapter()
+            report = await continue_panel(Path(root) / 'run', 'Try again.', {'fake': adapter}).run()
+            self.assertEqual(report['outcome'], 'agreed', report['reason'])
+            self.assertEqual(adapter.sessions, 3)
+            after = saved(root)
+            for pid in ('ada', 'bert', 'cy'):
+                self.assertEqual(after['participants'][pid]['retired_sessions'], [before['participants'][pid]['session_id']])
+                first = next(p for p in adapter.inputs if p['participant_id'] == pid)
+                self.assertTrue(first['history_file'].endswith('history-d3.json'))
+                self.assertTrue(all(e['data'].get('brief_revision') == 3 for e in first['events']))
+        self.run_scenario(scenario)
+
+    def test_lost_fresh_session_keeps_history_by_reference(self):
+        """Given a fresh session lost mid-discussion, when the runner replaces it, then earlier discussions stay in the history file and only the current discussion is replayed inline."""
+        class LoseOnce(FakeAdapter):
+            lost = None
+
+            def resume(self, session_id, input, settings):
+                handle = super().resume(session_id, input, settings)
+                if self.lost is None and json.loads(input.split('PANEL_INPUT\n')[1])['participant_id'] == 'ada':
+                    self.lost = session_id
+                    original = handle.completion
+                    async def missing():
+                        await original
+                        return Terminal(session_id, exit_status=1, outcome='session_unavailable', error='Session expired')
+                    handle.completion = test_panel.asyncio.create_task(missing())
+                return handle
+
+        async def scenario(root):
+            f = Fixture(root)
+            await f.run()
+            adapter = LoseOnce()
+            report = await continue_panel(Path(root) / 'run', 'Fresh follow-up.', {'fake': adapter}, fresh_sessions=True).run()
+            self.assertEqual(report['outcome'], 'agreed', report['reason'])
+            self.assertIsNotNone(adapter.lost)
+            replacement = next(p for p in adapter.inputs if p['participant_id'] == 'ada' and p['session'] != adapter.lost)
+            self.assertTrue(replacement['history_file'])
+            self.assertTrue(replacement['events'])
+            self.assertTrue(all(e['data'].get('brief_revision') == 2 for e in replacement['events']))
+        self.run_scenario(scenario)
+
+    def test_fresh_sessions_flag_requires_a_followup(self):
+        """Given --fresh-sessions without --continue or --reopen, when the CLI runs, then it refuses before launching anything."""
+        result = subprocess.run([sys.executable, str(PACKAGE / 'scripts' / 'panel.py'), '--fresh-sessions', '--stop', '/nonexistent'],
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 2)
+        self.assertIn('--fresh-sessions', json.loads(result.stdout)['error'])
+
     def test_crash_during_report_publication(self):
         """Given a follow-up crash while publishing its report, when continuing or recovering, then never archive the previous answer as the new one or lose its original report."""
         for target in ('discussion-2.json', 'report.json'):

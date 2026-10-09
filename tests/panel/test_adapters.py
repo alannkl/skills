@@ -1,6 +1,7 @@
 """Adapter acceptance scenarios, fixed before subprocess fixtures."""
 import unittest
 import asyncio
+import io
 import json
 import os
 from pathlib import Path
@@ -8,6 +9,7 @@ import subprocess
 import sys
 import tempfile
 import time
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'panel' / 'scripts'))
 from adapters import production_adapters
@@ -100,7 +102,7 @@ class AdapterBehavior(unittest.TestCase):
                 self.assertEqual(resumed[resumed.index('--permission-mode') + 1], 'auto')
                 self.assertIn('--resume', resumed)
                 self.assertIn('--include-partial-messages', resumed, 'thinking deltas keep the idle bound honest')
-                self.assertIn('Read,Grep,Glob', resumed)
+                self.assertIn('Read,Grep,Glob,Skill,Agent', resumed)
                 self.assertNotIn('--bare', resumed)
 
 
@@ -146,6 +148,58 @@ class AdapterBehavior(unittest.TestCase):
                 self.assertEqual(command['cwd'], root)
         self.run_scenario(scenario)
 
+
+    def test_claude_cache_ttl_reaches_only_the_child(self):
+        """Given prompt_cache_ttl, when a Claude participant launches, then its child process sees CLAUDE_CODE_PROMPT_CACHE_TTL and the runner's environment is unchanged."""
+        from adapters.claude import ClaudeAdapter
+
+        class Probe(ClaudeAdapter):
+            def command(self, session_id, settings):
+                return [sys.executable, '-c', 'import os; print(os.environ.get("CLAUDE_CODE_PROMPT_CACHE_TTL", "unset"))'], 'probe'
+
+            def parse(self, output, code, session_id):
+                from adapters.base import Terminal
+                return Terminal(session_id, raw_text=output.strip(), exit_status=code, outcome='completed')
+
+        async def scenario(root):
+            for inherited in (None, '5m', '1h'):
+                with patch.dict(os.environ, {}, clear=False):
+                    os.environ.pop('CLAUDE_CODE_PROMPT_CACHE_TTL', None)
+                    os.environ.pop('FORCE_PROMPT_CACHING_5M', None)
+                    if inherited:
+                        os.environ['CLAUDE_CODE_PROMPT_CACHE_TTL'] = inherited
+                    before = dict(os.environ)
+                    for ttl, expected in (('1h', '1h'), ('5m', '5m'), (None, inherited or 'unset')):
+                        options = dict(settings(root, f'ttl-{inherited}-{ttl}'), **({'prompt_cache_ttl': ttl} if ttl else {}))
+                        result = await asyncio.wait_for(Probe().start('', options).completion, 5)
+                        self.assertEqual(result.raw_text, expected)
+                    self.assertEqual(dict(os.environ), before)
+        self.run_scenario(scenario)
+
+    def test_forced_short_cache_is_reported(self):
+        """Given FORCE_PROMPT_CACHING_5M in the runner environment, when a one-hour cache is requested, then the adapter warns on stderr and still passes the request through."""
+        from adapters.claude import ClaudeAdapter
+        with patch.dict(os.environ, {'FORCE_PROMPT_CACHING_5M': '1'}), patch('sys.stderr', new_callable=io.StringIO) as err:
+            env = ClaudeAdapter().environment({'prompt_cache_ttl': '1h'})
+        self.assertEqual(env['CLAUDE_CODE_PROMPT_CACHE_TTL'], '1h')
+        self.assertIn('FORCE_PROMPT_CACHING_5M', err.getvalue())
+        with patch.dict(os.environ, {}, clear=False), patch('sys.stderr', new_callable=io.StringIO) as err:
+            os.environ.pop('FORCE_PROMPT_CACHING_5M', None)
+            ClaudeAdapter().environment({'prompt_cache_ttl': '1h'})
+        self.assertEqual(err.getvalue(), '')
+
+    def test_invalid_cache_ttl_is_rejected(self):
+        """Given a cache lifetime Claude Code does not accept, when the roster is validated, then the panel refuses to start."""
+        sys.path.insert(0, str(Path(__file__).resolve().parent))
+        from engine import validate_roster
+        adapters = production_adapters()
+        preset = json.loads((PACKAGE / 'presets' / 'independent-discussion.json').read_text())
+        roster = {'drafter': 'a', 'participants': [{'id': 'a', 'role': 'member', 'harness': 'claude',
+                                                    'settings': {'model': 'm', 'prompt_cache_ttl': '2h'}}]}
+        with self.assertRaisesRegex(ValueError, 'prompt_cache_ttl'):
+            validate_roster(roster, adapters, preset)
+        roster['participants'][0]['settings']['prompt_cache_ttl'] = '1h'
+        validate_roster(roster, adapters, preset)
 
     def test_process_group_cancel(self):
         """Given a running process with a child, when cancelled, then stop both before confirming inactive and preserve cancellation evidence."""

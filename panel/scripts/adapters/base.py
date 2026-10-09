@@ -55,6 +55,10 @@ class ProcessAdapter:
     def session_unavailable(self, stderr, session_id):
         return False
 
+    def environment(self, settings):
+        """Child environment, or None to inherit the runner's unchanged."""
+        return None
+
     def start(self, input, settings):
         return self._start(None, input, settings)
 
@@ -82,7 +86,7 @@ class ProcessAdapter:
             with prompt.open('rb') as stdin, (attempt / 'stdout').open('wb') as stdout, (attempt / 'stderr').open('wb') as stderr:
                 handle.process = await asyncio.create_subprocess_exec(
                     *command, cwd=settings['cwd'], stdin=stdin, stdout=stdout,
-                    stderr=stderr, start_new_session=True)
+                    stderr=stderr, start_new_session=True, env=self.environment(settings))
                 atomic_json(attempt / 'process.json', {'pid': handle.process.pid})
                 if handle.stopping:
                     await self._terminate(handle)
