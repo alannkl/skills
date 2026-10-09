@@ -23,7 +23,7 @@ description: Writes or reviews agent skills and slash commands built from reusab
 2. Gather and allocate the material.
    - Ground the skill in completed tasks, user corrections, project docs, runbooks, schemas, review comments, issues, or patches. Collect the reference material it should preserve.
    - Before writing a lesson as instructions, check whether a lint rule, type, runtime check, or script can enforce it. When enforcement fits in the skill's own artifacts, such as a bundled script or hook, put it there and omit the prose rule; when it belongs in the target repo, recommend it rather than editing beyond the skill.
-   - Separate judgment and approval from mechanical steps. Assign each mechanical step to a script or direct call per [Scripts](#scripts), then choose supporting references, assets, templates, or sample files.
+   - Separate judgment and approval from mechanical steps. Assign each mechanical step to a script or direct call per the Scripts section, then choose supporting references, assets, templates, or sample files.
 
 3. Choose the skill name and location.
    - Name the directory to match the `name` field: 1-64 characters of lowercase letters, numbers, and single hyphens, starting and ending with a letter or number.
@@ -31,7 +31,7 @@ description: Writes or reviews agent skills and slash commands built from reusab
 4. Write `SKILL.md`.
    - Start with YAML frontmatter containing at least `name` and `description`.
    - Add optional fields such as `license`, `compatibility`, `metadata`, or `allowed-tools` only when they carry information.
-   - Make the skill model-invoked only when the agent must invoke it on its own or another skill must load it. Its description stays in context every turn; write it per [Description pattern](#description-pattern). Otherwise set `disable-model-invocation: true` and use a one-line human-facing description without trigger lists. A user-invoked skill costs no context, and typing its name still invokes it.
+   - Make the skill model-invoked only when the agent must invoke it on its own or another skill must load it. Its description stays in context every turn; write it per the Description pattern section. Otherwise set `disable-model-invocation: true` and use a one-line human-facing description without trigger lists. A user-invoked skill costs no context, and typing its name still invokes it.
    - When user-invoked skills become hard to remember, suggest one user-invoked router skill that names the others and when to use each. Update the router whenever a routed skill is added, renamed, or removed.
    - Keep the description out of the body. When the skill needs activation or scope rules the description cannot carry, put them in a `## Boundaries` section; skip the section when the description is already clear, and put execution defaults in the workflow steps.
    - Focus the body on procedures, defaults, examples, gotchas, scripts, and validation steps.
@@ -44,6 +44,7 @@ description: Writes or reviews agent skills and slash commands built from reusab
 
 5. Apply progressive disclosure.
    - Keep what every run needs in `SKILL.md`. Move material needed only by some branches into supporting files, behind pointers that name the branch that loads each one.
+   - Write pointers as plain paths, such as `references/evaluating-skills.md`, and name sections in prose, such as "the Scripts section". Markdown link syntax repeats the target in both label and URL.
    - Treat ~100 non-empty body lines as a smell that inline material belongs behind a pointer, not a limit or target; completeness and correctness outrank size.
    - A narrow instruction-only skill needs no supporting files: a single `SKILL.md` with the shortest workflow that covers the decisions the agent would get wrong, plus gotchas, examples, and validation only where they prevent likely mistakes.
    - Move detailed documentation into `references/`, and reusable templates, images, sample files, or static data into `assets/`; the Scripts section governs `scripts/`. Keep supporting resources one level deep, relative to the skill directory.
@@ -55,7 +56,7 @@ description: Writes or reviews agent skills and slash commands built from reusab
 7. Review the result.
    - Present the draft when scope is uncertain or the skill encodes domain-specific preferences. Ask whether it covers the use cases, what is missing or unclear, and what should be more or less detailed.
    - Keep terminology consistent across `SKILL.md` and supporting files.
-   - Check each mechanical step against [Scripts](#scripts). Verify documented arguments and outputs against the bundled scripts.
+   - Check each mechanical step against the Scripts section. Verify documented arguments and outputs against the bundled scripts.
    - For model-invoked skills, sanity-check the description against realistic positive prompts and near-miss negative prompts. Revise wording that is too broad or too narrow.
    - If formal evals such as trigger tests or comparative runs would be useful, suggest them as a next step for the user; do not run manual evals as part of this workflow.
 
@@ -124,6 +125,7 @@ description: Does a specific reusable task. Use when the user asks for concrete 
 - The workflow batches independent operations into one tool round. Batches stop at steps that need judgment or user authorization, and failures stay visible.
 - Keep environment-derived facts in the environment that owns them. Document the unwritten conventions, reasons, and gotchas it cannot supply.
 - Every instruction changes behavior in some situation. Cut sentences no agent could act on differently, such as "check your tools", "use judgment", or "be thorough", and hedges that restate what the agent's environment already guarantees.
+- Name the action, not the steps an agent takes on its own to perform it: "apply `references/x.md`", not "read and apply `references/x.md`". Spell out sub-steps only where the agent would otherwise skip or misorder them.
 - State each rule once, where it applies. Cut restatements of a rule elsewhere in the skill, including gotchas that only negate a rule the workflow already states.
 - Keep a concept's definition, rules, and caveats together under one heading.
 - Defaults are clear; alternatives appear only when they change a decision.

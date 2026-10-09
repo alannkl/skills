@@ -12,7 +12,7 @@ Loaded before the work starts rather than for a task. Wire both into your instru
 
 | Skill                                             | Description                                                                                                                                                                                                                                    |
 | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`constitution`](constitution/SKILL.md)           | The Collaboration Constitution as an installable skill: universal rules for how the agent leads the collaboration. Mirrors [`AGENTS.md`](AGENTS.md); always loaded.                                                                            |
+| [`constitution`](constitution/SKILL.md)           | The Collaboration Constitution as an installable skill: universal rules for how the agent leads the collaboration; always loaded.                                                                                                              |
 | [`coding-discipline`](coding-discipline/SKILL.md) | Apply disciplined engineering habits for simple, scoped, maintainable, well-structured agent-written code. Based on [karpathy-guidelines](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/skills/karpathy-guidelines/SKILL.md). |
 
 ### Agent workflow
@@ -126,13 +126,13 @@ External skills that pair well with this repo:
   npx skills add cursor/plugins --skill unslop -g -y
   ```
 
-## AGENTS.md
+## Collaboration Constitution
 
-Besides skills, this repo includes [`AGENTS.md`](AGENTS.md), the Collaboration Constitution. Its task-agnostic rules tell the agent how to lead the collaboration: surface assumptions, define done, hold scope, and push back on real issues. It is the agent-side counterpart to [Working with Agents](docs/working-with-agents.md). The file is active in this repo, with `CLAUDE.md` importing it via `@AGENTS.md`, so agents working here already follow it.
+Besides skills, this repo includes the Collaboration Constitution, shipped as the [`constitution`](constitution/SKILL.md) skill. Its task-agnostic rules tell the agent how to lead the collaboration: surface assumptions, define done, hold scope, and push back on real issues. It is the agent-side counterpart to [Working with Agents](docs/working-with-agents.md). This repo's [`AGENTS.md`](AGENTS.md) points agents to it, and `CLAUDE.md` imports `AGENTS.md` via `@AGENTS.md`, so agents working here already follow it.
 
 ### Using it yourself
 
-The constitution is meant to be always loaded. Install it as the [`constitution`](constitution/SKILL.md) skill, a copy of `AGENTS.md`. For coding projects, also install [`coding-discipline`](coding-discipline/SKILL.md):
+The constitution is meant to be always loaded. Install it as the [`constitution`](constitution/SKILL.md) skill. For coding projects, also install [`coding-discipline`](coding-discipline/SKILL.md):
 
 ```bash
 npx skills add alannkl/skills --skill constitution -y
@@ -144,8 +144,8 @@ Run these commands from your project directory. Add `-g` to install globally for
 Add the following at the top of your project's `AGENTS.md`. Each skill has its own line so you can omit either one if you do not use it:
 
 ```markdown
-Read and apply the `constitution` skill before starting work.
-Read and apply the `coding-discipline` skill before code work, except trivial formatting, pure prose edits, or explicitly throwaway prototypes.
+Apply the `constitution` skill from the start.
+Apply the `coding-discipline` skill to code work, except trivial formatting, pure prose edits, or explicitly throwaway prototypes.
 
 If a required skill is missing, say so and stop the affected work.
 Project-specific instructions below take precedence over the skills above.
@@ -157,7 +157,7 @@ Project-specific instructions below take precedence over the skills above.
 
 Your `AGENTS.md` stays yours: `npx skills update -p` (or `-g` for a global install) refreshes the constitution without touching it. An update follows the source's current revision; the skills lock file records a content hash, not a version, and pinning to a specific revision is unverified. For Claude Code, which reads `CLAUDE.md` rather than `AGENTS.md`, add a `CLAUDE.md` containing the single line `@AGENTS.md`; a plain file needs no symlink support, which some Windows setups and archive workflows lack.
 
-Copying all of [AGENTS.md](AGENTS.md) into an always-loaded instruction file still works, but every copy then has to be updated by hand.
+Copying the body of [`constitution/SKILL.md`](constitution/SKILL.md) into an always-loaded instruction file still works, but every copy then has to be updated by hand.
 
 Add to the universal rules only when the addition pays off in every session. Anything more specific belongs in a skill, a doc, or the project section.
 
@@ -168,8 +168,8 @@ Referencing the skill by name works for any install scope. If your agent does no
 Background notes and research behind these skills:
 
 - [Philosophy](docs/philosophy.md): a standalone, slowly growing list of personal beliefs about engineering with AI.
-- [Working with Agents](docs/working-with-agents.md): human-facing principles for directing an agent to complete tasks, synthesized from Anthropic, OpenAI, Microsoft Research, Ethan Mollick, Simon Willison, and academic human-AI collaboration research. Its agent-side counterpart is the [Collaboration Constitution](#agentsmd) above.
-- [How an agent should communicate with its human](docs/agent-communication.md): the evidence base behind the Communicating section of AGENTS.md, from a survey of this repo's skills and related sources.
+- [Working with Agents](docs/working-with-agents.md): human-facing principles for directing an agent to complete tasks, synthesized from Anthropic, OpenAI, Microsoft Research, Ethan Mollick, Simon Willison, and academic human-AI collaboration research. Its agent-side counterpart is the [Collaboration Constitution](#collaboration-constitution) above.
+- [How an agent should communicate with its human](docs/agent-communication.md): the evidence base behind the Communicating section of the [Collaboration Constitution](constitution/SKILL.md), from a survey of this repo's skills and related sources.
 - [Codebase Structure Principles](docs/codebase-structure.md): durable principles for organizing code around ownership, change patterns, dependency direction, and module boundaries.
 - [Behavior-First Testing for Agentic Coding](docs/behavior-first-testing-for-agentic-coding.md): a behavior-scaffold workflow that establishes intended behavior before the change's code or executable test mechanics can bias it.
 - [Cheap Code, Expensive Systems](docs/cheap-code-expensive-systems.md): a cost model for adversarial review and review triage, so findings that are valid but not worth fixing stay unfixed.

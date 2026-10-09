@@ -1,6 +1,6 @@
 # How an agent should communicate with its human
 
-The evidence base behind the `## Communicating` section of [AGENTS.md](../AGENTS.md). That section is the gist; this doc records everything the survey found bearing on agent → human communication, ordered by how directly it applies, with sources. Surveyed: this repo's skills, the [unslop](https://github.com/cursor/plugins/blob/main/pstack/skills/unslop/SKILL.md) skill, the [pstack skills](https://github.com/cursor/plugins/tree/main/pstack/skills) (cursor/plugins), and [mattpocock/skills](https://github.com/mattpocock/skills).
+The evidence base behind the `## Communicating` section of the [Collaboration Constitution](../constitution/SKILL.md). That section is the gist; this doc records everything the survey found bearing on agent → human communication, ordered by how directly it applies, with sources. Surveyed: this repo's skills, the [unslop](https://github.com/cursor/plugins/blob/main/pstack/skills/unslop/SKILL.md) skill, the [pstack skills](https://github.com/cursor/plugins/tree/main/pstack/skills) (cursor/plugins), and [mattpocock/skills](https://github.com/mattpocock/skills).
 
 Each theme ends with where it landed: a rule in `Communicating` (→ #n), another constitution rule, or doc-only with the reason it stayed out of the always-loaded gist.
 
@@ -92,7 +92,7 @@ Mostly already encoded in "Evidence over assertion" (While working #1) and "Repo
 
 ## 8. Why the gist must stay short
 
-The meta-finding that shaped how much of this went into AGENTS.md: "skills that fight verbosity fail by growing: a four-hundred-line concision skill still leaves the model verbose, because the model reads the volume, not the plea" (mattpocock wait-what docs). Same from writing-for-agents: attention thins across sprawl, and a no-op sentence — one the model already obeys by default — pays context load to say nothing. A communication section that is itself long, padded, or vague fails its own test. Hence: seven rules in the constitution, everything else here.
+The meta-finding that shaped how much of this went into the constitution: "skills that fight verbosity fail by growing: a four-hundred-line concision skill still leaves the model verbose, because the model reads the volume, not the plea" (mattpocock wait-what docs). Same from writing-for-agents: attention thins across sprawl, and a no-op sentence — one the model already obeys by default — pays context load to say nothing. A communication section that is itself long, padded, or vague fails its own test. Hence: seven rules in the constitution, everything else here.
 
 ## 9. Reporting upward
 

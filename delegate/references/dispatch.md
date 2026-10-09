@@ -10,7 +10,7 @@
 
 Use the digester only when you can quickly check its product against the evidence. If a digest determines which requirements you see, write it yourself.
 
-- Use the harness's native subagent tool by default, with the table's agent type and the model and effort from [Model tiers](models.md), following its availability fallbacks. Compare the expected model with the record's runtime-confirmed model.
+- Use the harness's native subagent tool by default, with the table's agent type and the model and effort from `references/models.md`, following its availability fallbacks. Compare the expected model with the record's runtime-confirmed model.
 - On Claude Code, state every rule the collector needs in its work order and name the files it must read in full.
 - Use the harness's headless CLI only when it has no native subagent tool. Load `spawn-agent` and request lean mode. Pass the role's model and effort, limit tools to its listed capability, and use read-only mode for collectors and digesters where available. Put the full work order in the prompt.
 
@@ -21,7 +21,7 @@ Include:
 - Purpose and completion conditions.
 - Input scope and, wherever exact contents matter, content identity: a hash, tree fingerprint, revision, or retrieval time with a retained snapshot.
 - Capability limits, permitted actions and side effects, including web access for a collector.
-- Output contract: return the [record](#record) in the reply, in bounded chunks when large. Only the runner may write a record file, in its workspace.
+- Output contract: return the record defined under Record in the reply, in bounded chunks when large. Only the runner may write a record file, in its workspace.
 - Execution budget in turns or time, stop and escalation rules, and conditions for retries and side effects.
 - An instruction to do the work itself, without further delegation.
 
