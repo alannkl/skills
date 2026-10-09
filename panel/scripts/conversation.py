@@ -62,7 +62,7 @@ def revised_limits(panel, saved, overrides):
     return limits
 
 
-def continue_panel(run_dir, brief, adapters, host_input=None, limits=None, *, reopen=False):
+def continue_panel(run_dir, brief, adapters, host_input=None, limits=None, *, reopen=False, fresh_sessions=False):
     if not isinstance(brief, str) or not brief.strip():
         raise ValueError('Follow-up must contain the latest user request and acceptance criteria')
     records = Records(run_dir, existing=True)
@@ -87,7 +87,7 @@ def continue_panel(run_dir, brief, adapters, host_input=None, limits=None, *, re
         if any(t['result']['outcome'] == 'indeterminate' for t in terminals.values()) or any(
                 e['kind'] == 'cancel' and not e['data']['confirmed_inactive'] for e in recent):
             raise ValueError('Indeterminate delivery or termination; resolve effects before an explicit reset')
-        if any(not p.get('session_id') for p in manifest['participants'].values()):
+        if any(not p.get('session_id') and not p.get('history') for p in manifest['participants'].values()):
             raise ValueError('A participant has no resumable session; reset explicitly instead of replacing it')
         if snapshot_hash(manifest['source']) != manifest['source_hash']:
             raise ValueError('Source snapshot changed; restore the evidence or reset explicitly')
@@ -113,11 +113,35 @@ def continue_panel(run_dir, brief, adapters, host_input=None, limits=None, *, re
         records.save_manifest(manifest)
         records.append('discussion_start', 'setup', sender='host', visibility=['all'],
                        discussion=manifest['discussion'], brief_revision=panel.brief_revision, text=brief,
-                       limits=manifest['limits'], reopened=reopen)
+                       limits=manifest['limits'], reopened=reopen, fresh_sessions=fresh_sessions)
+        for pid, person in panel.people.items():
+            awaiting_fresh_start = not person.get('session_id')
+            person.pop('history', None)
+            person.pop('history_briefs', None)
+            if fresh_sessions or awaiting_fresh_start:
+                start_fresh(panel, pid, person, manifest['discussion'])
+        records.save_manifest(manifest)
         return panel
     except BaseException:
         records.close()
         raise
+
+
+def start_fresh(panel, pid, person, discussion):
+    """Retire the native session; earlier visible discussion moves to a file the new session reads on demand."""
+    briefs = [{'revision': revision, 'text': (panel.records.root / f'brief-{revision}.md').read_text()}
+              for revision in range(1, panel.brief_revision)]
+    history = {'prior_briefs': briefs, 'events': panel.visible_history(pid, panel.discussion_start)}
+    # The participant's own scratch directory is already readable; the run root also holds peers' private work.
+    path = panel.records.root / 'participants' / pid / 'scratch' / f'history-d{discussion}.json'
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(json.dumps(history, ensure_ascii=False, indent=1))
+    if person['session_id']:
+        person.setdefault('retired_sessions', []).append(person['session_id'])
+        panel.records.append('session_replacement', 'setup', participant=pid, previous_session=person['session_id'],
+                             reason='fresh sessions requested at a discussion boundary', history=str(path))
+    person.update(session_id=None, history=str(path), history_briefs=panel.brief_revision,
+                  delivered=sorted(set(person['delivered']) | {e['id'] for e in panel.records.events[:panel.discussion_start]}))
 
 
 def stop_panel(run_dir):

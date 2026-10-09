@@ -40,10 +40,31 @@ class Fixture:
 
 
 
+def report_text(event):
+    return Path(event['data']['path']).read_text()
+
+
 class PanelBehavior(unittest.TestCase):
     def run_scenario(self, scenario):
         with tempfile.TemporaryDirectory() as root:
             asyncio.run(scenario(root))
+
+    def test_review_prompt_carries_candidate_text_once(self):
+        """Given a frozen candidate, when reviewers are prompted, then its full text appears only in the candidate field and persisted events keep the original."""
+        async def scenario(root):
+            fixture = Fixture(root)
+            report = await fixture.run()
+            self.assertEqual(report['outcome'], 'agreed')
+            reviews = [i for i in fixture.adapter.inputs if i['phase'] == 'review']
+            self.assertTrue(reviews)
+            for payload in reviews:
+                text = payload['candidate']['text']
+                self.assertEqual(json.dumps(payload).count(json.dumps(text)), 1)
+                self.assertTrue(any(e['kind'] == 'candidate' and e['data']['revision'] == payload['candidate']['revision']
+                                    for e in payload['events']))
+            stored = [e for e in fixture.panel.records.events if e['kind'] == 'candidate']
+            self.assertTrue(all(e['data']['text'] == report_text(e) for e in stored))
+        self.run_scenario(scenario)
 
     def test_independent_rounds(self):
         """Given three designers sharing an adapter, when discussing, then initial inputs exclude peers, critique uses one cutoff, sessions stay separate and all approve."""

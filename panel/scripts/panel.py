@@ -48,6 +48,8 @@ async def execute(args):
         raise ValueError('--recover and --stop take no limits; pass changed limits with --continue or --reopen')
     if args.unbounded and args.run_seconds is not None:
         raise ValueError('--unbounded removes the discussion deadline; do not combine it with --run-seconds')
+    if args.fresh_sessions and not followup_run:
+        raise ValueError('--fresh-sessions applies only to --continue or --reopen')
     if bool(args.follow_up) != bool(followup_run):
         raise ValueError('--continue and --reopen require --follow-up FILE; --follow-up is only for these operations')
     if args.stop:
@@ -60,7 +62,8 @@ async def execute(args):
         panel = continue_panel(followup_run, Path(args.follow_up).read_text(), adapters, checkpoint,
                                limits={'max_cycles': args.max_cycles, 'idle_seconds': args.idle_seconds,
                                        'run_seconds': args.run_seconds, 'report_seconds': args.report_seconds,
-                                       'unbounded': args.unbounded}, reopen=bool(args.reopen))
+                                       'unbounded': args.unbounded}, reopen=bool(args.reopen),
+                               fresh_sessions=args.fresh_sessions)
     else:
         if not all((args.preset, args.brief, args.roster)):
             raise ValueError('preset, brief and roster are required for a new panel')
@@ -108,6 +111,7 @@ def main():
     saved.add_argument('--continue', dest='continue_run', metavar='RUN_DIR', help='Resume the same participants for another discussion')
     saved.add_argument('--reopen', metavar='RUN_DIR', help='Reopen a stopped panel and resume its saved participants for a new discussion')
     saved.add_argument('--stop', metavar='RUN_DIR', help='End an idle panel conversation without launching participants')
+    parser.add_argument('--fresh-sessions', action='store_true', help='With --continue or --reopen: start new native sessions; earlier discussion is supplied as a file each participant reads on demand')
     parser.add_argument('--follow-up', metavar='FILE', help='Latest user request, decisions and acceptance criteria for --continue or --reopen')
     args = parser.parse_args()
     try:

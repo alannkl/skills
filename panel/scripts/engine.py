@@ -52,6 +52,8 @@ def validate_roster(roster, adapters, preset):
         allowed = getattr(adapters[person['harness']], 'settings_keys', {'model'})
         if set(settings) - allowed:
             raise ValueError('unknown adapter settings; capabilities and working directories come from the task')
+        if 'prompt_cache_ttl' in settings and settings['prompt_cache_ttl'] not in ('5m', '1h'):
+            raise ValueError('prompt_cache_ttl must be 5m or 1h')
         if 'max_turns' in settings and (type(settings['max_turns']) is not int or settings['max_turns'] < 1):
             raise ValueError('max_turns must be a positive integer')
         if 'max_budget_usd' in settings and (not isinstance(settings['max_budget_usd'], (int, float)) or not math.isfinite(settings['max_budget_usd']) or settings['max_budget_usd'] <= 0):
@@ -229,7 +231,29 @@ class Panel:
                 directories.add(str(Path(artifact['patch']).parent))
         self.people[pid]['read_dirs'] = sorted(directories)
 
+    def deduplicated(self, events):
+        """Send the current candidate's full text once, in the candidate field; persisted events stay unchanged."""
+        if not self.candidate:
+            return events
+        current = (self.candidate['revision'], self.candidate['content_hash'])
+        reference = f"Full text is the candidate field, revision {self.candidate['revision']}."
+        projected = []
+        for e in events:
+            if e['kind'] == 'candidate' and (e['data'].get('revision'), e['data'].get('content_hash')) == current:
+                e = dict(e, data={'revision': current[0], 'content_hash': current[1], 'path': self.candidate['path'],
+                                  'brief_revision': e['data'].get('brief_revision'), 'text': reference})
+            elif e['kind'] == 'message' and e['data'].get('text') == self.candidate['text']:
+                e = dict(e, data=dict(e['data'], text=reference))
+            projected.append(e)
+        return projected
+
+    def visible_history(self, pid, before):
+        return [e for e in self.records.events[:before]
+                if e['kind'] in ('message', 'candidate', 'review', 'human_decision')
+                and (pid in e['visibility'] or 'all' in e['visibility'])]
+
     def prompt(self, pid, instruction, events, cutoff):
+        history = self.people[pid].get('history')
         payload = {'participant_id': pid, 'role': self.people[pid]['role'],
                    'phase': self.phase, 'instruction': instruction,
                    'authority': self.preset['authority'], 'execution': self.execution.config,
@@ -239,12 +263,13 @@ class Panel:
                    'brief_revision': self.brief_revision, 'brief': self.brief,
                    'discussion': self.manifest.get('discussion', 1),
                    'prior_briefs': [{'revision': revision, 'text': (self.records.root / f'brief-{revision}.md').read_text()}
-                                    for revision in range(1, self.brief_revision)],
+                                    for revision in range(self.people[pid].get('history_briefs', 1), self.brief_revision)],
+                   'history_file': history,
                    'source_snapshot': self.manifest['source'], 'source_hash': self.manifest['source_hash'],
                    'artifact_directory': str(self.records.root / 'participants' / pid / 'scratch'),
                    'roster': [{'id': p, 'role': self.people[p]['role']} for p in self.ids],
                    'declared_drafter': self.manifest['drafter'],
-                   'cutoff': cutoff, 'events': events, 'candidate': self.candidate,
+                   'cutoff': cutoff, 'events': self.deduplicated(events), 'candidate': self.candidate,
                    'unresolved_reviews': self.unresolved}
         contract = {'participant_id': pid, 'kind': 'review' if self.phase == 'review' else 'candidate' if self.phase == 'draft' else 'contribution',
                     'text': 'Your contribution; for draft, the final deliverable or a report of actual file changes.',
@@ -264,8 +289,9 @@ class Panel:
                 'File-reading permission alone allows no source edits or other side effects. Follow execution settings and declared capabilities. '
                 'For file work, write only in your own working_directory. Preserve the source snapshot, peer workspaces and frozen results. '
                 'Read peer artifacts only after the runner reveals them. '
-                'Do not commit, push, publish, change installed skills, or launch further agents. Sender identity is assigned by the runner. '
+                'Do not commit, push, publish or change installed skills. Sender identity is assigned by the runner. '
                 'This is an ongoing panel conversation. Continue from your session history and supplied prior discussion. '
+                'When history_file is set, your session is new: earlier briefs and the earlier discussion visible to you are in that file; read what the current brief needs. '
                 'The current brief is the latest host request; retain prior decisions unless it revises them. '
                 'Private opening rounds withhold only current opening contributions; earlier shared discussion remains known. '
                 'Perform the work and deliver what the brief specifies. Put requested structured output in data, with keys defined by the brief. '
@@ -479,7 +505,9 @@ class Panel:
                     restarted = True
                     self.people[pid].setdefault('retired_sessions', []).append(session)
                     self.people[pid]['session_id'] = None
-                    self.people[pid]['delivered'] = []
+                    # A session started fresh holds earlier discussions in its history file, not inline.
+                    self.people[pid]['delivered'] = ([e['id'] for e in self.records.events[:self.discussion_start]]
+                                                     if self.people[pid].get('history') else [])
                     self.records.append('session_replacement', self.phase, participant=pid,
                                         previous_session=session, reason=result.error)
                     self.records.save_manifest(self.manifest)
