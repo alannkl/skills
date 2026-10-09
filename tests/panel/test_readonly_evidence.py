@@ -32,18 +32,17 @@ class ReadonlyEvidence(unittest.TestCase):
 
 
     def test_native_readonly_boundaries_survive_resume(self):
-        """Given default permissions, when native adapters start and resume, then Codex keeps its read-only sandbox and Claude permits only file and web reads, skills and subagents."""
+        """Given default permissions, when native adapters start and resume, then participants get their full tool set, Codex can write only its working and scratch directories, and the frozen evidence stays read-only on disk."""
         capabilities = ExecutionPolicy({}, ['a', 'b'], 'a').capabilities()
-        settings = {'model': 'fixture', 'cwd': '/tmp/evidence', 'capabilities': capabilities}
+        settings = {'model': 'fixture', 'cwd': '/tmp/evidence', 'capabilities': capabilities, 'scratch_dir': '/tmp/scratch'}
         for name, adapter in production_adapters().items():
             start, session = adapter.command(None, settings)
             resume, _ = adapter.command(session or 'existing-session', settings)
             if name == 'codex':
-                self.assertEqual(start[start.index('--sandbox') + 1], 'read-only')
-                self.assertIn('sandbox_mode="read-only"', resume)
+                self.assertEqual(start[start.index('--sandbox') + 1], 'workspace-write')
+                self.assertIn('sandbox_mode="workspace-write"', resume)
+                self.assertTrue(all('sandbox_workspace_write.writable_roots=["/tmp/scratch"]' in argv for argv in (start, resume)))
                 self.assertTrue(all('approval_policy="never"' in argv for argv in (start, resume)))
             else:
-                # Skill and Agent widen nothing: subagents inherit this tool set, which still has no Edit, Write or Bash.
-                self.assertTrue(all(set(argv[argv.index('--tools') + 1].split(',')) ==
-                                    {'Read', 'Grep', 'Glob', 'Skill', 'Agent', 'WebSearch', 'WebFetch'} for argv in (start, resume)))
+                self.assertTrue(all('--tools' not in argv for argv in (start, resume)))
             self.assertFalse(any('bypass' in argument for argument in start + resume))

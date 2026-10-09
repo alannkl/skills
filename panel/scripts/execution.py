@@ -46,7 +46,9 @@ class ExecutionPolicy:
 
     def capabilities(self):
         # Describe permitted effects; a harness may implement file reads through a shell.
+        # Panel participants get their harness's full tool set; workspace modes declare intent, and the runner
+        # enforces the source snapshot and inspect-mode patches after each round.
         return {'file_reads': True, 'workspace_write': self.worktree, 'source_edits': self.editable,
-                'web': self.config['web'],
+                'full_tools': True, 'web': self.config['web'],
                 'tool_approval': 'automatic within task bounds',
                 'verification_commands': [c['argv'] for c in self.config['checks']]}

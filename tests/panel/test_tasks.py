@@ -174,14 +174,13 @@ class TaskBehavior(unittest.TestCase):
                 first, session = adapter.command(None, settings)
                 resumed, _ = adapter.command(session or 'existing', settings)
                 if name == 'claude':
-                    tools = first[first.index('--tools') + 1].split(',')
-                    self.assertEqual(tools, resumed[resumed.index('--tools') + 1].split(','))
-                    self.assertEqual('WebSearch' in tools, kind == 'research')
-                    self.assertEqual('Edit' in tools, kind == 'implementation')
-                    self.assertEqual('Bash' in tools, kind == 'implementation')
+                    self.assertNotIn('--tools', first + resumed)
+                    for argv in (first, resumed):
+                        blocked = argv[argv.index('--disallowedTools') + 1:] if '--disallowedTools' in argv else []
+                        self.assertEqual('WebSearch' in blocked, kind == 'implementation')
                 else:
                     self.assertEqual('web_search="live"' in resumed, kind == 'research')
-                    mode = 'workspace-write' if kind == 'implementation' else 'read-only'
+                    mode = 'workspace-write'
                     self.assertEqual(first[first.index('--sandbox') + 1], mode)
                     self.assertIn('sandbox_mode="' + mode + '"', resumed)
                     self.assertNotIn('--cd', resumed)

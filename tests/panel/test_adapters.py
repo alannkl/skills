@@ -176,6 +176,20 @@ class AdapterBehavior(unittest.TestCase):
                     self.assertEqual(dict(os.environ), before)
         self.run_scenario(scenario)
 
+    def test_claude_reports_pending_subagent(self):
+        """Given a Claude stream, when the participant has launched a subagent whose result has not returned, then delegated work is pending until the result arrives."""
+        from adapters.claude import ClaudeAdapter
+        call = {'type': 'assistant', 'parent_tool_use_id': None, 'message': {'content': [{'type': 'tool_use', 'id': 'toolu_1', 'name': 'Agent'}]}}
+        child = {'type': 'assistant', 'parent_tool_use_id': 'toolu_1', 'message': {'content': [{'type': 'tool_use', 'id': 'toolu_2', 'name': 'Read'}]}}
+        child_result = {'type': 'user', 'parent_tool_use_id': 'toolu_1', 'message': {'content': [{'type': 'tool_result', 'tool_use_id': 'toolu_2'}]}}
+        result = {'type': 'user', 'parent_tool_use_id': None, 'message': {'content': [{'type': 'tool_result', 'tool_use_id': 'toolu_1'}]}}
+        with tempfile.TemporaryDirectory() as root:
+            adapter, stdout = ClaudeAdapter(), Path(root, 'stdout')
+            self.assertFalse(adapter.delegated_work_pending(root))
+            for events, pending in (([call], True), ([call, child, child_result], True), ([call, child, child_result, result], False)):
+                stdout.write_text(''.join(json.dumps(e) + '\n' for e in events))
+                self.assertEqual(adapter.delegated_work_pending(root), pending)
+
     def test_forced_short_cache_is_reported(self):
         """Given FORCE_PROMPT_CACHING_5M in the runner environment, when a one-hour cache is requested, then the adapter warns on stderr and still passes the request through."""
         from adapters.claude import ClaudeAdapter

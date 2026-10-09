@@ -14,7 +14,7 @@ class CodexAdapter(ProcessAdapter):
 
     def command(self, session_id, settings):
         capabilities = settings.get('capabilities', {})
-        sandbox = 'workspace-write' if capabilities.get('workspace_write') else 'read-only'
+        sandbox = 'workspace-write' if capabilities.get('full_tools') or capabilities.get('workspace_write') else 'read-only'
         command = [settings.get('executable', 'codex'), 'exec']
         if session_id:
             command += ['resume']
@@ -24,6 +24,9 @@ class CodexAdapter(ProcessAdapter):
             command += ['-c', 'sandbox_mode=' + json.dumps(sandbox)]
         else:
             command += ['--cd', settings['cwd'], '--sandbox', sandbox]
+        if capabilities.get('full_tools') and settings.get('scratch_dir'):
+            # The scratch directory sits outside the working directory; --add-dir is not accepted on resume.
+            command += ['-c', 'sandbox_workspace_write.writable_roots=' + json.dumps([settings['scratch_dir']])]
         if 'capabilities' in settings:
             command += ['-c', 'web_search=' + json.dumps('live' if capabilities.get('web') else 'disabled')]
         if settings.get('effort'):
