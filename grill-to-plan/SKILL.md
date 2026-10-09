@@ -30,6 +30,7 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
 
 3. Use available context before asking.
    - Answer discoverable questions yourself: inspect the codebase, docs, issue tracker, or session log first and report what you found; ask only what exploration cannot settle.
+   - When a decision-changing question needs a runtime observation that reading cannot settle, such as whether either rendering approach meets an agreed latency limit, run the cheapest isolated probe or prototype within existing authorization, or propose it and wait when it needs more authorization. Record the result with the load-bearing facts in step 8, or in the synthesis when no session record is kept. Use the observation to settle the factual question, and put any remaining product or preference choice to the user. When the evidence stays unavailable, keep the question open and state what is missing.
    - If a needed fact requires lengthy exploration, do not stall the session: start the exploration in the background when the harness allows, move on to questions that do not depend on it, and fold the finding in when it arrives.
    - Look for `CONTEXT-MAP.md`, `CONTEXT.md`, and `docs/adr/` when the discussion touches domain language or architecture.
 
@@ -82,10 +83,11 @@ Turn a vague goal, rough idea, plan, or design into shared understanding, clear 
    - In lightweight mode, give the resolved decision, any explicit deferral, and the next step.
    - In documented mode, provide the full synthesis: resolved plan, decisions made, open questions, docs updated, risks, and next steps.
    - Order the plan by likelihood of revision: lead with the decisions the user is most likely to tweak (data models, type interfaces, user-facing behavior) and put mechanical or well-understood work last.
+   - For a plan with several implementation units, give each unit its deliverable, its prerequisites, and the check that shows it done. Presentation order is for review; prerequisites set build order.
    - Use a diagram (flow, sequence, state, dependency) in the synthesis and in `plan.md` or `session.md` when structure — component interactions, data flow, decision branches, build order — is easier to grasp visually than in prose. Write diagrams in mermaid, in chat and in the records alike, unless the repo's existing docs use another diagram convention. Never diagram what a sentence covers.
    - Offer an alignment quiz alongside the synthesis: a short multiple-choice round checking the user and the plan agree on how the planned system should behave — probing behaviors the user never reasoned through and the plan's critical paths. On acceptance, read `references/ALIGNMENT-QUIZ.md` and follow it; fold any changed decision back into the synthesis and records.
    - Whenever a session record exists, also persist the final plan as `plan.md` next to `session.md`, following `references/SESSION-RECORD-FORMAT.md`. Overwrite it if the session resumes and the plan changes.
-   - Keep `plan.md` forward-looking: what to build and in what order. Link to `session.md` for decision history instead of duplicating it.
+   - Keep `plan.md` forward-looking: what to build and what each part needs first. Link to `session.md` for decision history instead of duplicating it.
 
 ## ADR rule
 

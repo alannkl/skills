@@ -11,7 +11,7 @@ Runs only when the user named no target and did not say there is none.
 
 ## Proposal record
 
-One per candidate idea. For target `none`, `current behavior` and `gap` read "not applicable"; every other field is filled against the proposed approach.
+One per candidate. For target `none`, `current behavior` and `gap` read "not applicable"; every other field is filled against the proposed approach.
 
 | Field | Content |
 | --- | --- |
@@ -19,18 +19,24 @@ One per candidate idea. For target `none`, `current behavior` and `gap` read "no
 | `support` | Independent families using it, and the claim IDs with their `basis`. |
 | `current behavior` | What the target does now, with location, or "absent". |
 | `gap` | The concrete failure or missed opportunity in the target, shown by an example or a location. |
+| `change` | How the proposal would change the artifact or process; for `idea`, the design choice it settles; for `none`, how it shapes the recommended approach. An adopt needs a concrete answer; other dispositions state the change considered or why none is proposed. |
 | `expected improvement` | What changes for the target's user when the idea is adopted. |
 | `added complexity` | Lines, branches, dependencies, or decisions the change adds. |
 | `fit` | The user-stated or inferred preference the idea matches or violates, labeled as stated or inferred. |
 | `check` | How the applied change will be shown to work. |
 | `disposition` | `adopt`, `already satisfied`, `reject`, or `defer`. |
-| `reconsider when` | For reject and defer: the evidence or condition that reopens the decision. |
+| `reconsider when` | For reject and defer: the evidence or condition that would reopen the proposal. For any other proposal the user declines or defers: their stated revisit condition, or `not specified`. |
+| `user decision` | `picked`, `declined`, or `deferred` as the user stated it, or `not recorded`. A disposition is the agent's recommendation, never a user decision. |
 
 ## Output by target
 
 - **Artifact**: a gap analysis, delivered as step 4 describes.
 - **Idea**: a sharpened design. The idea restated part by part; for each part, what the sources did, which of the user's choices the agreements back or contradict, and the decisions still open. Proposals attach to parts.
 - **None**: a recommendation. The approach to take, the alternatives considered and why each was rejected, and a starting draft when the user asked for one or the approach is clear enough that the draft is cheaper than a description.
+
+## Saved result
+
+One file shaped as a study report. After the findings, a `Changes` section gives each adopt's idea, the gap it closes with a link, the change, and the user decision, then one line per other disposition with its reason. After the evidence records, a `Proposal records` appendix holds every proposal record in full.
 
 ## Session evidence
 

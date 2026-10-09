@@ -120,7 +120,7 @@ External skills that pair well with this repo:
   npx skills add mattpocock/skills --skill writing-for-agents -g -y
   ```
 
-- Install [`unslop`](https://github.com/cursor/plugins/blob/main/pstack/skills/unslop/SKILL.md) to cut AI tells from any writing. [`refine-it`](refine-it/SKILL.md) and [`shorten-it`](shorten-it/SKILL.md) improve structure and length; `unslop` removes generated-sounding patterns. It is model-invoked, so agents load it on their own once installed.
+- Install [`unslop`](https://github.com/cursor/plugins/blob/main/pstack/skills/unslop/SKILL.md) to cut AI tells from any writing. [`refine-it`](refine-it/SKILL.md) and [`shorten-it`](shorten-it/SKILL.md) improve structure and length; `unslop` removes generated-sounding patterns. It is user-invoked: use `/unslop` for a writing pass.
 
   ```bash
   npx skills add cursor/plugins --skill unslop -g -y

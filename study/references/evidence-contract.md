@@ -1,8 +1,8 @@
 # Evidence contract
 
-Version: `contract: 1`. Collectors produce source records in this shape, the synthesis cites their claim IDs, and `learn-from` cites the same IDs in its proposals. A study report opens with its `contract` line.
+Version: `contract: 2`. Collectors produce source records in this shape, the synthesis cites their claim IDs, and `learn-from` cites the same IDs in its proposals. A report carries its `contract` line as the first line of its `Evidence records` appendix.
 
-Compatibility: a consumer checks that the fields it needs are present and repairs missing ones for the claims it uses; it does not redo the study. A report with no `contract` line is legacy input and gets the same targeted repair.
+Compatibility: a consumer reads the version from the `contract` line wherever it appears; a `contract: 1` report has the same records, with the line at the top of the file. A consumer checks that the fields it needs are present and repairs missing ones for the claims it uses; it does not redo the study. A report with no `contract` line is legacy input and gets the same targeted repair.
 
 ## Study header
 
@@ -57,22 +57,17 @@ Claims collected from a conversation transcript carry three more fields:
 
 ## Report shape
 
-Every report opens with a TL;DR: the question, the terminal outcome (complete, partial, or blocked) with the reason when it is not complete, the two or three findings that matter most, and the coverage gaps that limit them. Below it, section order may change; every field above must be present. Per-source detail goes after the synthesis. Both shapes end with the sources: every URL or path read or relayed, per unit, marked read, relayed, or unreachable, with the retrieval date.
+Write the report for a reader who was not in the session. The body reads top to bottom without this contract: no claim lines, sub-question codes, working-directory paths, or process detail such as budget and collectors. The records go in an appendix.
 
-Field study:
+Body:
 
-1. Question and trust: the header, with how far each source can be trusted and the coverage gaps.
-2. Agreements: each counted by independent families, citing claim IDs, with the counterexample search's result.
-3. Disagreements: who differs, on what, and which basis each side rests on.
-4. Open questions.
-5. Per-source detail: one section per source record.
-6. Sources.
+1. A title naming the subject or question.
+2. Summary: the question, the outcome (complete, partial, or blocked, with the reason when not complete), the two or three findings that matter most, and the coverage gaps that limit them.
+3. Findings, by shape:
+   - Field: agreements, each with the number of independent families behind it and what the counterexample search found; disagreements, naming who differs, on what, and the basis on each side; open questions.
+   - Subject: how it works; design choices with their rationale, each marked as stated by the author or inferred; ideas worth carrying elsewhere; open questions.
+4. Sources: every URL or path read or relayed, per unit, marked read, relayed, or unreachable, with the retrieval date.
 
-Subject study:
+Cite a claim by linking its location at the pinned revision, or by naming the file and revision when no link exists, followed by its claim ID: `([to-tickets](https://github.com/...#L38), mp:3)`. Before the first ID, tell the reader in one sentence that IDs point to the evidence records.
 
-1. Question and trust.
-2. How it works: the mechanism, citing claim IDs.
-3. Design choices and their stated rationale, each marked as author-stated or inferred.
-4. Notable ideas worth carrying elsewhere.
-5. Open questions.
-6. Source record and sources.
+Appendix, titled `Evidence records`: the `contract` line, the study header, then one section per source record with every claim line, so each cited ID resolves.
