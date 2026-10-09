@@ -18,7 +18,8 @@ description: Research a question from sources into an evidence-graded report, ei
    - Sources the user named are in and seed the scout. Skip scouting only when the user limits the study to the named sources.
    - Scout: a shallow sweep from the seeds that returns candidate sources, one line each, with no close reading.
    - Select collection units. A unit is one system, work, or author's source family at one version or surface. For a field, group candidates by family, a system, author, or school rather than a URL, and take one representative per family with the best primary access, plus every outlier that answers the question differently and every user-named source. Expect three to six units; take the whole field when it is small. For a subject, take the surfaces and versions the sub-questions need. Record each dropped candidate and the reason in the study header.
-   - Before dispatching collectors, report the frame and the selected units in chat, then continue; a correction from the user re-selects before any further dispatch.
+   - Before collecting, report the frame and selected units. Separate user-named sources from scouted additions, and give each addition's purpose and budget impact. Unless the user requires approval of additions, continue without waiting for a reply; when they do, request it in that report and leave additions uncollected until approved.
+   - Collect independent named units first. Then apply any corrections received and reassess additions against the remaining budget. Record additions left out for budget or missing approval as dropped candidates, and deliver **partial** when consequential coverage gaps remain.
 
 3. Collect.
    - Fill one source record per unit from primary material: the prompt, code, config, or vendor document. Secondary coverage fills gaps and is labeled as such. A source you cannot access is a coverage gap in the record.
@@ -34,8 +35,8 @@ description: Research a question from sources into an evidence-graded report, ei
    - Carry every record's `gaps` and `limitations` into the header's coverage gaps.
 
 5. Deliver.
-   - In chat, deliver the report from its TL;DR through the open questions, then the sources, and offer to save it.
-   - Save when the user named a path or accepts the offer: one file at that path or at `docs/<slug>.md` in the current project, with the per-source section carrying every record's claims so each cited claim ID resolves.
+   - In chat, deliver the report body per the contract's [Report shape](references/evidence-contract.md#report-shape), and offer to save it.
+   - Save when the user names a path or accepts the offer: one file, the body followed by the `Evidence records` appendix, at the named path or else at `<dir>/study/<slug>.md` in the current project, where `<dir>` is the project's established research-report location, or `docs` when it has none.
    - Terminal outcomes: **complete**; **partial**, naming the sub-questions still open and why; **blocked**, when the sources that decide the question are inaccessible.
 
 ## Gotchas

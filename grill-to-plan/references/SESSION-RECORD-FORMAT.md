@@ -62,7 +62,15 @@ Date: {yyyy-mm-dd}
 
 ## Plan
 
-{The final synthesis: what to build and in what order, led by the parts most likely to be revised.}
+{The final synthesis: what to build, led by the parts most likely to be revised. For several implementation units, write one entry per unit:}
+
+### U1: {Unit name}
+
+Delivers: {What exists when the unit is done.}
+
+Needs: {Prerequisite unit IDs and external conditions required before this unit can start, or "none".}
+
+Done when: {The check that shows the unit works.}
 
 ## Acceptance Criteria
 
