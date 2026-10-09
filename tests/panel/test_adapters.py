@@ -105,6 +105,25 @@ class AdapterBehavior(unittest.TestCase):
                 self.assertIn('Read,Grep,Glob,Skill,Agent', resumed)
                 self.assertNotIn('--bare', resumed)
 
+    def test_claude_grants_global_skill_roots(self):
+        """Given installed user-level skills, when a Claude participant or consultant starts or resumes, then every existing skill root is granted with --add-dir after the declared read directories, without duplicates, so installed skills and their reference files are readable by rule."""
+
+        from adapters.claude import skill_roots
+        with tempfile.TemporaryDirectory() as home:
+            for root in ('.claude/skills', '.agents/skills'):
+                Path(home, root).mkdir(parents=True)
+            self.assertEqual(skill_roots(home), [str(Path(home, '.claude/skills')), str(Path(home, '.agents/skills'))])
+            Path(home, '.agents/skills').rmdir()
+            self.assertEqual(skill_roots(home), [str(Path(home, '.claude/skills'))])
+        with patch('adapters.claude.skill_roots', return_value=['/skills/a', '/skills/b']):
+            adapter = production_adapters()['claude']
+            for session_id in (None, 'known-session'):
+                for extra in ({}, {'read_dirs': ['/evidence', '/skills/b']}):
+                    command, _ = adapter.command(session_id, dict(settings('/tmp'), **extra))
+                    start = command.index('--add-dir') + 1
+                    end = next(i for i in range(start, len(command)) if command[i].startswith('--'))
+                    self.assertEqual(command[start:end], extra.get('read_dirs', []) + [r for r in ['/skills/a', '/skills/b'] if r not in extra.get('read_dirs', [])])
+
 
     def test_schema_enforced_envelope(self):
         """Given a phase schema, when each adapter launches, then Claude passes it inline, Codex writes a strict copy with data as a string, and Codex output decodes that string back into an object."""

@@ -293,6 +293,8 @@ class Panel:
                 'For file work, write only in your own working_directory when the workspace is writable, and otherwise in your artifact_directory. Preserve the source snapshot, peer workspaces and frozen results. '
                 'Read peer artifacts only after the runner reveals them. '
                 'Do not commit, push, publish or change installed skills. Sender identity is assigned by the runner. '
+                'Your harness\'s skills and subagents are available within these boundaries. Apply the delegate skill when it is installed, '
+                'and otherwise delegate a bounded step when its result is cheaper to check than to produce; make your contribution and any review decision yourself. '
                 'This is an ongoing panel conversation. Continue from your session history and supplied prior discussion. '
                 'When history_file is set, your session is new: earlier briefs and the earlier discussion visible to you are in that file; read what the current brief needs. '
                 'The current brief is the latest host request; retain prior decisions unless it revises them. '

@@ -6,6 +6,20 @@ import sys
 from .base import ProcessAdapter, Terminal, session_uuid, structured
 
 
+# User-level skill installs. Granting them keeps installed skills and their reference files readable by rule,
+# independent of the native permission classifier, so participants can apply skills such as delegate.
+SKILL_ROOTS = ('~/.claude/skills', '~/.agents/skills')
+
+
+def skill_roots(home=None):
+    roots = []
+    for root in SKILL_ROOTS:
+        path = Path(root.replace('~', home, 1)) if home else Path(root).expanduser()
+        if path.is_dir() and str(path) not in roots:
+            roots.append(str(path))
+    return roots
+
+
 class ClaudeAdapter(ProcessAdapter):
     settings_keys = {'model', 'effort', 'max_turns', 'max_budget_usd', 'executable', 'prompt_cache_ttl'}
     idle_seconds = 300  # partial-message deltas keep the capture growing while the model thinks
@@ -35,8 +49,9 @@ class ClaudeAdapter(ProcessAdapter):
             command += ['--tools', ','.join(tools)]
         elif not web:
             command += ['--disallowedTools', 'WebSearch', 'WebFetch']
-        if settings.get('read_dirs'):
-            command += ['--add-dir', *settings['read_dirs']]
+        grants_dirs = list(settings.get('read_dirs') or []) + [r for r in skill_roots() if r not in (settings.get('read_dirs') or [])]
+        if grants_dirs:
+            command += ['--add-dir', *grants_dirs]
         if settings.get('schema'):
             command += ['--json-schema', json.dumps(settings['schema'])]
         command += ['--resume' if session_id else '--session-id', session]
