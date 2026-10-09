@@ -31,7 +31,7 @@ description: Writes or reviews agent skills and slash commands built from reusab
 4. Write `SKILL.md`.
    - Start with YAML frontmatter containing at least `name` and `description`.
    - Add optional fields such as `license`, `compatibility`, `metadata`, or `allowed-tools` only when they carry information.
-   - Make the skill model-invoked only when the agent must invoke it on its own or another skill must load it. Its description stays in context every turn; write it per the Description pattern section. Otherwise set `disable-model-invocation: true` and use a one-line human-facing description without trigger lists. A user-invoked skill costs no context, and typing its name still invokes it.
+   - Make the skill model-invoked only when the agent must invoke it on its own or another skill must load it. Its description stays in context every turn; write it per the Description pattern section. Otherwise set `disable-model-invocation: true`, use a one-line human-facing description without trigger lists, and add `agents/openai.yaml` setting `policy.allow_implicit_invocation` to an unquoted `false`, because Codex ignores the frontmatter field. Typing the skill's name still invokes it.
    - When user-invoked skills become hard to remember, suggest one user-invoked router skill that names the others and when to use each. Update the router whenever a routed skill is added, renamed, or removed.
    - Keep the description out of the body. When the skill needs activation or scope rules the description cannot carry, put them in a `## Boundaries` section; skip the section when the description is already clear, and put execution defaults in the workflow steps.
    - Focus the body on procedures, defaults, examples, gotchas, scripts, and validation steps.
