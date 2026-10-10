@@ -25,6 +25,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
 
 1. Read before coding: files, tests, docs, conventions.
    - For structural decisions, inspect the tree, import/dependency rules, build files, tests, and representative files in the area before choosing where code belongs.
+   - Manifests, lockfiles, and CI config outrank docs; flag any doc they contradict.
    - Identify the behavioral surface: inputs, outputs, side effects, persistence, external calls, and user-visible contracts.
    - State assumptions when they affect implementation or risk; do not hide confusion.
    - When the request prescribes a mechanism ("add a retry loop here"), contradicts the code, or names only a symptom, restate the goal it serves before planning; recommend what serves it better.
@@ -70,7 +71,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - Treat authorization, injection risks, secrets, personal data, and least-privilege access as part of the design, not as afterthoughts.
    - When changing stored data, configs, queues, or external contracts, account for old data, mixed versions, migrations, defaults, and rollback behavior.
    - Make errors actionable with enough context to diagnose.
-   - Never log secrets, credentials, tokens, private keys, personal data, or full sensitive payloads.
+   - Never log or commit secrets, credentials, tokens, private keys, personal data, or full sensitive payloads.
    - Make production behavior observable with appropriate logs, metrics, traces, or audit events when the system would otherwise be hard to diagnose.
    - Avoid hidden concurrency and fire-and-forget work unless intentional, documented, and observable.
    - In hot paths, consider data volume, algorithmic complexity, indexing, batching, caching, and N+1 risks; measure before broad optimization.
