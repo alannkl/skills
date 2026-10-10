@@ -3,7 +3,7 @@
 Write the explainer to a destination where future readers will already look.
 
 - Change scope: the destination is the PR description or extended commit-message body, so the explainer persists where reviewers and future readers already look.
-- Other scopes: name the concrete destination where the explainer belongs — the relevant README section, an existing docs page, an architecture note — not a vague "this could be documented". Keep it markdown; mermaid renders where docs live.
+- Other scopes: name the concrete destination where the explainer belongs — the relevant README section, an existing docs page, an architecture note — not a vague "this could be documented". Keep it markdown, and redraw the explainer's plain-text diagrams in mermaid, which renders where docs live.
 - Update docs or run git or gh commands only with the user's explicit go-ahead: an explainer is written for one reader at one moment, and silently merging it into shared docs invites rot and duplication. Adapt it to the destination's audience and mode — a how-to section should not absorb explanation-mode prose wholesale — rather than pasting verbatim.
 - Keep the explainer's confidence language intact when folding it in: inference labels and hedges are findings, not style, and must survive the merge.
 - Write the full explanation, not a summary, unless the user asks for less.
