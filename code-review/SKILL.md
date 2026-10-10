@@ -161,7 +161,7 @@ Before reporting a finding, check that it has:
 
 Write for a reader who may never have seen the code. Open with one line on the code's responsibility, then state the wrong behavior in a plain sentence before explaining the mechanism. Use the evidence to trace the path from trigger to wrong outcome.
 
-If a plausible misreading of the code hides the defect, name and correct it. When ordering, concurrency, or state transitions are too tangled to follow in prose, reduce the failing case to a minimal example, such as two writers or a three-slot queue, or draw a small mermaid diagram. Use prose alone when a sentence suffices.
+If a plausible misreading of the code hides the defect, name and correct it. When ordering, concurrency, or state transitions are too tangled to follow in prose, reduce the failing case to a minimal example, such as two writers or a three-slot queue, or draw a small plain-text diagram. Use prose alone when a sentence suffices.
 
 Review in the language and conventions present in the diff. The example below illustrates the shape of a strong finding, not its domain.
 

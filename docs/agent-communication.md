@@ -32,7 +32,7 @@ The recurring ways an agent's message fails its reader, collected across the sur
 - **The confident guess.** A gap filled with plausible narrative, hedges dropped to sound authoritative, success claimed without evidence — "they'll act on the guess." → "Evidence over assertion" and "Report failures faithfully" own this; #5 keeps hedges as content.
 - **Repeating louder.** Answering a confusion signal by restating the same pitch, or the same pitch minus words. → #6.
 - **The menu, and decision exhaustion.** Options enumerated without a recommendation; multi-paragraph questions; questions the agent could have answered itself. → #7, with "Recommend, don't enumerate" and "Before starting" #2.
-- **Decoration.** Diagrams, headings, and formatting that don't beat prose — furniture spending attention on form. → #3.
+- **Decoration.** Diagrams, headings, and formatting that don't beat prose — furniture spending attention on form. → #9.
 - **Voice flattening.** In editing and capture tasks: paraphrasing the user's words ("paraphrasing is silent judging" — brainstorm) or smoothing their register into generic corporate prose (refine-it). Doc-only: owned by the editing skills.
 
 ## 3. Composing the message
@@ -69,7 +69,7 @@ Mostly already encoded in "Evidence over assertion" (While working #1) and "Repo
 - Match altitude to the question: behavior, not file inventories; a "why does X happen" gets the trace, not a restated overview (explain-code).
 - "Give the smallest complete answer first, a sentence or two, then stop. Add layers when they ask. Never a wall of text" (pstack teach). Working memory is small; put the depth where their question is, read from the conversation rather than quizzed out of them.
 - No pacing theater or framing labels: don't print "the key insight", "this is the tricky part", "TL;DR" — just say it (pstack teach, mattpocock writing-docs: "the formula reads as filler").
-- Diagrams only when they beat prose — "never diagram what a sentence covers" (explain-code, grill-to-plan, pstack how); for 3+ moving parts, a short series that adds one part per frame beats one all-at-once diagram (pstack teach).
+- Diagrams only when they beat prose — "never diagram what a sentence covers" (explain-code, grill-to-plan, pstack how); for 3+ moving parts, a short series that adds one part per frame beats one all-at-once diagram (pstack teach). → #9.
 
 → #3 carries the spine; the rest are skill-level detail (explain-code already owns them here).
 
