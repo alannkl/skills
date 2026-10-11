@@ -1,16 +1,16 @@
 # Runner usage
 
-The skill has two modes. Panel mode runs `scripts/panel.py` with one of three presets; pair mode runs `scripts/consult.py` as described under Consultant. Choose between them with the mode-selection rules under Prepare in `SKILL.md`.
+Panel mode runs `scripts/panel.py` with one of three presets; pair mode runs `scripts/consult.py`, described under Consultant. Choose the mode under Prepare in `SKILL.md`.
 
 ## Brief and roster
 
-The brief defines the work, deliverable and acceptance criteria, and the runner reads it as written. The host may adapt `references/brief-examples.md`.
+The brief defines the work, deliverable and acceptance criteria; the runner reads it as written.
 
-For an existing skill in either mode, follow `references/skill-collaboration.md`. The host manages interactive stages, skill loading and questions. In panel mode it supplies the chosen preset to `panel.py`; the runner does not automate the skill's stages. In pair mode the host executes those stages under the Pair mode consultation and review rules in `SKILL.md`.
+For an existing skill in either mode, follow `references/skill-collaboration.md`; the host manages the skill's stages, loading and questions, and the runner does not automate them.
 
 ### Default roster
 
-In panel mode, when the user leaves the roster unspecified, use two participants. Pair mode uses one consultant; its model choice and fallback follow the same per-harness defaults:
+An unspecified panel roster has two participants. Pair mode has one consultant by default; Pair mode in `SKILL.md` assigns harnesses to further ones. Participants and consultants follow these per-harness defaults:
 
 | Harness | Preferred model | Effort |
 | --- | --- | --- |
@@ -48,7 +48,7 @@ Use supported effort values. IDs must be unique; `host`, `runner` and `all` are 
 
 Roles are neutral labels: `member` for every participant, and `leader` for the `leader-members` leader. The brief defines the work; the preset's opening round divides it, or keeps it whole. A role that names a viewpoint or a slice of the task prejudices that round, since the runner sends each participant its own role and the full roster in every phase, including the opening. The `drafter` designation is an editing duty.
 
-Follow the roster-confirmation step under Prepare in `SKILL.md` before launch. Direct CLI calls with explicit roster files remain noninteractive.
+Direct CLI calls with explicit roster files are noninteractive.
 
 Every opening contribution is required. Critique or clarification may skip a failed participant after confirming inactivity and reconciling the failure; that participant remains required for final approval.
 
@@ -201,7 +201,7 @@ Completed version-3 panels can be continued explicitly with their saved sessions
 
 ## Consultant
 
-`scripts/consult.py` runs one read-only participant while the host does the work. Pair mode uses it under the Pair mode consultation and review rules in `SKILL.md`, keeping the session available across follow-ups.
+`scripts/consult.py` runs one read-only participant per directory while the host does the work. Pair mode opens one directory per consultant under the Pair mode consultation and review rules in `SKILL.md`, keeping each session available across follow-ups.
 
 | Command | Behavior |
 | --- | --- |

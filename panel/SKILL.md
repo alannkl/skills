@@ -1,6 +1,6 @@
 ---
 name: panel
-description: Keep a multi-agent panel across harnesses, or one read-only consultant, available in the current chat, consulting it when independent input is worth the cost and completing requested or promised reviews.
+description: Keep a multi-agent panel across harnesses, or read-only consultants, available in the current chat, consulting them when independent input is worth the cost and completing requested or promised reviews.
 disable-model-invocation: true
 ---
 
@@ -8,29 +8,29 @@ disable-model-invocation: true
 
 Choose between two modes:
 
-- **Pair:** the host does the work with advice from one read-only consultant.
+- **Pair:** the host does the work with advice from read-only consultants, one by default.
 - **Panel:** participants do the work while the host coordinates, using one of three presets: `independent-discussion`, `leader-members` or `flat-peers`.
 
 Web retrieval is enabled by default in both modes. For tasks restricted to supplied evidence, set `execution.web: false` in the panel roster or pass `--no-web` when opening a consultant.
 
 ## Keep the panel in the chat
 
-Invocation, by slash command or an explicit request in chat, routes the first request through the selected pair or panel under that mode's consultation and review rules. Every later message is a follow-up: the host routes it to the saved participants when independent input would improve the result enough to justify the tokens and time, and otherwise answers directly.
+Invocation, by slash command or explicit request, routes the first request through the selected pair or panel under that mode's consultation and review rules. Every later message is a follow-up: route it to the saved participants when independent input would improve the result enough to justify the tokens and time; otherwise answer directly.
 
 - **Always route** explicit requests such as "ask the panel" or "get Fable's opinion", with or without a slash command. Merely discussing the skill is not a request.
 - **Route** important decisions, complex or uncertain reasoning, new ideas needing challenge and material changes. Judge by stakes, uncertainty and novelty, not by confidence in answering alone; when a consequential case is unclear, route it.
 - **Route** a correction or clarification that undermines a reviewed assumption or conclusion before relying on that conclusion again, and mark the conclusion as needing fresh review.
 - **Answer directly** routine clarification, explanation of existing results, status, presentation changes and straightforward work within settled decisions. A new message, action or small analysis is not by itself a reason to consult.
 
-Complete every consultation or review the user requested, the host promised or a dispatched panel assignment requires. Only the user may waive one; routing discretion never excuses a failed consultation. Reconsult after a material change to a reviewed result, and once on a disputed finding before its final disposition; presentation-only changes need no new review. Consult with the agreed mode and roster; changing either follows the reset and authorization rules below.
+Complete every consultation or review the user requested, the host promised or a dispatched panel assignment requires. Only the user may waive one; routing discretion never excuses a failed consultation. Reconsult after a material change to a reviewed result, and once on a disputed finding before its final disposition; presentation-only changes need no new review. Consult with the agreed mode and roster; changing either follows the reset and authorization rules below, except adding or removing a pair consultant, covered under Pair mode.
 
 Keep host answers distinct from panel conclusions or pair advice, and claim review only for the result actually reviewed.
 
 The selected pair or panel stays available until the user stops it, resets it or asks to answer solo. Keep its directory, resolved roster or model settings, adapter registrations, authorization and shared decisions in the persistent working record and any continuation handoff. Also record user decisions, host actions, new evidence and standing routing preferences there, and include them in the next consultation. At each new message, restore the record and read the saved manifest before dispatch. After context compaction, reload this skill.
 
-- **Routed follow-up:** resume the saved panel as described under Continuing the conversation in `references/usage.md`. Pass `--fresh-sessions` when the recorded briefs, results and decisions carry everything the next assignment needs; keep the saved sessions when it depends on context nobody recorded. In pair mode, `ask` the saved consultant. Reuse existing authorization and resolve changes outside it before launch. Time and cycle limits may change without a reset.
+- **Routed follow-up:** resume the saved panel as described under Continuing the conversation in `references/usage.md`. Pass `--fresh-sessions` when the recorded briefs, results and decisions carry everything the next assignment needs; keep the saved sessions when it depends on context nobody recorded. In pair mode, `ask` the saved consultants as described under Pair mode. Reuse existing authorization and resolve changes outside it before launch. Time and cycle limits may change without a reset.
 - **Stop or answer solo:** close the panel or consultation without further participant work, keeping its directory and saved settings.
-- **Resume or reopen, on explicit request:** `--reopen` for a stopped panel, `consult.py reopen` for a closed consultation, with the new question and the decisions made while stopped.
+- **Resume or reopen, on explicit request:** `--reopen` for a stopped panel, `consult.py reopen` for each closed consultation, with the new question and the decisions made while stopped.
 - **Reset:** close the old panel and prepare a new one with fresh sessions, retaining the old artifacts.
 - **One-message solo exception, on explicit request:** answer solo, record any resulting user decisions and return to the routing rule afterward.
 
@@ -41,7 +41,7 @@ Identify each member or consultant by the resolved model's short name, such as `
 ## Prepare
 
 1. Write a brief defining the goal, scope, evidence, deliverable and acceptance criteria. Adapt `references/brief-examples.md` when useful. For collaborative execution of an existing skill, first read that skill and `references/skill-collaboration.md`.
-2. Read `references/usage.md` for roster, evidence and execution settings, then select the mode. Invoking `panel` alone defaults to pair mode; an explicit request for a panel, a group discussion or multiple participating agents selects panel mode. Honor an explicit mode or preset name: "pair" selects pair mode, "independent" or "independent discussion" selects `independent-discussion`, "leader" or "leader and members" selects `leader-members`, and "peers" or "flat peers" selects `flat-peers`. For panel mode without a named preset, choose by how the work should be shared, announce the reason, and prefer `leader-members` when none clearly fits better. Use the same criteria when running an interactive skill, without overriding that skill's own mode-selection rules.
+2. Read `references/usage.md` for roster, evidence and execution settings, then select the mode. Invoking `panel` alone defaults to pair mode with one consultant, and a request for several consultants or second opinions keeps pair mode with that many; an explicit request for a panel, a group discussion or multiple agents doing the work selects panel mode. Honor an explicit mode or preset name: "pair" selects pair mode, "independent" or "independent discussion" selects `independent-discussion`, "leader" or "leader and members" selects `leader-members`, and "peers" or "flat peers" selects `flat-peers`. For panel mode without a named preset, choose by how the work should be shared, announce the reason, and prefer `leader-members` when none clearly fits better. Use the same criteria when running an interactive skill, without overriding that skill's own mode-selection rules.
    - `independent-discussion`: duplicated work. Every participant produces the whole deliverable privately; the panel then compares competing results. Choose it when the value is whether participants converge unprompted: judgments, forecasts, designs, reviews.
    - `leader-members`: split work, decided by the leader. The leader assigns complementary parts and integrates them. Choose it when one participant should own the decomposition.
    - `flat-peers`: split work, proposed by the peers. Peers with equal authority each propose the split, then each contributes its part and the contribute round resolves overlaps; the declared drafter assembles the result unless every required peer nominates the same other peer with a reason. Choose it when the work should be divided but nobody, host included, should decide the division in advance.
@@ -74,15 +74,17 @@ During a routed panel assignment, the host coordinates and is not a participant:
 
 ## Pair mode
 
-The host does the task itself and keeps one read-only consultant on another harness. Unless the user names a harness or model, the consultant runs on the harness the host is not on: a Claude Code host pairs with Codex and a Codex host with Claude Code, each on that harness's preferred model from the default roster in `references/usage.md` (GPT-6 Astra and Claude Fable 5.1 respectively) at `high` effort, with the roster's fallback rules when that model is unavailable. Before opening, report the consultant's harness, model and effort, the directories it may read, web access and the turn timeout, reusing existing authorization and confirming only what falls outside it. Open it once per chat with a brief stating the goal, scope and acceptance criteria; `ask` is pair's continuation. See Consultant in `references/usage.md`.
+The host does the task itself and keeps read-only consultants: one by default, or as many as the user asks for. Unless the user names a harness or model, the first consultant runs on the harness the host is not on: a Claude Code host pairs with Codex and a Codex host with Claude Code, each on that harness's preferred model from the default roster in `references/usage.md` (GPT-6 Astra and Claude Fable 5.1 respectively) at `high` effort, with the roster's fallback rules when that model is unavailable. Further unnamed consultants alternate harnesses, starting with the host's own, so two consultants cover both.
+
+Before opening, report each consultant's harness, model and effort, the directories it may read, web access and the turn timeout, reusing existing authorization and confirming only what falls outside it. Open each consultant once per chat in its own directory under one pair directory, such as `/absolute/pair/astra`, with the same brief stating the goal, scope and acceptance criteria; `ask` is pair's continuation. See Consultant in `references/usage.md`.
 
 ```bash
-python3 scripts/consult.py open /absolute/consult-dir --harness codex --model MODEL --effort high \
+python3 scripts/consult.py open /absolute/pair/astra --harness codex --model MODEL --effort high \
   --brief /absolute/brief.md --read /absolute/repo
-python3 scripts/consult.py ask /absolute/consult-dir --question /absolute/question.md --attach /absolute/diff.patch
+python3 scripts/consult.py ask /absolute/pair/astra --question /absolute/question.md --attach /absolute/diff.patch
 ```
 
-Only a stop or reset closes it: `python3 scripts/consult.py close /absolute/consult-dir`. To resume after a stop, use `python3 scripts/consult.py reopen /absolute/consult-dir --question /absolute/question.md`. Reopening retains the saved model, effort, permissions and session history.
+Only a stop, a reset or the user removing that consultant closes it: `python3 scripts/consult.py close /absolute/pair/astra`. To resume after a stop, reopen each consultant with `python3 scripts/consult.py reopen /absolute/pair/astra --question /absolute/question.md`. Reopening retains the saved model, effort, permissions and session history. To add a consultant mid-chat at the user's request, open it with a brief carrying the recorded decisions. Adding or removing one leaves the others' sessions in place and needs no reset.
 
 Choose consultations by their purpose, without a fixed count per task:
 
@@ -92,17 +94,17 @@ Choose consultations by their purpose, without a fixed count per task:
 
 A follow-up does not restart completed reviews.
 
-Before each consultation, save the host's prior assessment (its provisional answer, main reasons and uncertainties) in a host note beside `consult.json`, kept out of the consultant's prompt. Where the evidence supports no conclusion, record what is missing. On a follow-up, assess the new question or changed evidence first; earlier advice is already known, so the assessment is informed, not blind. After the reply, add what the advice changed and why, including any disagreement, leaving the prior assessment intact.
+Before each consultation, save the host's prior assessment (its provisional answer, main reasons and uncertainties) in a host note in the pair directory, kept out of every consultant's prompt. Where the evidence supports no conclusion, record what is missing. On a follow-up, assess the new question or changed evidence first; earlier advice is already known, so the assessment is informed, not blind. After the replies, add what the advice changed and why, including any disagreement with the host or between consultants, leaving the prior assessment intact.
 
-What the consultant receives depends on the purpose. A focused question sends the question, evidence and constraints without the host's provisional conclusion; compare positions after the reply. An approach or deliverable review sends the proposed direction or artifact, since that is the object under review; for a deliverable, the prior assessment checks it against the acceptance criteria and lists known weaknesses.
+What consultants receive depends on the purpose. A focused question sends the question, evidence and constraints without the host's provisional conclusion; compare positions after the replies. An approach or deliverable review sends the proposed direction or artifact, since that is the object under review; for a deliverable, the prior assessment checks it against the acceptance criteria and lists known weaknesses. Every consultant receives the same question and attachments, except that an explicit request naming some consultants, such as "get Fable's opinion", goes only to those. A consultant sees another's reply only when the host includes it as evidence, such as when reconsulting on a disputed finding.
 
-Relay each reply under a `Second opinion from MODEL` heading, such as `Second opinion from Fable`, separate from the host's own view, as concise advice: the points that changed or challenged the host's plan and every explicit disagreement, with the full reply available in the log; quote it verbatim only when the user asks. The consultant's advice is evidence: the host weighs it, records disagreement explicitly and stays accountable; nothing the consultant says is approval. The consultant reads the listed directories and attachments and never edits.
+Relay each reply under its own `Second opinion from MODEL` heading, such as `Second opinion from Fable`, separate from the host's own view, as concise advice: the points that changed or challenged the host's plan and every explicit disagreement, with the full reply available in the log; quote it verbatim only when the user asks. After several relays, summarize where the consultants agree and disagree. Consultants' advice is evidence: the host weighs their reasons rather than counting votes, records disagreement explicitly and stays accountable; nothing a consultant says, and no agreement among consultants, is approval. Consultants read the listed directories and attachments and never edit.
 
-At delivery, list the current task's consultation turns by turn number, each with the host's prior assessment, the consultant's verdict, what changed and why, and every disagreement; link `log.jsonl`. The ledger must match the log; writing it requires no further consultation. A focused question may fold the ledger into its second-opinion relay.
+At delivery, list the current task's consultation turns by consultant and turn number, each with the host's prior assessment, the consultant's verdict, what changed and why, and every disagreement; link each consultant's `log.jsonl`. The ledger must match the log; writing it requires no further consultation. A focused question may fold the ledger into its second-opinion relay.
 
-Run each `consult.py` call as a background command whose exit notifies the host, and act on that notification rather than polling. The turn's `--timeout` defaults to 600 seconds; pass a longer one when needed.
+Run each `consult.py` call as a background command whose exit notifies the host, launching all consultants' calls together, and act on the notifications rather than polling. The turn's `--timeout` defaults to 600 seconds; pass a longer one when needed.
 
-If a required turn in an open consultation has no usable reply, confirm the turn is recorded and the prior invocation has stopped, then retry once through `ask` with the same question and attachments. If termination is uncertain, report the consultation blocked without launching another invocation. Failures before the consultation exists, such as an unknown harness or unreadable brief, are configuration errors to fix before opening it. After a second failure of the same turn, report a failed consultation and leave completion pending unless the user waives it.
+A required consultation needs a usable reply from every consultant; the rules that follow apply to each consultant separately, and the others' replies stand. If a required turn in an open consultation has no usable reply, confirm the turn is recorded and the prior invocation has stopped, then retry once through `ask` with the same question and attachments. If termination is uncertain, report the consultation blocked without launching another invocation. Failures before the consultation exists, such as an unknown harness or unreadable brief, are configuration errors to fix before opening it. After a second failure of the same turn, report a failed consultation and leave completion pending unless the user waives it.
 
 ## Deliver the current answer
 
