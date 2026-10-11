@@ -13,9 +13,9 @@ In panel mode, the preset allocates the current stage: the leader assigns comple
 
 ## Pair mode
 
-The host executes the selected skill and maintains its work product. Follow Pair mode in `SKILL.md` for consultations, required review and the turn ledger. Apply the routing rule under Keep the panel in the chat in `SKILL.md` after the first delivered answer; a stage boundary alone adds no consultation requirement. Advice informs the host's decisions and never supplies approval.
+The host executes the selected skill and maintains its work product. Follow Pair mode in `SKILL.md` for consultations, required review and the turn ledger. Apply the routing rule under Keep the panel in the chat in `SKILL.md` after the first delivered answer; a stage boundary alone adds no consultation requirement.
 
-For routed follow-ups, use `consult.py ask`, described under Consultant in `references/usage.md`, with the saved consultation, including relevant user answers, corrections, stage context and new evidence. Keep it open after delivery and close it only on stop or reset. On an explicit request to resume after stopping, use `consult.py reopen` with the new question and the decisions made while stopped.
+For routed follow-ups, use `consult.py ask`, described under Consultant in `references/usage.md`, with each saved consultation, putting relevant user answers, corrections, stage context and new evidence in the question. Close, reopen, add or remove consultants under Pair mode in `SKILL.md`.
 
 ## When the skill needs user input
 
