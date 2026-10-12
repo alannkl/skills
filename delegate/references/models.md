@@ -36,8 +36,8 @@ When the role default is unavailable:
 
 1. From the same harness's roster, choose the available model you already judge sufficient for the task with the lowest expected total cost, verification and retry risk included. A lower tier qualifies when known task requirements support it; record that reason. Judge from existing context, without exploratory calls.
 2. If suitability is uncertain, try the higher populated capability tiers, nearest first. On Cursor the order is Composer 2.5, Grok 4.7 Medium, then Grok 4.7 High, continuing after the unavailable model.
-3. If the chain reaches the host's own model, stop and do the step inline, reporting it as inline because the fallback reached the host model. Match model identity, not tier: aliases, context-window suffixes and effort variants count as the same model, so Grok 4.7 Medium and High match. Use the host's runtime-confirmed model, or its requested model if unconfirmed. This stop applies only to fallbacks; the initial role-default dispatch uses the ordinary cost comparison.
-4. Before dispatch, rerun the cost comparison with the fallback's weights. If no selectable choice still pays, do the step inline.
+3. If the chain reaches the host's own model, stop and do the step inline, reporting it as inline because the fallback reached the host model. Match model identity, not tier: aliases, context-window suffixes and effort variants count as the same model, so Grok 4.7 Medium and High match. Use the host's runtime-confirmed model, or its requested model if unconfirmed. This stop applies only to fallbacks; the initial role-default dispatch uses the decision rule in `SKILL.md` step 3.
+4. Before dispatch, rerun that decision rule with the fallback's weights and speed. If no selectable choice still pays, do the step inline.
 
 The fallback keeps the role's capability limits and, where separately selectable, its effort; on Cursor, the fallback's selector sets the effort. For frontier fallbacks, expect `claude-fable-5-1` or `gpt-6-astra`; pass that exact ID where the tool accepts it, otherwise an exposed selector for that model.
 
