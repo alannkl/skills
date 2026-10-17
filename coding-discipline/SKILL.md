@@ -93,6 +93,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
 8. Validate and finish cleanly.
    - Run the most relevant formatter, linter, typecheck, test, build, or targeted smoke check available.
    - If a full check is expensive or unavailable, run the narrowest meaningful check and state the gap.
+   - In every check — automated, manual, or against a real model — fast-forward time you control instead of waiting it out: inject a clock, age timestamps, or set short horizons for the run, and wait only the minimum the check needs. When elapsed time is itself the evidence (a soak, a latency measurement) or outside your control (an external system's window), bound the wait and state what a compressed check could not prove. A check's runtime is a cost to optimize: aim for a single test in seconds and the full suite in minutes.
    - For a risky change, name the single fact its safety hinges on and verify that fact by running code, not by argument — a written justification reads as convincing whether or not it is true. Check impact where symbol search stops: serialized data, wire formats, readers in other languages, feature flags. A search that finds nothing is still an answer worth recording.
    - Review the diff: every changed line should trace to the request or to cleanup caused by your change.
    - Keep changes reviewable: avoid unrelated churn, explain non-obvious tradeoffs, and make contract or migration effects explicit.

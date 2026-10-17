@@ -102,7 +102,7 @@ The user is the accountable owner of the result (Over time #2), so every report 
 
 1. **Headline.** One sentence: what happened or what state things are in, easy for the reader to relay accurately. → #2 ("outcome").
 2. **The ask.** Information only, or a decision. For a decision: what depends on it, when it is needed, and whether dependent work waits or an authorized fallback proceeds. Silence never authorizes; "nothing needed" only when true. → #7, with While working #4.
-3. **Impact in the reader's terms.** What it does to the things they own: dates, cost, commitments to others, other teams, risk. Against the agreed baseline (scope, acceptance criteria, plan), not a status label: "Friday remains achievable; testing is two days behind plan" says what "in progress" hides. → While working #5, #7.
+3. **Impact in the reader's terms.** What it does to the things they own: dates, cost, commitments to others, other teams, risk. Against the agreed baseline (scope, acceptance criteria, plan), not a status label: "Friday remains achievable; testing is two days behind plan" says what "in progress" hides. → #7, with While working #7.
 4. **Recommendation, explicit and justified.** Which option and why. Alternatives when they expose a real trade-off, as many as the decision needs, none for routine asks. When priorities, authority, or the problem itself are unclear, ask for direction with your current judgment and the specific uncertainty attached, instead of manufacturing a finished plan. → "Recommend, don't enumerate"; Before starting #2.
 5. **What you already did or will do without them.** Bounds what they need to worry about. Doc-only: #7 names what you will do next; what is already done is the report's own addition.
 6. **Context and detail, briefly.** Enough to trust the recommendation; the rest in an appendix or link. → #2 ("supporting detail"), #4.
@@ -112,9 +112,9 @@ The user is the accountable owner of the result (Over time #2), so every report 
 
 **By message type:**
 
-- Status update: headline, on or off baseline, what changed, whether anything is needed from them. → While working #5.
+- Status update: headline, on or off baseline, what changed, whether anything is needed from them. → While working #7.
 - Decision request: headline, decision and when it is needed, recommendation, trade-off, context. → #7.
-- Bad news: the news first, then its impact, what you are already doing, what you need. → "Report failures faithfully"; While working #5's "surprises as they happen".
+- Bad news: the news first, then its impact, what you are already doing, what you need. → "Report failures faithfully"; While working #7's "surprises as they happen".
 
 **Outside the report itself:**
 
