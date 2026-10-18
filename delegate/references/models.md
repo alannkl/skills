@@ -1,6 +1,6 @@
 # Model tiers and cost inputs
 
-Opinionated working preferences as of 2026-10-07, not benchmark results. When the supported models change, review the tier placements against observed results on each role's tasks, update the defaults, fallback order and the cost weights under Cost inputs, then refresh the date. A model's name alone does not establish its tier.
+Opinionated working preferences as of 2026-10-18, not benchmark results. When the supported models change, review the tier placements against observed results on each role's tasks, update the defaults, fallback order and the cost weights under Cost inputs, then refresh the date. A model's name alone does not establish its tier.
 
 ## Capability tiers
 
@@ -16,13 +16,14 @@ Rank choices within the active harness; a shared tier does not make two harnesse
 
 ## Role defaults
 
-| Role | Claude Code selector and expected model | Codex model and effort | Cursor model selector |
+| Role | Claude Code selector, expected model, and effort | Codex model and effort | Cursor model selector |
 | --- | --- | --- | --- |
-| `collector` | `sonnet`, expect `claude-sonnet-5-5` | `gpt-6.1-sol`, `low` | `composer-2.5` |
-| `runner` | `sonnet`, expect `claude-sonnet-5-5` | `gpt-6.1-sol`, `low` | `grok-4.7-medium` |
-| `digester` | `opus`, expect `claude-opus-5-5` | `gpt-6.1-sol`, `medium` | `grok-4.7-high` |
+| `collector` | `sonnet`, expect `claude-sonnet-5-5`, `medium` | `gpt-6.1-sol`, `low` | `composer-2.5` |
+| `runner` | `sonnet`, expect `claude-sonnet-5-5`, `medium` | `gpt-6.1-sol`, `low` | `grok-4.7-medium` |
+| `digester` | `opus`, expect `claude-opus-5-5`, `medium` | `gpt-6.1-sol`, `medium` | `grok-4.7-high` |
+| `implementer` | `opus`, expect `claude-opus-5-5`, `high` | `gpt-6.1-sol`, `high` | `grok-4.7-high` |
 
-Pass the effort where supported. Claude Code's native Agent tool inherits the session's effort unless a custom agent definition sets one; estimate and record that inherited effort. For headless Claude Code, use `low` for collectors and runners and `medium` for digesters.
+Pass the effort where supported. Where Claude Code's native Agent tool takes no effort, it inherits the session's effort unless a custom agent definition sets one; estimate and record that inherited effort.
 
 Cursor encodes Grok's effort in the model ID; pass the listed selector to its CLI's `--model`. Composer 2.5 has no separate effort setting. When availability changes, refresh Cursor selectors with `agent --list-models`, outside the per-candidate cost estimate.
 

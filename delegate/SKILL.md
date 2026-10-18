@@ -1,13 +1,13 @@
 ---
 name: delegate
-description: Delegates bounded steps to subagents when that costs less than doing them inline, or saves the user time at bounded extra cost. Use before searching broadly, reading a long reference, running a verbose command, or starting independent parallel batches, and when accepting a delegate's returned record. When another workflow requires an agent or reviewer, follow its delegation rules.
+description: Delegates bounded steps to subagents when that costs less than doing them inline, or saves the user time at bounded extra cost. Use before searching broadly, reading a long reference, running a verbose command, implementing a design you have fixed, or starting independent parallel batches, and when accepting a delegate's returned record. When another workflow requires an agent or reviewer, follow its delegation rules.
 ---
 
 # Delegate
 
 ## Workflow
 
-1. Identify candidates: broad searches, inventories, long references, verbose command output, and independent parallel batches.
+1. Identify candidates: broad searches, inventories, long references, verbose command output, code changes that carry out a design you have fixed, and independent parallel batches.
    - Handle design, diagnosis, findings, trade-offs, acceptance, and user interaction yourself.
    - Delegate before reading bulky inputs yourself; an orientation read first is fine.
    - Read the instructions that govern your own work yourself, including any skill you load; delegate task material only.
