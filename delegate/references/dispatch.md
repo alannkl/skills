@@ -7,8 +7,11 @@
 | `collector` | Bounded retrieval, inventory, and extraction with an explicit search scope | Read, search, list; web search and fetch when the work order grants them; no writes | Explore |
 | `runner` | Execute a specified procedure and report observed outcomes; stop on any unexpected branch | Shell plus read; writes only those the procedure allows | general-purpose |
 | `digester` | Provisional summaries, structured transformations, and drafts from facts you have already established | Read; returns its product for you to save | general-purpose |
+| `implementer` | Code changes that carry out a design you have fixed, against an acceptance check that exists before dispatch: tests, type check, or build | Read; edit within the work order's file scope; run the acceptance commands; use an isolated worktree while you or another delegate work in the same tree; no commits, installs, or network unless granted | general-purpose |
 
 Use the digester only when you can quickly check its product against the evidence. If a digest determines which requirements you see, write it yourself.
+
+Use the implementer only when you will read its whole diff, and have its work order stop it when the design does not fit the code rather than let it choose another.
 
 - Use the harness's native subagent tool by default, with the table's agent type and the model and effort from `references/models.md`, following its availability fallbacks. Compare the expected model with the record's runtime-confirmed model.
 - On Claude Code, state every rule the collector needs in its work order and name the files it must read in full.
@@ -48,20 +51,21 @@ Role-specific fields:
 - Collector: the inspected scope, a location for every claim, and unresolved interpretations.
 - Runner: tool-written receipts per command.
 - Digester: stated uncertainty for each claim.
+- Implementer: the base revision, the diff or worktree path, tool-written receipts per acceptance command, and each deviation from the design.
 
 Accept the record only when:
 
 - it matches the work order, and its input identity matches what you are about to accept;
 - its receipts match the available tool results, with execution claims you cannot verify marked as unverified;
 - its content claims, including citations, pass their stated checks;
-- the runner's resulting changes match the work order, with none outside its permitted outputs;
+- a runner's or implementer's resulting changes match the work order, with none outside its permitted outputs;
 - you judge its expected and completed work sufficient for the step.
 
 Open the artifacts on any failure or contradiction.
 
 ## Escalate by cause
 
-Before any retry or takeover, confirm the delegate has finished or stop it, then inspect the resulting state; a wait timeout does not stop a native agent, and a running runner can still write.
+Before any retry or takeover, confirm the delegate has finished or stop it, then inspect the resulting state; a wait timeout does not stop a native agent, and a running runner or implementer can still write.
 
 - Missing input, access, or a transient tool failure: resolve or report the dependency; a bounded same-tier retry is fine when you know the cause and replay is safe.
 - Demonstrated reasoning failure, consequential omission, or unresolved contradiction: take the step over, using the returned evidence and failure record.
