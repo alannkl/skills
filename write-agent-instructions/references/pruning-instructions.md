@@ -1,6 +1,6 @@
 # Pruning instructions
 
-Use this for a structural revision of an existing instruction artifact: removing or merging requirements, sections, or steps; reordering them; changing output formats; or moving material between always-loaded text and references. The pruning rules in step 5 of `SKILL.md` decide what may go; this reference covers the baseline, consumers, and comparison.
+Use this for a structural revision of an existing instruction artifact, or a review that recommends one: removing or merging requirements, sections, or steps; reordering them; changing output formats; or moving material between always-loaded text and references. The pruning rules in step 5 of `SKILL.md` decide what may go; this reference covers the baseline, consumers, and comparison.
 
 ## Baseline
 
@@ -9,7 +9,7 @@ Use this for a structural revision of an existing instruction artifact: removing
 
 ## Consumers
 
-- Before removing or renaming anything, search for what relies on it: skills, instruction files, scripts, tests, docs, or code that load the artifact, cite its section or step names or numbers, parse its output, or depend on its trigger.
+- Before removing, renaming, or reordering anything, or recommending such a change, search for what relies on it: skills, instruction files, scripts, tests, docs, or code that load the artifact, cite its section or step names or numbers, parse its output, or depend on its trigger.
 - Update each consumer in scope, or keep the contract it relies on. Report consumers outside the requested scope instead of editing them.
 
 ## Unusually specific rules

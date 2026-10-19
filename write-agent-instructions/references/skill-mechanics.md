@@ -21,7 +21,7 @@ For a shortcut that packages instructions the user retypes, name it per the Name
 
 ## Invocation
 
-- Start `SKILL.md` with YAML frontmatter containing at least `name` and `description`. Add optional fields such as `license`, `compatibility`, `metadata`, or `allowed-tools` only when they carry information.
+- Start `SKILL.md` with YAML frontmatter containing at least `name` and `description`; use a quoted or block scalar for a description containing `: ` or ` #`. Add optional fields such as `license`, `compatibility`, `metadata`, or `allowed-tools` only when they carry information.
 - Make the skill model-invoked only when the agent must invoke it on its own or another skill must load it. Its description returns on every request where the harness supplies the skill list to the model; write it per the Description pattern section.
 - Otherwise set `disable-model-invocation: true`, use a one-line human-facing description without trigger lists, and add `agents/openai.yaml` setting `policy.allow_implicit_invocation` to an unquoted `false`, because Codex ignores the frontmatter field. Typing the skill's name still invokes it. A harness that honors neither setting still lists the skill to the model, so check the target harness before relying on a user-invoked skill costing no context.
 - When user-invoked skills become hard to remember, suggest one user-invoked router skill that names the others and when to use each. Update the router whenever a routed skill is added, renamed, or removed.
@@ -35,7 +35,7 @@ Before writing a description, list the prompts, contexts, and files that should 
 description: [What the skill enables]. [Conditions that invoke it: specific user intents, keywords, contexts, or file types].
 ```
 
-State what the skill does in the first sentence, front-loading the vocabulary the user actually types. In the second, state its invocation conditions, one trigger per distinct branch. Collapse synonyms for the same branch and omit details already covered by the first sentence. Write for model invocation; users can invoke any skill by name. Add an exclusion only for a real near-miss the triggers would otherwise catch.
+State what the skill does in the first sentence, front-loading the vocabulary the user actually types. In the second, state its invocation conditions, one trigger per distinct branch. Collapse synonyms for the same branch and omit details already covered by the first sentence. Write for model invocation; users can invoke any skill by name. Add an exclusion only for a real near-miss the triggers would otherwise catch. For workflows that publish, send, or change external state, include check, review, or readiness requests as triggers only when the body provides a read-only outcome for them.
 
 Prefer:
 

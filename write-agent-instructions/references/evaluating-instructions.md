@@ -7,7 +7,7 @@ Use the section that fits the request; this is not a suite to run in full. Pruni
 - For a consequential change, write a scenario that exercises the changed requirement and declare beforehand what the output must show. Run the previous and revised versions on it; compare a new artifact with running no instructions. Run each in a fresh context so the evaluator's own context does not leak into the result.
 - Grade against the declared expectations with concrete evidence. Use scripts for mechanical checks and human or LLM review for judgment-heavy qualities.
 - Use one scenario per consequential change; add another only for a material risk the first cannot exercise.
-- If the user wants eval files for a skill, start with 2-3 realistic cases in `evals/evals.json`. Each case includes `prompt`, `expected_output`, optional `files`, and later `assertions`.
+- If the user wants eval files for a skill, start with 2-3 realistic cases in the format of the eval tool they use. Each case gives a prompt, the expected result, any input files, and later assertions.
 
 ## No-op disputes
 
