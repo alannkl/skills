@@ -38,7 +38,7 @@ argument-hint: <sources or study report> [into <target>]
 
 5. Apply the picked changes.
    - Make one coherent, independently valid change per edit set; coupled ideas may share one. A target that is not a file, such as a process, ends at the recommendation.
-   - Run the target's own checks. For a skill, apply `create-agent-skill` as a checklist on the finished file.
+   - Run the target's own checks. For a skill or agent instruction file, apply `write-agent-instructions` as a checklist on the finished file.
    - Approval to edit is not approval to commit. Commit only when asked, with the source, the gap, and the claim IDs in the commit body.
    - Place provenance where a reader needs it: a README credit line when the artifact is substantially built on one source; inside the artifact only when a license requires it, when naming the source makes a surprising rule credible, or when correct application depends on knowing the origin.
    - Terminal outcomes: **applied and checked**; **applied, checks failed or unavailable**, naming the remaining issue; **proposals delivered**, awaiting the pick; **recommendation delivered**, for target `none`; **nothing worth changing**; **needs a target decision**.
