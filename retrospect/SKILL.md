@@ -37,8 +37,8 @@ Run bundled scripts by absolute path, using `<skill-dir>` for this skill's insta
    - Before proposing a check, inspect the target's existing check commands and CI. An existing check that is unwired or silently broken is the finding, and a repo with no guardrail at all (no pre-commit hook and no CI running its checks) is a finding in itself.
    - An empty proposal list is a complete result.
 
-7. Apply only the picked lessons; unpicked ones are not recorded and come back if they keep repeating. Load `create-agent-skill` to edit or create a skill, and `writing-for-agents` when installed to edit an instruction file. Make no commits, sends or other external actions.
-   - Apply directly only when the session runs inside the destination repo or project; otherwise write a hand-off brief: destination repo and file, the lesson, the fix, how to check it, and for a skill, that the edit goes through `create-agent-skill`.
+7. Apply only the picked lessons; unpicked ones are not recorded and come back if they keep repeating. Load `write-agent-instructions` to edit or create a skill or an instruction file. Make no commits, sends or other external actions.
+   - Apply directly only when the session runs inside the destination repo or project; otherwise write a hand-off brief: destination repo and file, the lesson, the fix, how to check it, and for a skill or instruction file, that the edit goes through `write-agent-instructions`.
    - Anything written outside the project a lesson came from (skill source, the constitution, briefs for other repos) states the lesson generically: no project names, code or quoted chat text. Session locations appear only in the proposal list.
 
 8. Report: coverage; lessons applied, with paths; briefs, ready to paste; lessons not picked; and the "already captured" list with where each is saved, which needs no pick.

@@ -19,7 +19,7 @@ Loaded before the work starts rather than for a task. Wire both into your instru
 
 | Skill                                               | Description                                                                                                                                                                                                                 |
 | --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| [`create-agent-skill`](create-agent-skill/SKILL.md) | Create agent skills from reusable workflows, domain expertise, or project conventions. Aligned with [`writing-for-agents`](https://github.com/mattpocock/skills/blob/main/skills/productivity/writing-for-agents/SKILL.md). |
+| [`write-agent-instructions`](write-agent-instructions/SKILL.md) | Write, edit, review, evaluate, and prune instructions for agents: skills, slash commands, `AGENTS.md`, `CLAUDE.md`, and system or task prompts. Incorporates guidance from [`writing-for-agents`](https://github.com/mattpocock/skills/blob/main/skills/productivity/writing-for-agents/SKILL.md). |
 | [`spawn-agent`](spawn-agent/SKILL.md)               | Spawn a headless coding-agent CLI run (`agy -p`, `claude -p`, `agent -p`, or `codex exec`) for one scoped subtask, with a shared workflow and one reference per supported harness.                                          |
 | [`delegate`](delegate/SKILL.md)                     | Delegate bounded steps when cheaper than doing them inline, or faster at bounded extra cost when the user is waiting or has a deadline. Weigh the cost, choose a collector, runner, digester, or implementer, write the work order, check the returned record, and report a delegation ledger at delivery. |
 | [`panel`](panel/SKILL.md)                           | Keep a multi-agent panel across harnesses, or read-only consultants, available in the current chat; consult them when independent input is worth the cost and complete requested or promised reviews. User-invoked.         |
@@ -66,14 +66,14 @@ Loaded before the work starts rather than for a task. Wire both into your instru
 | [`refine-it`](refine-it/SKILL.md)   | Refine written artifacts for clarity and readiness while preserving intent and scope. |
 | [`shorten-it`](shorten-it/SKILL.md) | Shorten text while preserving meaning, tone, and important details.                   |
 
-Seven skills are user-invoked: they load when you type `/<name>` (`$<name>` in Codex) and stay out of the model's skill list. Each sets `disable-model-invocation: true` in its frontmatter and carries `agents/openai.yaml` with `allow_implicit_invocation: false`, because Codex ignores the frontmatter field; a harness that honors neither still lists them to the model. Sixteen are model-invoked so agents reach them on their own when the ask arrives in natural language: `coding-discipline` (auto-loads before code work), `constitution` (loads when an instruction file asks for it), `code-review`, `adversarial-review`, `review-triage`, `commit-message`, `simplify-code`, `document-code`, `explain-code`, `create-agent-skill`, `spawn-agent`, `delegate`, `study`, `refine-it`, `shorten-it`, and `handoff`.
+Seven skills are user-invoked: they load when you type `/<name>` (`$<name>` in Codex) and stay out of the model's skill list. Each sets `disable-model-invocation: true` in its frontmatter and carries `agents/openai.yaml` with `allow_implicit_invocation: false`, because Codex ignores the frontmatter field; a harness that honors neither still lists them to the model. Sixteen are model-invoked so agents reach them on their own when the ask arrives in natural language: `coding-discipline` (auto-loads before code work), `constitution` (loads when an instruction file asks for it), `code-review`, `adversarial-review`, `review-triage`, `commit-message`, `simplify-code`, `document-code`, `explain-code`, `write-agent-instructions`, `spawn-agent`, `delegate`, `study`, `refine-it`, `shorten-it`, and `handoff`.
 
 ## Installation
 
-This repo plus the two [recommended](#recommended-skills) skills, globally:
+This repo plus the [recommended](#recommended-skills) skill, globally:
 
 ```bash
-npx skills add alannkl/skills --all -g -y && npx skills add mattpocock/skills --skill writing-for-agents -g -y && npx skills add cursor/plugins --skill unslop -g -y
+npx skills add alannkl/skills --all -g -y && npx skills add cursor/plugins --skill unslop -g -y
 ```
 
 ### Skills CLI
@@ -113,13 +113,7 @@ To uninstall manually, delete the skill directory (and any symlinks) from the sa
 
 ## Recommended skills
 
-External skills that pair well with this repo:
-
-- Install [`writing-for-agents`](https://github.com/mattpocock/skills/blob/main/skills/productivity/writing-for-agents/SKILL.md) for the full reference on writing skills, `AGENTS.md`, `CLAUDE.md`, and docs behind pointers. [`create-agent-skill`](create-agent-skill/SKILL.md) condenses its guidance.
-
-  ```bash
-  npx skills add mattpocock/skills --skill writing-for-agents -g -y
-  ```
+An external skill that pairs well with this repo:
 
 - Install [`unslop`](https://github.com/cursor/plugins/blob/main/pstack/skills/unslop/SKILL.md) to cut AI tells from any writing. [`refine-it`](refine-it/SKILL.md) and [`shorten-it`](shorten-it/SKILL.md) improve structure and length; `unslop` removes generated-sounding patterns. It is user-invoked: use `/unslop` for a writing pass.
 
@@ -185,6 +179,17 @@ Background notes and research behind these skills:
   assets/      # optional templates, images, or static data
   agents/      # openai.yaml invocation policy for Codex (user-invoked skills)
 ```
+
+Eval cases for `claude plugin eval` live in `evals/<skill-name>/`, outside the skill folders, so installs don't ship them. Each case runs a real, billed Claude Code session. `scripts/eval-skill` runs a skill's cases against a temporary copy of the skill, with Haiku as the agent under test and Opus as the judge, and passes any other options to `claude plugin eval`. To compare a skill against no skill:
+
+```bash
+scripts/eval-skill write-agent-instructions --ablation with-without --scaffold \
+  --trust-plugin --allow-tools Edit Write --no-publish --max-cost-usd 15
+```
+
+Results go to `evals/<skill-name>/results/`, which git ignores. When the cost ceiling is reached, the remaining LLM graders are skipped and recorded as failed, so check a run's skipped graders before reading its scores. A full run of `write-agent-instructions` at the default 3 runs per version costs roughly $15; use `--case` to run one case or `--runs 1` for a quick check.
+
+In a with-without run the agent decides for itself whether to load the skill, so a low score can mean the skill never loaded. Add `--force-skill` to tell the agent to load the skill when it is available; this measures what the skill does once loaded, and leaves out cases that check the skill does not load. Pass `--model` to test another agent model.
 
 ## License
 
