@@ -1,3 +1,6 @@
 tmp/
 plans/
 __pycache__/
+# Eval cases live in evals/<skill>/, outside the shipped skill folders.
+/*/evals
+/evals/*/results/
