@@ -51,7 +51,7 @@ The recurring ways an agent's message fails its reader, collected across the sur
 
 ## 4. Honesty and epistemic register
 
-Mostly already encoded in "Evidence over assertion" (While working #1) and "Report failures faithfully"; the survey added texture:
+Mostly already encoded in "Evidence over assertion" (While working) and "Report failures faithfully"; the survey added texture:
 
 - Five confidence tiers with distinct phrasings — direct (cited, present tense), supported, inferred (hedged, chain explicit), speculative (marked as a guess), unknown ("one of the most valuable outputs"; be specific about what you searched) (pstack `why/epistemics`).
 - Hedges are content, not style: "dropping the hedges to sound more authoritative is the exact failure mode this skill exists to prevent"; confidence words ("because", "was designed to", "fixes") need a citation immediately adjacent. Avoid "obviously", "clearly", "just".
@@ -60,7 +60,7 @@ Mostly already encoded in "Evidence over assertion" (While working #1) and "Repo
 - Never fabricate a link, citation, or transcript reference; label inference as inference everywhere (explain-code, handoff, commit-message).
 - "Treat a confident reply without evidence as a red flag"; a green build proves it compiles, not that it works (pstack guide).
 
-→ hedge-as-content made #5; the rest lives in While working #1 and #3 of "When you disagree".
+→ hedge-as-content made #5; the rest lives in "Evidence over assertion" and "Report failures faithfully".
 
 ## 5. Explaining and teaching
 
@@ -101,20 +101,20 @@ The user is the accountable owner of the result (Over time #2), so every report 
 **Default order.** Lead with what makes the message intelligible and actionable: for a known issue, the headline itself; for something new to the reader, one line of context, then the headline. Decision-critical impact or risk can move above the ask, and a part that adds nothing is dropped. → #2 ("put context first when the reader needs it", "omit parts that add nothing"), with #3's "background needed to follow it".
 
 1. **Headline.** One sentence: what happened or what state things are in, easy for the reader to relay accurately. → #2 ("outcome").
-2. **The ask.** Information only, or a decision. For a decision: what depends on it, when it is needed, and whether dependent work waits or an authorized fallback proceeds. Silence never authorizes; "nothing needed" only when true. → #7, with While working #4.
-3. **Impact in the reader's terms.** What it does to the things they own: dates, cost, commitments to others, other teams, risk. Against the agreed baseline (scope, acceptance criteria, plan), not a status label: "Friday remains achievable; testing is two days behind plan" says what "in progress" hides. → #7, with While working #7.
+2. **The ask.** Information only, or a decision. For a decision: what depends on it, when it is needed, and whether dependent work waits or an authorized fallback proceeds. Silence never authorizes; "nothing needed" only when true. → #7, with "Calibrate autonomy to reversibility".
+3. **Impact in the reader's terms.** What it does to the things they own: dates, cost, commitments to others, other teams, risk. Against the agreed baseline (scope, acceptance criteria, plan), not a status label: "Friday remains achievable; testing is two days behind plan" says what "in progress" hides. → #7, with "Make progress observable".
 4. **Recommendation, explicit and justified.** Which option and why. Alternatives when they expose a real trade-off, as many as the decision needs, none for routine asks. When priorities, authority, or the problem itself are unclear, ask for direction with your current judgment and the specific uncertainty attached, instead of manufacturing a finished plan. → "Recommend, don't enumerate"; Before starting #2.
 5. **What you already did or will do without them.** Bounds what they need to worry about. Doc-only: #7 names what you will do next; what is already done is the report's own addition.
 6. **Context and detail, briefly.** Enough to trust the recommendation; the rest in an appendix or link. → #2 ("supporting detail"), #4.
-7. **Risks and what you will know when.** Doc-only: While working #1 covers stating uncertainty; the date by which it resolves is the report's own addition.
+7. **Risks and what you will know when.** Doc-only: "Evidence over assertion" covers stating uncertainty; the date by which it resolves is the report's own addition.
 
 **Confidence beside the claim it qualifies.** A caveat that changes the decision sits next to the headline or recommendation, not in a closing section read after the reader has acted. → #2.
 
 **By message type:**
 
-- Status update: headline, on or off baseline, what changed, whether anything is needed from them. → While working #7.
+- Status update: headline, on or off baseline, what changed, whether anything is needed from them. → "Make progress observable".
 - Decision request: headline, decision and when it is needed, recommendation, trade-off, context. → #7.
-- Bad news: the news first, then its impact, what you are already doing, what you need. → "Report failures faithfully"; While working #7's "surprises as they happen".
+- Bad news: the news first, then its impact, what you are already doing, what you need. → "Report failures faithfully"; "Make progress observable" ("surprises as they happen").
 
 **Outside the report itself:**
 
