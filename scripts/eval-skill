@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Run a skill's eval cases from evals/<skill>/ with `claude plugin eval`.
+# `claude plugin eval` needs the cases inside the skill folder and rejects a
+# symlinked evals/, so this runs a temporary copy of the skill with the cases
+# copied in, then moves the results to evals/<skill>/results/.
+# Usage: scripts/eval-skill <skill> [claude plugin eval options...]
+set -euo pipefail
+
+usage="usage: scripts/eval-skill <skill> [claude plugin eval options...]"
+root="$(cd "$(dirname "$0")/.." && pwd)"
+skill="${1:?$usage}"
+shift
+
+[[ "$skill" =~ ^[a-z0-9][a-z0-9-]*$ ]] || { echo "skill must be a folder name such as write-agent-instructions" >&2; exit 1; }
+[[ -f "$root/$skill/SKILL.md" ]] || { echo "no skill at $skill/SKILL.md" >&2; exit 1; }
+[[ -d "$root/evals/$skill" ]] || { echo "no eval cases in evals/$skill" >&2; exit 1; }
+# The copies below are cleaned with rm -rf, which would follow a copied symlink.
+[[ ! -L "$root/$skill" && ! -L "$root/evals/$skill" ]] || { echo "$skill or evals/$skill is a symlink" >&2; exit 1; }
+
+work="$(mktemp -d)"
+trap 'rm -rf "$work"' EXIT
+trap 'exit 130' INT TERM
+
+# The copy keeps the skill's folder name, which is the name graders match.
+cp -R "$root/$skill" "$work/$skill"
+rm -rf "$work/$skill/evals"
+cp -R "$root/evals/$skill" "$work/$skill/evals"
+rm -rf "$work/$skill/evals/results"
+
+status=0
+# Haiku is the agent under test, so a skill's effect shows on a weaker model;
+# a strong model judges. Options after the skill name come later and override these.
+claude plugin eval "$work/$skill" --model claude-haiku-5-5 --judge-model claude-opus-5-5 "$@" || status=$?
+
+if [[ -d "$work/$skill/evals/results" ]]; then
+  mkdir -p "$root/evals/$skill/results"
+  cp -R "$work/$skill/evals/results/." "$root/evals/$skill/results/"
+  echo "Results copied to evals/$skill/results/" >&2
+fi
+exit "$status"
