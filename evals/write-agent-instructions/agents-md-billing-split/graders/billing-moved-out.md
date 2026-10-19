@@ -1,9 +1,9 @@
 ---
 type: regex
-pattern: 'ISO 4217'
+pattern: 'billing-changes\.md|manual_review'
 flags: i
 match: not_contains
 target: {source: file, path: AGENTS.md}
 ---
 
-Billing-only detail no longer sits in the root file.
+The billing-only migration and refund rules no longer sit in the root file.
