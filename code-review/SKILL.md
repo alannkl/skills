@@ -176,11 +176,11 @@ Good findings:
 > **Why it matters:** Losing the final partial page breaks the documented "returns all items" contract. Exports and sync jobs built on it lose data without an error.
 > **Proposed fix:** Use `Math.ceil(total / pageSize)` and add a boundary test for the remainder case.
 
-> **F2 [Medium/high] New retry loop duplicates the shared `withRetry` helper** - `src/sync/upload.ts:40`
-> **Problem:** `uploadBatch` sends a batch to the storage API and must survive transient failures. It adds its own 30-line retry loop, although `src/lib/retry.ts` exports `withRetry`, which the other three API clients use.
-> **Evidence:** `withRetry(fn, { attempts: 3, backoffMs: 200 })` gives the same attempts, backoff, and retryable-status check (`isTransient`). Tracing a 429, a 503, and a network error through both yields the same outcome. The PR description gives no reason for a separate loop. No material disadvantage found; checked the error types, the attempt count the tests assert, and the `syncAll` caller.
-> **Why it matters:** Two retry policies must now change together. The next fix to backoff or to the retryable statuses will reach one and miss the other.
-> **Proposed fix:** Replace the loop with `return withRetry(() => client.put(batch), { attempts: 3, backoffMs: 200 });` and delete the local `sleep` helper.
+> **F2 [Medium/med] Stored comment count adds state that every bypassing write path must keep in sync** - `blog/models.py:41`
+> **Problem:** `Post.comment_count` shows how many visible comments each post has on the post list. The change stores the count and adjusts it from the `Comment` save and delete signals and from `hide()`. Writes that bypass those hooks leave it wrong.
+> **Evidence:** The moderation queue hides comments in bulk with `Comment.objects.filter(...).update(hidden=True)`, which sends no signals and skips `hide()`, so the stored count keeps counting hidden comments. On the list queryset, which has no other joins, `annotate(comment_count=Count("comments", filter=Q(comments__hidden=False)))` returns the visible count with no stored state. The PR gives no load figures for the list page.
+> **Why it matters:** The counter is a second source of truth with a backfill migration. Every bulk write, import, or new visibility rule must remember to adjust it, and the bulk hide already does not.
+> **Proposed fix:** Annotate the list queryset, and drop the field, the signal handlers, and the unmerged migration. Trade-off: the list query aggregates comments on each page load instead of reading a column. Recommend the annotation unless a measurement shows that query over the page's latency budget; in that case keep the counter and update it in the bulk hide too.
 
 Bad findings:
 
