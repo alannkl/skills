@@ -42,7 +42,7 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
    - If tooling is unavailable because there is no PR platform, the checkout is detached or shallow, or commands fail, degrade gracefully: review what you can access, state which context you could not gather, and treat that gap as residual risk rather than guessing.
 
 2. Read enough context, then stop.
-   - Inspect changed files, related tests, called functions, imported modules, neighboring code, and contract-defining files as needed.
+   - Inspect changed files, related tests, called functions, imported modules, neighboring code, and contract-defining files as needed. Read beyond the diff even when the scope is a supplied patch: before accepting a new abstraction or repeated mechanism, inspect the sibling code and shared helpers that may already do its job. A review that read only the diff has not finished this step.
    - For each new or generalized decision rule (a selection, ranking, classification, filter, or fallback), identify the relevant supported variants, multiple-item cases, and ownership boundaries from definitions, producers, schemas, and fixtures. Construct one case beyond the author's motivating example and trace its result to the consumer. Where the rule excludes or aggregates evidence, ask whether the discarded distinctions or evidence could change the decision and whether the code proves the exclusion safe.
    - Identify public surfaces touched: APIs, CLI flags, config, schemas, migrations, events, persisted data, permissions, external integrations, and serialized formats.
    - For generated or mechanical diffs, inspect the generator, source rule, or representative output instead of line-reviewing noise.
@@ -52,6 +52,8 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
    - Map every changed file and touched public surface to at least one risk category below, or explicitly clear it, before deciding which findings are worth reporting.
    - Problem fit: the intent solves the stated problem rather than a symptom, sits in the right layer rather than working around one, and introduces no unjustified conflict with existing contracts, features, or recorded decisions.
    - Intent fit: the code delivers the intended behavior without scope drift or missing cases.
+   - Approach fit: when the change adds a module, dependency, state, flag, or abstraction, or is large for its goal, look for one demonstrably simpler alternative that meets the same goal: not adding the code at all, an existing repo helper, standard-library or platform feature, or installed dependency that covers it, or a design with fewer states or concepts. Trace the alternative through the Step 2 cases where constructed, the existing tests, and the affected consumers, and name what it removes. Naming, style, and rewrites that remove nothing are not approach findings.
+   - Recorded reasons: treat a reason recorded against the alternative, in the description, a commit, or a comment, as a claim to verify, not a veto. It settles the choice unless evidence you can cite shows its premise false, shows the alternative still satisfies it, or names an omitted factor that changes the outcome; then report the finding, quote the reason, and say which. Missing evidence is an open question, not a finding. A concern that only weighs the reason's own factors differently goes under `Open questions / assumptions`.
    - Functional correctness: boundaries, edge cases, missing branches, null/error handling, failures hidden by swallowed errors or silent fallbacks, off-by-one errors, state transitions, concurrency, race conditions, lock ordering, idempotency, and resource lifecycle.
    - Breaking changes: backward and forward compatibility, mixed-version behavior, migrations, defaults, rollback, and external integrations.
    - Developer workflow: changes that break how developers run or build locally — secrets sourced differently, environment variables renamed or newly required, ports remapped, new mandatory setup steps. New alternative paths and ordinary dependency additions do not count.
@@ -95,8 +97,9 @@ Apply principal-engineer judgment: reconstruct intent, reason from evidence and 
    - Grade rule violations by practical impact unless the repo's review guidance sets their severity.
    - If there are no findings, say so directly; do not invent low-value findings to avoid an empty review.
    - Report a wrong goal as a finding, ordered by severity alongside implementation findings. Name the concrete conflict with the stated problem, a sibling path left broken, or a contract or decision it violates. Propose an alternative or ask for a requirement decision when context is missing. Still review the mechanics, since the user may confirm the goal.
+   - Report an approach-fit alternative as a finding, with severity from the maintenance consequence it removes, such as two copies that must change together or a state the system must keep consistent: such a maintainability issue with practical risk is `Medium`; a few saved lines are `Low`. Show the alternative under **Proposed fix** as a snippet or outline, and state the trade-off found, or `no material disadvantage found` with what was checked. Keep confidence at `med` or lower unless the alternative was traced through every case and consumer. When the alternative trades a real cost for its simplicity, state both sides, recommend one, and name the choice in the opening line.
    - Report defects introduced by the change, including existing defects it makes newly reachable, demonstrably more likely, or more severe; identify the regression the change causes. A pre-existing defect unaffected by the change may be noted under `Next steps` when it warrants a concrete follow-up, labeled pre-existing.
-   - **Do not report:** guessed intent without concrete evidence; broad rewrites when a local fix addresses the issue; breakage that is the change's stated, scope-constrained intent (a removed flag, a deleted feature) unless its impacts look under-weighed; fixes that demand more rigor than the surrounding codebase applies, unless the change creates concrete correctness, security, compatibility, data-integrity, operational, or maintainability risk; or issues already reported by a linter, formatter, or type-checker shown to run on the affected path. Check coverage explicitly for excluded scripts, optional build targets, generated consumers, and separate packages. The `Bad findings` examples below show the other shapes to reject.
+   - **Do not report:** guessed intent without concrete evidence; broad rewrites when a local fix suffices and the rewrite removes no material maintenance burden; breakage that is the change's stated, scope-constrained intent (a removed flag, a deleted feature) unless its impacts look under-weighed; fixes that demand more rigor than the surrounding codebase applies, unless the change creates concrete correctness, security, compatibility, data-integrity, operational, or maintainability risk; or issues already reported by a linter, formatter, or type-checker shown to run on the affected path. Check coverage explicitly for excluded scripts, optional build targets, generated consumers, and separate packages. The `Bad findings` examples below show the other shapes to reject.
 
 8. Self-check before finalizing.
    - Confirm every finding meets the `Finding quality` checklist below; drop any that do not, and apply the severity and confidence rule from Step 7 to anything uncertain.
@@ -163,9 +166,9 @@ Write for a reader who may never have seen the code. Open with one line on the c
 
 If a plausible misreading of the code hides the defect, name and correct it. When ordering, concurrency, or state transitions are too tangled to follow in prose, reduce the failing case to a minimal example, such as two writers or a three-slot queue, or draw a small plain-text diagram. Use prose alone when a sentence suffices.
 
-Review in the language and conventions present in the diff. The example below illustrates the shape of a strong finding, not its domain.
+Review in the language and conventions present in the diff. The examples below illustrate the shape of strong findings, not their domain.
 
-Good finding:
+Good findings:
 
 > **F1 [High/high] Pagination drops the partial last page** - `src/lib/paginate.ts:24`
 > **Problem:** `paginate` tells callers how many pages to fetch to retrieve every item. It undercounts by one whenever the total is not a multiple of the page size.
@@ -173,10 +176,17 @@ Good finding:
 > **Why it matters:** Losing the final partial page breaks the documented "returns all items" contract. Exports and sync jobs built on it lose data without an error.
 > **Proposed fix:** Use `Math.ceil(total / pageSize)` and add a boundary test for the remainder case.
 
+> **F2 [Medium/high] New retry loop duplicates the shared `withRetry` helper** - `src/sync/upload.ts:40`
+> **Problem:** `uploadBatch` sends a batch to the storage API and must survive transient failures. It adds its own 30-line retry loop, although `src/lib/retry.ts` exports `withRetry`, which the other three API clients use.
+> **Evidence:** `withRetry(fn, { attempts: 3, backoffMs: 200 })` gives the same attempts, backoff, and retryable-status check (`isTransient`). Tracing a 429, a 503, and a network error through both yields the same outcome. The PR description gives no reason for a separate loop. No material disadvantage found; checked the error types, the attempt count the tests assert, and the `syncAll` caller.
+> **Why it matters:** Two retry policies must now change together. The next fix to backoff or to the retryable statuses will reach one and miss the other.
+> **Proposed fix:** Replace the loop with `return withRetry(() => client.put(batch), { attempts: 3, backoffMs: 200 });` and delete the local `sleep` helper.
+
 Bad findings:
 
 - "Consider adding more tests here." - vague, with no behavior risk.
 - "This function is a bit long; you might refactor it." - preference with no concrete risk.
+- "Use a `for` loop instead of `reduce`; it reads better." - a same-size rewrite that removes nothing.
 - "Ensure this handles errors correctly." - a "verify" chore the reviewer can check directly.
 - "Nice clean implementation!" - praise, not a finding.
 - "Line 12 sets `count = 0`." - restates the code without identifying an issue.
