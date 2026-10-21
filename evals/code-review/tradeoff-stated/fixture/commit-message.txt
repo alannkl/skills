@@ -1,0 +1,5 @@
+Cache feature flags
+
+Each request evaluates about ten flags, and every lookup calls the flags
+service (~15 ms each). Cache the flags and refresh them every 30 s from a
+background thread. Flag changes can take up to 30 s to apply.
