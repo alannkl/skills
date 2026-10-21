@@ -33,7 +33,7 @@ Use these prices:
 ## Triage each finding, in order
 
 1. **Valid?** Reproduce or refute it with concrete evidence. Reject invalid findings and cite the guard clause (`file:line`), the test you ran, or the declared constraint or trade-off the reviewer missed. "I had my reasons" is not a rejection; rejections are never free.
-2. **Material?** It causes incorrect behavior, violates an explicit requirement, risks data loss or a security hole, or makes a realistic failure likely, or it adds deployed complexity, such as a state, module, dependency, or duplicated logic, that a demonstrated simpler alternative removes for the same goal. Style preferences, speculative future requirements, and marginal improvements are not material. Record critical/high/medium/low severity from impact and likelihood, revising the source's estimate when validation changes either. Revise confidence separately when the supporting evidence changes.
+2. **Material?** It causes incorrect behavior, violates an explicit requirement, risks data loss or a security hole, makes a realistic failure likely, or adds deployed complexity (a state, module, dependency, or duplicated logic) that a demonstrated simpler alternative removes for the same goal. Style preferences, speculative future requirements, and marginal improvements are not material. Record critical/high/medium/low severity from impact and likelihood, revising the source's estimate when validation changes either. Revise confidence separately when the supporting evidence changes.
 3. **Fix cost?** Count these signs in the proposed fix:
    - adds a new state, flag, or failure mode
    - adds a special case to a previously uniform rule
