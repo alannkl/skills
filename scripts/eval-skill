@@ -39,18 +39,22 @@ rm -rf "$work/$skill/evals/results"
 if (( force )); then
   for case_dir in "$work/$skill/evals"/*/; do
     [[ -f "$case_dir/prompt.md" ]] || continue
-    # A case that expects the skill not to load (a Skill grader with max: 0) is a near-miss.
-    near_miss=0
+    # A near-miss case expects the skill not to load: it has a Skill grader with
+    # max: 0 and none that requires a load (skill-not-shadowed pairs with skill-fired).
+    loads=0 forbids=0
     for grader in "$case_dir"graders/*.md; do
-      if grep -q '^tool: Skill$' "$grader" && grep -q '^max: 0$' "$grader"; then near_miss=1; fi
+      grep -q '^tool: Skill$' "$grader" || continue
+      if grep -q '^max: 0$' "$grader"; then forbids=1; else loads=1; fi
     done
-    if (( near_miss )); then
+    if (( forbids && !loads )); then
       rm -rf "$case_dir"
       echo "Skipped near-miss case $(basename "$case_dir")" >&2
       continue
     fi
     # Conditional, so the without-skill run is not asked to load a skill it lacks.
-    printf '\nIf a skill named %s is available, load it with the Skill tool before you start.\n' "$skill" >>"$case_dir/prompt.md"
+    # The copy under test loads as <skill>:<skill>; an installed or built-in skill
+    # with the bare name would shadow it, so name the copy and rule the others out.
+    printf '\nIf a skill named %s:%s is available, load it with the Skill tool before you start. Do not load any other skill named %s.\n' "$skill" "$skill" "$skill" >>"$case_dir/prompt.md"
   done
 fi
 

@@ -1,0 +1,4 @@
+Let users change their display name
+
+Writes the profile with optimistic concurrency, so a concurrent edit to
+another field is not lost.

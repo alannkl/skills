@@ -1,0 +1,4 @@
+Add exchange-rates client
+
+Fetches the latest rates for the pricing page. See the comment in
+latest() for why it has its own retry loop.

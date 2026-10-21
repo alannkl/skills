@@ -1,0 +1,4 @@
+Fix negative amounts in format_currency
+
+A month whose refunds exceed its sales rendered -150 cents as "$-2.50".
+Put the sign before the dollar sign: "-$1.50".

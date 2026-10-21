@@ -16,7 +16,7 @@ Findings can arrive in any shape: structured reviewer output, human PR comments,
 - **id.** Keep the source's; number them yourself otherwise.
 - **claim.** One sentence.
 - **location.** Use `file:line`. Keep the source's location, or locate the claimed code yourself.
-- **failure scenario.** State the inputs, the state, and the wrong outcome. Keep the source's scenario if concrete; otherwise construct it yourself. If no concrete scenario can be supported, reject the finding as unsupported, without claiming the code is safe. If a plausible material scenario depends on evidence you cannot get, defer it pending a specific check.
+- **failure scenario.** State the inputs, the state, and the wrong outcome. For a simpler-design finding, state the maintenance consequence, such as two copies that must change together, and the alternative that removes it. Keep the source's scenario if concrete; otherwise construct it yourself. If no concrete scenario can be supported, reject the finding as unsupported, without claiming the code is safe. If a plausible material scenario depends on evidence you cannot get, defer it pending a specific check.
 - **severity / confidence.** Carry over the source's values as starting estimates; step 2 revises them.
 
 ## Cost model
@@ -33,7 +33,7 @@ Use these prices:
 ## Triage each finding, in order
 
 1. **Valid?** Reproduce or refute it with concrete evidence. Reject invalid findings and cite the guard clause (`file:line`), the test you ran, or the declared constraint or trade-off the reviewer missed. "I had my reasons" is not a rejection; rejections are never free.
-2. **Material?** It causes incorrect behavior, violates an explicit requirement, risks data loss or a security hole, or makes a realistic failure likely. Style preferences, speculative future requirements, and marginal improvements are not material. Record critical/high/medium/low severity from impact and likelihood, revising the source's estimate when validation changes either. Revise confidence separately when the supporting evidence changes.
+2. **Material?** It causes incorrect behavior, violates an explicit requirement, risks data loss or a security hole, makes a realistic failure likely, or adds deployed complexity (a state, module, dependency, or duplicated logic) that a demonstrated simpler alternative removes for the same goal. Style preferences, speculative future requirements, and marginal improvements are not material. Record critical/high/medium/low severity from impact and likelihood, revising the source's estimate when validation changes either. Revise confidence separately when the supporting evidence changes.
 3. **Fix cost?** Count these signs in the proposed fix:
    - adds a new state, flag, or failure mode
    - adds a special case to a previously uniform rule
@@ -44,10 +44,10 @@ Use these prices:
    Two or more tells = high-cost fix.
 
 4. **Disposition.**
-   - **Fix.** Valid, material, low-cost. Choose the simplest correct design, even when that means rewriting undeployed code.
+   - **Fix.** Valid, material, low-cost, with no unresolved material trade-off. Choose the simplest correct design, even when that means rewriting undeployed code.
    - **Defer.** Valid but not material now, or plausibly material but awaiting a specific check you cannot run. For the first, state what would make it material; when its code is in scope, plan a comment naming the ceiling and trigger, or a ticket for a scheduled check (a date, a vendor change). For the second, name the check and how its result would settle the finding; keep the uncertainty in the report, with no comment.
    - **Reject.** Invalid, speculative, or out of scope. Include the concrete refutation. When the code invites the misreading, or the finding has been rejected before, plan a one-line comment there naming the wrong reading. When the same misreading recurs across files, one line in the repo's review guidance may replace a comment per site; record the rationale, never a rule to skip a finding class.
-   - **Escalate.** Material and high-cost. The expense of the fix is evidence about the design, so diagnose the cause before patching: architecture mismatch, misunderstood requirement, invalid core assumption, or inherent domain complexity. Present the fork exactly once: **(A)** patch the current design, **(B)** redesign the affected area, or **(C)** clarify or change the requirement. Give the cost of each option and your recommendation. "The domain is inherently like this; pay the cost" is a legitimate conclusion. Redesigns and requirement changes belong to the user. Present the fork; do not take it.
+   - **Escalate.** Material and high-cost. The expense of the fix is evidence about the design, so diagnose the cause before patching: architecture mismatch, misunderstood requirement, invalid core assumption, or inherent domain complexity. Present the fork exactly once: **(A)** patch the current design, **(B)** redesign the affected area, or **(C)** clarify or change the requirement. Give the cost of each option and your recommendation. "The domain is inherently like this; pay the cost" is a legitimate conclusion. Redesigns and requirement changes belong to the user. Present the fork; do not take it. Also escalate a simpler-design finding whose alternative carries a material cost, such as added latency, whether a requirement names it or the review demonstrates it; present the same fork.
 
 ## Boundary
 

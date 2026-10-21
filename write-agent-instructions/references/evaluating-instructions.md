@@ -8,6 +8,9 @@ Use the section that fits the request; this is not a suite to run in full. Pruni
 - Grade against the declared expectations with concrete evidence. Use scripts for mechanical checks and human or LLM review for judgment-heavy qualities.
 - Use one scenario per consequential change; add another only for a material risk the first cannot exercise.
 - If the user wants eval files for a skill, start with 2-3 realistic cases in the format of the eval tool they use. Each case gives a prompt, the expected result, any input files, and later assertions.
+- Make each case discriminate: the previous version, or no instructions, should often fail it while the revised version passes, and it should offer a tempting wrong answer. Remove hints that give the answer away, add realistic noise such as unrelated real defects, and pair a case that should change behavior with one where the right result is restraint.
+- Choose cases from the behavior the change targets before seeing results, then run each against the baseline. A case the baseline passes reliably cannot show improvement and spends paid runs; keep it only as a labeled regression guard, and report guards alongside the rest. When no version passes, find the cause before changing the instructions: model capability, evidence the fixture does not supply, an ambiguous grader, or a tooling failure.
+- Run cases on the model that executes the instructions in practice. A weaker model is a cheap regression screen, but its failures on judgment-heavy behavior can reflect capability rather than the instructions. Repeat each version at least three times and treat the result as a first sample, not proof. Check that every run loaded only the copy under test; an installed or built-in skill with the same name can shadow it.
 
 ## No-op disputes
 

@@ -1,0 +1,4 @@
+Add storage client for the cleanup job
+
+Lists the objects under a prefix and deletes keys in batches of up to
+1,000, the API's limit per call.
