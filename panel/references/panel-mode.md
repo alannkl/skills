@@ -1,24 +1,22 @@
-# Runner usage
+# Panel mode
 
-Panel mode runs `scripts/panel.py` with one of three presets; pair mode runs `scripts/consult.py`, described under Consultant.
+Participants do the work through `scripts/panel.py` while the host coordinates.
 
-## Brief and roster
+## Presets
 
-The brief defines the work, deliverable and acceptance criteria; the runner reads it as written.
+Without a named preset, choose by how the work should be shared, announce the reason, and prefer `leader-members` when none clearly fits better.
 
-### Default roster
+- `independent-discussion`: duplicated work. Each participant privately produces the whole deliverable, then the panel compares the results. Choose it when the value is whether participants converge unprompted: judgments, forecasts, designs, reviews.
+- `leader-members`: split work, decided by the leader, who assigns complementary parts and integrates them. Choose it when one participant should own the decomposition.
+- `flat-peers`: split work, proposed by the peers. Peers with equal authority each propose the split, then contribute their parts, resolving overlaps in the contribute round; the declared drafter assembles the result unless every required peer nominates the same other peer with a reason. Choose it when the work should be divided but nobody, host included, should decide the division in advance.
 
-An unspecified panel roster has two participants; Pair mode in `SKILL.md` sets how many consultants run and on which harnesses. Participants and consultants follow these per-harness defaults:
+## Prepare
 
-| Harness | Preferred model | Effort |
-| --- | --- | --- |
-| Claude Code | Claude Fable 5.1 | `high` |
-| Codex | GPT-6 Astra | `high` |
+The runner reads the brief as written.
 
-1. Preserve explicit user choices and apply task-specific model restrictions only within their stated scope. Fill unspecified models and effort on matching harnesses from the table.
-2. Resolve exact model identifiers for the installed harness and current account from current model listings or account availability evidence, consulting current official vendor guidance when identifiers or capability are unclear. If a preferred model is unavailable, choose that harness's most capable available model for general reasoning and coding, ranked by current model descriptions rather than names or speed/cost defaults; apply the same rule to other requested harnesses. Report fallbacks and reasons, or unresolved availability or ranking, before launch; never invent an identifier.
-3. Set `high` explicitly where supported. If effort control exists but lacks `high`, disclose the supported choices and resolve effort before launch. Report harnesses without effort control.
-4. For panel mode, assign neutral roles and the integrator to fit the preset, with both default participants required to approve. Write the resolved choices into the roster file; the runner does not discover or substitute models. Spend model capability on required approvers first.
+1. Resolve the requested or default roster under Default roster in `SKILL.md`. Assign neutral roles and the integrator to fit the preset, with both default participants required to approve; choose an unspecified drafter under Default drafter; and assign IDs, adapters and required approvers under Roster file. Write the resolved choices into the roster file; the runner does not discover or substitute models. Spend model capability on required approvers first.
+2. Set authorized web, command and source-edit access under Execution boundaries. Choose checks with expected exit codes, or explain how review will verify completion. Preserve authentication and billing settings.
+3. Freeze the inputs and the resolved roster, then report the source revision, deliverable, participant count, each participant's harness, model, effort and role, required approvers, preset and run limits. Confirm the roster, including effort defaults or a fallback policy, unless the user already supplied or approved it; report choices within that approval without asking again and confirm changes outside it. Use `--unbounded` only when the user asks for it by name.
 
 ### Default drafter
 
@@ -48,9 +46,41 @@ Direct CLI calls with explicit roster files are noninteractive.
 
 Every opening contribution is required. Critique or clarification may skip a failed participant after confirming inactivity and reconciling the failure; that participant remains required for final approval.
 
+## Run
+
+Run from this skill's directory:
+
+```bash
+python3 scripts/panel.py leader-members /absolute/brief.md /absolute/roster.json \
+  --run-dir /absolute/new-run-directory --max-cycles 3 --run-seconds 3600
+```
+
+Leave `--idle-seconds` out unless one window should override every harness's own. See Limits and artifacts for defaults.
+
+The runner manages scheduling, sessions, working directories, tool permissions, input delivery, artifacts and final approval. Report missing participants or permissions as blockers and preserve the roster.
+
+Run the runner in the background and retain the process handle. Beside it, run `python3 scripts/progress.py RUN_DIR --follow` and relay its output as progress, not transcript: one status line per turn; the substance of each completed message in a few sentences; a review decision only with the revision and attempt it carries, since a streamed attempt can still fail or be retried; blockers as soon as they appear; reasoning only when the user asks. Name the run directory once so the full transcript (`progress.py RUN_DIR --all`) is one command away. Conclusions come from the report, and the host view waits for the reveal.
+
+For round-by-round decisions, use `--pause-between-rounds` and send host decisions through stdin. Follow Human input and recovery for brief changes, cancellation and crashes. Wait for the report before claiming processes stopped.
+
+## Host view
+
+During a routed panel assignment, the host coordinates and is not a participant: the participant count excludes it, and the roster does not set its model. Keep the opening brief to goal, scope, evidence and criteria so opening contributions stay independent. After the reveal, the host may add its own opinion under a `Host view (non-binding)` heading, sent as a brief revision at a round boundary or inside a follow-up file. Participants treat it as evidence to challenge; approval stays with the roster. At delivery, the host may add its own dissent as a host comment, separate from the panel outcome.
+
+## Deliver
+
+Read `report.json` first. Report the outcome and artifact paths, link this answer's `discussion_report`, retain the active panel record and yield for the next user message. Report unresolved continuation failures as blockers instead of silently answering alone.
+
+- `agreed`: every required reviewer accepted this exact result and the selected verification policy passed.
+- `disagreement`: bounded rounds ended with objections; the result is unapproved.
+- `incomplete`: required work, checks, valid output or delivery certainty is missing.
+- `interrupted`: the host stopped the run; report uncertain in-flight effects.
+
+Participant approval does not authorize applying changes, committing, publishing or external actions. The runner leaves the caller's checkout untouched; the host may apply a patch under existing task authorization after inspecting the destination's current changes. Report that independence is procedural, without enforced filesystem isolation.
+
 ## Execution boundaries
 
-In panel mode, `execution` declares what participants may change and how results are checked, independently of the brief's subject and output format:
+`execution` declares what participants may change and how results are checked, independently of the brief's subject and output format:
 
 | Setting | Meaning |
 | --- | --- |
@@ -63,7 +93,7 @@ In panel mode, `execution` declares what participants may change and how results
 
 Participants get their harness's full tool set in every mode, including shell, file writes, skills and subagents, with automatic approval; final approval requires every configured reviewer. Their prompt directs them to apply the `delegate` skill when it is installed, and otherwise to delegate a bounded step when its result is cheaper to check than to produce, while making their contribution and any review decision themselves. The workspace setting is declared intent the participant follows, not a tool restriction. The runner enforces what it can check: the frozen source snapshot is read-only on disk and a changed snapshot ends the run incomplete, and an `inspect` round that leaves a source patch ends incomplete. In read-only runs, participants write scratch files in their artifact directory.
 
-Use Python 3.10+ on Linux or macOS, authenticated roster CLIs, and Git for `inspect` or `edit`. No Python packages are required.
+`inspect` and `edit` need Git.
 
 ## Evidence and working copies
 
@@ -120,12 +150,7 @@ Codex uses `approval_policy="never"` with a workspace-write sandbox whose writab
 
 Claude's `max_turns` caps the agentic loop (model responses with tool calls) within one invocation. It is unset by default, so a participant takes as many steps as the task needs, and the idle window and discussion allowance end runaway work. Its budget flag applies where the account supports it. Codex has no equivalent generation bound here. Both retain reported usage and have wall-clock limits, without a guaranteed whole-run token or monetary ceiling.
 
-## Run and inspect
-
-```bash
-python3 scripts/panel.py independent-discussion /absolute/brief.md /absolute/roster.json \
-  --run-dir /absolute/new-run-directory
-```
+## Limits and artifacts
 
 See `--help` for options. Defaults:
 
@@ -159,7 +184,7 @@ Result hashes bind text and data, plus files, patch and verification for working
 
 ## Continuing the conversation
 
-For each routed follow-up, write a file with the user's message, new decisions or evidence, the current skill stage if applicable, and the requested deliverable and acceptance criteria. Include relevant host-only exchanges since the last discussion, separating user decisions from host recommendations. Put the host's opinion under a `Host view (non-binding)` heading, per Host view in `SKILL.md`. Resume the same run directory:
+For each routed follow-up, write a file with the user's message, new decisions or evidence, the current skill stage if applicable, and the requested deliverable and acceptance criteria. Include relevant host-only exchanges since the last discussion, separating user decisions from host recommendations. Put the host's opinion under a `Host view (non-binding)` heading, per Host view. Resume the same run directory:
 
 ```bash
 python3 scripts/panel.py --continue /absolute/panel-directory \
@@ -194,27 +219,6 @@ The process exits after each answer, releasing its writer lock; native sessions 
 ### Older runs
 
 Completed version-3 panels can be continued explicitly with their saved sessions; the runner archives their original report and upgrades continuation state to version 4. Unfinished work must be recovered first. The `task` roster configuration is rejected: put objectives and result requirements in the brief, and access and check requirements in `execution`. Completed older reports remain readable; unfinished older-format runs need a new run.
-
-## Consultant
-
-`scripts/consult.py` runs one read-only participant per directory while the host does the work.
-
-| Command | Behavior |
-| --- | --- |
-| `open DIR --harness H --model M [--effort E] [--web \| --no-web] --brief FILE [--read DIR ...]` | Start a session and answer the brief. Web retrieval defaults to enabled; `--no-web` disables it. A fresh consultation requires a new directory. |
-| `ask DIR --question FILE [--attach FILE ...] [--read DIR ...]` | Resume the saved session. Also the retry path for a failed opening turn once the consultation exists, since a second `open` rejects that directory. Rejects closed consultations. |
-| `close DIR` | Close the consultation on stop or reset. |
-| `reopen DIR --question FILE [--attach FILE ...] [--read DIR ...]` | Reopen a closed consultation and answer the new question with the saved session, model, effort and permissions. |
-
-Attachments are inlined into the question. `--read` grants directory access through Claude's `--add-dir` or Codex's read-only sandbox. Neither harness grants the consultant write capability. Register external harnesses with `--adapter NAME=FILE`, as for the panel.
-
-A one-field schema requires each reply as text. `--timeout` defaults to 600 seconds and cancels a turn that never returns, leaving the session open. Stdout carries one JSON object with `ok`, `text` and the turn number. Exit 2 means no reply; the `error` text distinguishes a timeout, failed turn or configuration error. An unconfirmed timeout cancellation warns that the process may still be running.
-
-`DIR/consult.json` records the harness, model, session and readable directories. `DIR/log.jsonl` records every question and reply; `DIR/turns/tN/` holds native captures.
-
-All consultation commands take a writer lock. Before dispatch, the runner records `pending_turn` and clears the marker only after recording a determinate outcome. Active writers, missing completion records, unfinished turns and uncertain termination block asking, closing and reopening. Reconcile the saved records and confirm termination before resuming; changing the closed/open flag does not resolve these conditions.
-
-A terminal session-loading failure starts one fresh session within the same turn timeout. It retains prior questions, captured attachments and replies as context and records `replacement` in the reply and log, with the old session under `retired_sessions` in the manifest. The original attempt stays in `turns/tN/`; the fresh attempt uses `turns/tN/fresh/`. Normal follow-ups then use the replacement session. A missing saved session ID is an incomplete record, not proof of a terminal native failure.
 
 ## Human input and recovery
 

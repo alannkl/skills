@@ -2,9 +2,9 @@
 
 Adapt these examples' goals, evidence, deliverables and acceptance criteria to the user's request. The runner does not load them.
 
-In pair mode, put the task context in the brief, then ask for objections or review; Pair mode in `SKILL.md` sets which consultations to run and when they are complete.
+In consult mode, put the task context in the brief, then ask for objections or review; `references/consult-mode.md` sets which consultations to run and when they are complete.
 
-## Pair consultation examples
+## Consultation examples
 
 ### Focused question
 
@@ -54,10 +54,10 @@ User decision: the shared document addresses communication for any audience. Rev
 
 In panel mode, resume the saved participants with `panel.py`, passing the active directory to `--continue` and this brief file to `--follow-up`.
 
-In pair mode, put the routed follow-up and the host's current approach or proposed answer in the question, asking for objections or review as appropriate, and resume each saved consultation:
+In consult mode, put the routed follow-up and the host's current approach or proposed answer in the question, asking for objections or review as appropriate, and resume each saved consultation:
 
 ```bash
-python3 scripts/consult.py ask /absolute/pair/astra --question /absolute/follow-up.md
+python3 scripts/consult.py ask /absolute/consult/astra --question /absolute/follow-up.md
 ```
 
-See Consultant in `references/usage.md` for attachments and access settings.
+See Consultant commands in `references/consult-mode.md` for attachments and access settings.
