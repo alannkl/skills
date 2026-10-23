@@ -46,15 +46,13 @@ Write finished copy for the requested audience, purpose, tone, format and length
 
 Allocate observation slots for a fictional moon. Return the allocation and the reasoning needed to verify it. Give each requested observer one slot, without overlaps, and satisfy every stated visibility constraint.
 
-Any subject works the same way: specify the deliverable and checks in the brief and choose the required access.
-
 ## Continue after an answer
 
 User follow-up: "Keep this document generic; the audience-specific guidance belongs in the individual skills. Which recommendations change?"
 
 User decision: the shared document addresses communication for any audience. Revise the prior recommendation accordingly, retaining other settled decisions. Return the revised recommendation and explain what changed; do not edit files. Acceptance: every proposed change respects the generic document's scope, and the answer identifies any remaining uncertainty.
 
-First apply the routing rule under Keep the panel in the chat in `SKILL.md`. An explanation of an earlier recommendation can stay with the host; a changed assumption that undermines it needs fresh consultation. In panel mode, resume the saved participants with `panel.py`, passing the active directory to `--continue` and this brief file to `--follow-up`.
+In panel mode, resume the saved participants with `panel.py`, passing the active directory to `--continue` and this brief file to `--follow-up`.
 
 In pair mode, put the routed follow-up and the host's current approach or proposed answer in the question, asking for objections or review as appropriate, and resume each saved consultation:
 

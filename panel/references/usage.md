@@ -1,32 +1,28 @@
 # Runner usage
 
-Panel mode runs `scripts/panel.py` with one of three presets; pair mode runs `scripts/consult.py`, described under Consultant. Choose the mode under Prepare in `SKILL.md`.
+Panel mode runs `scripts/panel.py` with one of three presets; pair mode runs `scripts/consult.py`, described under Consultant.
 
 ## Brief and roster
 
 The brief defines the work, deliverable and acceptance criteria; the runner reads it as written.
 
-For an existing skill in either mode, follow `references/skill-collaboration.md`; the host manages the skill's stages, loading and questions, and the runner does not automate them.
-
 ### Default roster
 
-An unspecified panel roster has two participants. Pair mode has one consultant by default; Pair mode in `SKILL.md` assigns harnesses to further ones. Participants and consultants follow these per-harness defaults:
+An unspecified panel roster has two participants; Pair mode in `SKILL.md` sets how many consultants run and on which harnesses. Participants and consultants follow these per-harness defaults:
 
 | Harness | Preferred model | Effort |
 | --- | --- | --- |
 | Claude Code | Claude Fable 5.1 | `high` |
 | Codex | GPT-6 Astra | `high` |
 
-1. Preserve explicit user choices and apply task-specific model restrictions only within their stated scope. Fill unspecified models on matching harnesses from the table; default unspecified effort to `high`.
+1. Preserve explicit user choices and apply task-specific model restrictions only within their stated scope. Fill unspecified models and effort on matching harnesses from the table.
 2. Resolve exact model identifiers for the installed harness and current account from current model listings or account availability evidence, consulting current official vendor guidance when identifiers or capability are unclear. If a preferred model is unavailable, choose that harness's most capable available model for general reasoning and coding, ranked by current model descriptions rather than names or speed/cost defaults; apply the same rule to other requested harnesses. Report fallbacks and reasons, or unresolved availability or ranking, before launch; never invent an identifier.
 3. Set `high` explicitly where supported. If effort control exists but lacks `high`, disclose the supported choices and resolve effort before launch. Report harnesses without effort control.
-4. For panel mode, assign neutral roles and the integrator to fit the preset, with both default participants required to approve. Write the resolved choices into the roster file; the runner does not discover or substitute models. Spend model capability on required approvers first; the host's session model is independent of the roster.
+4. For panel mode, assign neutral roles and the integrator to fit the preset, with both default participants required to approve. Write the resolved choices into the roster file; the runner does not discover or substitute models. Spend model capability on required approvers first.
 
 ### Default drafter
 
-Unless the user specifies a drafter, choose from the resolved roster in this order: **Codex > Claude Code**, breaking ties within a harness by roster order. If neither is present, choose a participant suited to the deliverable and report the choice. This preference selects among existing participants; it does not add or replace models.
-
-Write the selected participant ID into `drafter`. The preset rules still apply: `leader-members` uses its assigned leader to integrate, and `flat-peers` may unanimously nominate another integrator.
+Unless the user specifies a drafter, write into `drafter` the ID of the first Codex participant in roster order, or else the first Claude Code participant. If neither is present, choose a participant suited to the deliverable and report the choice. This preference selects among existing participants; it does not add or replace models.
 
 ### Roster file
 
@@ -44,9 +40,9 @@ A panel roster specifies participants, coordination roles, optional evidence and
 }
 ```
 
-Use supported effort values. IDs must be unique; `host`, `runner` and `all` are reserved. Each participant gets a separate session, even on the same harness. `required_approvers` defaults to everyone. Set `drafter`; `leader-members` also requires `leader`, who integrates instead, and `flat-peers` treats `drafter` as the fallback when peers do not unanimously nominate an integrator. Working-copy runs require an approver other than the integrator.
+IDs must be unique; `host`, `runner` and `all` are reserved. Each participant gets a separate session, even on the same harness. `required_approvers` defaults to everyone. Set `drafter`; `leader-members` also requires `leader`, who integrates instead, and `flat-peers` treats `drafter` as the fallback when peers do not unanimously nominate an integrator. Working-copy runs require an approver other than the integrator.
 
-Roles are neutral labels: `member` for every participant, and `leader` for the `leader-members` leader. The brief defines the work; the preset's opening round divides it, or keeps it whole. A role that names a viewpoint or a slice of the task prejudices that round, since the runner sends each participant its own role and the full roster in every phase, including the opening. The `drafter` designation is an editing duty.
+Roles are neutral labels: `member` for every participant, and `leader` for the `leader-members` leader. The preset's opening round divides the work or keeps it whole; a role that names a viewpoint or a slice of the task prejudices that round, since the runner sends each participant its own role and the full roster in every phase, including the opening. The `drafter` designation is an editing duty.
 
 Direct CLI calls with explicit roster files are noninteractive.
 
@@ -65,7 +61,7 @@ In panel mode, `execution` declares what participants may change and how results
 | `checks` | Commands to verify the assembled result, with expected exit codes. |
 | `verification_note` | Explain the review method when working-copy verification cannot use executable checks. |
 
-Participants get their harness's full tool set in every mode, including shell, file writes, skills and subagents, with automatic approval; final approval requires every configured reviewer. The prompt directs participants to apply the `delegate` skill when it is installed, and otherwise to delegate a bounded step when its result is cheaper to check than to produce, while making their contribution and any review decision themselves. The workspace setting is declared intent the participant follows, not a tool restriction. The runner enforces what it can check: the frozen source snapshot is read-only on disk and a changed snapshot ends the run incomplete, and an `inspect` round that leaves a source patch ends incomplete. In read-only runs, participants write scratch files in their artifact directory.
+Participants get their harness's full tool set in every mode, including shell, file writes, skills and subagents, with automatic approval; final approval requires every configured reviewer. Their prompt directs them to apply the `delegate` skill when it is installed, and otherwise to delegate a bounded step when its result is cheaper to check than to produce, while making their contribution and any review decision themselves. The workspace setting is declared intent the participant follows, not a tool restriction. The runner enforces what it can check: the frozen source snapshot is read-only on disk and a changed snapshot ends the run incomplete, and an `inspect` round that leaves a source patch ends incomplete. In read-only runs, participants write scratch files in their artifact directory.
 
 Use Python 3.10+ on Linux or macOS, authenticated roster CLIs, and Git for `inspect` or `edit`. No Python packages are required.
 
@@ -95,7 +91,7 @@ The runner resolves the revision once, creates a private local clone without har
 
 `HEAD` includes only committed work. To review dirty work, export the exact diff and supporting files as evidence, preserving the requested scope.
 
-Participants retain working directories across resume. Contributions are captured as patches and read-only snapshots, which peers receive after reveal; later edits cannot alter that evidence. The integrator assembles the result in its worktree. A separate verification worktree reconstructs the final patch before checks run.
+Participants retain working directories across resume. Contributions are captured as patches and read-only snapshots, which peers receive after reveal; later edits cannot alter that evidence. The integrator assembles the result in its worktree, and a separate verification worktree reconstructs the final patch before checks run.
 
 Choose a new run directory outside the source, caller repository and skill package. Regular files, executable modes and internal relative symlinks are supported. Escaping symlinks, special files and uninitialized submodule entries are rejected. Git-ignored files are not patch deliverables.
 
@@ -118,11 +114,11 @@ For acceptance tests participants must not edit, run a script from the immutable
 
 Both bundled adapters accept `model`, `effort` and an optional trusted `executable`. Claude also accepts `max_turns`, `max_budget_usd` and `prompt_cache_ttl` (`5m` or `1h`), which sets `CLAUDE_CODE_PROMPT_CACHE_TTL` for that participant's process only. `FORCE_PROMPT_CACHING_5M` in the runner's environment overrides it, and the adapter then prints a warning to stderr; a one-hour cache costs more to write and pays off when a participant's turns are more than five minutes apart. Codex rejects unsupported bounds. Both retain existing authentication and billing settings.
 
-Claude uses native `auto` without interactive permission prompts and no `--tools` restriction; `web: false` disallows the web tools. Subagents inherit the participant's tool set. Native policy assesses shell operations without a runner command allowlist. Consultants keep a read-only set: file reads, skills, subagents and web when enabled. Declare source and check directories with `--add-dir`; add peer snapshot access after reveal and retain it on resume. The adapter also grants the user-level skill roots `~/.claude/skills` and `~/.agents/skills` where they exist, so installed skills such as `delegate` and `constitution` and their reference files stay readable by rule for participants, consultants and their subagents. Put complex or Unicode-bearing shell programs in scratch script files to avoid parsing errors. Directory grants follow [Claude permission rules](https://code.claude.com/docs/en/permissions#working-directories).
+Claude uses native `auto` without interactive permission prompts and no `--tools` restriction; `web: false` disallows the web tools. Subagents inherit the participant's tool set. Native policy assesses shell operations without a runner command allowlist. Consultants keep a read-only set: file reads, skills, subagents and web when enabled. Declare source and check directories with `--add-dir`; add peer snapshot access after reveal and retain it on resume. The adapter also grants `~/.claude/skills` and `~/.agents/skills` where they exist, so participants, consultants and their subagents can read installed skills, such as `delegate` and `constitution`, and their reference files. Put complex or Unicode-bearing shell programs in scratch script files to avoid parsing errors. Directory grants follow [Claude permission rules](https://code.claude.com/docs/en/permissions#working-directories).
 
 Codex uses `approval_policy="never"` with a workspace-write sandbox whose writable roots add the participant's scratch directory; consultants run read-only. Codex discovers user-level skills in `~/.agents/skills` and `~/.codex/skills` itself, and both sandboxes read files outside the working directory, so installed skills and their reference files need no extra grant. Web retrieval follows `execution.web` through the [documented setting](https://learn.chatgpt.com/docs/config-file/config-reference). Neither adapter uses unrestricted bypass; native denials remain visible blockers.
 
-Claude's `max_turns` caps the agentic loop (model responses with tool calls) within one invocation and is unset by default, so a participant takes as many steps as the task needs and the idle window and discussion allowance end runaway work; its budget flag applies where the account supports it. Codex has no equivalent generation bound here. Both retain reported usage and have wall-clock limits, without a guaranteed whole-run token or monetary ceiling.
+Claude's `max_turns` caps the agentic loop (model responses with tool calls) within one invocation. It is unset by default, so a participant takes as many steps as the task needs, and the idle window and discussion allowance end runaway work. Its budget flag applies where the account supports it. Codex has no equivalent generation bound here. Both retain reported usage and have wall-clock limits, without a guaranteed whole-run token or monetary ceiling.
 
 ## Run and inspect
 
@@ -143,9 +139,9 @@ See `--help` for options. Defaults:
 
 The round cap is the opening phase count plus three times the cycle cap, including restarts after brief changes. There is no whole-chat spending cap and no cap on a turn's total time.
 
-The discussion allowance caps unattended work. Waiting for a host decision at a round boundary pauses it and the remainder resumes afterwards. A `continue` or `brief` decision never renews it, because the runner cannot tell a person's decision from the host agent's own; only a new discussion started by `--continue` or `--reopen` starts it afresh. Elapsed time between human interventions can therefore exceed the allowance by the time spent waiting, never by autonomous work. `--unbounded` is an explicit opt-in that removes the discussion deadline: the idle bound and round cap still end stalled or looping work, but a turn that keeps writing is never killed. It is saved across follow-ups until a later `--run-seconds` restores a ceiling.
+The discussion allowance caps unattended work. Waiting for a host decision at a round boundary pauses it, and the remainder resumes afterwards. A `continue` or `brief` decision never renews it, because the runner cannot tell a person's decision from the host agent's own; only a new discussion started by `--continue` or `--reopen` starts it afresh. Time between human interventions can therefore exceed the allowance only by the time spent waiting, never by autonomous work. `--unbounded` is an explicit opt-in that removes the discussion deadline: the idle bound and round cap still end stalled or looping work, but a turn that keeps writing is never killed. It is saved across follow-ups until a later `--run-seconds` restores a ceiling.
 
-The idle window bounds stalls. A turn is killed only after that long with nothing new written under its attempt directory, which both bundled harnesses stream to as they work. Silence is sampled once per window, so a stalled turn is killed between one and two windows after its last write. Claude streams partial-message deltas, including reasoning, so a long thinking call keeps the capture growing and captures are correspondingly larger. Codex emits an event per completed item, so a long reasoning phase writes nothing, which is why its window is longer. A subagent streams only its finished messages, so its parent can fall silent during one long subagent response; while a Claude participant has a subagent call without a result, silence may last four windows before the turn is killed. `--idle-seconds` overrides every harness with one value and is saved like other limits.
+The idle window bounds stalls: a turn is killed only after that long with nothing new written under its attempt directory, which both bundled harnesses stream to as they work. Silence is sampled once per window, so a stalled turn is killed one to two windows after its last write. Claude streams partial-message deltas, including reasoning, so a long thinking call keeps the capture growing and captures are larger. Codex emits an event per completed item, so a long reasoning phase writes nothing; its window is longer for that reason. A subagent streams only its finished messages, so its parent can fall silent during one long subagent response; while a Claude participant has a subagent call without a result, silence may last four windows before the turn is killed. `--idle-seconds` overrides every harness with one value and is saved like other limits.
 
 A turn that is killed for idling or exits without a valid envelope is resumed once in the same session, with a runner notice naming the reason and asking it to finish from the work already done; the second attempt has the same idle window. Both attempts are recorded under the same turn ID, and the dispatch event carries `retry_reason`. Native permission denials and indeterminate deliveries are not retried.
 
@@ -155,7 +151,7 @@ Both bundled harnesses stream native events to the attempt's `stdout` file while
 
 Artifacts include the saved manifest, `events.jsonl`, participant prompts and native outputs, and `revisions/REVISION/` with `result.md` and `result.json`. Working-copy results add frozen files, a patch and check evidence. `report.json` is the latest answer's report; `reports/discussion-N.json` preserves each answer's reviews, verification, failures, cancellations and usage. Link the returned `discussion_report` when presenting an answer so later follow-ups cannot change its approval record. `manifest.json` records whether the conversation is active or stopped, independently of the latest answer's outcome.
 
-The protocol envelope carries contributions or deliverables in `text` and any brief-requested JSON object in `data`, without predefined keys. Reviews use revision/hash and approve/object/unable fields. The runner builds a JSON schema for each dispatch and each harness enforces it natively, through Claude's `--json-schema` and Codex's `--output-schema`, so the outer shape of an envelope is constrained and the review schema limits the revision and hash to the candidate under review. Codex validates strictly, so its copy carries `data` as a JSON-encoded string that the adapter decodes; that string can still be invalid JSON, which makes the turn a failed attempt that one retry can recover. A pinned revision proves which candidate the response is associated with, not that the reviewer examined it: the runner still validates identity and content, and reviewers assess substance against the brief.
+The protocol envelope carries contributions or deliverables in `text` and any brief-requested JSON object in `data`, without predefined keys. Reviews use revision/hash and approve/object/unable fields. The runner builds a JSON schema for each dispatch, which each harness enforces natively through Claude's `--json-schema` and Codex's `--output-schema`; it constrains the envelope's outer shape, and the review schema limits the revision and hash to the candidate under review. Codex validates strictly, so its copy carries `data` as a JSON-encoded string that the adapter decodes; invalid JSON there fails the attempt, which one retry can recover. A pinned revision proves which candidate the response is associated with, not that the reviewer examined it: the runner still validates identity and content, and reviewers assess substance against the brief.
 
 In `flat-peers`, the responsibilities round also carries an `integrator` nomination with an `integrator_reason`. Participants are told the `declared_drafter`; a null nomination with an empty reason keeps it, and a nomination needs a nonempty reason. Only a unanimous nomination by the required peers moves integration to that peer for the discussion, announced to everyone as a runner message with every reason; otherwise, or when a working-copy run would leave no other approver, the roster's declared drafter integrates. The roster's `drafter` stays the saved fallback across follow-ups.
 
@@ -163,7 +159,7 @@ Result hashes bind text and data, plus files, patch and verification for working
 
 ## Continuing the conversation
 
-After delivering an answer, keep the panel available and apply the routing rule under Keep the panel in the chat in `SKILL.md`. For each routed follow-up, write a file with the user's message, new decisions or evidence, the current skill stage if applicable, and the requested deliverable and acceptance criteria. Include relevant host-only exchanges since the last discussion, separating user decisions from host recommendations. Put the host's opinion under a `Host view (non-binding)` heading, per Host view in `SKILL.md`. Resume the same run directory:
+For each routed follow-up, write a file with the user's message, new decisions or evidence, the current skill stage if applicable, and the requested deliverable and acceptance criteria. Include relevant host-only exchanges since the last discussion, separating user decisions from host recommendations. Put the host's opinion under a `Host view (non-binding)` heading, per Host view in `SKILL.md`. Resume the same run directory:
 
 ```bash
 python3 scripts/panel.py --continue /absolute/panel-directory \
@@ -172,11 +168,11 @@ python3 scripts/panel.py --continue /absolute/panel-directory \
 
 Add `--fresh-sessions` to start new native sessions instead of resuming. Each participant then receives the new brief and a history file in its own scratch directory holding the earlier briefs and the earlier discussion visible to it, which it reads as the task needs; nothing earlier is inlined. Sessions stay retired, the report lists them under `session_replacements`, and later follow-ups resume the new sessions. Put every decision the next answer depends on in the follow-up file, since fresh sessions keep no unrecorded context.
 
-Supply the same `--adapter NAME=FILE` registrations for external harnesses. Pass `--idle-seconds`, `--run-seconds`, `--unbounded`, `--max-cycles` or `--report-seconds` to change the saved limits for this and later discussions; the `discussion_start` event records the limits in force, with `idle_seconds` null while each adapter's own window applies. Each `--continue` or `--reopen` starts a fresh autonomous-work allowance. The runner retains the roster, preset, models, effort, required approvers, execution settings, source snapshot, workspaces and, unless `--fresh-sessions` is passed, participant sessions. It supplies prior host briefs and previously undelivered shared discussion, clears the current candidate and approvals, and runs a fresh bounded discussion. Private opening rounds withhold current opening contributions only; participants still know the earlier conversation. Every new panel result requires fresh approval of its exact revision, even when its text is unchanged.
+Supply the same `--adapter NAME=FILE` registrations for external harnesses. Pass `--idle-seconds`, `--run-seconds`, `--unbounded`, `--max-cycles` or `--report-seconds` to change the saved limits for this and later discussions; the `discussion_start` event records the limits in force, with `idle_seconds` null while each adapter's own window applies. The runner retains the roster, preset, models, effort, required approvers, execution settings, source snapshot, workspaces and, unless `--fresh-sessions` is passed, participant sessions. It supplies prior host briefs and previously undelivered shared discussion, clears the current candidate and approvals, and runs a fresh bounded discussion. Private opening rounds withhold current opening contributions only; participants still know the earlier conversation. Every new panel result requires fresh approval of its exact revision, even when its text is unchanged.
 
 Continue within the saved execution boundaries. The source snapshot stays pinned; include new read-only evidence in the follow-up text. A new message does not authorize broader tools or source edits. Changes to the roster, preset, source or execution boundaries require an explicit reset; explain this and resolve authorization before starting the replacement. Changed limits need no reset.
 
-The runner first resumes saved sessions in their original harness accounts and directories. A definitive terminal session-loading failure starts one fresh session automatically with the same role, settings, permissions and workspace. The replacement receives recorded briefs and the history visible to that participant, but not unrecorded native-session context. Other failures, including transient errors, permission denials and uncertain termination, do not trigger replacement. Relay any `session_replacements` listed in the report.
+The runner first resumes saved sessions in their original harness accounts and directories. A definitive terminal session-loading failure starts one fresh session automatically with the same role, settings, permissions and workspace. The replacement receives recorded briefs and the history visible to that participant, but not unrecorded native-session context. Relay any `session_replacements` listed in the report.
 
 For stop or answer-solo requests while idle:
 
@@ -184,31 +180,31 @@ For stop or answer-solo requests while idle:
 python3 scripts/panel.py --stop /absolute/panel-directory
 ```
 
-This closes the conversation without invoking participants or modifying previous answers. Clear the host's active-panel routing but retain its directory and saved settings for an explicit reopen request:
+This closes the conversation without invoking participants or modifying previous answers. Clear the host's active-panel routing. On an explicit reopen request:
 
 ```bash
 python3 scripts/panel.py --reopen /absolute/panel-directory \
   --follow-up /absolute/follow-up.md
 ```
 
-Reopening runs the same checks as continuation, preserves prior reports and requires fresh approval of the new result. Use `--continue` while active and `--reopen` after stopping; neither changes the roster or execution permissions, and both accept the same limit overrides and adapter registrations. For a reset, close the old panel and use the normal new-panel command with a new run directory; record it as active. Carry context into a reset only as requested, and disclose that participants start fresh. For an explicit one-message solo exception, keep the panel saved and include any new decisions when next continuing it.
+Reopening runs the same checks as continuation and preserves prior reports. Use `--continue` while active and `--reopen` after stopping; neither changes the roster or execution permissions, and both accept the same limit overrides and adapter registrations. For a reset, close the old panel and use the normal new-panel command with a new run directory; record it as active. Carry context into a reset only as requested, and disclose that participants start fresh.
 
 The process exits after each answer, releasing its writer lock; native sessions and panel records persist on disk. Missing saved session IDs, changed frozen evidence, unreconciled dispatches or indeterminate delivery block continuation and reopening; preserve the roster and report the gap. Resolve uncertain effects before a reset that could repeat work.
 
 ### Older runs
 
-Completed version-3 panels can be continued explicitly with their saved sessions; the runner archives their original report and upgrades continuation state to version 4. Unfinished work must be recovered first. The experimental `task` roster configuration is rejected: put objectives and result requirements in the brief, and access and check requirements in `execution`. Completed older reports remain readable; unfinished older-format runs need a new run.
+Completed version-3 panels can be continued explicitly with their saved sessions; the runner archives their original report and upgrades continuation state to version 4. Unfinished work must be recovered first. The `task` roster configuration is rejected: put objectives and result requirements in the brief, and access and check requirements in `execution`. Completed older reports remain readable; unfinished older-format runs need a new run.
 
 ## Consultant
 
-`scripts/consult.py` runs one read-only participant per directory while the host does the work. Pair mode opens one directory per consultant under the Pair mode consultation and review rules in `SKILL.md`, keeping each session available across follow-ups.
+`scripts/consult.py` runs one read-only participant per directory while the host does the work.
 
 | Command | Behavior |
 | --- | --- |
 | `open DIR --harness H --model M [--effort E] [--web \| --no-web] --brief FILE [--read DIR ...]` | Start a session and answer the brief. Web retrieval defaults to enabled; `--no-web` disables it. A fresh consultation requires a new directory. |
 | `ask DIR --question FILE [--attach FILE ...] [--read DIR ...]` | Resume the saved session. Also the retry path for a failed opening turn once the consultation exists, since a second `open` rejects that directory. Rejects closed consultations. |
 | `close DIR` | Close the consultation on stop or reset. |
-| `reopen DIR --question FILE [--attach FILE ...] [--read DIR ...]` | Reopen a closed consultation and answer the new question with the saved session, model, effort and permissions. Include decisions made while stopped. |
+| `reopen DIR --question FILE [--attach FILE ...] [--read DIR ...]` | Reopen a closed consultation and answer the new question with the saved session, model, effort and permissions. |
 
 Attachments are inlined into the question. `--read` grants directory access through Claude's `--add-dir` or Codex's read-only sandbox. Neither harness grants the consultant write capability. Register external harnesses with `--adapter NAME=FILE`, as for the panel.
 
@@ -224,7 +220,7 @@ A terminal session-loading failure starts one fresh session within the same turn
 
 With `--pause-between-rounds`, stderr announces `awaiting_host_decision`. Write one JSON line to stdin: `{"action":"continue"}`, `{"action":"stop"}`, or `{"action":"brief","text":"The full revised brief and acceptance criteria."}`.
 
-A revised brief invalidates approvals and restarts opening rounds within the current discussion's round cap and remaining allowance; a boundary decision pauses the clock while the host is deciding and never renews it. Sessions retain history; working copies retain work. After an answer, use `--continue` for the next discussion, or `--reopen` if the conversation was stopped. SIGINT/SIGTERM stops scheduling, cancels active agent and verification process groups, and closes panel routing. Reports distinguish confirmed exit from uncertain termination. Stop an active process through its retained handle; `--stop` acquires the writer lock and closes only an idle conversation.
+A revised brief invalidates approvals and restarts opening rounds within the current discussion's round cap and remaining allowance. Sessions retain history; working copies retain work. SIGINT/SIGTERM stops scheduling, cancels active agent and verification process groups, and closes panel routing. Reports distinguish confirmed exit from uncertain termination. Stop an active process through its retained handle; `--stop` acquires the writer lock and closes only an idle conversation.
 
 After a crash, use `python3 scripts/panel.py --recover /absolute/run-directory`. Recovery takes the writer lock, reconciles the current discussion's persisted output and exit evidence, and applies valid results once. It retains earlier reports and returns incomplete without redispatch or re-verification. An already completed discussion returns its saved report. If delivery is certain and all sessions exist, the host may continue, or explicitly reopen a stopped conversation, with a follow-up that accounts for the recovered effects. A torn final append is retained as `torn-event`. Saved PIDs are never signalled because they may have been reused.
 

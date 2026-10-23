@@ -1,6 +1,6 @@
 # Collaborating on an existing skill
 
-Use these instructions when running an existing skill in either pair or panel mode. The selected skill defines the process and output. Choose the collaboration mode and any panel preset through Prepare in `SKILL.md`.
+Use these instructions when running an existing skill in either pair or panel mode. The selected skill defines the process and output.
 
 ## Prepare one shared execution
 
@@ -13,9 +13,9 @@ In panel mode, the preset allocates the current stage: the leader assigns comple
 
 ## Pair mode
 
-The host executes the selected skill and maintains its work product. Follow Pair mode in `SKILL.md` for consultations, required review and the turn ledger. Apply the routing rule under Keep the panel in the chat in `SKILL.md` after the first delivered answer; a stage boundary alone adds no consultation requirement.
+The host executes the selected skill and maintains its work product, consulting under Pair mode in `SKILL.md`. After the first delivered answer, apply the routing rule under Keep the panel in the chat in `SKILL.md`; a stage boundary alone adds no consultation requirement.
 
-For routed follow-ups, use `consult.py ask`, described under Consultant in `references/usage.md`, with each saved consultation, putting relevant user answers, corrections, stage context and new evidence in the question. Close, reopen, add or remove consultants under Pair mode in `SKILL.md`.
+For routed follow-ups, `consult.py ask` each saved consultation, putting relevant user answers, corrections, stage context and new evidence in the question.
 
 ## When the skill needs user input
 
@@ -31,16 +31,16 @@ Panel participants propose questions and analyze answers through the host, witho
 
 ## Deliver one result
 
-Maintain one shared work product and decision record, using prescribed artifacts where applicable. In pair mode, the host completes any required review and delivers the result with the consultation ledger. For a routed panel assignment, the integrator combines contributions and required reviewers check the same final result against the brief and skill requirements. Direct follow-ups use the host's normal answer format.
+Maintain one shared work product and decision record, using prescribed artifacts where applicable. For a routed panel assignment, the integrator combines contributions and required reviewers check the same final result against the brief and skill requirements.
 
-Complete the skill only when all required stages and decisions are resolved or explicitly deferred under its rules. Deliver one output in the required format, identifying unresolved work. Agreement on a stage artifact, such as a proposed question, does not complete the whole skill. Completing the selected skill leaves the pair or panel active for later questions in this chat.
+Complete the skill only when all required stages and decisions are resolved or explicitly deferred under its rules. Deliver one output in the required format, identifying unresolved work. Completing the selected skill leaves the pair or panel active for later questions in this chat.
 
 ## Using the current runner
 
-This section applies to panel mode. The host interprets the skill and manages its stages. The runner executes bounded preset rounds; it neither schedules `SKILL.md` steps nor forwards questions to the user.
+In panel mode, the runner executes bounded preset rounds; it neither schedules the skill's steps nor forwards questions to the user.
 
 Run the current bounded assignment, then apply the routing rule to user answers, corrections and subsequent stages. For routed work, continue the saved panel per Continuing the conversation in `references/usage.md`, carrying shared instructions and decisions into the follow-up brief.
 
-Use `--pause-between-rounds` for host decisions inside a discussion; brief updates restart opening rounds within that discussion's original limits. A continued discussion renews those limits. Changed execution settings require an explicit reset under the existing authorization rules.
+Use `--pause-between-rounds` for host decisions inside a discussion.
 
 Supply the skill instructions, current stage and output requirements through the existing brief and result envelope.
