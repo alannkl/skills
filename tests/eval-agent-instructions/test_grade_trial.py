@@ -6,11 +6,12 @@ import tempfile
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "skill-eval"))
-from skill_eval import SETTINGS, agent_args, grade_trial, harbor_command, missing_trials, report, stored_baseline  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scripts"))
+from eval_instructions import SETTINGS, agent_args, grade_trial, harbor_command, missing_trials, report, stored_baseline  # noqa: E402
 from tasks import task_digest  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
+SKILL = {"type": "skill", "name": "shorten-it"}
 CONFIG = {"harness": "claude-code", "model": "anthropic/claude-haiku-5-5", "effort": "high"}
 
 
@@ -36,7 +37,7 @@ class GradeTrial(unittest.TestCase):
         (self.trial / "result.json").write_text(json.dumps({"exception_info": None}))
 
     def test_graded_trial_reports_loaded_skill_and_grader_results(self):
-        row = grade_trial(self.trial, "claude-haiku", CONFIG, "shorten-it", self.cases, ["unused"])
+        row = grade_trial(self.trial, "claude-haiku", CONFIG, SKILL, self.cases, ["unused"])
         self.assertEqual((row["status"], row["case"], row["variant"]), ("ok", "shorten-doc", "with"))
         self.assertTrue(row["skill_loaded"])
         self.assertTrue(row["skill_loaded_expected"])
@@ -44,13 +45,23 @@ class GradeTrial(unittest.TestCase):
 
     def test_minus_variant_is_graded_and_expected_like_the_with_arm(self):
         (self.trial / "config.json").write_text(json.dumps({"task": {"path": "/x/tasks/shorten-doc--minus-r"}}))
-        row = grade_trial(self.trial, "claude-haiku", CONFIG, "shorten-it", self.cases, ["unused"])
+        row = grade_trial(self.trial, "claude-haiku", CONFIG, SKILL, self.cases, ["unused"])
         self.assertEqual((row["variant"], row["skill_loaded_expected"]), ("minus-r", True))
         self.assertIn("short", row["graders"])
 
+    def test_delivered_instruction_file_counts_as_part_of_the_starting_workspace(self):
+        delivered = self.cases.parent / "tasks" / "shorten-doc--with" / "environment" / "instructions"
+        delivered.mkdir(parents=True)
+        (delivered / "AGENTS.md").write_text("# Keep it short\n")
+        (self.trial / "verifier" / "workspace" / "AGENTS.md").write_text("# Keep it short\n")
+        artifact = {"type": "instruction-file", "path": "AGENTS.md", "as": "AGENTS.md"}
+        row = grade_trial(self.trial, "claude-haiku", CONFIG, artifact, self.cases, ["unused"])
+        self.assertEqual((row["skill_loaded"], row["delivered"]), (None, True))
+        self.assertTrue(row["graders"]["only-doc"]["pass"])
+
     def test_infrastructure_failure_is_not_graded(self):
         (self.trial / "result.json").write_text(json.dumps({"exception_info": {"exception_type": "AgentSetupTimeoutError"}}))
-        row = grade_trial(self.trial, "claude-haiku", CONFIG, "shorten-it", self.cases, ["unused"])
+        row = grade_trial(self.trial, "claude-haiku", CONFIG, SKILL, self.cases, ["unused"])
         self.assertEqual((row["status"], row["error"]), ("infra_error", "AgentSetupTimeoutError"))
         self.assertNotIn("graders", row)
 
@@ -63,15 +74,15 @@ class GradeTrial(unittest.TestCase):
 
     def test_missing_or_partial_snapshot_is_missing_evidence(self):
         (self.trial / "verifier" / "reward.json").unlink()
-        row = grade_trial(self.trial, "claude-haiku", CONFIG, "shorten-it", self.cases, ["unused"])
+        row = grade_trial(self.trial, "claude-haiku", CONFIG, SKILL, self.cases, ["unused"])
         self.assertEqual(row["status"], "missing_evidence")
         shutil.rmtree(self.trial / "verifier")
-        row = grade_trial(self.trial, "claude-haiku", CONFIG, "shorten-it", self.cases, ["unused"])
+        row = grade_trial(self.trial, "claude-haiku", CONFIG, SKILL, self.cases, ["unused"])
         self.assertEqual(row["status"], "missing_evidence")
 
     def test_agent_timeout_with_a_snapshot_is_graded(self):
         (self.trial / "result.json").write_text(json.dumps({"exception_info": {"exception_type": "AgentTimeoutError"}}))
-        row = grade_trial(self.trial, "claude-haiku", CONFIG, "shorten-it", self.cases, ["unused"])
+        row = grade_trial(self.trial, "claude-haiku", CONFIG, SKILL, self.cases, ["unused"])
         self.assertEqual((row["status"], row["timed_out"]), ("ok", True))
         self.assertIn("graders", row)
 

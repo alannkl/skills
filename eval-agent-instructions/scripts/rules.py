@@ -1,10 +1,11 @@
-"""Map a skill's rules to the graders that test them, build minus-one-rule copies, and tabulate results.
+"""Map an artifact's rules to the graders that test them, build minus-one-rule copies, and tabulate results.
 
-`evals/<skill>/rules.json`:
+`evals/<suite>/rules.json`:
 
     {"rules": {"<rule>": {"file": "SKILL.md", "text": "<exact text>" | ["<text>", ...],
                           "graders": ["<case>/<grader>", ...]}}}
 
+`file` is relative to the skill folder, or is the instruction file's own name.
 Each text must occur exactly once in its file; deleting every text of a rule
 gives that rule's minus variant. A rule with no graders is listed as untested.
 """
@@ -20,12 +21,12 @@ RULE_NAME = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
 
 
 def arm(variant: str) -> str:
-    """The arm a variant stands for in expectations and grader filters: a minus variant is a with-skill run."""
+    """The arm a variant stands for in expectations and grader filters: a minus variant is a with run."""
     return "with" if variant.startswith(MINUS) else variant
 
 
-def load_rules(evals_skill_dir: Path) -> dict:
-    path = evals_skill_dir / "rules.json"
+def load_rules(suite_dir: Path) -> dict:
+    path = suite_dir / "rules.json"
     if not path.is_file():
         raise SystemExit(f"{path} does not exist")
     rules = json.loads(path.read_text())["rules"]
@@ -35,13 +36,13 @@ def load_rules(evals_skill_dir: Path) -> dict:
     return rules
 
 
-def check_rules(rules: dict, skill_dir: Path, cases_root: Path) -> list[str]:
+def check_rules(rules: dict, root: Path, cases_root: Path) -> list[str]:
     """Problems that would make a minus variant or a grader reference wrong; empty when the map is sound."""
     problems = []
     for name, rule in rules.items():
         if not RULE_NAME.match(name):
             problems.append(f"{name}: rule names are lowercase kebab-case")
-        source = skill_dir / rule["file"]
+        source = root / rule["file"]
         content = source.read_text() if source.is_file() else None
         if content is None:
             problems.append(f"{name}: {rule['file']} does not exist")
@@ -86,10 +87,15 @@ def remove_text(content: str, text: str) -> str:
     return before + after
 
 
-def minus_skill(skill_dir: Path, rule: dict, dest: Path) -> None:
-    """Copy the skill with only this rule's text removed; every other file is identical."""
-    shutil.copytree(skill_dir, dest, ignore=shutil.ignore_patterns("evals"))
-    target = dest / rule["file"]
+def minus_artifact(source: Path, rule: dict, dest: Path) -> None:
+    """Copy a skill folder or instruction file with only this rule's text removed; nothing else differs."""
+    if source.is_dir():
+        shutil.copytree(source, dest, ignore=shutil.ignore_patterns("evals"))
+        target = dest / rule["file"]
+    else:
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(source, dest)
+        target = dest
     content = target.read_text()
     expected = content
     for text in rule["text"]:
@@ -105,10 +111,13 @@ def _words(text: str) -> list[str]:
     return [w for w in text.split() if w not in ("-", "*") and not re.fullmatch(r"\d+\.", w)]
 
 
-def skill_digest(skill_dir: Path) -> str:
+def artifact_digest(source: Path) -> str:
+    """Hash of a skill folder's files, or of an instruction file."""
+    if source.is_file():
+        return hashlib.sha256(source.read_bytes()).hexdigest()
     h = hashlib.sha256()
-    for path in sorted(p for p in skill_dir.rglob("*") if p.is_file() and "evals" not in p.parts):
-        h.update(path.relative_to(skill_dir).as_posix().encode() + b"\0" + path.read_bytes() + b"\0")
+    for path in sorted(p for p in source.rglob("*") if p.is_file() and "evals" not in p.parts):
+        h.update(path.relative_to(source).as_posix().encode() + b"\0" + path.read_bytes() + b"\0")
     return h.hexdigest()
 
 
@@ -119,17 +128,17 @@ def rule_cases(rules: dict, rule: str) -> list[str]:
 def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
     """Per rule and configuration, pass counts of the rule's graders in each arm, with a status.
 
-    `runs` holds (run.json, grade rows) for runs of the current skill text only.
+    `runs` holds (run.json, grade rows) for runs of the current artifact text only.
     Configurations are never pooled. A reused row repeats its original and is
-    skipped; a with-skill or minus run that never loaded the skill tests
+    skipped; a with or minus run that never loaded a skill artifact tests
     triggering, not the text, so it is counted apart; undecided grades are left out.
-    A --minus run's full-skill arm goes in its own `full` column, since those runs
-    were told to use the skill and the plain with-skill runs were not.
+    A --minus run's full-artifact arm goes in its own `full` column, since those runs
+    may be told to use the skill and the plain with runs are not.
     """
     columns = ("with", "without", "full", "minus")
     counts = defaultdict(lambda: [0, 0])  # (rule, config, column) -> [passed, graded]
     trials = defaultdict(set)  # (rule, config, column, case) -> trials that contributed
-    unloaded = defaultdict(set)  # (rule, config) -> with or minus trials that never loaded the skill
+    unloaded = defaultdict(set)  # (rule, config) -> with or minus trials that never loaded a skill artifact
     configs = set()
     for meta, rows in runs:
         for row in rows:
@@ -145,7 +154,7 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
                 if not refs:
                     continue
                 configs.add(row["config"])
-                if column != "without" and not row.get("skill_loaded"):
+                if column != "without" and not (row.get("skill_loaded") or row.get("delivered")):
                     unloaded[(name, row["config"])].add(row["trial"])
                     continue
                 for grader in refs:
@@ -182,7 +191,7 @@ def status(cells: dict, fewest: dict) -> str:
     if rate["minus"] is not None and rate["full"] is not None:
         if fewest["minus"] < 3 or fewest["full"] < 3:
             return "removal: fewer than 3 runs per arm on some case"
-        return "removal matched the full skill" if rate["minus"] >= rate["full"] else "removal did worse"
+        return "removal matched the full artifact" if rate["minus"] >= rate["full"] else "removal did worse"
     if rate["with"] is None or rate["without"] is None:
         return "needs with and without runs"
-    return "keep: the skill helps" if rate["with"] > rate["without"] else "candidate: no difference"
+    return "keep: the artifact helps" if rate["with"] > rate["without"] else "candidate: no difference"

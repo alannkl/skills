@@ -6,7 +6,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "skill-eval"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scripts"))
 from evidence import claude_code, codex, openclaw  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"

@@ -1,24 +1,27 @@
 #!/usr/bin/env python3
-"""Evaluate a skill with and without it across agent harnesses and models, through Harbor.
+"""Evaluate agent instructions with and without them across agent harnesses and models, through Harbor.
 
-  skill_eval.py run <skill> [--config NAME]... [--case NAME]... [--attempts N] [--probe] [--fresh-baseline]
-  skill_eval.py run <skill> --minus RULE [--config NAME]...
-  skill_eval.py grade <run-dir> [--judge MODEL]...
-  skill_eval.py report <run-dir>
-  skill_eval.py rules <skill> [--all-versions]
+Run from the root of the repository that holds the artifact and its `evals/<suite>/`.
+
+  eval_instructions.py run <suite> [--config NAME]... [--case NAME]... [--attempts N] [--probe] [--fresh-baseline]
+  eval_instructions.py run <suite> --minus RULE [--config NAME]...
+  eval_instructions.py grade <run-dir> [--judge MODEL]...
+  eval_instructions.py report <run-dir>
+  eval_instructions.py rules <suite> [--all-versions]
 
 `run` builds one Harbor task per case and variant, runs each configuration as a
-Harbor job, then grades and reports. The arms not under test (without the skill;
-with it, for --minus) reuse earlier graded trials when their task directory,
-configuration, Harbor version and agent arguments all match. Results go to
-evals/<skill>/results/<run-id>/. Grading reads only saved artifacts and the
-run's own copy of its cases, so `grade` reruns with other judges, or with the
-repo's current graders through --graders-from-repo, without rerunning any agent.
+Harbor job, then grades and reports. The arms not under test (without the
+artifact; with it, for --minus) reuse earlier graded trials when their task
+directory, configuration, Harbor version and agent arguments all match. Results
+go to evals/<suite>/results/<run-id>/. Grading reads only saved artifacts and
+the run's own copy of its cases, so `grade` reruns with other judges, or with
+the repo's current graders through --graders-from-repo, without rerunning any agent.
 
-`--minus RULE` runs the full skill against a copy lacking that rule's text from
-evals/<skill>/rules.json, three times each by default, on the cases whose graders
-test the rule; both arms are told to use the skill. `rules` checks the map and tabulates each rule's grader results
-over every run of the current skill text.
+`--minus RULE` runs the full artifact against a copy lacking that rule's text
+from evals/<suite>/rules.json, three times each by default, on the cases whose
+graders test the rule; for a skill, both arms are told to use it. `rules` checks
+the map and tabulates each rule's grader results over every run of the current
+artifact text.
 """
 import argparse
 import hashlib
@@ -34,13 +37,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
-REPO = HERE.parents[1]
+REPO = Path.cwd()
 sys.path.insert(0, str(HERE))
 
 from evidence import EXTRACTORS  # noqa: E402
 from graders import run_graders, temporary_initial_workspace  # noqa: E402
-from rules import MINUS, arm, check_rules, load_rules, minus_skill, rule_cases, skill_digest, tabulate  # noqa: E402
-from tasks import PROBE_CASE, build_tasks, load_spec, task_digest  # noqa: E402
+from rules import MINUS, arm, artifact_digest, check_rules, load_rules, minus_artifact, rule_cases, tabulate  # noqa: E402
+from tasks import PROBE_CASE, artifact_root, build_tasks, load_spec, load_suite, task_digest  # noqa: E402
 
 SETTINGS = json.loads((HERE / "configs.json").read_text())
 DEFAULT_CONFIGS = ["openclaw-deepseek-high"]
@@ -74,7 +77,7 @@ def base_image() -> str:
     versions = SETTINGS["cli_versions"]
     digest = hashlib.sha256(((HERE / "base.Dockerfile").read_text() + json.dumps(versions, sort_keys=True))
                             .encode()).hexdigest()[:12]
-    tag = f"skill-eval-base:{digest}"
+    tag = f"eval-agent-instructions-base:{digest}"
     if subprocess.run(["docker", "image", "inspect", tag], capture_output=True).returncode != 0:
         wait_for_docker()
         subprocess.run(["docker", "build", "-t", tag, "-f", str(HERE / "base.Dockerfile"),
@@ -198,9 +201,9 @@ def reuse_baselines(run_dir: Path, configs: list[str], tasks: list[str], attempt
     return reused
 
 
-def case_dirs(skill: str, names: list[str] | None, probe: bool) -> list[Path]:
+def case_dirs(suite: str, names: list[str] | None, probe: bool) -> list[Path]:
     """The named cases, or all of them; the probe joins when --probe is set or named as a case."""
-    root = REPO / "evals" / skill
+    root = REPO / "evals" / suite
     found = sorted(p for p in root.iterdir() if (p / "graders.json").is_file())
     if names:
         probe = probe or PROBE_CASE in names
@@ -212,13 +215,13 @@ def case_dirs(skill: str, names: list[str] | None, probe: bool) -> list[Path]:
     return found + ([root / PROBE_CASE] if probe else [])
 
 
-def archive_cases(skill: str, cases: list[Path], dest: Path) -> None:
+def archive_cases(suite: str, cases: list[Path], dest: Path) -> None:
     """Keep the run's own copy of each case, so regrading uses the fixtures the agents saw."""
     dest.mkdir(parents=True)
     for case in cases:
         if case.is_dir():
             shutil.copytree(case, dest / case.name, ignore=shutil.ignore_patterns("results"))
-    eval_config = REPO / "evals" / skill / "eval.json"
+    eval_config = REPO / "evals" / suite / "eval.json"
     if eval_config.is_file():
         shutil.copy(eval_config, dest / "eval.json")
 
@@ -244,30 +247,34 @@ def cmd_run(args) -> None:
         raise SystemExit(f"unknown configs: {sorted(unknown)}")
     check_credentials(configs)
     run_id = args.run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    run_dir = REPO / "evals" / args.skill / "results" / run_id
+    run_dir = REPO / "evals" / args.suite / "results" / run_id
     if run_dir.exists():
         raise SystemExit(f"{run_dir} exists")
+    suite = load_suite(REPO, args.suite)
+    artifact, full = suite["artifact"], REPO / suite["artifact"]["path"]
     variants, under_test, sources, attempts, preamble = args.variants, "with", {}, args.attempts or 1, ""
     case_names = args.case
     if args.minus:
-        rules = checked_rules(args.skill)
+        rules = checked_rules(suite)
         if args.minus not in rules or not rules[args.minus]["graders"]:
-            raise SystemExit(f"{args.minus} is not a rule with graders in evals/{args.skill}/rules.json")
+            raise SystemExit(f"{args.minus} is not a rule with graders in evals/{args.suite}/rules.json")
         under_test = MINUS + args.minus
         variants, attempts = ["with", under_test], args.attempts or 3
         case_names = case_names or rule_cases(rules, args.minus)
-        sources[under_test] = run_dir / "minus-skill" / args.skill
-        # A removal test measures the skill's text, so both arms are told to use the skill
-        # rather than left to trigger it.
-        preamble = USE_SKILL.format(skill=args.skill)
-        minus_skill(REPO / args.skill, rules[args.minus], sources[under_test])
-    cases = case_dirs(args.skill, case_names, args.probe)
+        sources[under_test] = run_dir / "minus" / full.name
+        minus_artifact(full, rules[args.minus], sources[under_test])
+        # A removal test measures the text, so a skill is named rather than left to trigger.
+        # An instruction file is always in context.
+        if artifact["type"] == "skill":
+            preamble = USE_SKILL.format(skill=artifact["name"])
+    cases = case_dirs(args.suite, case_names, args.probe)
     image = base_image()
-    tasks = build_tasks(REPO, args.skill, cases, variants, image, run_dir / "tasks", sources, preamble)
-    archive_cases(args.skill, cases, run_dir / "cases")
+    tasks = build_tasks(REPO, suite, cases, variants, image, run_dir / "tasks", sources, preamble)
+    archive_cases(args.suite, cases, run_dir / "cases")
     reused = {} if args.fresh_baseline else reuse_baselines(run_dir, configs, tasks, attempts, under_test)
-    meta = {"skill": args.skill, "skill_digest": skill_digest(REPO / args.skill), "minus": args.minus,
-            "preamble": preamble,
+    meta = {"suite": args.suite, "artifact": artifact, "artifact_digest": artifact_digest(full),
+            "probe_text": first_line(full) if artifact["type"] == "instruction-file" else None,
+            "minus": args.minus, "preamble": preamble,
             "configs": {c: SETTINGS["configs"][c] for c in configs},
             "cases": [c.name for c in cases], "variants": variants, "attempts": attempts,
             "harbor": SETTINGS["harbor"], "cli_versions": SETTINGS["cli_versions"], "base_image": image,
@@ -292,12 +299,18 @@ def cmd_run(args) -> None:
     print(report(run_dir))
 
 
-def grade_trial(trial: Path, config_name: str, config: dict, skill: str, cases_root: Path,
-                judges: list[str], specs_root: Path | None = None) -> dict:
+def first_line(path: Path) -> str:
+    """The file's first non-empty line without heading marks: what the probe asks the agent to quote."""
+    return next(line.strip().lstrip("#").strip() for line in path.read_text().splitlines() if line.strip())
+
+
+def grade_trial(trial: Path, config_name: str, config: dict, artifact: dict, cases_root: Path,
+                judges: list[str], specs_root: Path | None = None, probe_text: str | None = None) -> dict:
     """One row per trial: its status, evidence, and grader results.
 
-    Workspaces come from the cases under `cases_root`; graders.json from `specs_root`
-    when given, otherwise from the same cases.
+    Workspaces come from the cases under `cases_root`, plus the instruction file a
+    task delivered, found beside them in the run's tasks; graders.json comes from
+    `specs_root` when given, otherwise from the same cases.
     """
     harbor_config = json.loads((trial / "config.json").read_text())
     case, variant = Path(harbor_config["task"]["path"]).name.split("--")
@@ -324,17 +337,27 @@ def grade_trial(trial: Path, config_name: str, config: dict, skill: str, cases_r
     spec = load_spec((specs_root or cases_root) / case)
     evidence = EXTRACTORS[config["harness"]](trial / "agent")
     final_message = evidence.pop("final_message") if evidence["complete"] else None
-    loaded, foreign, listed = evidence["skills_loaded"], evidence["foreign_skills_loaded"], evidence["skills_listed"]
-    row.update(status="ok", final_message=final_message, evidence=evidence,
-               skill_loaded=None if loaded is None else skill in loaded,
-               skill_loaded_expected=spec["expect_skill_loaded"][arm(variant)],
-               # A same-named skill from anywhere but the installed copy.
-               foreign_copy_loaded=None if foreign is None else skill in foreign,
-               harness_lists_skill=None if listed is None else skill in listed)
+    row.update(status="ok", final_message=final_message, evidence=evidence)
+    if artifact["type"] == "skill":
+        skill = artifact["name"]
+        loaded, foreign, listed = evidence["skills_loaded"], evidence["foreign_skills_loaded"], evidence["skills_listed"]
+        row.update(skill_loaded=None if loaded is None else skill in loaded,
+                   skill_loaded_expected=spec["expect_skill_loaded"][arm(variant)],
+                   # A same-named skill from anywhere but the installed copy.
+                   foreign_copy_loaded=None if foreign is None else skill in foreign,
+                   harness_lists_skill=None if listed is None else skill in listed)
+        marker = skill
+    else:
+        # The harness puts an instruction file in context itself, so no transcript shows a load.
+        row.update(skill_loaded=None, delivered=variant != "without")
+        marker = probe_text
     if spec.get("probe"):
-        row["probe_lists_skill"] = None if final_message is None else skill in final_message
+        row["probe_sees_artifact"] = None if final_message is None or not marker else marker in final_message
     run = {"final_message": final_message, "writes": evidence["writes"]}
+    delivered = cases_root.parent / "tasks" / f"{case}--{variant}" / "environment" / "instructions"
     with temporary_initial_workspace(case_dir) as initial:
+        if delivered.is_dir():
+            shutil.copytree(delivered, initial, dirs_exist_ok=True)
         row["graders"] = run_graders(spec["graders"], arm(variant), workspace, initial, config["harness"], run,
                                      judges)
     return row
@@ -345,7 +368,9 @@ def grade(run_dir: Path, judges: list[str], graders_from_repo: bool = False) -> 
     load_dotenv(REPO / ".env")
     meta = json.loads((run_dir / "run.json").read_text())
     cases_root = run_dir / "cases"
-    specs_root = REPO / "evals" / meta["skill"] if graders_from_repo else None
+    suite = meta.get("suite") or meta["skill"]
+    artifact = meta.get("artifact") or {"type": "skill", "name": meta["skill"]}
+    specs_root = REPO / "evals" / suite if graders_from_repo else None
     # Each row is written as soon as it is graded, so an interrupted grading keeps finished judge calls.
     with open(run_dir / "grades.jsonl", "w") as out:
         for config_name, config in meta["configs"].items():
@@ -355,7 +380,8 @@ def grade(run_dir: Path, judges: list[str], graders_from_repo: bool = False) -> 
                       if job.is_dir() for t in sorted(job.iterdir()) if (t / "config.json").is_file()]
             graded = []
             for trial in trials:
-                graded.append(grade_trial(trial, config_name, config, meta["skill"], cases_root, judges, specs_root))
+                graded.append(grade_trial(trial, config_name, config, artifact, cases_root, judges, specs_root,
+                                          meta.get("probe_text")))
                 if trial.parent.parent.name == "reused":
                     graded[-1]["reused_from"] = sources.get(trial.name)
                 out.write(json.dumps(graded[-1]) + "\n")
@@ -393,7 +419,7 @@ def report(run_dir: Path) -> str:
         timed_out = sum(1 for t in ok if t.get("timed_out"))
         reused = sum(1 for t in ok if t.get("reused_from"))
         loaded = sum(1 for t in ok if t["skill_loaded"])
-        unknown = sum(1 for t in ok if t["skill_loaded"] is None)
+        unknown = sum(1 for t in ok if t["skill_loaded"] is None and "delivered" not in t)
         grader_counts = defaultdict(lambda: [0, 0, 0])
         for t in ok:
             # A reused trial's cost was paid by the run it came from.
@@ -409,18 +435,22 @@ def report(run_dir: Path) -> str:
                 verdicts = {m: v["pass"] for m, v in g.get("judges", {}).items()}
                 if len(set(verdicts.values())) > 1:
                     disagreements.append(f"{case} / {config} / {variant} / {name}: {verdicts}")
-        expected = ok[0]["skill_loaded_expected"] if ok else None
         grades = ", ".join(f"{n} {p}/{p + f}" + (f" ({u} undecided)" if u else "")
                            for n, (p, f, u) in grader_counts.items())
         probe = ""
-        if ok and "probe_lists_skill" in ok[0]:
-            probe = f" | listed {sum(1 for t in ok if t['probe_lists_skill'])}/{len(ok)}"
+        if ok and "probe_sees_artifact" in ok[0]:
+            probe = f" | visible {sum(1 for t in ok if t['probe_sees_artifact'])}/{len(ok)}"
+        if ok and "delivered" in ok[0]:
+            load = " | instruction file " + ("delivered" if ok[0]["delivered"] else "absent")
+        else:
+            expected = ok[0]["skill_loaded_expected"] if ok else None
+            load = (f" | skill loaded {loaded}/{len(ok)} (expected {expected})"
+                    + (f", {unknown} unknown" if unknown else ""))
         lines.append(f"- {case} | {config} | {variant}: {len(ok)} ok"
                      + (f" ({reused} reused)" if reused else "")
                      + (f" ({timed_out} timed out)" if timed_out else "")
                      + (f", {len(errors)} not graded {errors}" if errors else "")
-                     + f" | skill loaded {loaded}/{len(ok)} (expected {expected})"
-                     + (f", {unknown} unknown" if unknown else "") + probe + f" | {grades}")
+                     + load + probe + f" | {grades}")
     lines += ["", "Cost reported by the harness (USD):"]
     lines += [f"- {config}: " + (f"{cost[config]:.4f}" if cost_known[config] else "not reported")
               for config in sorted({k[1] for k in cells})]
@@ -431,27 +461,33 @@ def report(run_dir: Path) -> str:
     return "\n".join(lines) + "\n"
 
 
-def checked_rules(skill: str) -> dict:
-    """The skill's rule map, stopping on any rule whose text or graders do not resolve."""
-    rules = load_rules(REPO / "evals" / skill)
-    problems = check_rules(rules, REPO / skill, REPO / "evals" / skill)
+def checked_rules(suite: dict) -> dict:
+    """The suite's rule map, stopping on any rule whose text or graders do not resolve."""
+    artifact = suite["artifact"]
+    rules = load_rules(REPO / "evals" / suite["name"])
+    problems = check_rules(rules, artifact_root(REPO, artifact), REPO / "evals" / suite["name"])
+    if artifact["type"] == "instruction-file":
+        problems += [f"{name}: file must be {Path(artifact['path']).name}" for name, rule in rules.items()
+                     if rule["file"] != Path(artifact["path"]).name]
     if problems:
         raise SystemExit("rules.json problems:\n" + "\n".join(f"- {p}" for p in problems))
     return rules
 
 
 def cmd_rules(args) -> None:
-    """Per-rule pass counts from every graded run of the skill's current text."""
-    rules = checked_rules(args.skill)
-    current = skill_digest(REPO / args.skill)
+    """Per-rule pass counts from every graded run of the artifact's current text."""
+    suite = load_suite(REPO, args.suite)
+    rules = checked_rules(suite)
+    current = artifact_digest(REPO / suite["artifact"]["path"])
     runs = []
-    for meta_path in sorted((REPO / "evals" / args.skill / "results").glob("*/run.json")):
+    for meta_path in sorted((REPO / "evals" / args.suite / "results").glob("*/run.json")):
         meta, grades = json.loads(meta_path.read_text()), meta_path.parent / "grades.jsonl"
-        if grades.is_file() and (args.all_versions or meta.get("skill_digest") == current):
+        digest = meta.get("artifact_digest") or meta.get("skill_digest")
+        if grades.is_file() and (args.all_versions or digest == current):
             runs.append((meta, [json.loads(line) for line in grades.read_text().splitlines()]))
     untested = sum(1 for r in rules.values() if not r["graders"])
     print(f"{len(rules)} rules, {untested} without graders; {len(runs)} runs of "
-          + ("any skill text" if args.all_versions else "the current skill text") + ".\n")
+          + ("any artifact text" if args.all_versions else "the current artifact text") + ".\n")
     print(tabulate(rules, runs))
 
 
@@ -459,19 +495,20 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run")
-    run.add_argument("skill")
+    run.add_argument("suite", help="folder name under evals/")
     run.add_argument("--config", action="append", help=f"from configs.json; default {DEFAULT_CONFIGS}")
     run.add_argument("--case", action="append", help="case folder name; default all")
     run.add_argument("--variants", type=lambda s: s.split(","), default=["with", "without"])
     run.add_argument("--attempts", type=int, help="runs per task; default 1, or 3 with --minus")
     run.add_argument("--concurrency", type=int, default=2)
-    run.add_argument("--probe", action="store_true", help="add a case asking the agent to list its skills")
+    run.add_argument("--probe", action="store_true",
+                     help="add a case asking the agent to list its skills or quote its instruction file")
     run.add_argument("--judge", action="append")
     run.add_argument("--run-id")
     run.add_argument("--fresh-baseline", action="store_true",
                      help="rerun the arms not under test instead of reusing matching earlier trials")
     run.add_argument("--minus", metavar="RULE",
-                     help="compare the full skill with a copy lacking this rule from rules.json, on the rule's cases")
+                     help="compare the full artifact with a copy lacking this rule from rules.json, on the rule's cases")
     regrade = sub.add_parser("grade")
     regrade.add_argument("run_dir", type=Path)
     regrade.add_argument("--judge", action="append")
@@ -480,8 +517,8 @@ def main() -> None:
     show = sub.add_parser("report")
     show.add_argument("run_dir", type=Path)
     table = sub.add_parser("rules")
-    table.add_argument("skill")
-    table.add_argument("--all-versions", action="store_true", help="include runs of earlier skill text")
+    table.add_argument("suite", help="folder name under evals/")
+    table.add_argument("--all-versions", action="store_true", help="include runs of earlier artifact text")
     args = parser.parse_args()
     if args.command == "run":
         cmd_run(args)

@@ -5,7 +5,7 @@ import unittest
 from pathlib import Path
 from unittest import mock
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "skill-eval"))
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scripts"))
 import graders  # noqa: E402
 
 

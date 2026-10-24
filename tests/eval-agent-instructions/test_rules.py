@@ -5,8 +5,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
-sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "skill-eval"))
-from rules import check_rules, minus_skill, remove_text, tabulate  # noqa: E402
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scripts"))
+from rules import check_rules, minus_artifact, remove_text, tabulate  # noqa: E402
 
 SKILL = """---
 name: target
@@ -55,11 +55,16 @@ class Rules(unittest.TestCase):
 
     def test_minus_copy_differs_only_by_the_rule_text(self):
         dest = Path(self._tmp.name) / "minus" / "target"
-        minus_skill(self.skill, self.rule(["Use pnpm.", "Ask before deleting files."]), dest)
+        minus_artifact(self.skill, self.rule(["Use pnpm.", "Ask before deleting files."]), dest)
         self.assertEqual((dest / "SKILL.md").read_text(), SKILL.replace("Use pnpm. ", "").replace(
             "- Ask before deleting files.\n", ""))
         self.assertEqual((dest / "references" / "x.md").read_text(), "Reference.\n")
         self.assertEqual((self.skill / "SKILL.md").read_text(), SKILL)
+
+    def test_minus_copy_of_an_instruction_file(self):
+        dest = Path(self._tmp.name) / "minus" / "AGENTS.md"
+        minus_artifact(self.skill / "SKILL.md", self.rule("Ask before deleting files."), dest)
+        self.assertEqual(dest.read_text(), SKILL.replace("- Ask before deleting files.\n", ""))
 
     def test_table_classifies_each_rule_per_configuration(self):
         def row(variant, passed, config="haiku"):
@@ -76,9 +81,9 @@ class Rules(unittest.TestCase):
                 + [{**row("with", False), "skill_loaded": False}])
         minus_run = [row("with", True) for _ in range(3)] + [row("minus-use-pnpm", True) for _ in range(3)]
         table = tabulate(rules, [({}, rows), ({"minus": "use-pnpm"}, minus_run)])
-        self.assertIn("| use-pnpm | haiku | 2/2 | 0/3 | 3/3 | 3/3 | 1 | removal matched the full skill |", table)
+        self.assertIn("| use-pnpm | haiku | 2/2 | 0/3 | 3/3 | 3/3 | 1 | removal matched the full artifact |", table)
         self.assertIn("| use-pnpm | deepseek | 1/1 | 1/1 |  |  |  | candidate: no difference |", table)
-        self.assertIn("| other | haiku | 2/2 | 0/3 | 3/3 |  | 1 | keep: the skill helps |", table)
+        self.assertIn("| other | haiku | 2/2 | 0/3 | 3/3 |  | 1 | keep: the artifact helps |", table)
         self.assertIn("| ask-first | | | | | | | untested: no grader |", table)
 
     def test_removal_needs_three_runs_per_arm_and_no_worse_result(self):

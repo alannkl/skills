@@ -3,7 +3,7 @@
 Run from the repository root:
 
 ```bash
-python3 -m unittest discover -s tests/skill-eval -v
+python3 -m unittest discover -s tests/eval-agent-instructions -v
 ```
 
 The suite covers task generation, the host-side graders, grading a trial from its saved files, reuse of earlier trials, and the rule map with its minus-one-rule copies and table. No agent or judge is called; the judge is replaced in the test that needs it.
