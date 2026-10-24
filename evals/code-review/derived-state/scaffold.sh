@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Build a repository in the run's workspace (the current directory): the base
 # project on main, then the change committed on the feature branch. Write the
-# pull request's description and diff to files, since the run has no shell.
+# pull request's description and diff to files for the review to read.
 set -euo pipefail
 src="$(dirname "$0")/fixture"
 git init -q -b main .

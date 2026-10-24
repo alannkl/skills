@@ -1,0 +1,97 @@
+{
+  "harbor": "git+https://github.com/harbor-framework/harbor@bfc6c005e9a572ba22fd7e2d3b414bf014ae1ab0",
+  "cli_versions": {
+    "claude-code": "2.1.309",
+    "codex": "0.164.0",
+    "openclaw": "2026.10.6"
+  },
+  "judges": [
+    "claude-opus-5-5"
+  ],
+  "configs": {
+    "claude-haiku": {
+      "harness": "claude-code",
+      "model": "anthropic/claude-haiku-5-5",
+      "effort": "high",
+      "env": {
+        "ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}",
+        "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}"
+      }
+    },
+    "codex-luna": {
+      "harness": "codex",
+      "model": "openai/gpt-6-luna",
+      "effort": "high",
+      "env": {
+        "OPENAI_BASE_URL": "${ANTHROPIC_BASE_URL}/v1",
+        "OPENAI_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"
+      }
+    },
+    "openclaw-haiku": {
+      "harness": "openclaw",
+      "model": "anthropic/claude-haiku-5-5",
+      "effort": "high",
+      "context_window": 1000000,
+      "env": {
+        "ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}",
+        "ANTHROPIC_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"
+      }
+    },
+    "openclaw-deepseek-high": {
+      "harness": "openclaw",
+      "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+      "effort": "high",
+      "openrouter_provider": "deepseek",
+      "context_window": 1048576
+    },
+    "openclaw-deepseek-max": {
+      "harness": "openclaw",
+      "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+      "effort": "max",
+      "openrouter_provider": "deepseek",
+      "context_window": 1048576
+    },
+    "openclaw-glm-high": {
+      "harness": "openclaw",
+      "model": "openrouter/z-ai/glm-5.3-flash",
+      "effort": "high",
+      "openrouter_provider": "z-ai",
+      "context_window": 1048576
+    },
+    "openclaw-glm-max": {
+      "harness": "openclaw",
+      "model": "openrouter/z-ai/glm-5.3-flash",
+      "effort": "max",
+      "openrouter_provider": "z-ai",
+      "context_window": 1048576
+    },
+    "openclaw-mimo": {
+      "harness": "openclaw",
+      "model": "openrouter/xiaomi/mimo-v2.6-pro",
+      "effort": null,
+      "openrouter_provider": "xiaomi",
+      "context_window": 1050000
+    },
+    "openclaw-minimax-high": {
+      "harness": "openclaw",
+      "model": "openrouter/minimax/minimax-m3.1-flash",
+      "effort": "high",
+      "openrouter_provider": "minimax",
+      "context_window": 1048576
+    },
+    "openclaw-minimax-xhigh": {
+      "harness": "openclaw",
+      "model": "openrouter/minimax/minimax-m3.1-flash",
+      "effort": "xhigh",
+      "openrouter_provider": "minimax",
+      "context_window": 1048576
+    },
+    "openclaw-minimax-max": {
+      "harness": "openclaw",
+      "model": "openrouter/minimax/minimax-m3.1-flash",
+      "effort": "max",
+      "openrouter_provider": "minimax",
+      "context_window": 1048576
+    }
+  }
+}

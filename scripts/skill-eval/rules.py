@@ -1,0 +1,188 @@
+"""Map a skill's rules to the graders that test them, build minus-one-rule copies, and tabulate results.
+
+`evals/<skill>/rules.json`:
+
+    {"rules": {"<rule>": {"file": "SKILL.md", "text": "<exact text>" | ["<text>", ...],
+                          "graders": ["<case>/<grader>", ...]}}}
+
+Each text must occur exactly once in its file; deleting every text of a rule
+gives that rule's minus variant. A rule with no graders is listed as untested.
+"""
+import hashlib
+import json
+import re
+import shutil
+from collections import defaultdict
+from pathlib import Path
+
+MINUS = "minus-"
+RULE_NAME = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
+
+
+def arm(variant: str) -> str:
+    """The arm a variant stands for in expectations and grader filters: a minus variant is a with-skill run."""
+    return "with" if variant.startswith(MINUS) else variant
+
+
+def load_rules(evals_skill_dir: Path) -> dict:
+    path = evals_skill_dir / "rules.json"
+    if not path.is_file():
+        raise SystemExit(f"{path} does not exist")
+    rules = json.loads(path.read_text())["rules"]
+    for rule in rules.values():
+        if isinstance(rule["text"], str):
+            rule["text"] = [rule["text"]]
+    return rules
+
+
+def check_rules(rules: dict, skill_dir: Path, cases_root: Path) -> list[str]:
+    """Problems that would make a minus variant or a grader reference wrong; empty when the map is sound."""
+    problems = []
+    for name, rule in rules.items():
+        if not RULE_NAME.match(name):
+            problems.append(f"{name}: rule names are lowercase kebab-case")
+        source = skill_dir / rule["file"]
+        content = source.read_text() if source.is_file() else None
+        if content is None:
+            problems.append(f"{name}: {rule['file']} does not exist")
+        for text in rule["text"] if content is not None else []:
+            count = content.count(text)
+            if count != 1:
+                problems.append(f"{name}: text occurs {count} times in {rule['file']}: {text[:60]!r}")
+            elif not _whole_sentences(content, text):
+                problems.append(f"{name}: text is not whole sentences, so removing it leaves a fragment: {text[:60]!r}")
+        for ref in rule["graders"]:
+            case, _, grader = ref.partition("/")
+            spec = cases_root / case / "graders.json"
+            names = {g["name"] for g in json.loads(spec.read_text())["graders"]} if spec.is_file() else set()
+            if grader not in names:
+                problems.append(f"{name}: no grader {ref}")
+    return problems
+
+
+def _whole_sentences(content: str, text: str) -> bool:
+    """Text starts where a line, list item or sentence starts, and ends a sentence or line."""
+    start = content.index(text)
+    before, after = content[:start], content[start + len(text):]
+    starts = before == "" or re.search(r"(\n|^)\s*([-*]|\d+\.)?\s*$|[.!?:] $", before) is not None
+    ends = text.rstrip()[-1:] in (".", "!", "?", ":") or after[:1] in ("", "\n")
+    return starts and ends
+
+
+def remove_text(content: str, text: str) -> str:
+    """Delete one occurrence of text, then the space or list item it leaves empty."""
+    start = content.index(text)
+    before, after = content[:start], content[start + len(text):]
+    if before.endswith(" ") and after[:1] in (" ", "\n", ""):
+        before = before[:-1]
+    elif after.startswith(" ") and (before == "" or before.endswith("\n") or before.endswith("- ")):
+        after = after[1:]
+    line_start = before.rfind("\n") + 1
+    line_end = after.find("\n")
+    line = before[line_start:] + after[:line_end if line_end != -1 else len(after)]
+    if line.strip() in ("", "-", "*") or re.fullmatch(r"\s*\d+\.\s*", line):
+        before = before[:line_start]
+        after = after[line_end + 1:] if line_end != -1 else ""
+    return before + after
+
+
+def minus_skill(skill_dir: Path, rule: dict, dest: Path) -> None:
+    """Copy the skill with only this rule's text removed; every other file is identical."""
+    shutil.copytree(skill_dir, dest, ignore=shutil.ignore_patterns("evals"))
+    target = dest / rule["file"]
+    content = target.read_text()
+    expected = content
+    for text in rule["text"]:
+        content = remove_text(content, text)
+        expected = expected.replace(text, " ", 1)
+    if _words(content) != _words(expected):
+        raise SystemExit(f"removing {rule['text']!r} changed more than its words")
+    target.write_text(content)
+
+
+def _words(text: str) -> list[str]:
+    """Words other than list markers, which removing a whole item also drops."""
+    return [w for w in text.split() if w not in ("-", "*") and not re.fullmatch(r"\d+\.", w)]
+
+
+def skill_digest(skill_dir: Path) -> str:
+    h = hashlib.sha256()
+    for path in sorted(p for p in skill_dir.rglob("*") if p.is_file() and "evals" not in p.parts):
+        h.update(path.relative_to(skill_dir).as_posix().encode() + b"\0" + path.read_bytes() + b"\0")
+    return h.hexdigest()
+
+
+def rule_cases(rules: dict, rule: str) -> list[str]:
+    return sorted({ref.split("/", 1)[0] for ref in rules[rule]["graders"]})
+
+
+def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
+    """Per rule and configuration, pass counts of the rule's graders in each arm, with a status.
+
+    `runs` holds (run.json, grade rows) for runs of the current skill text only.
+    Configurations are never pooled. A reused row repeats its original and is
+    skipped; a with-skill or minus run that never loaded the skill tests
+    triggering, not the text, so it is counted apart; undecided grades are left out.
+    A --minus run's full-skill arm goes in its own `full` column, since those runs
+    were told to use the skill and the plain with-skill runs were not.
+    """
+    columns = ("with", "without", "full", "minus")
+    counts = defaultdict(lambda: [0, 0])  # (rule, config, column) -> [passed, graded]
+    trials = defaultdict(set)  # (rule, config, column, case) -> trials that contributed
+    unloaded = defaultdict(set)  # (rule, config) -> with or minus trials that never loaded the skill
+    configs = set()
+    for meta, rows in runs:
+        for row in rows:
+            if row.get("status") != "ok" or row.get("reused_from"):
+                continue
+            column = "minus" if row["variant"].startswith(MINUS) else row["variant"]
+            if column == "with" and meta.get("minus"):
+                column = "full"
+            for name, rule in rules.items():
+                if column == "minus" and row["variant"] != MINUS + name:
+                    continue
+                refs = [ref.partition("/")[2] for ref in rule["graders"] if ref.partition("/")[0] == row["case"]]
+                if not refs:
+                    continue
+                configs.add(row["config"])
+                if column != "without" and not row.get("skill_loaded"):
+                    unloaded[(name, row["config"])].add(row["trial"])
+                    continue
+                for grader in refs:
+                    result = row["graders"].get(grader)
+                    if result is None or result.get("pass") is None:
+                        continue
+                    counts[(name, row["config"], column)][0] += bool(result["pass"])
+                    counts[(name, row["config"], column)][1] += 1
+                    trials[(name, row["config"], column, row["case"])].add(row["trial"])
+    lines = ["| rule | config | with | without | full | minus | not loaded | status |",
+             "| --- | --- | --- | --- | --- | --- | --- | --- |"]
+    for name, rule in rules.items():
+        if not rule["graders"]:
+            lines.append(f"| {name} | | | | | | | untested: no grader |")
+            continue
+        tested = [c for c in sorted(configs)
+                  if any(counts[(name, c, col)][1] for col in columns) or unloaded[(name, c)]]
+        if not tested:
+            lines.append(f"| {name} | | | | | | | no runs yet |")
+        cases = sorted({ref.split("/", 1)[0] for ref in rule["graders"]})
+        for config in tested:
+            cells = {col: counts[(name, config, col)] for col in columns}
+            fewest = {col: min(len(trials[(name, config, col, case)]) for case in cases) for col in columns}
+            shown = {col: f"{p}/{t}" if t else "" for col, (p, t) in cells.items()}
+            lines.append(f"| {name} | {config} | {shown['with']} | {shown['without']} | {shown['full']} | "
+                         f"{shown['minus']} | "
+                         f"{len(unloaded[(name, config)]) or ''} | {status(cells, fewest)} |")
+    return "\n".join(lines) + "\n"
+
+
+def status(cells: dict, fewest: dict) -> str:
+    """`cells` holds [passed, graded] per column; `fewest` the fewest runs any of the rule's cases has per column."""
+    rate = {col: p / t if t else None for col, (p, t) in cells.items()}
+    if rate["minus"] is not None and rate["full"] is not None:
+        if fewest["minus"] < 3 or fewest["full"] < 3:
+            return "removal: fewer than 3 runs per arm on some case"
+        return "removal matched the full skill" if rate["minus"] >= rate["full"] else "removal did worse"
+    if rate["with"] is None or rate["without"] is None:
+        return "needs with and without runs"
+    return "keep: the skill helps" if rate["with"] > rate["without"] else "candidate: no difference"

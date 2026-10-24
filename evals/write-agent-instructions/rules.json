@@ -1,0 +1,588 @@
+{
+  "rules": {
+    "mixed-artifact-instruction-only": {
+      "file": "SKILL.md",
+      "text": "In a mixed artifact, such as a prompt inside application code, change only the instruction content; the repository's own workflow owns code integration and runtime checks.",
+      "graders": [
+        "app-code-system-prompt/parser-unchanged",
+        "app-code-system-prompt/test-unchanged",
+        "templated-prompt-rule/policy-unchanged",
+        "templated-prompt-rule/keeps-company-placeholder",
+        "templated-prompt-rule/keeps-customer-placeholder",
+        "templated-prompt-rule/keeps-marker",
+        "templated-prompt-rule/keeps-tool-list"
+      ]
+    },
+    "planning-only-in-conversation": {
+      "file": "SKILL.md",
+      "text": "Answer planning-only requests in conversation: plans, designs, critiques, outlines, and discussions of instruction structure.",
+      "graders": []
+    },
+    "mixed-request-plan-first": {
+      "file": "SKILL.md",
+      "text": "For mixed requests, resolve the plan first and write files once the implementation path is clear.",
+      "graders": []
+    },
+    "named-tools-are-context": {
+      "file": "SKILL.md",
+      "text": "Treat named tools, skills, frameworks, and workflows as context for the plan; switch to file creation only on the user's explicit ask.",
+      "graders": []
+    },
+    "ask-when-write-intent-ambiguous": {
+      "file": "SKILL.md",
+      "text": "When file-writing intent is ambiguous and edits would be surprising, ask before editing.",
+      "graders": []
+    },
+    "review-stays-read-only": {
+      "file": "SKILL.md",
+      "text": "A review-only or evaluation-only request stays read-only: check the artifact against this skill's rules and report findings in conversation.",
+      "graders": [
+        "evaluate-only/no-edit",
+        "evaluate-only/no-writes",
+        "review-only/no-edit",
+        "review-only/no-writes"
+      ]
+    },
+    "authorization-carries-forward": {
+      "file": "SKILL.md",
+      "text": "Existing explicit authorization carries forward.",
+      "graders": []
+    },
+    "ask-only-unresolved": {
+      "file": "SKILL.md",
+      "text": "Ask only about unresolved scope or material preferences.",
+      "graders": []
+    },
+    "load-references-at-step": {
+      "file": "SKILL.md",
+      "text": "Load a reference at the step named here when its condition holds, or where another pointer names it.",
+      "graders": []
+    },
+    "identify-job": {
+      "file": "SKILL.md",
+      "text": "Name the artifact, the agent that executes it, the outcome the user wants, and the operation: create, wording edit, structural revision including pruning, review, or evaluation.",
+      "graders": []
+    },
+    "wording-edit-keeps-requirements": {
+      "file": "SKILL.md",
+      "text": "A wording edit, such as shortening or polishing, keeps every requirement.",
+      "graders": [
+        "claude-md-wording-edit/keeps-billing-pointer",
+        "claude-md-wording-edit/keeps-conventional-commits",
+        "claude-md-wording-edit/keeps-make-test",
+        "claude-md-wording-edit/keeps-markdown-rule",
+        "claude-md-wording-edit/keeps-push-rule",
+        "claude-md-wording-edit/rules-preserved",
+        "identifier-parenthetical-adds-info/keeps-qualifiers",
+        "label-then-command/keeps-empty-branch",
+        "label-then-command/keeps-threshold",
+        "title-then-link-pointer/keeps-failed-step-report"
+      ]
+    },
+    "structural-only-when-requested": {
+      "file": "SKILL.md",
+      "text": "Removing, merging, or reordering requirements is a structural revision; make one only when the request calls for it.",
+      "graders": [
+        "add-one-rule/keeps-existing",
+        "trim-duplicates-keep-qualifiers/keeps-out-of-scope-rule"
+      ]
+    },
+    "ground-in-sources": {
+      "file": "SKILL.md",
+      "text": "Ground new instructions in completed tasks, user corrections, project docs, runbooks, schemas, review comments, issues, or patches, and identify what the executing agent gets wrong without them.",
+      "graders": []
+    },
+    "existing-requirements-baseline": {
+      "file": "SKILL.md",
+      "text": "For an existing artifact, its current requirements are the baseline: explicit user preferences, constraints and permissions, necessary ordering, safeguards, and formats its consumers rely on.",
+      "graders": []
+    },
+    "establish-delivery-path": {
+      "file": "SKILL.md",
+      "text": "When deciding where material lives, establish how the executing agent receives the artifact and what it can read, from the request, project docs, or the code that loads it.",
+      "graders": [
+        "toolless-prompt-pointer/handles-unreachable-pointer",
+        "toolless-prompt-pointer/no-dangling-read"
+      ]
+    },
+    "check-enforcement-first": {
+      "file": "SKILL.md",
+      "text": "Before writing a lesson as an instruction, check whether a lint rule, type, runtime check, script, or hook can enforce it.",
+      "graders": []
+    },
+    "enforcement-placement": {
+      "file": "SKILL.md",
+      "text": "When enforcement fits in the artifact's own files, put it there and omit the prose rule; when it belongs in the target repo, recommend it rather than editing beyond the artifact.",
+      "graders": [
+        "app-code-system-prompt/parser-unchanged",
+        "app-code-system-prompt/test-unchanged"
+      ]
+    },
+    "mechanical-steps-get-commands": {
+      "file": "SKILL.md",
+      "text": "Separate judgment and approval from mechanical steps, and give each mechanical step a script or a direct command where the executor can run one, choosing per the Scripts section of `references/skill-mechanics.md` when the choice is unclear.",
+      "graders": []
+    },
+    "outcome-first": {
+      "file": "SKILL.md",
+      "text": "Start with what a finished run delivers and its required content.",
+      "graders": []
+    },
+    "terminal-outcomes-including-nothing-to-change": {
+      "file": "SKILL.md",
+      "text": "List terminal outcomes when the work can end more than one way; for audit, review, and maintenance work, include \"nothing worth changing\" as a complete result without padding the report.",
+      "graders": []
+    },
+    "ordered-steps-when-sequence-matters": {
+      "file": "SKILL.md",
+      "text": "Use ordered steps when sequence matters.",
+      "graders": []
+    },
+    "prescribe-only-when-needed": {
+      "file": "SKILL.md",
+      "text": "Prescribe other steps, fixed headings, or templates only for fragile operations, cases the agent gets wrong by default, or formats another skill or tool consumes. Otherwise state the outcome and constraints; let the agent choose the method and form.",
+      "graders": []
+    },
+    "checkable-completion-criteria": {
+      "file": "SKILL.md",
+      "text": "Give steps and sets of rules a checkable completion criterion where one naturally exists; prefer exhaustive phrasing (\"every changed file reviewed\") over vague phrasing (\"review the changes\").",
+      "graders": []
+    },
+    "concrete-judgment-checks": {
+      "file": "SKILL.md",
+      "text": "Name concrete checks for judgment outcomes instead of forcing artificial metrics.",
+      "graders": []
+    },
+    "anchor-leading-words": {
+      "file": "SKILL.md",
+      "text": "Anchor recurring concepts on leading words: established terms the user's prompts and the domain already use, repeated as the same token throughout. Collapse spelled-out enumerations and paraphrases into the word.",
+      "graders": []
+    },
+    "define-coined-terms": {
+      "file": "SKILL.md",
+      "text": "Define a coined term where it first appears.",
+      "graders": []
+    },
+    "plain-precise-sentences": {
+      "file": "SKILL.md",
+      "text": "Write plain, precise sentences with concrete actions.",
+      "graders": []
+    },
+    "exact-identifiers-real-uncertainty": {
+      "file": "SKILL.md",
+      "text": "Keep commands, flags, paths, and identifiers exact, and state real uncertainty.",
+      "graders": [
+        "create-standup-command/keeps-gh-command",
+        "design-doc-to-skill/report"
+      ]
+    },
+    "state-target-behavior": {
+      "file": "SKILL.md",
+      "text": "State the target behavior.",
+      "graders": []
+    },
+    "prohibition-as-guardrail": {
+      "file": "SKILL.md",
+      "text": "Keep a prohibition only as a guardrail, paired with what to do instead.",
+      "graders": []
+    },
+    "write-for-executing-agent": {
+      "file": "SKILL.md",
+      "text": "Write every line for the executing agent.",
+      "graders": []
+    },
+    "omit-authoring-rationale": {
+      "file": "SKILL.md",
+      "text": "Omit authoring rationale, request history, and explanations of the artifact's shape; keep a reason only when it informs a call the agent must make unaided.",
+      "graders": [
+        "design-doc-to-skill/no-history",
+        "prune-release-notes/drops-history"
+      ]
+    },
+    "environment-facts-stay": {
+      "file": "SKILL.md",
+      "text": "Keep environment-derived facts, such as config values, `--help` output, or the directory layout, in the environment that owns them; document the conventions, reasons, and gotchas it cannot supply.",
+      "graders": [
+        "templated-prompt-rule/no-hardcoded-cap",
+        "templated-prompt-rule/rule-added"
+      ]
+    },
+    "avoid-time-sensitive-facts": {
+      "file": "SKILL.md",
+      "text": "Avoid time-sensitive facts unless the instructions say how to refresh them.",
+      "graders": []
+    },
+    "colocate-concept": {
+      "file": "SKILL.md",
+      "text": "Keep a concept's definition, rules, and caveats together under one heading.",
+      "graders": []
+    },
+    "clear-defaults": {
+      "file": "SKILL.md",
+      "text": "Make defaults clear; mention alternatives only when they change a decision.",
+      "graders": []
+    },
+    "batch-tool-rounds": {
+      "file": "SKILL.md",
+      "text": "Make the workflow batch independent operations into one tool round. Batches stop at steps that need judgment or user authorization, and failures stay visible.",
+      "graders": []
+    },
+    "realistic-examples": {
+      "file": "SKILL.md",
+      "text": "Make included examples concrete and realistic.",
+      "graders": []
+    },
+    "standalone-instructions": {
+      "file": "SKILL.md",
+      "text": "Prefer instructions that work with no other skill installed.",
+      "graders": []
+    },
+    "load-dont-copy": {
+      "file": "SKILL.md",
+      "text": "When the workflow needs another skill or document, name it and load it at the step that uses it, rather than copying or summarizing its guidance.",
+      "graders": []
+    },
+    "always-loaded-strictest-bar": {
+      "file": "SKILL.md",
+      "text": "Always-loaded text, such as an instruction file, a system prompt, or a model-invoked skill's description, returns on every later request that retains or reassembles it and in every agent context that inherits it. Text loaded on demand may also stay for later turns. Give always-loaded text the strictest retention bar.",
+      "graders": [
+        "add-one-rule/concise"
+      ]
+    },
+    "main-file-universal": {
+      "file": "SKILL.md",
+      "text": "Keep what every run needs in the main file, including universal constraints.",
+      "graders": [
+        "agents-md-billing-split/root-file"
+      ]
+    },
+    "branch-material-behind-pointer": {
+      "file": "SKILL.md",
+      "text": "Move material that only some branches need behind a pointer, unless the pointer and the extra read would cost about as much as the material. A reference that every run loads organizes the text but saves no context.",
+      "graders": [
+        "prune-release-notes/keeps-monorepo-pointer"
+      ]
+    },
+    "pointer-target-and-condition": {
+      "file": "SKILL.md",
+      "text": "A pointer names its target and a load condition the agent can recognize without first reading the target.",
+      "graders": [
+        "agents-md-billing-split/root-file",
+        "create-skill-from-doc/skill-content"
+      ]
+    },
+    "pointer-plain-path": {
+      "file": "SKILL.md",
+      "text": "Write it as a plain path, such as `references/context-design.md`, not a Markdown link, and name sections in prose, such as \"the Scripts section\".",
+      "graders": [
+        "title-then-link-pointer/no-markdown-link",
+        "title-then-link-pointer/pointers-plain",
+        "title-then-link-pointer/keeps-rollback-section"
+      ]
+    },
+    "sharpen-pointer-before-inlining": {
+      "file": "SKILL.md",
+      "text": "When a pointer fails to fire on a branch that needs its target, sharpen the wording before inlining the material.",
+      "graders": []
+    },
+    "pointer-target-retrievable": {
+      "file": "SKILL.md",
+      "text": "Place every pointer target where the executing agent can retrieve it.",
+      "graders": [
+        "toolless-prompt-pointer/no-dangling-read"
+      ]
+    },
+    "confirm-reach-before-moving": {
+      "file": "SKILL.md",
+      "text": "Before moving material out of the text that agent receives, confirm that agent will reach the new location and add the pointer or loading step that gets it there. When you cannot confirm that, keep the material inline, supply it with the task, or ask how to deliver it.",
+      "graders": [
+        "toolless-prompt-pointer/handles-unreachable-pointer",
+        "toolless-prompt-pointer/no-dangling-read",
+        "agents-md-billing-split/root-pointer",
+        "agents-md-billing-split/root-file"
+      ]
+    },
+    "count-full-read-path": {
+      "file": "SKILL.md",
+      "text": "Count the full read path: the main file plus every reference, skill, and inherited instruction a run loads, including `refine-it` and `shorten-it` when used. Loading a reference adds to context and clears nothing earlier.",
+      "graders": []
+    },
+    "weigh-human-load": {
+      "file": "SKILL.md",
+      "text": "Weigh agent context against human load: material with no pointer depends on the human remembering to invoke it. Spend that load only where human judgment matters.",
+      "graders": []
+    },
+    "long-main-file-signal": {
+      "file": "SKILL.md",
+      "text": "Treat a long main file, such as a `SKILL.md` body over ~100 non-empty lines, as a sign that branch material belongs behind a pointer, not as a length target; completeness and correctness outrank size.",
+      "graders": []
+    },
+    "reduce-by-moving-branch-material": {
+      "file": "SKILL.md",
+      "text": "Reduce the main file by moving branch material, not by fragmenting text or adding headings.",
+      "graders": []
+    },
+    "prune-inferable-and-no-op": {
+      "file": "SKILL.md",
+      "text": "When creating an artifact or making a structural revision, remove within the requested scope the requirements and sub-steps the agent can reliably infer from the outcome, whole sentences that change no behavior relative to the executing agent's default, and material that no longer bears on the task.",
+      "graders": [
+        "prune-release-notes/drops-history",
+        "prune-unexplained-safeguard/drops-filler"
+      ]
+    },
+    "preserve-protected-requirements": {
+      "file": "SKILL.md",
+      "text": "Preserve explicit user preferences, necessary ordering, consumer-required formats, and safeguards against specific likely or costly failures.",
+      "graders": [
+        "prune-release-notes/keeps-heading-order",
+        "prune-release-notes/keeps-tag-check",
+        "prune-release-notes/keeps-ticket-rule",
+        "prune-unexplained-safeguard/keeps-generated-flags-rule",
+        "prune-unexplained-safeguard/keeps-lint-test",
+        "prune-unexplained-safeguard/keeps-migrations-rule",
+        "prune-unexplained-safeguard/keeps-push-rule",
+        "prune-unexplained-safeguard/keeps-root-install-rule",
+        "prune-unexplained-safeguard/safeguards-meaning"
+      ]
+    },
+    "user-preference-stays": {
+      "file": "SKILL.md",
+      "text": "An explicit user preference stays even when it matches the default; list it as a suggested removal.",
+      "graders": [
+        "prune-release-notes/keeps-ticket-rule"
+      ]
+    },
+    "safeguard-keep-test": {
+      "file": "SKILL.md",
+      "text": "Keep a safeguard only when you can name the failure and why the executing agent's default would miss it.",
+      "graders": []
+    },
+    "keep-meaning-report-ambiguity": {
+      "file": "SKILL.md",
+      "text": "Keep each retained requirement's meaning exactly; report an ambiguity you notice instead of resolving it in the artifact.",
+      "graders": [
+        "design-doc-to-skill/report",
+        "trim-duplicates-keep-qualifiers/keeps-exception",
+        "trim-duplicates-keep-qualifiers/keeps-near-duplicate",
+        "trim-duplicates-keep-qualifiers/report"
+      ]
+    },
+    "wording-edit-lists-suggested-removals": {
+      "file": "SKILL.md",
+      "text": "In a wording edit, keep every requirement, including sentences that seem to match the agent's default, and list those as suggested removals; report pure emphasis that the polish cuts as a removal.",
+      "graders": [
+        "claude-md-wording-edit/keeps-markdown-rule",
+        "claude-md-wording-edit/report",
+        "claude-md-wording-edit/suggests-markdown-removal"
+      ]
+    },
+    "name-the-action": {
+      "file": "SKILL.md",
+      "text": "Name the action, not the steps the agent takes on its own: \"apply `references/x.md`\", not \"read and apply `references/x.md`\".",
+      "graders": []
+    },
+    "state-each-rule-once": {
+      "file": "SKILL.md",
+      "text": "State each rule once, where it applies; merge duplicates, including gotchas that merely negate a workflow rule.",
+      "graders": []
+    },
+    "polish-with-refine-then-shorten": {
+      "file": "SKILL.md",
+      "text": "Load `refine-it`, then `shorten-it`, and run each over the whole of every instruction artifact created or structurally revised, and over the changed text of other edits, or the whole artifact when the request is artifact-wide.",
+      "graders": []
+    },
+    "polish-user-supplied-text": {
+      "file": "SKILL.md",
+      "text": "Polish text the user supplied as well, unless they asked for it verbatim.",
+      "graders": []
+    },
+    "restore-polish-meaning-changes": {
+      "file": "SKILL.md",
+      "text": "Compare the polished text with the post-pruning draft. Restore any change the polish introduced to triggers, requirements, permissions, workflow order, or other operational meaning.",
+      "graders": [
+        "claude-md-wording-edit/rules-preserved",
+        "identifier-parenthetical-adds-info/keeps-qualifiers"
+      ]
+    },
+    "leave-unimproved-wording": {
+      "file": "SKILL.md",
+      "text": "Leave wording unchanged where neither pass improves it.",
+      "graders": []
+    },
+    "check-job-and-consumer-formats": {
+      "file": "SKILL.md",
+      "text": "Check the artifact against its job and every format a consumer requires.",
+      "graders": []
+    },
+    "consistent-terms-verified-pointers": {
+      "file": "SKILL.md",
+      "text": "Keep terminology consistent across the main file and its references, and verify each pointer, documented command, argument, and output against its target.",
+      "graders": []
+    },
+    "identifier-named-once": {
+      "file": "SKILL.md",
+      "text": "Check that each command, tool, and path is named once, as what its step acts on. An identifier in parentheses after words that name the same thing is a duplicate: rewrite \"load settings from the config file (`config.yaml`)\" as \"load settings from `config.yaml`\".",
+      "graders": [
+        "label-then-command/identifier-once",
+        "label-then-command/no-label-then-identifier",
+        "title-then-link-pointer/pointers-plain"
+      ]
+    },
+    "keep-identifier-extra-info": {
+      "file": "SKILL.md",
+      "text": "Keep what the identifier does not say, such as purpose, conditions, arguments, or where it is documented.",
+      "graders": [
+        "identifier-parenthetical-adds-info/keeps-docker",
+        "identifier-parenthetical-adds-info/keeps-duration",
+        "identifier-parenthetical-adds-info/keeps-general-prohibition",
+        "identifier-parenthetical-adds-info/keeps-production-only",
+        "identifier-parenthetical-adds-info/keeps-releases-channel",
+        "identifier-parenthetical-adds-info/keeps-staging-script",
+        "identifier-parenthetical-adds-info/keeps-qualifiers",
+        "label-then-command/identifier-once",
+        "label-then-command/keeps-post-slug",
+        "label-then-command/keeps-quotes-skill-pointer"
+      ]
+    },
+    "present-draft-when-uncertain": {
+      "file": "SKILL.md",
+      "text": "Present the draft when scope is uncertain or the instructions encode domain-specific preferences. Ask whether it covers the use cases, what is missing or unclear, and what should be more or less detailed.",
+      "graders": []
+    },
+    "wording-edit-meaning-review": {
+      "file": "SKILL.md",
+      "text": "A wording edit needs a meaning review, not behavior runs.",
+      "graders": []
+    },
+    "suggest-behavior-checks": {
+      "file": "SKILL.md",
+      "text": "Outside the evaluation reference's conditions, suggest useful behavior checks rather than running them.",
+      "graders": []
+    },
+    "report-what-changed": {
+      "file": "SKILL.md",
+      "text": "Report what changed, each intentionally removed requirement separately from wording changes, the checks performed, and material limits.",
+      "graders": [
+        "claude-md-wording-edit/report",
+        "prune-release-notes/report",
+        "prune-unexplained-safeguard/report",
+        "agents-md-billing-split/report",
+        "create-skill-from-doc/reference-created"
+      ]
+    },
+    "shortcut-user-invoked": {
+      "file": "references/skill-mechanics.md",
+      "text": "For a shortcut that packages instructions the user retypes, name it per the Name and layout section, make it user-invoked per the Invocation section with a one-line description, put the user's instructions in the body, then apply steps 5 and 6 of `SKILL.md`.",
+      "graders": [
+        "create-standup-command/user-invoked",
+        "create-standup-command/codex-policy-exists",
+        "create-standup-command/codex-user-invoked"
+      ]
+    },
+    "shortcut-keeps-user-instructions": {
+      "file": "references/skill-mechanics.md",
+      "text": "Keep every instruction the user gave; keep their exact wording only when they asked for it verbatim.",
+      "graders": [
+        "create-standup-command/instructions-intact",
+        "create-standup-command/keeps-gh-command"
+      ]
+    },
+    "skill-name-matches-directory": {
+      "file": "references/skill-mechanics.md",
+      "text": "Name the directory to match the `name` field: 1-64 characters of lowercase letters, numbers, and single hyphens, starting and ending with a letter or number.",
+      "graders": [
+        "design-doc-to-skill/name-matches"
+      ]
+    },
+    "skill-frontmatter-quoted-description": {
+      "file": "references/skill-mechanics.md",
+      "text": "Start `SKILL.md` with YAML frontmatter containing at least `name` and `description`; use a quoted or block scalar for a description containing `: ` or ` #`.",
+      "graders": [
+        "design-doc-to-skill/description-not-truncated"
+      ]
+    },
+    "user-invoked-settings": {
+      "file": "references/skill-mechanics.md",
+      "text": "Otherwise set `disable-model-invocation: true`, use a one-line human-facing description without trigger lists, and add `agents/openai.yaml` setting `policy.allow_implicit_invocation` to an unquoted `false`, because Codex ignores the frontmatter field.",
+      "graders": [
+        "create-standup-command/user-invoked",
+        "create-standup-command/codex-policy-exists",
+        "create-standup-command/codex-user-invoked"
+      ]
+    },
+    "readiness-triggers-need-read-only": {
+      "file": "references/skill-mechanics.md",
+      "text": "For workflows that publish, send, or change external state, include check, review, or readiness requests as triggers only when the body provides a read-only outcome for them.",
+      "graders": [
+        "design-doc-to-skill/keeps-instructions"
+      ]
+    },
+    "consumers-search": {
+      "file": "references/pruning-instructions.md",
+      "text": "Before removing, renaming, or reordering anything, or recommending such a change, search for what relies on it: skills, instruction files, scripts, tests, docs, or code that load the artifact, cite its section or step names or numbers, parse its output, or depend on its trigger.",
+      "graders": [
+        "review-only/consumer-warning",
+        "prune-release-notes/step-3-consumer"
+      ]
+    },
+    "consumers-update-in-scope": {
+      "file": "references/pruning-instructions.md",
+      "text": "Update each consumer in scope, or keep the contract it relies on. Report consumers outside the requested scope instead of editing them.",
+      "graders": [
+        "prune-release-notes/step-3-consumer"
+      ]
+    },
+    "restructure-update-references": {
+      "file": "references/pruning-instructions.md",
+      "text": "Update every pointer, step or section reference, and template that the moves or renumbering affect.",
+      "graders": [
+        "prune-release-notes/step-3-consumer"
+      ]
+    },
+    "oddly-specific-check-origin": {
+      "file": "references/pruning-instructions.md",
+      "text": "A rule that looks oddly specific often encodes a past failure or a user preference. Before deleting one, check its origin in version history, linked issues, or with the user.",
+      "graders": [
+        "prune-unexplained-safeguard/keeps-root-install-rule",
+        "prune-unexplained-safeguard/safeguards-meaning"
+      ]
+    },
+    "oddly-specific-keep-or-ask": {
+      "file": "references/pruning-instructions.md",
+      "text": "When the origin stays unknown and the rule guards a costly failure, keep it or ask.",
+      "graders": [
+        "prune-unexplained-safeguard/keeps-generated-flags-rule",
+        "prune-unexplained-safeguard/safeguards-meaning"
+      ]
+    },
+    "prune-compare-baseline": {
+      "file": "references/pruning-instructions.md",
+      "text": "Compare the original with the pruned draft: every baseline requirement is kept, moved, merged, or intentionally removed.",
+      "graders": [
+        "agents-md-billing-split/report"
+      ]
+    },
+    "retrieval-matches-tools": {
+      "file": "references/context-design.md",
+      "text": "Check retrieval against the tools the executing agent actually has, such as file reads or skill loading; a system prompt with no file access cannot follow a file pointer.",
+      "graders": [
+        "toolless-prompt-pointer/handles-unreachable-pointer",
+        "toolless-prompt-pointer/no-dangling-read"
+      ]
+    },
+    "trigger-prompt-sets": {
+      "file": "references/evaluating-instructions.md",
+      "text": "For an explicit evaluation, create 8-10 should-trigger prompts and 8-10 near-miss prompts that should not trigger the instructions.",
+      "graders": [
+        "evaluate-only/evaluation"
+      ]
+    },
+    "static-routing-label": {
+      "file": "references/evaluating-instructions.md",
+      "text": "Label a review of the description against prompts as a static routing review, not a measured activation rate.",
+      "graders": [
+        "evaluate-only/evaluation"
+      ]
+    }
+  }
+}

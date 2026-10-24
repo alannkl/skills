@@ -1,0 +1,60 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "drops-history",
+      "type": "regex",
+      "path": "release-notes/SKILL.md",
+      "pattern": "March|January",
+      "flags": "i",
+      "match": "not_contains",
+      "description": "History lines are removed."
+    },
+    {
+      "name": "keeps-heading-order",
+      "type": "regex",
+      "path": "release-notes/SKILL.md",
+      "pattern": "## Release <version>[\\s\\S]*### Added[\\s\\S]*### Fixed[\\s\\S]*### Breaking",
+      "flags": "i",
+      "match": "contains",
+      "description": "The consumer-required heading format survives in order."
+    },
+    {
+      "name": "keeps-monorepo-pointer",
+      "type": "regex",
+      "path": "release-notes/SKILL.md",
+      "pattern": "references/monorepo\\.md",
+      "flags": "i",
+      "match": "contains",
+      "description": "The monorepo pointer survives."
+    },
+    {
+      "name": "keeps-tag-check",
+      "type": "llm",
+      "path": "release-notes/SKILL.md",
+      "criteria": "Judge `release-notes/SKILL.md`. Before any notes are written, it confirms the release tag exists (for example with `git tag --list <version>`), and if the tag is missing it stops and asks the user."
+    },
+    {
+      "name": "keeps-ticket-rule",
+      "type": "regex",
+      "path": "release-notes/SKILL.md",
+      "pattern": "ticket",
+      "flags": "i",
+      "match": "contains",
+      "description": "The no-ticket-IDs preference survives."
+    },
+    {
+      "name": "report",
+      "type": "llm",
+      "criteria": "The final message names each requirement or rule it removed, and does not claim to have removed the tag check, the heading format, the ticket-ID rule, or the monorepo pointer."
+    },
+    {
+      "name": "step-3-consumer",
+      "type": "llm",
+      "criteria": "`docs/releasing.md` cites step 3 of the release-notes skill as the tag check, and the user authorized edits in the workspace. Pass if the final message shows the tag check is still step 3, or that the agent updated `docs/releasing.md` to match the new numbering or to refer to the check by name. Fail if it renumbered the steps and only flagged the doc, or did not mention it."
+    }
+  ]
+}

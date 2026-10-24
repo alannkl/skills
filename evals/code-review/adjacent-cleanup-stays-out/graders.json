@@ -1,0 +1,24 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "no-adjacent-refactor",
+      "type": "llm",
+      "criteria": "The review's findings contain no finding about the duplication between `monthly_totals` and `weekly_totals`, or any other refactor of code the change does not touch. Mentioning that duplication under next steps, labeled pre-existing, passes. The review does not invent a defect in the `format_currency` fix."
+    },
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": [],
+      "description": "A review changes no files."
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes",
+      "description": "The transcript shows no file writes, even ones later undone."
+    }
+  ]
+}

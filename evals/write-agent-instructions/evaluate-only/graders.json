@@ -1,0 +1,24 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "evaluation",
+      "type": "llm",
+      "criteria": "The final message evaluates both the trigger and the body. On triggering, it judges the description against concrete example requests, including at least one that should load the skill and one that should not. On the body, it names at least one material problem supported by the file. It does not claim to have run the skill, measured an activation rate, or tested it with an agent."
+    },
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": [],
+      "description": "A read-only request changes no files."
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes",
+      "description": "The transcript shows no file writes, even ones later undone."
+    }
+  ]
+}

@@ -1,0 +1,99 @@
+Now using node v24
+[openclaw] log line
+{
+  "payloads": [
+    {
+      "text": "`docs/onboarding.md` is now 107 words (from ~230) and committed as `505164a`.\n\nIt keeps every requirement: Node 24, `make bootstrap`, port 8443, never committin\u2026"
+    }
+  ],
+  "meta": {
+    "agentMeta": {
+      "usage": {
+        "input": 1866,
+        "output": 1422,
+        "cost": {
+          "total": 0.0014118840000000002,
+          "totalOrigin": "provider-billed"
+        }
+      },
+      "costUsd": 0.0014118840000000002,
+      "terminalReceipt": {
+        "rerouted": false,
+        "effective": {
+          "provider": "openrouter",
+          "model": "deepseek/deepseek-v4.1-flash-1017",
+          "responseModel": "deepseek/deepseek-v4.1-flash-1017"
+        }
+      }
+    },
+    "executionTrace": {
+      "fallbackUsed": false
+    },
+    "requestShaping": {
+      "thinking": "high"
+    },
+    "systemPromptReport": {
+      "skills": {
+        "entries": [
+          {
+            "name": "add-model-provider"
+          },
+          {
+            "name": "browser-automation"
+          },
+          {
+            "name": "canvas"
+          },
+          {
+            "name": "clawhub"
+          },
+          {
+            "name": "cloud-image-bake"
+          },
+          {
+            "name": "configure-channel"
+          },
+          {
+            "name": "control-ui"
+          },
+          {
+            "name": "diagnose-gateway"
+          },
+          {
+            "name": "diagram-maker"
+          },
+          {
+            "name": "healthcheck"
+          },
+          {
+            "name": "meme-maker"
+          },
+          {
+            "name": "node-connect"
+          },
+          {
+            "name": "node-inspect-debugger"
+          },
+          {
+            "name": "notion"
+          },
+          {
+            "name": "shorten-it"
+          },
+          {
+            "name": "skill-creator"
+          },
+          {
+            "name": "spike"
+          },
+          {
+            "name": "visualize"
+          },
+          {
+            "name": "weather"
+          }
+        ]
+      }
+    }
+  }
+}

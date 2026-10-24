@@ -1,0 +1,24 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "no-ttl-less-replacement",
+      "type": "llm",
+      "criteria": "The review's findings do not recommend replacing `TTLLRUCache` with `functools.lru_cache`, `functools.cache`, or another option that cannot expire entries after 10 minutes. If the review mentions such an option, it notes that it misses the expiry requirement. Raising other real defects in the change passes."
+    },
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": [],
+      "description": "A review changes no files."
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes",
+      "description": "The transcript shows no file writes, even ones later undone."
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "codex-policy-exists",
+      "type": "file_exists",
+      "path": "skills/standup/agents/openai.yaml",
+      "variants": [
+        "with"
+      ],
+      "description": "Convention check, not scored: Codex gets an invocation policy file."
+    },
+    {
+      "name": "codex-user-invoked",
+      "type": "regex",
+      "path": "skills/standup/agents/openai.yaml",
+      "pattern": "allow_implicit_invocation:\\s*false",
+      "flags": "i",
+      "match": "contains",
+      "variants": [
+        "with"
+      ],
+      "description": "Convention check, not scored: Codex treats it as user-invoked."
+    },
+    {
+      "name": "instructions-intact",
+      "type": "llm",
+      "path": "skills/standup/SKILL.md",
+      "criteria": "Judge `skills/standup/SKILL.md`. It preserves the user's three requests: summarize what the user merged yesterday from git log; list open PRs they are reviewing with `gh pr list --search review-requested:@me` (quoting the search term is fine); draft three standup bullets. Added detail must not change whose work is summarized, widen the time interval, or invent plans or blockers that the gathered data does not support."
+    },
+    {
+      "name": "keeps-gh-command",
+      "type": "regex",
+      "path": "skills/standup/SKILL.md",
+      "pattern": "gh pr list --search [\"']?review-requested:@me",
+      "flags": "i",
+      "match": "contains",
+      "description": "The user's exact gh command survives."
+    },
+    {
+      "name": "name-matches",
+      "type": "regex",
+      "path": "skills/standup/SKILL.md",
+      "pattern": "name:\\s*standup\\b",
+      "flags": "i",
+      "match": "contains",
+      "description": "The frontmatter name matches the directory."
+    },
+    {
+      "name": "skill-file-exists",
+      "type": "file_exists",
+      "path": "skills/standup/SKILL.md",
+      "description": "The skill file exists where the user asked."
+    },
+    {
+      "name": "user-invoked",
+      "type": "regex",
+      "path": "skills/standup/SKILL.md",
+      "pattern": "disable-model-invocation:\\s*true",
+      "flags": "i",
+      "match": "contains",
+      "variants": [
+        "with"
+      ],
+      "description": "Convention check, not scored: Claude Code treats it as a user-invoked slash command."
+    }
+  ]
+}

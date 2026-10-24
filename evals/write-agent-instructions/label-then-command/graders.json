@@ -1,0 +1,86 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "identifier-once",
+      "type": "llm",
+      "path": "skills/stock-alert/SKILL.md",
+      "criteria": "Judge the edited `skills/stock-alert/SKILL.md`. The original steps put each tool or command in parentheses after an English label that restates it: \"Read the profile (`get_profile`)\", \"Fetch quotes for the watchlist (`quotes-cli fetch`, ...)\", \"publish one post (`publish_post`, ...)\". Pass only if each of `get_profile`, `quotes-cli fetch` and `publish_post` is now named once, as what its step acts on, and none sits in parentheses after words that restate it. A verb phrase that carries the identifier as its object passes, such as \"Get the watchlist with `get_profile`\" or \"Fetch quotes for the watchlist with `quotes-cli fetch`\". Everything the identifiers do not say must survive with its meaning: the profile supplies the watchlist; an empty watchlist ends the run without a post; quotes are fetched for the watchlist; the quotes skill documents the command; the 5% move since the previous close; one post with post_slug `moves` naming each such ticker and its move; otherwise no post; the steps run in order. Fail if any of these is lost or changed, or if a parenthesized label-then-identifier pair remains."
+    },
+    {
+      "name": "keeps-empty-branch",
+      "type": "regex",
+      "path": "skills/stock-alert/SKILL.md",
+      "pattern": "empty",
+      "flags": "i",
+      "match": "contains",
+      "description": "The empty-watchlist branch survives."
+    },
+    {
+      "name": "keeps-get-profile",
+      "type": "regex",
+      "path": "skills/stock-alert/SKILL.md",
+      "pattern": "`get_profile`",
+      "flags": "",
+      "match": "contains",
+      "description": "The profile tool survives."
+    },
+    {
+      "name": "keeps-post-slug",
+      "type": "regex",
+      "path": "skills/stock-alert/SKILL.md",
+      "pattern": "post_slug[^\\n]*moves",
+      "flags": "",
+      "match": "contains",
+      "description": "The post_slug argument and its value survive."
+    },
+    {
+      "name": "keeps-publish-post",
+      "type": "regex",
+      "path": "skills/stock-alert/SKILL.md",
+      "pattern": "`publish_post`",
+      "flags": "",
+      "match": "contains",
+      "description": "The publish tool survives."
+    },
+    {
+      "name": "keeps-quotes-command",
+      "type": "regex",
+      "path": "skills/stock-alert/SKILL.md",
+      "pattern": "`quotes-cli fetch`",
+      "flags": "",
+      "match": "contains",
+      "description": "The quotes command survives."
+    },
+    {
+      "name": "keeps-quotes-skill-pointer",
+      "type": "regex",
+      "path": "skills/stock-alert/SKILL.md",
+      "pattern": "quotes skill",
+      "flags": "i",
+      "match": "contains",
+      "description": "The pointer to where the quotes command is documented survives."
+    },
+    {
+      "name": "keeps-threshold",
+      "type": "regex",
+      "path": "skills/stock-alert/SKILL.md",
+      "pattern": "5 ?%",
+      "flags": "",
+      "match": "contains",
+      "description": "The 5% threshold survives."
+    },
+    {
+      "name": "no-label-then-identifier",
+      "type": "regex",
+      "path": "skills/stock-alert/SKILL.md",
+      "pattern": "\\(`(get_profile|quotes-cli|publish_post)",
+      "flags": "",
+      "match": "not_contains",
+      "description": "No tool or command is placed in parentheses after an English label that restates it, such as \"Read the profile (`get_profile`)\"."
+    }
+  ]
+}

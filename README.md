@@ -180,16 +180,27 @@ Background notes and research behind these skills:
   agents/      # openai.yaml invocation policy for Codex (user-invoked skills)
 ```
 
-Eval cases for `claude plugin eval` live in `evals/<skill-name>/`, outside the skill folders, so installs don't ship them. Each case runs a real, billed Claude Code session. `scripts/eval-skill` runs a skill's cases against a temporary copy of the skill, with Haiku as the agent under test and Opus as the judge, and passes any other options to `claude plugin eval`. To compare a skill against no skill:
+## Evals
+
+Eval cases live in `evals/<skill-name>/`, outside the skill folders, so installs don't ship them. `scripts/skill-eval/skill_eval.py` runs each case with and without the skill on several agent harnesses and models through [Harbor](https://github.com/harbor-framework/harbor), one fresh Docker container per run, and grades the results on the host. Every run is a real, billed agent session.
 
 ```bash
-scripts/eval-skill write-agent-instructions --ablation with-without --scaffold \
-  --trust-plugin --allow-tools Edit Write --no-publish --max-cost-usd 15
+python3 scripts/skill-eval/skill_eval.py run write-agent-instructions --case add-one-rule --probe
+python3 scripts/skill-eval/skill_eval.py grade evals/write-agent-instructions/results/<run-id>
+python3 scripts/skill-eval/skill_eval.py rules write-agent-instructions
+python3 scripts/skill-eval/skill_eval.py run write-agent-instructions --minus <rule> --config claude-haiku
 ```
 
-Results go to `evals/<skill-name>/results/`, which git ignores. When the cost ceiling is reached, the remaining LLM graders are skipped and recorded as failed, so check a run's skipped graders before reading its scores. A full run of `write-agent-instructions` at the default 3 runs per version costs roughly $15; use `--case` to run one case or `--runs 1` for a quick check.
+It needs Docker, `uv`, and these credentials in the environment or the repository's `.env`: `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` for an Anthropic-compatible endpoint that also serves OpenAI's Responses API at `/v1` (Claude Code, Codex and the judges use it), and `OPENROUTER_API_KEY` for OpenClaw. The first run builds a base image with the pinned agent CLIs, which takes a few minutes.
 
-In a with-without run the agent decides for itself whether to load the skill, so a low score can mean the skill never loaded. Add `--force-skill` to tell the agent to load the skill when it is available; this measures what the skill does once loaded, and leaves out cases that check the skill does not load. The copy under test loads as `<skill>:<skill>`. An installed or built-in skill with the same bare name can shadow it, so `--force-skill` names the copy, and each case's `skill-fired` and `skill-not-shadowed` graders check that only that copy loaded. The without-skill arm can still load a same-named built-in skill, so it measures the default experience rather than no skill at all. Pass `--model` to test another agent model.
+- **Configurations** are named in `scripts/skill-eval/configs.json`: harness, model, reasoning effort, and for OpenRouter the pinned upstream provider. `openclaw-haiku` runs Claude Haiku in OpenClaw through the same Anthropic-compatible endpoint as Claude Code, so comparing it with `claude-haiku` isolates the harness. The default run uses `claude-haiku` (Claude Code), `codex-luna` (Codex) and `openclaw-deepseek-high` (OpenClaw); pass `--config` to choose others.
+- **A case** holds `instruction.md`, the workspace source (`fixture/`, or a `scaffold.sh` run in the empty workspace with `fixture/` beside it), and `graders.json`: whether the skill should load in each arm, and graders of type `regex`, `file_exists`, `unchanged_except`, `no_writes` or `llm`. `evals/<skill>/eval.json` lists skills the skill under test loads, which both arms install.
+- **Arms** differ only by the skill under test. Whether it loaded is read from each harness's transcript, so the report shows when a with-skill run never used it, and flags any run that loaded a same-named skill from somewhere else.
+- **Arms not under test are reused** from earlier runs when their task (instruction, workspace, installed skills, image), configuration, Harbor version and agent arguments are all unchanged and enough graded runs exist: the without-skill arm in a normal run, the full skill with `--minus`. The report marks reused runs and leaves their cost out. Pass `--fresh-baseline` to rerun them, for example after a provider updates a model behind the same name.
+- **Rules** are mapped to the graders that test them in `evals/<skill-name>/rules.json`: each rule's file, its exact text, and its `case/grader` references. `rules <skill>` checks the map and tabulates, per rule and configuration, its graders' pass counts with the skill, without it, and with only that rule removed, over every run of the current skill text. `run <skill> --minus <rule>` builds that copy and runs it against the full skill on the rule's cases, three times each by default, telling both arms to use the skill so the comparison measures its text rather than whether it triggers. The table only lists candidates and evidence; removing a rule stays a skill edit you make.
+- **Results** go to `evals/<skill-name>/results/<run-id>/`, which git ignores: `report.md` with pass counts per case, configuration and arm; `grades.jsonl` with each run's evidence; a copy of the cases as run; and Harbor's job folders. Runs that failed for infrastructure reasons, and grades the judge or a cut-off transcript left undecided, are counted apart from failures.
+- **Grading** uses the judge named in `configs.json` and the run's own copy of its cases. `grade` reruns it from the saved files without rerunning any agent: `--judge` adds or swaps judges, and `--graders-from-repo` applies edited graders.
+- **`--probe`** adds a case asking the agent to list its skills, to check that the skill is visible in the with-skill arm, absent in the without-skill arm, and not shadowed by a same-named built-in skill.
 
 ## License
 

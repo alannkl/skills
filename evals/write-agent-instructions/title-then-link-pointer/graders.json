@@ -1,0 +1,59 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "checklist-unchanged",
+      "type": "regex",
+      "path": "skills/release/references/checklist.md",
+      "pattern": "^\\#\\ Release\\ checklist\\n\\n\\#\\#\\ Before\\ tagging\\n\\n\\-\\ Update\\ `CHANGELOG\\.md`\\ with\\ every\\ merged\\ pull\\ request\\ since\\ the\\ last\\ tag\\.\\n\\-\\ Bump\\ the\\ version\\ in\\ `package\\.json`\\.\\n\\n\\#\\#\\ Rollback\\n\\n1\\.\\ Run\\ `deploy\\.sh\\ production\\ \\-\\-version\\ <previous\\ tag>`\\.\\n2\\.\\ Confirm\\ the\\ health\\ check\\ at\\ `/healthz`\\ returns\\ 200\\.\\n3\\.\\ Open\\ an\\ incident\\ issue\\ labelled\\ `release\\-rollback`\\.\\n$",
+      "flags": "",
+      "match": "contains",
+      "description": "The checklist reference is byte-for-byte unchanged."
+    },
+    {
+      "name": "keeps-checklist-path",
+      "type": "regex",
+      "path": "skills/release/SKILL.md",
+      "pattern": "references/checklist\\.md",
+      "flags": "",
+      "match": "contains",
+      "description": "The checklist path survives."
+    },
+    {
+      "name": "keeps-failed-step-report",
+      "type": "regex",
+      "path": "skills/release/SKILL.md",
+      "pattern": "which step failed",
+      "flags": "i",
+      "match": "contains",
+      "description": "The instruction to report the failed step survives."
+    },
+    {
+      "name": "keeps-rollback-section",
+      "type": "regex",
+      "path": "skills/release/SKILL.md",
+      "pattern": "Rollback",
+      "flags": "",
+      "match": "contains",
+      "description": "The Rollback section is still named."
+    },
+    {
+      "name": "no-markdown-link",
+      "type": "regex",
+      "path": "skills/release/SKILL.md",
+      "pattern": "\\]\\(",
+      "flags": "",
+      "match": "not_contains",
+      "description": "No pointer is written as a Markdown link; each is a plain path, with any section named in prose."
+    },
+    {
+      "name": "pointers-plain",
+      "type": "llm",
+      "path": "skills/release/SKILL.md",
+      "criteria": "Judge the edited `skills/release/SKILL.md`. The original pointed to `references/checklist.md` with Markdown links, one of them a section name followed by a link to the same section (\"the Rollback section ([Rollback](references/checklist.md#rollback))\"). Pass only if each pointer now names its target once: a plain path such as `references/checklist.md`, with the Rollback section named in prose, and no Markdown link, `#anchor`, or section title repeated as link text. Everything else must survive with its meaning: confirm `main` is green in CI or stop and report the failing job; work through the checklist before tagging; `git tag vX.Y.Z` and push the tag; `deploy.sh production`; on a failed deploy, follow the Rollback section and tell the user which step failed; the checklist is never skipped. Fail if any of these is lost or changed."
+    }
+  ]
+}

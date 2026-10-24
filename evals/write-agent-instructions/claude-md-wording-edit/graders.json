@@ -1,0 +1,72 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "keeps-billing-pointer",
+      "type": "regex",
+      "path": "CLAUDE.md",
+      "pattern": "docs/billing-rules\\.md",
+      "flags": "i",
+      "match": "contains",
+      "description": "The billing pointer survives."
+    },
+    {
+      "name": "keeps-conventional-commits",
+      "type": "regex",
+      "path": "CLAUDE.md",
+      "pattern": "conventional commits",
+      "flags": "i",
+      "match": "contains",
+      "description": "The commit format rule survives."
+    },
+    {
+      "name": "keeps-make-test",
+      "type": "regex",
+      "path": "CLAUDE.md",
+      "pattern": "make test",
+      "flags": "i",
+      "match": "contains",
+      "description": "The test command survives."
+    },
+    {
+      "name": "keeps-markdown-rule",
+      "type": "regex",
+      "path": "CLAUDE.md",
+      "pattern": "markdown",
+      "flags": "i",
+      "match": "contains",
+      "description": "The default-seeming Markdown rule survives a wording edit."
+    },
+    {
+      "name": "keeps-push-rule",
+      "type": "regex",
+      "path": "CLAUDE.md",
+      "pattern": "push[^\\n]*main|main[^\\n]*push",
+      "flags": "i",
+      "match": "contains",
+      "description": "The rule against pushing to main survives."
+    },
+    {
+      "name": "report",
+      "type": "llm",
+      "criteria": "The final message reports the edit to CLAUDE.md. It does not claim to have removed or changed the meaning of any of the push, commit-message, billing-pointer, test or Markdown rules. If it deleted a sentence outright, it says so; describing a shortened sentence as shortened is fine."
+    },
+    {
+      "name": "rules-preserved",
+      "type": "llm",
+      "path": "CLAUDE.md",
+      "criteria": "Judge the edited CLAUDE.md. It still requires all of these, with the same conditions: never push directly to main, and open a pull request so a human can review it; commit messages in Conventional Commits format (the release bot parses the prefixes); before changing the billing module in `src/billing/`, read `docs/billing-rules.md`; run `make test` before opening a pull request; format replies to the user in Markdown. Wording may differ."
+    },
+    {
+      "name": "suggests-markdown-removal",
+      "type": "llm",
+      "criteria": "Convention check, not scored: the final message names the \"Format your replies to the user in Markdown\" rule as a possible removal that it kept.",
+      "variants": [
+        "with"
+      ]
+    }
+  ]
+}

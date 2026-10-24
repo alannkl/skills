@@ -1,0 +1,32 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "parser-unchanged",
+      "type": "regex",
+      "path": "app/parse.py",
+      "pattern": "^import\\ json\\n\\n\\ndef\\ parse_reply\\(text:\\ str\\)\\ \\->\\ dict:\\n\\ \\ \\ \\ data\\ =\\ json\\.loads\\(text\\)\\n\\ \\ \\ \\ return\\ \\{\\n\\ \\ \\ \\ \\ \\ \\ \\ \"summary\":\\ data\\[\"summary\"\\],\\n\\ \\ \\ \\ \\ \\ \\ \\ \"actions\":\\ \\[\\(a\\[\"owner\"\\],\\ a\\[\"task\"\\]\\)\\ for\\ a\\ in\\ data\\[\"actions\"\\]\\],\\n\\ \\ \\ \\ \\ \\ \\ \\ \"confidence\":\\ float\\(data\\[\"confidence\"\\]\\),\\n\\ \\ \\ \\ \\}\\n$",
+      "flags": "",
+      "match": "contains",
+      "description": "The parser is byte-for-byte unchanged."
+    },
+    {
+      "name": "prompt-contract",
+      "type": "llm",
+      "path": "app/prompts.py",
+      "criteria": "Judge `app/prompts.py`. `SYSTEM_PROMPT` still requires a reply that is only a JSON object with keys `summary` (a string of at most three sentences), `actions` (a list of objects with `owner` and `task`, where `owner` is null when nobody owns the item) and `confidence` (a number from 0 to 1), and now states plainly that no text may appear outside the JSON. `MODEL` is still \"claude-haiku-4-5\" and `MAX_TOKENS` is still 800. The file is still valid Python."
+    },
+    {
+      "name": "test-unchanged",
+      "type": "regex",
+      "path": "tests/test_parse.py",
+      "pattern": "^from\\ app\\.parse\\ import\\ parse_reply\\n\\n\\ndef\\ test_parse_reply\\(\\):\\n\\ \\ \\ \\ reply\\ =\\ '\\{\"summary\":\\ \"Agreed\\ the\\ launch\\ date\\.\",\\ \"actions\":\\ \\[\\{\"owner\":\\ null,\\ \"task\":\\ \"Book\\ the\\ room\"\\}\\],\\ \"confidence\":\\ 0\\.8\\}'\\n\\ \\ \\ \\ assert\\ parse_reply\\(reply\\)\\[\"actions\"\\]\\ ==\\ \\[\\(None,\\ \"Book\\ the\\ room\"\\)\\]\\n$",
+      "flags": "",
+      "match": "contains",
+      "description": "The test is byte-for-byte unchanged."
+    }
+  ]
+}

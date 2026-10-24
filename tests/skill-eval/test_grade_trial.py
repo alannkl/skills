@@ -1,0 +1,166 @@
+"""A trial's row separates infrastructure failures from graded behavior."""
+import json
+import shutil
+import sys
+import tempfile
+import unittest
+from pathlib import Path
+
+sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "scripts" / "skill-eval"))
+from skill_eval import SETTINGS, agent_args, grade_trial, harbor_command, missing_trials, report, stored_baseline  # noqa: E402
+from tasks import task_digest  # noqa: E402
+
+FIXTURES = Path(__file__).resolve().parent / "fixtures"
+CONFIG = {"harness": "claude-code", "model": "anthropic/claude-haiku-5-5", "effort": "high"}
+
+
+class GradeTrial(unittest.TestCase):
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        root = Path(self._tmp.name)
+        self.cases = root / "evals" / "shorten-it"
+        case = self.cases / "shorten-doc"
+        (case / "fixture" / "docs").mkdir(parents=True)
+        (case / "fixture" / "docs" / "a.md").write_text("A long sentence that says very little.\n")
+        (case / "graders.json").write_text(json.dumps({
+            "expect_skill_loaded": {"with": True, "without": False},
+            "graders": [{"name": "short", "type": "regex", "path": "docs/a.md", "pattern": "^Short\\.$", "flags": "m"},
+                        {"name": "only-doc", "type": "unchanged_except", "allow": ["docs/a.md"]}]}))
+        self.trial = root / "trial"
+        (self.trial / "verifier" / "workspace" / "docs").mkdir(parents=True)
+        (self.trial / "verifier" / "workspace" / "docs" / "a.md").write_text("Short.\n")
+        (self.trial / "verifier" / "reward.json").write_text('{"snapshot": 1}')
+        shutil.copytree(FIXTURES / "claude-code", self.trial / "agent")
+        (self.trial / "config.json").write_text(json.dumps({"task": {"path": "/x/tasks/shorten-doc--with"}}))
+        (self.trial / "result.json").write_text(json.dumps({"exception_info": None}))
+
+    def test_graded_trial_reports_loaded_skill_and_grader_results(self):
+        row = grade_trial(self.trial, "claude-haiku", CONFIG, "shorten-it", self.cases, ["unused"])
+        self.assertEqual((row["status"], row["case"], row["variant"]), ("ok", "shorten-doc", "with"))
+        self.assertTrue(row["skill_loaded"])
+        self.assertTrue(row["skill_loaded_expected"])
+        self.assertEqual({k: v["pass"] for k, v in row["graders"].items()}, {"short": True, "only-doc": True})
+
+    def test_minus_variant_is_graded_and_expected_like_the_with_arm(self):
+        (self.trial / "config.json").write_text(json.dumps({"task": {"path": "/x/tasks/shorten-doc--minus-r"}}))
+        row = grade_trial(self.trial, "claude-haiku", CONFIG, "shorten-it", self.cases, ["unused"])
+        self.assertEqual((row["variant"], row["skill_loaded_expected"]), ("minus-r", True))
+        self.assertIn("short", row["graders"])
+
+    def test_infrastructure_failure_is_not_graded(self):
+        (self.trial / "result.json").write_text(json.dumps({"exception_info": {"exception_type": "AgentSetupTimeoutError"}}))
+        row = grade_trial(self.trial, "claude-haiku", CONFIG, "shorten-it", self.cases, ["unused"])
+        self.assertEqual((row["status"], row["error"]), ("infra_error", "AgentSetupTimeoutError"))
+        self.assertNotIn("graders", row)
+
+    def test_attempts_harbor_never_produced_are_reported_missing(self):
+        meta = {"tasks": ["shorten-doc--with", "shorten-doc--without"], "attempts": 2}
+        graded = [{"case": "shorten-doc", "variant": "with"}]
+        missing = missing_trials(meta, "claude-haiku", CONFIG, graded)
+        self.assertEqual(sorted((m["variant"], m["status"]) for m in missing),
+                         [("with", "missing"), ("without", "missing"), ("without", "missing")])
+
+    def test_missing_or_partial_snapshot_is_missing_evidence(self):
+        (self.trial / "verifier" / "reward.json").unlink()
+        row = grade_trial(self.trial, "claude-haiku", CONFIG, "shorten-it", self.cases, ["unused"])
+        self.assertEqual(row["status"], "missing_evidence")
+        shutil.rmtree(self.trial / "verifier")
+        row = grade_trial(self.trial, "claude-haiku", CONFIG, "shorten-it", self.cases, ["unused"])
+        self.assertEqual(row["status"], "missing_evidence")
+
+    def test_agent_timeout_with_a_snapshot_is_graded(self):
+        (self.trial / "result.json").write_text(json.dumps({"exception_info": {"exception_type": "AgentTimeoutError"}}))
+        row = grade_trial(self.trial, "claude-haiku", CONFIG, "shorten-it", self.cases, ["unused"])
+        self.assertEqual((row["status"], row["timed_out"]), ("ok", True))
+        self.assertIn("graders", row)
+
+    def test_report_keeps_ungraded_runs_undecided_grades_and_collisions_apart(self):
+        run_dir = Path(self._tmp.name) / "run-1"
+        run_dir.mkdir()
+        base = {"case": "c", "config": "claude-haiku", "status": "ok", "skill_loaded": True,
+                "skill_loaded_expected": True, "foreign_copy_loaded": False, "harness_lists_skill": True,
+                "evidence": {"cost_usd": 0.01}}
+        rows = [
+            {**base, "variant": "with", "graders": {"g": {"pass": True, "judges": {"a": {"pass": True}, "b": {"pass": False}}}}},
+            {**base, "variant": "with", "graders": {"g": {"pass": None}}},
+            {**base, "variant": "without", "skill_loaded": False, "skill_loaded_expected": False,
+             "graders": {"g": {"pass": False}}},
+            {"case": "c", "config": "claude-haiku", "variant": "without", "status": "infra_error", "error": "X"},
+        ]
+        (run_dir / "grades.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+        text = report(run_dir)
+        self.assertIn("c | claude-haiku | with: 2 ok | skill loaded 2/2 (expected True) | g 1/1 (1 undecided)", text)
+        self.assertIn("c | claude-haiku | without: 1 ok, 1 not graded ['X']", text)
+        self.assertIn("without: the harness lists a skill with this name", text)
+        self.assertIn("Judge disagreements:", text)
+        self.assertIn("claude-haiku: 0.0300", text)
+
+
+class StoredBaseline(unittest.TestCase):
+    """A without-skill task reuses earlier trials only when everything the agent saw is identical."""
+
+    def setUp(self):
+        self._tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(self._tmp.cleanup)
+        self.results = Path(self._tmp.name)
+
+    def prior_run(self, run_id, started, statuses, config=CONFIG, instruction="Shorten docs/a.md.", **row_extra):
+        run = self.results / run_id
+        task = run / "tasks" / "shorten-doc--without"
+        task.mkdir(parents=True)
+        (task / "instruction.md").write_text(instruction)
+        (run / "run.json").write_text(json.dumps({"harbor": SETTINGS["harbor"], "started_at": started,
+                                                  "configs": {"haiku": config},
+                                                  "agent_args": {"haiku": agent_args(config)}}))
+        rows = [{"config": "haiku", "case": "shorten-doc", "variant": "without", "status": s,
+                 "trial": f"{run_id}-t{i}", **row_extra} for i, s in enumerate(statuses)]
+        (run / "grades.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+        return task
+
+    def find(self, attempts):
+        digest = task_digest(self.prior_run("current", "2026-10-25", []))
+        return [t.name for t in stored_baseline(self.results, "current", CONFIG, "shorten-doc--without", digest, attempts)]
+
+    def test_newest_graded_trials_of_an_identical_task_are_reused(self):
+        self.prior_run("old", "2026-10-20", ["ok", "ok"])
+        self.prior_run("new", "2026-10-22", ["ok", "infra_error"])
+        self.assertEqual(self.find(2), ["new-t0", "old-t0"])
+
+    def test_too_few_matches_runs_fresh(self):
+        self.prior_run("old", "2026-10-20", ["ok", "missing"])
+        self.assertEqual(self.find(2), [])
+
+    def test_changed_task_other_config_or_reused_rows_do_not_count(self):
+        self.prior_run("edited", "2026-10-21", ["ok"], instruction="Shorten it more.")
+        self.prior_run("sonnet", "2026-10-21", ["ok"], config={**CONFIG, "model": "anthropic/claude-sonnet"})
+        self.prior_run("copy", "2026-10-21", ["ok"], reused_from="older/jobs/haiku/t")
+        self.assertEqual(self.find(1), [])
+
+    def test_runs_recorded_before_agent_arguments_were_stored_do_not_count(self):
+        task = self.prior_run("legacy", "2026-10-21", ["ok"])
+        meta = json.loads((task.parents[1] / "run.json").read_text())
+        del meta["agent_args"]
+        (task.parents[1] / "run.json").write_text(json.dumps(meta))
+        self.assertEqual(self.find(1), [])
+
+    def test_reused_tasks_are_excluded_from_the_harbor_job(self):
+        cmd = harbor_command(CONFIG | {"harness": "claude-code"}, Path("t"), Path("j"), "haiku", 1, 1,
+                             ["shorten-doc--without"])
+        self.assertIn("shorten-doc--without", cmd)
+        self.assertIn("*/shorten-doc--without", cmd)
+
+    def test_report_counts_reused_trials_without_their_cost(self):
+        run_dir = self.results / "run"
+        run_dir.mkdir()
+        row = {"case": "c", "config": "haiku", "variant": "without", "status": "ok", "skill_loaded": False,
+               "skill_loaded_expected": False, "graders": {}, "evidence": {"cost_usd": 0.5}}
+        rows = [row, {**row, "reused_from": "old/jobs/haiku/t"}]
+        (run_dir / "grades.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
+        text = report(run_dir)
+        self.assertIn("c | haiku | without: 2 ok (1 reused)", text)
+        self.assertIn("haiku: 0.5000", text)
+
+
+if __name__ == "__main__":
+    unittest.main()

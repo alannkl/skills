@@ -1,0 +1,52 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "description-not-truncated",
+      "type": "regex",
+      "path": "skills/release-check/SKILL.md",
+      "pattern": "^description: (?![\\\"'>|])[^\\n]*\\s#",
+      "flags": "m",
+      "match": "not_contains",
+      "description": "An unquoted description containing \" #\" is cut off by YAML at that point."
+    },
+    {
+      "name": "keeps-instructions",
+      "type": "llm",
+      "path": "skills/release-check/SKILL.md",
+      "criteria": "Judge `skills/release-check/SKILL.md`. It tells the agent to do all seven of these before a release: confirm a clean working tree; confirm the `package.json` version matches the tag; confirm `CHANGELOG.md` has an entry for that version; run `pnpm test` and stop on failure; compare the tag's lockfile hash with `main`'s and stop on a mismatch; retry the artifact upload a definite number of times; post the summary in `#releases` only after the upload succeeds. If its description says it also applies to checking whether a release is ready, a readiness check stops before uploading or posting."
+    },
+    {
+      "name": "name-matches",
+      "type": "regex",
+      "path": "skills/release-check/SKILL.md",
+      "pattern": "name:\\s*release-check\\b",
+      "flags": "i",
+      "match": "contains",
+      "description": "The frontmatter name matches the directory."
+    },
+    {
+      "name": "no-history",
+      "type": "regex",
+      "path": "skills/release-check/SKILL.md",
+      "pattern": "not yet verified|after we measure|reviewer|dana|2\\.3 release|we considered",
+      "flags": "i",
+      "match": "not_contains",
+      "description": "Draft status, staged values, reviewer notes and design history stay out of the skill."
+    },
+    {
+      "name": "report",
+      "type": "llm",
+      "criteria": "The final message says what the agent did with the retry count the doc left provisional (\"start with 3 and lower it later\"): it chose a number and says so, or asks the user. It also mentions the reviewer's open question about the changelog check, or keeps that check without claiming the question of whether it is needed was settled for good; saying it stays in for now is fine."
+    },
+    {
+      "name": "skill-file-exists",
+      "type": "file_exists",
+      "path": "skills/release-check/SKILL.md",
+      "description": "The skill file exists."
+    }
+  ]
+}

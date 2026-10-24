@@ -1,0 +1,32 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "adds-rule",
+      "type": "regex",
+      "path": "AGENTS.md",
+      "pattern": "src/testing",
+      "flags": "i",
+      "match": "contains",
+      "description": "The new rule is present."
+    },
+    {
+      "name": "concise",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "criteria": "Judge AGENTS.md. Compared with the original three rules (pnpm; `pnpm test` before a pull request; pull requests against `develop`), it adds one short rule saying test fixtures live under `src/testing/`. It adds no examples, no pointer to the README, no other new rules, and does not reword the existing ones. A brief clause that tests should use those fixtures is acceptable."
+    },
+    {
+      "name": "keeps-existing",
+      "type": "regex",
+      "path": "AGENTS.md",
+      "pattern": "- Use pnpm, never npm or yarn\\.[\\s\\S]*- Run `pnpm test` before opening a pull request\\.[\\s\\S]*- Open pull requests against `develop`\\.",
+      "flags": "i",
+      "match": "contains",
+      "description": "Existing rules are unchanged and keep their order; the new rule may go anywhere in the list."
+    }
+  ]
+}
