@@ -83,6 +83,12 @@ class Graders(unittest.TestCase):
         self.assertEqual(set(rows[1]["graders"]["g"]["judges"]), {"judge-a", "judge-b"})
         self.assertNotIn("pending", rows[1]["graders"]["g"])
 
+    def test_llm_can_show_the_final_message_beside_the_file(self):
+        spec = {"type": "llm", "path": "AGENTS.md", "criteria": "c", "with_final_message": True}
+        self.assertIn("Removed the emphasis line.", self.grade(spec, message="Removed the emphasis line.")["g"]["pending"]["subject"])
+        self.assertIsNone(self.grade(spec, message=None)["g"]["pass"])
+        self.assertNotIn("pending", self.grade(spec, message=None)["g"])
+
     def test_final_message_graders_are_undecided_without_a_complete_transcript(self):
         self.assertIsNone(self.grade({"type": "regex", "pattern": "x"}, message=None)["g"]["pass"])
         self.assertIsNone(self.grade({"type": "llm", "criteria": "c"}, message=None)["g"]["pass"])

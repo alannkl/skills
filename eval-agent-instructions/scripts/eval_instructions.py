@@ -115,7 +115,9 @@ def openclaw_model_config(config: dict) -> str:
     (sent as max), there is no xhigh, and some models get medium sent as low.
     """
     provider, model_id = config["model"].split("/", 1)
-    entry = {"id": model_id, "name": model_id, "reasoning": True, "contextWindow": config["context_window"]}
+    # OpenClaw's default output cap of 8192 tokens can go entirely to reasoning, ending the turn with nothing done.
+    entry = {"id": model_id, "name": model_id, "reasoning": True, "contextWindow": config["context_window"],
+             "maxTokens": 64000}
     if provider == "openrouter":
         effort = config["effort"]
         entry["compat"] = {"supportsReasoningEffort": True, "supportedReasoningEfforts": [effort]} if effort else \
@@ -398,6 +400,10 @@ def grade_trial(trial: Path, config_name: str, config: dict, artifact: dict, cas
     case_dir = cases_root / case
     spec = load_spec((specs_root or cases_root) / case)
     evidence = EXTRACTORS[config["harness"]](trial / "agent")
+    # The harness ended the run itself, as when a reply hit its output cap.
+    if evidence.get("terminal_error"):
+        row.update(status="infra_error", error=evidence["terminal_error"])
+        return row
     final_message = evidence.pop("final_message") if evidence["complete"] else None
     row.update(status="ok", final_message=final_message, evidence=evidence)
     if artifact["type"] == "skill":

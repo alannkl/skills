@@ -115,6 +115,10 @@ def llm(spec, workspace, initial, harness, run, judges):
         original = _file_text(initial, spec["path"]) or "(absent)"
         subject = _file_text(workspace, spec["path"]) or "(file missing)"
         label = spec["path"]
+        if spec.get("with_final_message"):
+            if run["final_message"] is None:
+                return _UNDECIDED_NO_TRANSCRIPT
+            subject += f"\n>>>\n\nThe agent's final message:\n<<<\n{run['final_message']}"
     elif run["final_message"] is None:
         return _UNDECIDED_NO_TRANSCRIPT
     else:

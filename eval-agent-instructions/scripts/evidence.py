@@ -279,7 +279,16 @@ def openclaw(agent_dir: Path) -> dict:
         thinking=meta.get("requestShaping", {}).get("thinking"),
         upstream_providers=None if generations is None else sorted({str(g["provider"]) for g in generations}),
         generations=generations,
+        terminal_error=_openclaw_terminal_error(events_path),
     )
+
+
+def _openclaw_terminal_error(events_path: Path) -> str | None:
+    """The error that ended the run without a deliverable turn, such as output hitting the token cap."""
+    for event in _json_lines(events_path):
+        if event.get("type") == "model.completed" and (event.get("data") or {}).get("terminalError"):
+            return event["data"]["terminalError"]
+    return None
 
 
 def api(agent_dir: Path) -> dict:

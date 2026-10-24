@@ -38,7 +38,7 @@ Grader types; `path` is relative to the workspace:
 | `file_exists` | the file's presence matches `exists` | `path`, `exists` (default true) |
 | `unchanged_except` | no file changed or appeared outside `allow` | `allow` |
 | `no_writes` | the transcript shows no write through an edit tool | |
-| `llm` | the judge finds `criteria` met, given the file at `path` before and after, or the final message | `criteria`, `path` |
+| `llm` | the judge finds `criteria` met, given the file at `path` before and after, or the final message | `criteria`, `path`, `with_final_message` (also show the final message beside the file) |
 | `json` | the file at `path`, or the final message, parses as JSON whole and has every `required` top-level key | `required`, `path` |
 
 A grader with `"variants": ["with"]` runs only in that arm. A read-only case needs both `unchanged_except` and `no_writes`: an agent can write through the shell, which only the end state shows.

@@ -160,6 +160,14 @@ class Extractors(unittest.TestCase):
         self.assertFalse(e["complete"])
         self.assertIsNone(e["writes"])
 
+    def test_openclaw_run_ended_by_the_harness_records_why(self):
+        agent = self.copy("openclaw")
+        self.assertIsNone(openclaw(agent)["terminal_error"])
+        events = agent / "openclaw-trajectory" / "events.jsonl"
+        with events.open("a") as f:
+            f.write(json.dumps({"type": "model.completed", "data": {"terminalError": "non_deliverable_terminal_turn"}}) + "\n")
+        self.assertEqual(openclaw(agent)["terminal_error"], "non_deliverable_terminal_turn")
+
     def test_missing_transcript_is_unknown_not_absent(self):
         agent = self.copy("openclaw")
         shutil.rmtree(agent / "openclaw-trajectory")
