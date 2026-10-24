@@ -8,7 +8,7 @@
       "name": "name-matches",
       "type": "regex",
       "path": "skills/deploy-review/SKILL.md",
-      "pattern": "name:\\s*deploy-review\\b",
+      "pattern": "name:\\s*[\"']?deploy-review\\b",
       "flags": "i",
       "match": "contains",
       "description": "The frontmatter name matches the directory."

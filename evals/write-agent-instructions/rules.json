@@ -348,7 +348,7 @@
     },
     "user-preference-stays": {
       "file": "SKILL.md",
-      "text": "An explicit user preference stays even when it matches the default; list it as a suggested removal.",
+      "text": "An explicit user preference, one the user states in the request or conversation, stays even when it matches the default; list it as a suggested removal.",
       "graders": [
         "prune-release-notes/keeps-ticket-rule"
       ]
@@ -374,20 +374,12 @@
         "trim-duplicates-keep-qualifiers/report"
       ]
     },
-    "wording-edit-lists-suggested-removals": {
-      "file": "SKILL.md",
-      "text": "Check each one against the executing agent's default and list matches as suggested removals.",
-      "graders": [
-        "claude-md-wording-edit/keeps-markdown-rule",
-        "claude-md-wording-edit/report",
-        "claude-md-wording-edit/suggests-markdown-removal"
-      ]
-    },
     "wording-edit-reports-cut-emphasis": {
       "file": "SKILL.md",
       "text": "In a wording edit, report pure emphasis that the polish cuts as a removal.",
       "graders": [
-        "title-then-link-pointer/skip-line-kept-or-reported"
+        "title-then-link-pointer/skip-line-kept-or-reported",
+        "claude-md-wording-edit/report"
       ]
     },
     "name-the-action": {
@@ -481,8 +473,7 @@
         "prune-release-notes/report",
         "prune-unexplained-safeguard/report",
         "agents-md-billing-split/report",
-        "create-skill-from-doc/reference-created",
-        "claude-md-wording-edit/suggests-markdown-removal"
+        "create-skill-from-doc/reference-created"
       ]
     },
     "shortcut-user-invoked": {
@@ -511,7 +502,7 @@
     },
     "skill-frontmatter-quoted-description": {
       "file": "references/skill-mechanics.md",
-      "text": "Start `SKILL.md` with YAML frontmatter containing at least `name` and `description`; use a quoted or block scalar for a description containing `: ` or ` #`.",
+      "text": "Start `SKILL.md` with YAML frontmatter containing at least `name` and `description`; quote the description.",
       "graders": [
         "design-doc-to-skill/description-not-truncated"
       ]

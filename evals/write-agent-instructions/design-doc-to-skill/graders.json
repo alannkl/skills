@@ -23,7 +23,7 @@
       "name": "name-matches",
       "type": "regex",
       "path": "skills/release-check/SKILL.md",
-      "pattern": "name:\\s*release-check\\b",
+      "pattern": "name:\\s*[\"']?release-check\\b",
       "flags": "i",
       "match": "contains",
       "description": "The frontmatter name matches the directory."
