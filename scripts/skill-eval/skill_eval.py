@@ -43,7 +43,7 @@ from rules import MINUS, arm, check_rules, load_rules, minus_skill, rule_cases, 
 from tasks import PROBE_CASE, build_tasks, load_spec, task_digest  # noqa: E402
 
 SETTINGS = json.loads((HERE / "configs.json").read_text())
-DEFAULT_CONFIGS = ["claude-haiku", "codex-luna", "openclaw-deepseek-high"]
+DEFAULT_CONFIGS = ["openclaw-deepseek-high"]
 # Each harness ships skills of its own, such as Claude Code's code-review and the
 # skill-creator in Codex and OpenClaw. They compete with the skill under test and
 # can share its name, so they are off unless a configuration sets builtin_skills;
