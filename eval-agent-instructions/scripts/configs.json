@@ -92,6 +92,22 @@
       "effort": "max",
       "openrouter_provider": "minimax",
       "context_window": 1048576
+    },
+    "api-haiku": {
+      "harness": "api",
+      "model": "anthropic/claude-haiku-5-5",
+      "effort": "high"
+    },
+    "api-luna": {
+      "harness": "api",
+      "model": "openai/gpt-6-luna",
+      "effort": "high"
+    },
+    "api-deepseek-high": {
+      "harness": "api",
+      "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+      "effort": "high",
+      "openrouter_provider": "deepseek"
     }
   }
 }

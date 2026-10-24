@@ -121,8 +121,21 @@ def llm(spec, workspace, initial, harness, run, judges):
     return {"pass": primary["pass"], "detail": primary["reason"], "judges": verdicts}
 
 
+def json_output(spec, workspace, initial, harness, run, judges):
+    """The file at `path`, or the final message, parses as JSON whole and holds every `required` top-level key."""
+    text = _file_text(workspace, spec["path"]) if spec.get("path") else run["final_message"]
+    if text is None:
+        return {"pass": None if not spec.get("path") else False, "detail": "no text to parse"}
+    try:
+        value = json.loads(text)
+    except json.JSONDecodeError as exc:
+        return {"pass": False, "detail": f"not JSON: {exc}"}
+    missing = [k for k in spec.get("required", []) if not isinstance(value, dict) or k not in value]
+    return {"pass": not missing, "detail": f"missing {missing}" if missing else ""}
+
+
 GRADERS = {"regex": regex, "file_exists": file_exists, "unchanged_except": unchanged_except,
-           "no_writes": no_writes, "llm": llm}
+           "no_writes": no_writes, "llm": llm, "json": json_output}
 
 
 def run_graders(specs: list[dict], variant: str, workspace: Path, initial: Path, harness: str,

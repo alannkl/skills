@@ -11,7 +11,13 @@ A suite is `evals/<suite>/` in the repository that holds the artifact, outside t
 }
 ```
 
-- `artifact.type` is `skill` or `instruction-file`. An instruction file also takes `"as"`, the name it gets in the workspace, such as `AGENTS.md` or `CLAUDE.md`; it defaults to the file's own name.
+- `artifact.type` is `skill`, `instruction-file` or `prompt`.
+- An instruction file also takes `"as"`, the name it gets in the workspace, such as `AGENTS.md` or `CLAUDE.md`; it defaults to the file's own name. A fixture must not already hold that file.
+- A prompt also takes `"role"` and `"runner"`:
+  - `"role": "system"` (default) adds the text to the system prompt: Claude Code's appended system prompt, Codex's developer instructions, or the API call's system message. OpenClaw has no such setting; evaluate the text as an AGENTS.md there.
+  - `"role": "user"` puts the text before the case's request, as a task prompt arrives.
+  - `"runner": "harness"` (default) runs agent setups; `"runner": "api"` runs the `api-*` setups, which call the model once with no tools, as an app does.
+  - `{{name}}` placeholders take the case's `vars.json` values.
 - Without an `artifact` entry, the suite tests the skill in the repository folder with the suite's name.
 - `dependencies` lists skills the artifact loads. Both arms install them, so the arms differ only by the artifact.
 
@@ -20,7 +26,8 @@ A suite is `evals/<suite>/` in the repository that holds the artifact, outside t
 Each case is a folder in the suite:
 
 - `instruction.md`: the user's request, exactly as the agent receives it.
-- The workspace: `fixture/`, copied into it, or `scaffold.sh`, run in the empty workspace with `fixture/` beside it. A fixture must not already hold the instruction file under test.
+- The workspace: `fixture/`, copied into it, or `scaffold.sh`, run in the empty workspace with `fixture/` beside it. An API case needs none.
+- `vars.json`: values for a prompt's placeholders.
 - `graders.json`: `expect_skill_loaded` with `with` and `without` booleans (skills only), optional `agent_timeout_sec`, and `graders`.
 
 Grader types; `path` is relative to the workspace:
@@ -32,6 +39,7 @@ Grader types; `path` is relative to the workspace:
 | `unchanged_except` | no file changed or appeared outside `allow` | `allow` |
 | `no_writes` | the transcript shows no write through an edit tool | |
 | `llm` | the judge finds `criteria` met, given the file at `path` before and after, or the final message | `criteria`, `path` |
+| `json` | the file at `path`, or the final message, parses as JSON whole and has every `required` top-level key | `required`, `path` |
 
 A grader with `"variants": ["with"]` runs only in that arm. A read-only case needs both `unchanged_except` and `no_writes`: an agent can write through the shell, which only the end state shows.
 

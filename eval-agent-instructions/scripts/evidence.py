@@ -30,6 +30,7 @@ INSTALLED_ROOTS = {
     "claude-code": ("/logs/agent/sessions/skills/", "/skills/"),
     "codex": ("/root/.agents/skills/", "/skills/"),
     "openclaw": ("$OPENCLAW_STATE_DIR/skills/", "/root/.openclaw/skills/", "/skills/"),
+    "api": (),
 }
 _SKILL_FILE = re.compile(r"[^\s'\"`]*/([A-Za-z0-9._-]+)/SKILL\.md")
 
@@ -281,4 +282,16 @@ def openclaw(agent_dir: Path) -> dict:
     )
 
 
-EXTRACTORS = {"claude-code": claude_code, "codex": codex, "openclaw": openclaw}
+def api(agent_dir: Path) -> dict:
+    """A direct API call has no tools, so its record is the reply alone."""
+    path = agent_dir / "api.json"
+    if not path.is_file():
+        return summarize("api", [], False)
+    reply = json.loads(path.read_text())
+    return summarize("api", [], True, models=[reply["model"]] if reply.get("model") else [],
+                     final_message=reply.get("text", ""), usage=reply.get("usage"), cost_usd=reply.get("cost_usd"),
+                     cost_basis="reported by the API" if reply.get("cost_usd") is not None else None,
+                     upstream_providers=[reply["provider"]] if reply.get("provider") else None)
+
+
+EXTRACTORS = {"claude-code": claude_code, "codex": codex, "openclaw": openclaw, "api": api}

@@ -44,22 +44,24 @@ from evidence import EXTRACTORS  # noqa: E402
 from graders import run_graders, temporary_initial_workspace  # noqa: E402
 from rules import MINUS, arm, artifact_digest, check_rules, load_rules, minus_artifact, rule_cases, tabulate  # noqa: E402
 from tasks import PROBE_CASE, artifact_root, build_tasks, load_spec, load_suite, task_digest  # noqa: E402
+from api_runner import run_api_job  # noqa: E402
 
 SETTINGS = json.loads((HERE / "configs.json").read_text())
 DEFAULT_CONFIGS = ["openclaw-deepseek-high"]
+DEFAULT_API_CONFIGS = ["api-deepseek-high"]
 # Each harness ships skills of its own, such as Claude Code's code-review and the
 # skill-creator in Codex and OpenClaw. They compete with the skill under test and
 # can share its name, so they are off unless a configuration sets builtin_skills;
-# OpenClaw's switch lives in openclaw_model_config.
+# OpenClaw's switch lives in openclaw_model_config. Claude Code also needs an
+# environment variable; doctor and plugin-authoring survive it, so they are turned off by name.
 BLOCK_BUILTIN_SKILLS = {
-    # doctor and plugin-authoring survive the bundled switch, so they are turned off by name.
-    "claude-code": ["--ae", "CLAUDE_CODE_DISABLE_BUNDLED_SKILLS=1",
-                    "--ak", 'config={"skillOverrides": {"doctor": "off", "plugin-authoring": "off"}}'],
-    "codex": ["--ak", 'config={"skills": {"bundled": {"enabled": false}}}'],
+    "claude-code": {"skillOverrides": {"doctor": "off", "plugin-authoring": "off"}},
+    "codex": {"skills": {"bundled": {"enabled": False}}},
 }
 # Names the installed copy by path: a harness may ship a built-in skill with the same name.
 USE_SKILL = "Use the skill at /skills/{skill}/SKILL.md for this task.\n\n"
 HARBOR_AGENT = {"claude-code": "claude-code", "codex": "codex", "openclaw": "harbor_agents:PreinstalledOpenClaw"}
+API = "api"
 
 
 def load_dotenv(path: Path) -> None:
@@ -131,9 +133,15 @@ def openclaw_model_config(config: dict) -> str:
     return json.dumps(overlay)
 
 
-def agent_args(config: dict) -> list[str]:
-    """Harbor arguments that decide how the agent runs, as opposed to where results go."""
+def agent_args(config: dict, system_prompt: str | None = None) -> list[str]:
+    """Arguments that decide how the agent runs, as opposed to where results go.
+
+    `system_prompt` is appended to Claude Code's system prompt, or becomes Codex's
+    developer instructions; OpenClaw has no such setting.
+    """
     harness = config["harness"]
+    if harness == API:
+        return [API, config["model"], f"effort={config.get('effort')}", f"provider={config.get('openrouter_provider')}"]
     args = ["-a", HARBOR_AGENT[harness], "-m", config["model"],
             "--ak", f"version={SETTINGS['cli_versions'][harness]}",
             # The OpenClaw adapter reads its config from a bind-mounted /logs/agent.
@@ -141,20 +149,58 @@ def agent_args(config: dict) -> list[str]:
     if config.get("effort"):
         args += ["--ak", f"reasoning_effort={config['effort']}"]
     if harness == "openclaw":
-        args += ["--ak", f"openclaw_config={openclaw_model_config(config)}"]
-    elif not config.get("builtin_skills"):
-        args += BLOCK_BUILTIN_SKILLS[harness]
+        if system_prompt is not None:
+            raise SystemExit("OpenClaw has no system prompt setting; evaluate the text as an AGENTS.md instead")
+        return args + ["--ak", f"openclaw_config={openclaw_model_config(config)}"]
+    native = {} if config.get("builtin_skills") else dict(BLOCK_BUILTIN_SKILLS[harness])
+    if harness == "claude-code" and not config.get("builtin_skills"):
+        args += ["--ae", "CLAUDE_CODE_DISABLE_BUNDLED_SKILLS=1"]
+    if system_prompt is not None and harness == "claude-code":
+        args += ["--ak", f"append_system_prompt={system_prompt}"]
+    elif system_prompt is not None:
+        native["developer_instructions"] = system_prompt
+    if native:
+        args += ["--ak", f"config={json.dumps(native)}"]
     return args
 
 
 def harbor_command(config: dict, tasks_dir: Path, jobs_dir: Path, job: str, attempts: int, concurrency: int,
-                   exclude: list[str] = ()) -> list[str]:
+                   exclude: list[str] = (), include: list[str] = (), system_prompt: str | None = None) -> list[str]:
     cmd = ["uv", "tool", "run", "--python", "3.12", "--from", f"harbor @ {SETTINGS['harbor']}", "harbor", "run",
-           "-p", str(tasks_dir), *agent_args(config),
+           "-p", str(tasks_dir), *agent_args(config, system_prompt),
            "-k", str(attempts), "-n", str(concurrency), "-o", str(jobs_dir), "--job-name", job, "-y", "-q"]
+    for task in include:
+        cmd += ["-i", task, "-i", f"*/{task}"]
     for task in exclude:
         cmd += ["-x", task, "-x", f"*/{task}"]
     return cmd
+
+
+def job_plan(tasks_dir: Path, tasks: list[str], skip: list[str], artifact: dict) -> list[tuple[str, list[str], str | None]]:
+    """(job name, tasks, system prompt) per Harbor job for one setup.
+
+    A system prompt is an agent argument, which Harbor sets per job, so each task
+    that delivers one runs as its own job; everything else shares one job.
+    """
+    pending = [t for t in tasks if t not in skip]
+    if artifact["type"] != "prompt" or artifact["role"] != "system":
+        return [("main", pending, None)] if pending else []
+    plain = [t for t in pending if not (tasks_dir / t / "prompt" / "system.md").is_file()]
+    plan = [("main", plain, None)] if plain else []
+    return plan + [(t, [t], (tasks_dir / t / "prompt" / "system.md").read_text())
+                   for t in pending if t not in plain]
+
+
+def trial_dirs(job_root: Path) -> list[Path]:
+    """Trial folders under a setup's jobs, one or two levels down: those whose config.json names a task."""
+    found = []
+    for path in sorted(job_root.glob("*/config.json")) + sorted(job_root.glob("*/*/config.json")):
+        try:
+            if "task" in json.loads(path.read_text()):
+                found.append(path.parent)
+        except json.JSONDecodeError:
+            continue
+    return found
 
 
 def stored_baseline(results: Path, run_id: str, config: dict, task: str, digest: str, attempts: int) -> list[Path]:
@@ -178,7 +224,7 @@ def stored_baseline(results: Path, run_id: str, config: dict, task: str, digest:
             # A reused row points at an older run's trial, which this loop reaches on its own.
             if (row["config"] in names and (row["case"], row["variant"]) == (case, variant)
                     and row["status"] == "ok" and not row.get("reused_from")):
-                found.append(prior / "jobs" / row["config"] / row["trial"])
+                found.append(prior / row.get("trial_path", f"jobs/{row['config']}/{row['trial']}"))
     return found[:attempts] if len(found) >= attempts else []
 
 
@@ -241,7 +287,10 @@ def check_credentials(configs: list[str]) -> None:
 
 def cmd_run(args) -> None:
     load_dotenv(REPO / ".env")
-    configs = args.config or DEFAULT_CONFIGS
+    suite = load_suite(REPO, args.suite)
+    artifact, full = suite["artifact"], REPO / suite["artifact"]["path"]
+    wants_api = artifact["type"] == "prompt" and artifact["runner"] == API
+    configs = args.config or (DEFAULT_API_CONFIGS if wants_api else DEFAULT_CONFIGS)
     unknown = set(configs) - set(SETTINGS["configs"])
     if unknown:
         raise SystemExit(f"unknown configs: {sorted(unknown)}")
@@ -250,8 +299,15 @@ def cmd_run(args) -> None:
     run_dir = REPO / "evals" / args.suite / "results" / run_id
     if run_dir.exists():
         raise SystemExit(f"{run_dir} exists")
-    suite = load_suite(REPO, args.suite)
-    artifact, full = suite["artifact"], REPO / suite["artifact"]["path"]
+    mismatched = [c for c in configs if (SETTINGS["configs"][c]["harness"] == API) != wants_api]
+    if mismatched:
+        kind = "api setups" if wants_api else "harness setups"
+        raise SystemExit(f"evals/{args.suite} runs on {kind}; pick others than {mismatched}")
+    if artifact["type"] == "prompt" and artifact["role"] == "system" and not wants_api:
+        openclaw = [c for c in configs if SETTINGS["configs"][c]["harness"] == "openclaw"]
+        if openclaw:
+            raise SystemExit(f"OpenClaw has no system prompt setting, so {openclaw} cannot run this suite; "
+                             "evaluate the text as an AGENTS.md instead")
     variants, under_test, sources, attempts, preamble = args.variants, "with", {}, args.attempts or 1, ""
     case_names = args.case
     if args.minus:
@@ -268,12 +324,13 @@ def cmd_run(args) -> None:
         if artifact["type"] == "skill":
             preamble = USE_SKILL.format(skill=artifact["name"])
     cases = case_dirs(args.suite, case_names, args.probe)
-    image = base_image()
+    # An API run starts no container, so it needs no image.
+    image = "none" if wants_api else base_image()
     tasks = build_tasks(REPO, suite, cases, variants, image, run_dir / "tasks", sources, preamble)
     archive_cases(args.suite, cases, run_dir / "cases")
     reused = {} if args.fresh_baseline else reuse_baselines(run_dir, configs, tasks, attempts, under_test)
     meta = {"suite": args.suite, "artifact": artifact, "artifact_digest": artifact_digest(full),
-            "probe_text": first_line(full) if artifact["type"] == "instruction-file" else None,
+            "probe_text": None if artifact["type"] == "skill" else first_line(full),
             "minus": args.minus, "preamble": preamble,
             "configs": {c: SETTINGS["configs"][c] for c in configs},
             "cases": [c.name for c in cases], "variants": variants, "attempts": attempts,
@@ -283,18 +340,23 @@ def cmd_run(args) -> None:
     (run_dir / "run.json").write_text(json.dumps(meta, indent=2) + "\n")
     for name in configs:
         config = SETTINGS["configs"][name]
-        skip = sorted(reused.get(name, {}))
-        if len(skip) == len(tasks):
+        plan = job_plan(run_dir / "tasks", tasks, sorted(reused.get(name, {})), artifact)
+        if not plan:
             print(f"== {name}: every task reused", file=sys.stderr)
+            continue
+        print(f"== {name}", file=sys.stderr)
+        if config["harness"] == API:
+            run_api_job(config, run_dir / "tasks", [t for _, job_tasks, _ in plan for t in job_tasks], attempts,
+                        run_dir / "jobs" / name / API, args.concurrency)
             continue
         env = dict(os.environ, PYTHONPATH=str(HERE))
         env.update({k: os.path.expandvars(v) for k, v in config.get("env", {}).items()})
-        wait_for_docker()
-        print(f"== {name}", file=sys.stderr)
         with open(run_dir / f"harbor-{name}.log", "w") as log:
-            subprocess.run(harbor_command(config, run_dir / "tasks", run_dir / "jobs", name,
-                                          attempts, args.concurrency, skip),
-                           env=env, stdout=log, stderr=subprocess.STDOUT, check=False)
+            for job, job_tasks, system_prompt in plan:
+                wait_for_docker()
+                subprocess.run(harbor_command(config, run_dir / "tasks", run_dir / "jobs" / name, job, attempts,
+                                              args.concurrency, include=job_tasks, system_prompt=system_prompt),
+                               env=env, stdout=log, stderr=subprocess.STDOUT, check=False)
     grade(run_dir, args.judge or SETTINGS["judges"])
     print(report(run_dir))
 
@@ -348,7 +410,7 @@ def grade_trial(trial: Path, config_name: str, config: dict, artifact: dict, cas
                    harness_lists_skill=None if listed is None else skill in listed)
         marker = skill
     else:
-        # The harness puts an instruction file in context itself, so no transcript shows a load.
+        # An instruction file or prompt reaches the model without a tool call, so no transcript shows a load.
         row.update(skill_loaded=None, delivered=variant != "without")
         marker = probe_text
     if spec.get("probe"):
@@ -376,13 +438,13 @@ def grade(run_dir: Path, judges: list[str], graders_from_repo: bool = False) -> 
         for config_name, config in meta["configs"].items():
             sources = {Path(src).name: src for srcs in meta.get("reused", {}).get(config_name, {}).values()
                        for src in srcs}
-            trials = [t for job in (run_dir / "jobs" / config_name, run_dir / "reused" / config_name)
-                      if job.is_dir() for t in sorted(job.iterdir()) if (t / "config.json").is_file()]
+            trials = trial_dirs(run_dir / "jobs" / config_name) + trial_dirs(run_dir / "reused" / config_name)
             graded = []
             for trial in trials:
                 graded.append(grade_trial(trial, config_name, config, artifact, cases_root, judges, specs_root,
                                           meta.get("probe_text")))
-                if trial.parent.parent.name == "reused":
+                graded[-1]["trial_path"] = trial.relative_to(run_dir).as_posix()
+                if trial.relative_to(run_dir).parts[0] == "reused":
                     graded[-1]["reused_from"] = sources.get(trial.name)
                 out.write(json.dumps(graded[-1]) + "\n")
                 out.flush()
@@ -441,7 +503,7 @@ def report(run_dir: Path) -> str:
         if ok and "probe_sees_artifact" in ok[0]:
             probe = f" | visible {sum(1 for t in ok if t['probe_sees_artifact'])}/{len(ok)}"
         if ok and "delivered" in ok[0]:
-            load = " | instruction file " + ("delivered" if ok[0]["delivered"] else "absent")
+            load = " | artifact " + ("delivered" if ok[0]["delivered"] else "absent")
         else:
             expected = ok[0]["skill_loaded_expected"] if ok else None
             load = (f" | skill loaded {loaded}/{len(ok)} (expected {expected})"
@@ -496,7 +558,8 @@ def main() -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run")
     run.add_argument("suite", help="folder name under evals/")
-    run.add_argument("--config", action="append", help=f"from configs.json; default {DEFAULT_CONFIGS}")
+    run.add_argument("--config", action="append",
+                     help=f"from configs.json; default {DEFAULT_CONFIGS}, or {DEFAULT_API_CONFIGS} for an api prompt")
     run.add_argument("--case", action="append", help="case folder name; default all")
     run.add_argument("--variants", type=lambda s: s.split(","), default=["with", "without"])
     run.add_argument("--attempts", type=int, help="runs per task; default 1, or 3 with --minus")
