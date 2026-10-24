@@ -342,7 +342,8 @@
         "prune-unexplained-safeguard/keeps-migrations-rule",
         "prune-unexplained-safeguard/keeps-push-rule",
         "prune-unexplained-safeguard/keeps-root-install-rule",
-        "prune-unexplained-safeguard/safeguards-meaning"
+        "prune-unexplained-safeguard/safeguards-meaning",
+        "review-only/keeps-safeguards"
       ]
     },
     "user-preference-stays": {
@@ -369,7 +370,7 @@
     },
     "wording-edit-lists-suggested-removals": {
       "file": "SKILL.md",
-      "text": "In a wording edit, keep every requirement, including sentences that seem to match the agent's default, and list those as suggested removals; report pure emphasis that the polish cuts as a removal.",
+      "text": "In a wording edit, list sentences that seem to match the agent's default as suggested removals instead of cutting them, and report pure emphasis that the polish cuts as a removal.",
       "graders": [
         "claude-md-wording-edit/keeps-markdown-rule",
         "claude-md-wording-edit/report",

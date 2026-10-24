@@ -1,6 +1,6 @@
 ---
 name: write-agent-instructions
-description: Creates, edits, reviews, evaluates, and prunes instructions written for agents. Use before writing, changing, or reviewing any skill, slash command, AGENTS.md, CLAUDE.md, or similar agent instruction file; when packaging repeated instructions behind a name; and for explicit requests to write, revise, review, or evaluate a system prompt, developer prompt, or other instructions for a model or agent. Not for ordinary conversation or human-facing prose.
+description: "Writes, edits, reviews, evaluates, and prunes agent instructions: skills (SKILL.md), slash commands, AGENTS.md, CLAUDE.md, and system or developer prompts. Use for any change to one of these, however small, including wording-only polishing or shortening and adding one rule to AGENTS.md; for any request to review, critique, evaluate, or improve one, including requests for advice only; and when packaging repeated instructions behind a name. Not for ordinary conversation or human-facing prose."
 ---
 
 # Write agent instructions
@@ -64,7 +64,7 @@ Load a reference at the step named here when its condition holds, or where anoth
 5. Prune, then polish.
    - When creating an artifact or making a structural revision, remove within the requested scope the requirements and sub-steps the agent can reliably infer from the outcome, whole sentences that change no behavior relative to the executing agent's default, and material that no longer bears on the task.
    - Preserve explicit user preferences, necessary ordering, consumer-required formats, and safeguards against specific likely or costly failures. An explicit user preference stays even when it matches the default; list it as a suggested removal. Keep a safeguard only when you can name the failure and why the executing agent's default would miss it. Keep each retained requirement's meaning exactly; report an ambiguity you notice instead of resolving it in the artifact.
-   - In a wording edit, keep every requirement, including sentences that seem to match the agent's default, and list those as suggested removals; report pure emphasis that the polish cuts as a removal.
+   - In a wording edit, list sentences that seem to match the agent's default as suggested removals instead of cutting them, and report pure emphasis that the polish cuts as a removal.
    - Name the action, not the steps the agent takes on its own: "apply `references/x.md`", not "read and apply `references/x.md`". State each rule once, where it applies; merge duplicates, including gotchas that merely negate a workflow rule.
    - Load `refine-it`, then `shorten-it`, and run each over the whole of every instruction artifact created or structurally revised, and over the changed text of other edits, or the whole artifact when the request is artifact-wide. Polish text the user supplied as well, unless they asked for it verbatim.
    - Compare the polished text with the post-pruning draft. Restore any change the polish introduced to triggers, requirements, permissions, workflow order, or other operational meaning. Leave wording unchanged where neither pass improves it.
