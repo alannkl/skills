@@ -44,6 +44,16 @@ from tasks import PROBE_CASE, build_tasks, load_spec, task_digest  # noqa: E402
 
 SETTINGS = json.loads((HERE / "configs.json").read_text())
 DEFAULT_CONFIGS = ["claude-haiku", "codex-luna", "openclaw-deepseek-high"]
+# Each harness ships skills of its own, such as Claude Code's code-review and the
+# skill-creator in Codex and OpenClaw. They compete with the skill under test and
+# can share its name, so they are off unless a configuration sets builtin_skills;
+# OpenClaw's switch lives in openclaw_model_config.
+BLOCK_BUILTIN_SKILLS = {
+    # doctor and plugin-authoring survive the bundled switch, so they are turned off by name.
+    "claude-code": ["--ae", "CLAUDE_CODE_DISABLE_BUNDLED_SKILLS=1",
+                    "--ak", 'config={"skillOverrides": {"doctor": "off", "plugin-authoring": "off"}}'],
+    "codex": ["--ak", 'config={"skills": {"bundled": {"enabled": false}}}'],
+}
 # Names the installed copy by path: a harness may ship a built-in skill with the same name.
 USE_SKILL = "Use the skill at /skills/{skill}/SKILL.md for this task.\n\n"
 HARBOR_AGENT = {"claude-code": "claude-code", "codex": "codex", "openclaw": "harbor_agents:PreinstalledOpenClaw"}
@@ -109,7 +119,13 @@ def openclaw_model_config(config: dict) -> str:
         native = {"models": [entry]}
     else:
         native = {"api": "anthropic-messages", "models": [entry]}
-    return json.dumps({"models": {"providers": {provider: native}}})
+    overlay = {"models": {"providers": {provider: native}}}
+    if not config.get("builtin_skills"):
+        # An empty allowlist means every bundled skill, so name one that does not exist.
+        # The two plugin skills are not bundled and need their own switch.
+        overlay["skills"] = {"allowBundled": ["none"],
+                             "entries": {name: {"enabled": False} for name in ("browser-automation", "canvas")}}
+    return json.dumps(overlay)
 
 
 def agent_args(config: dict) -> list[str]:
@@ -123,6 +139,8 @@ def agent_args(config: dict) -> list[str]:
         args += ["--ak", f"reasoning_effort={config['effort']}"]
     if harness == "openclaw":
         args += ["--ak", f"openclaw_config={openclaw_model_config(config)}"]
+    elif not config.get("builtin_skills"):
+        args += BLOCK_BUILTIN_SKILLS[harness]
     return args
 
 

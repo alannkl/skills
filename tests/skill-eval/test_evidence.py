@@ -142,6 +142,16 @@ class Extractors(unittest.TestCase):
         self.assertTrue(e["complete"])
         self.assertEqual(e["thinking"], "high")
 
+    def test_openclaw_log_line_spliced_mid_line_is_skipped(self):
+        agent = self.copy("openclaw")
+        path = agent / "openclaw.txt"
+        text = path.read_text()
+        cut = text.index('"', text.index("\n{") + 10)
+        path.write_text(text[:cut] + "[agents/agent-command] [agent] run x ended with stopReason=stop\n" + text[cut:])
+        e = openclaw(agent)
+        self.assertTrue(e["complete"])
+        self.assertEqual(e["thinking"], "high")
+
     def test_openclaw_export_without_its_end_event_is_unknown(self):
         agent = self.copy("openclaw")
         self.rewrite_lines(agent / "openclaw-trajectory" / "events.jsonl",

@@ -170,9 +170,12 @@ def codex(agent_dir: Path) -> dict:
 
 
 # Harbor captures OpenClaw's stderr into the same file, so a log line such as
-# "[agents/agent-command] run ... ended" can land inside the JSON envelope. JSON
-# strings cannot span lines, so a whole line of this shape is never envelope text.
+# "[agents/agent-command] run ... ended" can land inside the JSON envelope, on a
+# line of its own or mid-line at a pipe-buffer boundary. JSON strings cannot span
+# lines, so a whole line of this shape is never envelope text; the mid-line form
+# is tried last, and only a parse that yields the envelope is accepted.
 _OPENCLAW_LOG_LINE = re.compile(r"^\s*\[[A-Za-z][\w/.:-]*\] .*\n", re.M)
+_OPENCLAW_LOG_SPLICE = re.compile(r"\[[a-z][\w/.:-]*\] \[[\w-]+\] [^\n]*\n")
 
 
 def _openclaw_envelope(agent_dir: Path) -> dict | None:
@@ -180,7 +183,8 @@ def _openclaw_envelope(agent_dir: Path) -> dict | None:
     if not path.is_file():
         return None
     text = path.read_text(errors="replace")
-    for candidate in (text, _OPENCLAW_LOG_LINE.sub("", text)):
+    unlined = _OPENCLAW_LOG_LINE.sub("", text)
+    for candidate in (text, unlined, _OPENCLAW_LOG_SPLICE.sub("", unlined)):
         decoder = json.JSONDecoder(strict=False)
         start = candidate.find("\n{")
         while start != -1:
