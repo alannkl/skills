@@ -35,7 +35,7 @@ Before writing a description, list the prompts, contexts, and files that should 
 description: [What the skill enables]. [Conditions that invoke it: specific user intents, keywords, contexts, or file types].
 ```
 
-State what the skill does in the first sentence, front-loading the vocabulary the user actually types. In the second, state its invocation conditions, one trigger per distinct branch. Collapse synonyms for the same branch and omit details already covered by the first sentence. Write for model invocation; users can invoke any skill by name. Add an exclusion only for a real near-miss the triggers would otherwise catch. For workflows that publish, send, or change external state, include check, review, or readiness requests as triggers only when the body provides a read-only outcome for them.
+State what the skill does in the first sentence, front-loading the vocabulary the user actually types. In the second, state its invocation conditions, one trigger per distinct branch. Collapse synonyms for the same branch and omit details already covered by the first sentence. Write for model invocation; users can invoke any skill by name. Add an exclusion only for a real near-miss the triggers would otherwise catch. For workflows that publish, send, or change external state, a check, review, or readiness trigger needs a body branch that stops before that action; add the branch or leave the trigger out.
 
 Prefer:
 

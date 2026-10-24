@@ -364,17 +364,30 @@
       "graders": [
         "design-doc-to-skill/report",
         "trim-duplicates-keep-qualifiers/keeps-exception",
-        "trim-duplicates-keep-qualifiers/keeps-near-duplicate",
+        "trim-duplicates-keep-qualifiers/keeps-near-duplicate"
+      ]
+    },
+    "covered-elsewhere-check-exceptions": {
+      "file": "SKILL.md",
+      "text": "Before removing a rule because another source covers it, confirm the source applies everywhere the rule does, including tasks an exception or load condition excludes from it; otherwise keep the rule for the uncovered cases or ask; don't widen where the other source applies to make it cover them.",
+      "graders": [
         "trim-duplicates-keep-qualifiers/report"
       ]
     },
     "wording-edit-lists-suggested-removals": {
       "file": "SKILL.md",
-      "text": "In a wording edit, list sentences that seem to match the agent's default as suggested removals instead of cutting them, and report pure emphasis that the polish cuts as a removal.",
+      "text": "Check each one against the executing agent's default and list matches as suggested removals.",
       "graders": [
         "claude-md-wording-edit/keeps-markdown-rule",
         "claude-md-wording-edit/report",
         "claude-md-wording-edit/suggests-markdown-removal"
+      ]
+    },
+    "wording-edit-reports-cut-emphasis": {
+      "file": "SKILL.md",
+      "text": "In a wording edit, report pure emphasis that the polish cuts as a removal.",
+      "graders": [
+        "title-then-link-pointer/skip-line-kept-or-reported"
       ]
     },
     "name-the-action": {
@@ -462,13 +475,14 @@
     },
     "report-what-changed": {
       "file": "SKILL.md",
-      "text": "Report what changed, each intentionally removed requirement separately from wording changes, the checks performed, and material limits.",
+      "text": "Report what changed, each intentionally removed requirement separately from wording changes, suggested removals, the checks performed, and material limits.",
       "graders": [
         "claude-md-wording-edit/report",
         "prune-release-notes/report",
         "prune-unexplained-safeguard/report",
         "agents-md-billing-split/report",
-        "create-skill-from-doc/reference-created"
+        "create-skill-from-doc/reference-created",
+        "claude-md-wording-edit/suggests-markdown-removal"
       ]
     },
     "shortcut-user-invoked": {
@@ -513,7 +527,7 @@
     },
     "readiness-triggers-need-read-only": {
       "file": "references/skill-mechanics.md",
-      "text": "For workflows that publish, send, or change external state, include check, review, or readiness requests as triggers only when the body provides a read-only outcome for them.",
+      "text": "For workflows that publish, send, or change external state, a check, review, or readiness trigger needs a body branch that stops before that action; add the branch or leave the trigger out.",
       "graders": [
         "design-doc-to-skill/keeps-instructions"
       ]
