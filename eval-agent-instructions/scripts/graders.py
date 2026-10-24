@@ -10,6 +10,7 @@ import contextlib
 import hashlib
 import json
 import os
+import random
 import re
 import shutil
 import subprocess
@@ -17,6 +18,7 @@ import tempfile
 import time
 import urllib.error
 import urllib.request
+from collections import defaultdict
 from pathlib import Path
 
 # Files a harness writes into the workspace on its own. They are ignored unless the
@@ -108,6 +110,7 @@ def no_writes(spec, workspace, initial, harness, run, judges):
 
 
 def llm(spec, workspace, initial, harness, run, judges):
+    """Hold the output for a batched judge call; `judge_pending` fills in the verdict."""
     if spec.get("path"):
         original = _file_text(initial, spec["path"]) or "(absent)"
         subject = _file_text(workspace, spec["path"]) or "(file missing)"
@@ -116,9 +119,8 @@ def llm(spec, workspace, initial, harness, run, judges):
         return _UNDECIDED_NO_TRANSCRIPT
     else:
         original, subject, label = "(not applicable)", run["final_message"], "final message"
-    verdicts = {model: judge(model, spec["criteria"], original, subject, label) for model in judges}
-    primary = verdicts[judges[0]]
-    return {"pass": primary["pass"], "detail": primary["reason"], "judges": verdicts}
+    return {"pass": None, "detail": "not judged",
+            "pending": {"criteria": spec["criteria"], "original": original, "subject": subject, "label": label}}
 
 
 def json_output(spec, workspace, initial, harness, run, judges):
@@ -145,13 +147,55 @@ def run_graders(specs: list[dict], variant: str, workspace: Path, initial: Path,
             for s in specs if variant in s.get("variants", (variant,))}
 
 
-def judge(model: str, criteria: str, original: str, subject: str, label: str) -> dict:
-    """Ask one judge model through the proxy at $ANTHROPIC_BASE_URL whether `subject` meets `criteria`."""
+def judge_pending(rows: list[dict], judges: list[str]) -> None:
+    """Judge every pending `llm` grade in `rows`, in place.
+
+    Outputs that share a criterion and original go to each judge in one call, shuffled
+    and unlabelled so the judge cannot tell which arm or setup produced them. A group
+    over BATCH_CHARS splits across calls.
+    """
+    groups = defaultdict(list)
+    for row in rows:
+        for result in row.get("graders", {}).values():
+            if "pending" in result:
+                p = result["pending"]
+                groups[(p["criteria"], p["original"], p["label"])].append(result)
+    for (criteria, original, label), results in groups.items():
+        random.shuffle(results)
+        for batch in _batches(results):
+            subjects = [r.pop("pending")["subject"] for r in batch]
+            verdicts = {m: judge(m, criteria, original, subjects, label) for m in judges}
+            for i, result in enumerate(batch):
+                per_judge = {m: v[i] for m, v in verdicts.items()}
+                primary = per_judge[judges[0]]
+                result.update({"pass": primary["pass"], "detail": primary["reason"], "judges": per_judge})
+
+
+# Characters of agent output per judge call; a larger group splits.
+BATCH_CHARS = 120_000
+
+
+def _batches(results: list[dict]) -> list[list[dict]]:
+    batches, size = [[]], 0
+    for result in results:
+        n = len(result["pending"]["subject"])
+        if batches[-1] and size + n > BATCH_CHARS:
+            batches.append([])
+            size = 0
+        batches[-1].append(result)
+        size += n
+    return batches
+
+
+def judge(model: str, criteria: str, original: str, subjects: list[str], label: str) -> list[dict]:
+    """Ask one judge model through the proxy at $ANTHROPIC_BASE_URL whether each of `subjects` meets `criteria`."""
+    outputs = "\n\n".join(f"Output {i}, the agent's resulting {label}:\n<<<\n{s}\n>>>"
+                           for i, s in enumerate(subjects, 1))
     prompt = (
-        "You grade one output of an AI agent against a criterion. Reply with JSON only: "
-        '{"pass": true|false, "reason": "<one sentence>"}.\n\n'
-        f"Criterion:\n{criteria}\n\nOriginal {label}:\n<<<\n{original}\n>>>\n\n"
-        f"Agent's resulting {label}:\n<<<\n{subject}\n>>>"
+        f"You grade {len(subjects)} outputs of AI agents against one criterion. Each output comes from a separate, "
+        "independent run on the same task; judge each on its own, never by comparison with the others. Reply with "
+        'JSON only, one object per output: [{"id": 1, "pass": true|false, "reason": "<one sentence>"}, ...].\n\n'
+        f"Criterion:\n{criteria}\n\nOriginal {label}:\n<<<\n{original}\n>>>\n\n{outputs}"
     )
     base = os.environ["ANTHROPIC_BASE_URL"].rstrip("/")
     if model.startswith("gpt-"):
@@ -159,30 +203,36 @@ def judge(model: str, criteria: str, original: str, subject: str, label: str) ->
         body = {"model": model, "input": prompt, "reasoning": {"effort": "high"}}
     else:
         url = f"{base}/v1/messages"
-        body = {"model": model, "max_tokens": 4000, "output_config": {"effort": "high"},
+        body = {"model": model, "max_tokens": 32000, "output_config": {"effort": "high"},
                 "messages": [{"role": "user", "content": prompt}]}
     try:
         data = _post(url, body)
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-        return {"pass": None, "reason": f"judge call failed: {exc}", "model": model}
+        return [{"pass": None, "reason": f"judge call failed: {exc}", "model": model}] * len(subjects)
     if model.startswith("gpt-"):
         text = "".join(c.get("text", "") for o in data.get("output", []) if o.get("type") == "message"
                        for c in o.get("content", []))
     else:
         text = "".join(c.get("text", "") for c in data.get("content", []) if c.get("type") == "text")
-    return parse_verdict(text) | {"model": data.get("model")}
+    return [v | {"model": data.get("model")} for v in parse_verdicts(text, len(subjects))]
 
 
-def parse_verdict(text: str) -> dict:
-    """A verdict needs a JSON boolean "pass"; anything else is undecided, never a pass or fail."""
-    match = re.search(r"\{.*\}", text, re.S)
+def parse_verdicts(text: str, count: int) -> list[dict]:
+    """One verdict per output; a verdict needs a JSON boolean "pass", and anything else is undecided, never a pass or fail."""
+    match = re.search(r"\[.*\]", text, re.S)
     try:
-        verdict = json.loads(match.group(0)) if match else None
+        reply = json.loads(match.group(0)) if match else None
     except json.JSONDecodeError:
-        verdict = None
-    if not isinstance(verdict, dict) or not isinstance(verdict.get("pass"), bool):
-        return {"pass": None, "reason": f"malformed judge reply: {text[:200]}"}
-    return {"pass": verdict["pass"], "reason": str(verdict.get("reason", ""))}
+        reply = None
+    by_id = {v.get("id"): v for v in reply if isinstance(v, dict)} if isinstance(reply, list) else {}
+    verdicts = []
+    for i in range(1, count + 1):
+        v = by_id.get(i)
+        if not isinstance(v, dict) or not isinstance(v.get("pass"), bool):
+            verdicts.append({"pass": None, "reason": f"malformed or missing verdict for output {i}: {text[:200]}"})
+        else:
+            verdicts.append({"pass": v["pass"], "reason": str(v.get("reason", ""))})
+    return verdicts
 
 
 def _post(url: str, body: dict, attempts: int = 2) -> dict:
@@ -192,7 +242,7 @@ def _post(url: str, body: dict, attempts: int = 2) -> dict:
         "content-type": "application/json", "anthropic-version": "2023-06-01"})
     for attempt in range(attempts):
         try:
-            with urllib.request.urlopen(request, timeout=300) as response:
+            with urllib.request.urlopen(request, timeout=900) as response:
                 return json.load(response)
         except urllib.error.HTTPError as exc:
             retryable = exc.code == 429 or exc.code >= 500

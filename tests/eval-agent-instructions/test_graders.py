@@ -63,20 +63,25 @@ class Graders(unittest.TestCase):
         self.assertIn("g", self.grade(spec, variant="with"))
         self.assertNotIn("g", self.grade(spec, variant="without"))
 
-    def test_llm_passes_original_and_result_to_each_judge(self):
+    def test_llm_outputs_with_one_criterion_go_to_each_judge_in_one_call(self):
         calls = []
 
-        def fake_judge(model, criteria, original, subject, label):
-            calls.append((model, original, subject, label))
-            return {"pass": model == "judge-a", "reason": model}
+        def fake_judge(model, criteria, original, subjects, label):
+            calls.append((model, original, sorted(subjects), label))
+            return [{"pass": model == "judge-a" and s.endswith("New rule.\n"), "reason": model} for s in subjects]
+        spec = [{"name": "g", "type": "llm", "path": "AGENTS.md", "criteria": "c"}]
+        rows = [{"graders": graders.run_graders(spec, "with", self.workspace, self.initial, "codex",
+                                                {"final_message": "", "writes": []}, ["judge-a", "judge-b"])}]
         (self.workspace / "AGENTS.md").write_text("- Use pnpm.\n- New rule.\n")
+        rows.append({"graders": graders.run_graders(spec, "with", self.workspace, self.initial, "codex",
+                                                    {"final_message": "", "writes": []}, ["judge-a", "judge-b"])})
         with mock.patch.object(graders, "judge", fake_judge):
-            result = graders.run_graders([{"name": "g", "type": "llm", "path": "AGENTS.md", "criteria": "c"}],
-                                         "with", self.workspace, self.initial, "codex",
-                                         {"final_message": "", "writes": []}, ["judge-a", "judge-b"])
-        self.assertTrue(result["g"]["pass"])
-        self.assertEqual(set(result["g"]["judges"]), {"judge-a", "judge-b"})
-        self.assertEqual(calls[0][1:], ("- Use pnpm.\n", "- Use pnpm.\n- New rule.\n", "AGENTS.md"))
+            graders.judge_pending(rows, ["judge-a", "judge-b"])
+        self.assertEqual([c[0] for c in calls], ["judge-a", "judge-b"])
+        self.assertEqual(calls[0][1:], ("- Use pnpm.\n", ["- Use pnpm.\n", "- Use pnpm.\n- New rule.\n"], "AGENTS.md"))
+        self.assertEqual([r["graders"]["g"]["pass"] for r in rows], [False, True])
+        self.assertEqual(set(rows[1]["graders"]["g"]["judges"]), {"judge-a", "judge-b"})
+        self.assertNotIn("pending", rows[1]["graders"]["g"])
 
     def test_final_message_graders_are_undecided_without_a_complete_transcript(self):
         self.assertIsNone(self.grade({"type": "regex", "pattern": "x"}, message=None)["g"]["pass"])
@@ -91,16 +96,21 @@ class Graders(unittest.TestCase):
                                    writes=["/app/MEMORY.md", "/tmp/scratch.txt"])["g"]["pass"])
         self.assertFalse(self.grade({"type": "no_writes"}, writes=["docs/guide.md"])["g"]["pass"])
 
-    def test_judge_verdict_must_be_a_boolean(self):
-        self.assertTrue(graders.parse_verdict('{"pass": true, "reason": "ok"}')["pass"])
-        self.assertFalse(graders.parse_verdict('Sure: {"pass": false, "reason": "no"}')["pass"])
-        for reply in ('{"pass": "false"}', '{"pass": null}', '{"reason": "x"}', "{not json}", "no json"):
-            self.assertIsNone(graders.parse_verdict(reply)["pass"], reply)
+    def test_each_judge_verdict_must_be_a_boolean(self):
+        verdicts = graders.parse_verdicts('Sure: [{"id": 2, "pass": false, "reason": "no"}, '
+                                          '{"id": 1, "pass": true}, {"id": 3, "pass": "true"}]', 4)
+        self.assertEqual([v["pass"] for v in verdicts], [True, False, None, None])
+        for reply in ('{"pass": true}', "[not json]", "no json"):
+            self.assertEqual([v["pass"] for v in graders.parse_verdicts(reply, 2)], [None, None], reply)
 
     def test_failed_judge_call_is_undecided(self):
         import urllib.error
         with mock.patch.object(graders, "_post", side_effect=urllib.error.URLError("down")):
-            self.assertIsNone(graders.judge("claude-x", "c", "o", "s", "f")["pass"])
+            self.assertEqual([v["pass"] for v in graders.judge("claude-x", "c", "o", ["s", "t"], "f")], [None, None])
+
+    def test_large_groups_split_across_calls(self):
+        results = [{"pending": {"subject": "x" * (graders.BATCH_CHARS // 2 + 1)}} for _ in range(3)]
+        self.assertEqual([len(b) for b in graders._batches(results)], [1, 1, 1])
 
     def test_initial_workspace_runs_scaffold_beside_its_fixture(self):
         case = Path(self._tmp.name) / "case"

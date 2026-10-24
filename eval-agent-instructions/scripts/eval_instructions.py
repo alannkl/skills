@@ -41,7 +41,7 @@ REPO = Path.cwd()
 sys.path.insert(0, str(HERE))
 
 from evidence import EXTRACTORS  # noqa: E402
-from graders import run_graders, temporary_initial_workspace  # noqa: E402
+from graders import judge_pending, run_graders, temporary_initial_workspace  # noqa: E402
 from rules import MINUS, arm, artifact_digest, check_rules, load_rules, minus_artifact, rule_cases, tabulate  # noqa: E402
 from tasks import PROBE_CASE, artifact_root, build_tasks, load_spec, load_suite, task_digest  # noqa: E402
 from api_runner import run_api_job  # noqa: E402
@@ -433,23 +433,22 @@ def grade(run_dir: Path, judges: list[str], graders_from_repo: bool = False) -> 
     suite = meta.get("suite") or meta["skill"]
     artifact = meta.get("artifact") or {"type": "skill", "name": meta["skill"]}
     specs_root = REPO / "evals" / suite if graders_from_repo else None
-    # Each row is written as soon as it is graded, so an interrupted grading keeps finished judge calls.
-    with open(run_dir / "grades.jsonl", "w") as out:
-        for config_name, config in meta["configs"].items():
-            sources = {Path(src).name: src for srcs in meta.get("reused", {}).get(config_name, {}).values()
-                       for src in srcs}
-            trials = trial_dirs(run_dir / "jobs" / config_name) + trial_dirs(run_dir / "reused" / config_name)
-            graded = []
-            for trial in trials:
-                graded.append(grade_trial(trial, config_name, config, artifact, cases_root, judges, specs_root,
-                                          meta.get("probe_text")))
-                graded[-1]["trial_path"] = trial.relative_to(run_dir).as_posix()
-                if trial.relative_to(run_dir).parts[0] == "reused":
-                    graded[-1]["reused_from"] = sources.get(trial.name)
-                out.write(json.dumps(graded[-1]) + "\n")
-                out.flush()
-            for row in missing_trials(meta, config_name, config, graded):
-                out.write(json.dumps(row) + "\n")
+    rows = []
+    for config_name, config in meta["configs"].items():
+        sources = {Path(src).name: src for srcs in meta.get("reused", {}).get(config_name, {}).values()
+                   for src in srcs}
+        trials = trial_dirs(run_dir / "jobs" / config_name) + trial_dirs(run_dir / "reused" / config_name)
+        graded = []
+        for trial in trials:
+            graded.append(grade_trial(trial, config_name, config, artifact, cases_root, judges, specs_root,
+                                      meta.get("probe_text")))
+            graded[-1]["trial_path"] = trial.relative_to(run_dir).as_posix()
+            if trial.relative_to(run_dir).parts[0] == "reused":
+                graded[-1]["reused_from"] = sources.get(trial.name)
+        rows += graded + missing_trials(meta, config_name, config, graded)
+    # Judge calls batch across every setup in the run.
+    judge_pending(rows, judges)
+    (run_dir / "grades.jsonl").write_text("".join(json.dumps(row) + "\n" for row in rows))
     (run_dir / "report.md").write_text(report(run_dir))
 
 
