@@ -11,10 +11,12 @@ Use the section that fits the request; this is not a suite to run in full. Pruni
 - Make each case discriminate: the previous version, or no instructions, should often fail it while the revised version passes, and it should offer a tempting wrong answer. Remove hints that give the answer away, add realistic noise such as unrelated real defects, and pair a case that should change behavior with one where the right result is restraint.
 - Choose cases from the behavior the change targets before seeing results, then run each against the baseline. A case the baseline passes reliably cannot show improvement and spends paid runs; keep it only as a labeled regression guard, and report guards alongside the rest. When no version passes, find the cause before changing the instructions: model capability, evidence the fixture does not supply, an ambiguous grader, or a tooling failure.
 - Run cases on the model that executes the instructions in practice. A weaker model is a cheap regression screen, but its failures on judgment-heavy behavior can reflect capability rather than the instructions. Repeat each version at least three times and treat the result as a first sample, not proof. Check that every run loaded only the copy under test; an installed or built-in skill with the same name can shadow it.
+- Report each model and harness pair separately; never pool runs across them. Count runs that never loaded the instructions apart from the rest, since they test triggering, not the text. Install the skills the instructions load in every version's runs, so versions differ only in the text under test.
 
 ## No-op disputes
 
-- When reviewers disagree about whether a sentence changes behavior, settle it by running the instructions with and without the sentence on the target executor, not by debate. Whether a sentence is a no-op depends on the executing model and harness.
+- When reviewers disagree about whether a sentence changes behavior, run the instructions with and without the sentence on the target executor instead of debating it. Whether a sentence is a no-op depends on the executing model and harness.
+- Runs estimate the effect under the tested conditions. A sentence that shows no difference is a removal candidate, not a proven no-op. Remove it only when it fails the test for keeping a safeguard in step 5 of `SKILL.md`, or when the instructions without it do as well as the full instructions on the cases that exercise it, over at least three runs per version on the weakest executor the instructions must support. Until then, keep it.
 - A word too weak to beat the default is a no-op too. Treat a stronger word as a hypothesis to test, not a fix.
 
 ## Read path and cost
