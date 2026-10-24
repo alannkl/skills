@@ -44,7 +44,8 @@ from tasks import PROBE_CASE, build_tasks, load_spec, task_digest  # noqa: E402
 
 SETTINGS = json.loads((HERE / "configs.json").read_text())
 DEFAULT_CONFIGS = ["claude-haiku", "codex-luna", "openclaw-deepseek-high"]
-USE_SKILL = "Use the {skill} skill for this task.\n\n"
+# Names the installed copy by path: a harness may ship a built-in skill with the same name.
+USE_SKILL = "Use the skill at /skills/{skill}/SKILL.md for this task.\n\n"
 HARBOR_AGENT = {"claude-code": "claude-code", "codex": "codex", "openclaw": "harbor_agents:PreinstalledOpenClaw"}
 
 

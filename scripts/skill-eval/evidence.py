@@ -24,11 +24,12 @@ import urllib.request
 from pathlib import Path
 
 # Where each harness's Harbor adapter installs the skills from the task's skills_dir,
-# with the agent running as root. OpenClaw's export redacts its state directory.
+# with the agent running as root, plus skills_dir itself, which a --minus prompt names.
+# OpenClaw's export redacts its state directory.
 INSTALLED_ROOTS = {
-    "claude-code": ("/logs/agent/sessions/skills/",),
-    "codex": ("/root/.agents/skills/",),
-    "openclaw": ("$OPENCLAW_STATE_DIR/skills/", "/root/.openclaw/skills/"),
+    "claude-code": ("/logs/agent/sessions/skills/", "/skills/"),
+    "codex": ("/root/.agents/skills/", "/skills/"),
+    "openclaw": ("$OPENCLAW_STATE_DIR/skills/", "/root/.openclaw/skills/", "/skills/"),
 }
 _SKILL_FILE = re.compile(r"[^\s'\"`]*/([A-Za-z0-9._-]+)/SKILL\.md")
 

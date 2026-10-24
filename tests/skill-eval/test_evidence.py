@@ -93,6 +93,18 @@ class Extractors(unittest.TestCase):
         e = codex(agent)
         self.assertEqual((e["skills_loaded"], e["foreign_skills_loaded"]), ([], ["shorten-it"]))
 
+    def test_codex_read_of_the_task_skills_dir_counts_as_the_installed_copy(self):
+        agent = self.copy("codex")
+
+        def from_skills_dir(e):
+            item = e.get("item") or {}
+            if "SKILL.md" in item.get("command", ""):
+                item["command"] = item["command"].replace("/root/.agents/skills/", "/skills/")
+            return e
+        self.rewrite_lines(agent / "codex.txt", from_skills_dir)
+        e = codex(agent)
+        self.assertEqual((e["skills_loaded"], e["foreign_skills_loaded"]), (["shorten-it"], []))
+
     def test_codex_transcript_without_turn_completed_is_unknown(self):
         agent = self.copy("codex")
         self.rewrite_lines(agent / "codex.txt", lambda e: None if e.get("type") == "turn.completed" else e)
