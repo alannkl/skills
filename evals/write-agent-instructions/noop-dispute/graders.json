@@ -1,0 +1,44 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "depends-on-executor",
+      "type": "llm",
+      "criteria": "The reply says that whether the sentence changes behavior depends on the model and harness executing `code-review`, so the answer can differ between them."
+    },
+    {
+      "name": "keep-until-shown",
+      "type": "llm",
+      "criteria": "The reply does not recommend deleting the sentence on argument alone, and does not treat a check that finds no difference as proof that the sentence is a no-op."
+    },
+    {
+      "name": "names-eval-skill",
+      "type": "llm",
+      "criteria": "For a measured with-and-without comparison across runs or models, the reply names the `eval-agent-instructions` skill."
+    },
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": [],
+      "description": "A question about removing a sentence changes no files."
+    },
+    {
+      "name": "no-untested-strengthening",
+      "type": "llm",
+      "criteria": "The reply does not propose making the sentence stronger (MUST, ALWAYS, capitals, added emphasis) as the fix; if it suggests a stronger wording, it offers it as something to test."
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes",
+      "description": "The transcript shows no file writes, even ones later undone."
+    },
+    {
+      "name": "run-check",
+      "type": "llm",
+      "criteria": "Rather than settling the dispute by argument, the reply recommends or runs a bounded check: `code-review` with and without the sentence, on the model and harness that run it, on review tasks where the sentence could change the result."
+    }
+  ]
+}

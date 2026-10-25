@@ -1,0 +1,181 @@
+# Skills
+
+Agent skills for repeatable workflows, project conventions, and domain-specific habits.
+
+Each skill lives in its own directory and follows the [agentskills.io specification](https://agentskills.io/specification). A skill starts with `SKILL.md`, which contains YAML frontmatter and Markdown instructions, and may include supporting `references/`, `scripts/`, or `assets/`.
+
+## Available skills
+
+### Foundation
+
+Loaded before the work starts rather than for a task. Wire both into your instruction file; see [Using it yourself](#using-it-yourself).
+
+| Skill                                             | Description                                                                                                                                                                                                                                    |
+| ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`constitution`](constitution/SKILL.md)           | The Collaboration Constitution as an installable skill: universal rules for how the agent leads the collaboration. Mirrors [`AGENTS.md`](AGENTS.md); always loaded.                                                                            |
+| [`coding-discipline`](coding-discipline/SKILL.md) | Apply disciplined engineering habits for simple, scoped, maintainable, well-structured agent-written code. Based on [karpathy-guidelines](https://github.com/multica-ai/andrej-karpathy-skills/blob/main/skills/karpathy-guidelines/SKILL.md). |
+
+### Agent workflow
+
+| Skill                                               | Description                                                                                                                                                                                                                 |
+| --------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`create-agent-skill`](create-agent-skill/SKILL.md) | Create agent skills from reusable workflows, domain expertise, or project conventions. Aligned with [`writing-for-agents`](https://github.com/mattpocock/skills/blob/main/skills/productivity/writing-for-agents/SKILL.md). |
+| [`spawn-agent`](spawn-agent/SKILL.md)               | Spawn a headless coding-agent CLI run (`agy -p`, `claude -p`, `agent -p`, or `codex exec`) for one scoped subtask, with a shared workflow and one reference per supported harness.                                          |
+| [`delegate`](delegate/SKILL.md)                     | Delegate bounded steps when cheaper than doing them inline. Weigh the cost, choose a collector, runner, or digester, write the work order, and check the returned record.                                                   |
+| [`panel`](panel/SKILL.md)                           | Keep N agents across different harnesses in the current chat, resume their discussion on follow-ups, and verify each combined result; or pair the host with one read-only consultant for second opinions. User-invoked.     |
+| [`handoff`](handoff/SKILL.md)                       | Create a compact temporary handoff so another agent can continue the current conversation.                                                                                                                                  |
+
+### Coding
+
+| Skill                                       | Description                                                                                                                                                                                                            |
+| ------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`simplify-code`](simplify-code/SKILL.md)   | Simplify source code for clarity and maintainability while preserving behavior. Based on [`code-simplifier`](https://github.com/anthropics/claude-code/blob/main/plugins/pr-review-toolkit/agents/code-simplifier.md). |
+| [`document-code`](document-code/SKILL.md)   | Improve source-code understanding by adding only useful comments, docstrings, or focused docs without changing behavior.                                                                                               |
+| [`explain-code`](explain-code/SKILL.md)     | Explain a completed change, a module, or the whole codebase, with an optional quiz to surface understanding gaps and an optional interactive micro-world for complex logic.                                            |
+| [`commit-message`](commit-message/SKILL.md) | Draft accurate Conventional Commit messages from real git changes.                                                                                                                                                     |
+
+### Reviewing
+
+| Skill                                               | Description                                                                                                                                                                                                                                                                   |
+| --------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`code-review`](code-review/SKILL.md)               | Produce findings-led code review reports for concrete code changes.                                                                                                                                                                                                           |
+| [`adversarial-review`](adversarial-review/SKILL.md) | Hunt material failures in a diff, branch, or files. Return structured findings with failure scenarios, but never apply fixes.                                                                                                                                                 |
+| [`review-triage`](review-triage/SKILL.md)           | Triage review findings as the code's owner. Validate each, weigh fix cost against deployed complexity, and return dispositions instead of fixing everything.                                                                                                                  |
+| [`review-panel`](review-panel/SKILL.md)             | Run a parallel panel of reviewer models, then merge and triage findings. Fixes are user-gated by default; `/review-panel auto-fix` approves them upfront. Spawns several agent sessions (cost scales with preset); strongest with multiple harnesses installed. User-invoked. |
+
+### Planning
+
+| Skill                                     | Description                                                                                                                                                                                                                                                                                         |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| [`brainstorm`](brainstorm/SKILL.md)       | Host a structured brainstorming session as both facilitator and participant, from problem framing through divergent ideation to an actionable shortlist.                                                                                                                                            |
+| [`grill-to-plan`](grill-to-plan/SKILL.md) | Turn vague ideas and plans into clear decisions through scoped questioning. Based on [`grill-me`](https://github.com/mattpocock/skills/blob/main/skills/productivity/grill-me/SKILL.md) and [`grill-with-docs`](https://github.com/mattpocock/skills/tree/main/skills/engineering/grill-with-docs). |
+
+### Writing
+
+| Skill                               | Description                                                                           |
+| ----------------------------------- | ------------------------------------------------------------------------------------- |
+| [`refine-it`](refine-it/SKILL.md)   | Refine written artifacts for clarity and readiness while preserving intent and scope. |
+| [`shorten-it`](shorten-it/SKILL.md) | Shorten text while preserving meaning, tone, and important details.                   |
+
+Four skills are user-invoked (`disable-model-invocation: true`): they load only when you type `/<name>`, and cost no always-loaded context. Fifteen are model-invoked so agents reach them on their own when the ask arrives in natural language: `coding-discipline` (auto-loads before code work), `constitution` (loads when an instruction file asks for it), `code-review`, `adversarial-review`, `review-triage`, `commit-message`, `simplify-code`, `document-code`, `explain-code`, `create-agent-skill`, `spawn-agent`, `delegate`, `refine-it`, `shorten-it`, and `handoff`.
+
+## Installation
+
+This repo plus the two [recommended](#recommended-skills) skills, globally:
+
+```bash
+npx skills add alannkl/skills --all -g -y && npx skills add mattpocock/skills --skill writing-for-agents -g -y && npx skills add cursor/plugins --skill unslop -g -y
+```
+
+### Skills CLI
+
+List the skills in this repo:
+
+```bash
+npx skills add alannkl/skills --list
+```
+
+Install every skill from this repo globally:
+
+```bash
+npx skills add alannkl/skills --all -g -y
+```
+
+Omit `-g` for a project-local install. Use `--skill <name>` instead of `--all` to install a single skill.
+
+To remove a skill, use `npx skills remove --skill <name> -g -y` (omit `-g` for project-local). Run `npx skills remove -g` to pick skills interactively. `--all` removes every installed skill in that scope, not just this repo.
+
+### Manual
+
+Copy or symlink a skill directory into your agent's skills path:
+
+| Scope   | Universal (Cursor, Codex, Claude Code, and others) | Agent-specific (also supported)          |
+| ------- | -------------------------------------------------- | ---------------------------------------- |
+| Global  | `~/.agents/skills/`                                | `~/.cursor/skills/`, `~/.claude/skills/` |
+| Project | `.agents/skills/`                                  | `.cursor/skills/`, `.claude/skills/`     |
+
+If an agent does not read `~/.agents/skills/` directly, symlink from there:
+
+```bash
+ln -sfn ~/.agents/skills/commit-message ~/.cursor/skills/commit-message
+```
+
+To uninstall manually, delete the skill directory (and any symlinks) from the same paths.
+
+## Recommended skills
+
+External skills that pair well with this repo:
+
+- Install [`writing-for-agents`](https://github.com/mattpocock/skills/blob/main/skills/productivity/writing-for-agents/SKILL.md) for the full reference on writing skills, `AGENTS.md`, `CLAUDE.md`, and docs behind pointers. [`create-agent-skill`](create-agent-skill/SKILL.md) condenses its guidance.
+
+  ```bash
+  npx skills add mattpocock/skills --skill writing-for-agents -g -y
+  ```
+
+- Install [`unslop`](https://github.com/cursor/plugins/blob/main/pstack/skills/unslop/SKILL.md) to cut AI tells from any writing. [`refine-it`](refine-it/SKILL.md) and [`shorten-it`](shorten-it/SKILL.md) improve structure and length; `unslop` removes generated-sounding patterns. It is model-invoked, so agents load it on their own once installed.
+
+  ```bash
+  npx skills add cursor/plugins --skill unslop -g -y
+  ```
+
+## AGENTS.md
+
+Besides skills, this repo includes [`AGENTS.md`](AGENTS.md), the Collaboration Constitution. Its task-agnostic rules tell the agent how to lead the collaboration: surface assumptions, define done, hold scope, and push back on real issues. It is the agent-side counterpart to [Working with Agents](docs/working-with-agents.md). The file is active in this repo, with `CLAUDE.md` importing it via `@AGENTS.md`, so agents working here already follow it.
+
+### Using it yourself
+
+The constitution is meant to be always loaded. Install it as the [`constitution`](constitution/SKILL.md) skill, a copy of `AGENTS.md`. For coding projects, also install [`coding-discipline`](coding-discipline/SKILL.md):
+
+```bash
+npx skills add alannkl/skills --skill constitution -y
+npx skills add alannkl/skills --skill coding-discipline -y
+```
+
+Run these commands from your project directory. Add `-g` to install globally for use across projects.
+
+Add the following at the top of your project's `AGENTS.md`. Each skill has its own line so you can omit either one if you do not use it:
+
+```markdown
+Read and apply the `constitution` skill before starting work.
+Read and apply the `coding-discipline` skill before code work, except trivial formatting, pure prose edits, or explicitly throwaway prototypes.
+
+If a required skill is missing, say so and stop the affected work.
+Project-specific instructions below take precedence over the skills above.
+
+## Project-specific instructions
+
+<!-- build/test commands, conventions, domain context, gotchas -->
+```
+
+Your `AGENTS.md` stays yours: `npx skills update -p` (or `-g` for a global install) refreshes the constitution without touching it. An update follows the source's current revision; the skills lock file records a content hash, not a version, and pinning to a specific revision is unverified. For Claude Code, which reads `CLAUDE.md` rather than `AGENTS.md`, add a `CLAUDE.md` containing the single line `@AGENTS.md`; a plain file needs no symlink support, which some Windows setups and archive workflows lack.
+
+Copying all of [AGENTS.md](AGENTS.md) into an always-loaded instruction file still works, but every copy then has to be updated by hand.
+
+Add to the universal rules only when the addition pays off in every session. Anything more specific belongs in a skill, a doc, or the project section.
+
+Referencing the skill by name works for any install scope. If your agent does not resolve skills by name, link the installed `SKILL.md` path instead (e.g. `.agents/skills/coding-discipline/SKILL.md` for a project-local install).
+
+## Docs
+
+Background notes and research behind these skills:
+
+- [Philosophy](docs/philosophy.md): a standalone, slowly growing list of personal beliefs about engineering with AI.
+- [Working with Agents](docs/working-with-agents.md): human-facing principles for directing an agent to complete tasks, synthesized from Anthropic, OpenAI, Microsoft Research, Ethan Mollick, Simon Willison, and academic human-AI collaboration research. Its agent-side counterpart is the [Collaboration Constitution](#agentsmd) above.
+- [How an agent should communicate with its human](docs/agent-communication.md): the evidence base behind the Communicating section of AGENTS.md, from a survey of this repo's skills and related sources.
+- [Codebase Structure Principles](docs/codebase-structure.md): durable principles for organizing code around ownership, change patterns, dependency direction, and module boundaries.
+- [Behavior-First Testing for Agentic Coding](docs/behavior-first-testing-for-agentic-coding.md): a behavior-scaffold workflow that establishes intended behavior before the change's code or executable test mechanics can bias it.
+- [Cheap Code, Expensive Systems](docs/cheap-code-expensive-systems.md): a cost model for adversarial review and review triage, so findings that are valid but not worth fixing stay unfixed.
+
+## Repository layout
+
+```text
+<skill-name>/
+  SKILL.md
+  references/  # optional supporting docs
+  scripts/     # optional deterministic helpers
+  assets/      # optional templates, images, or static data
+```
+
+## License
+
+MIT. See [LICENSE](LICENSE).

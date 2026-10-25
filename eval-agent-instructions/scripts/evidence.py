@@ -5,7 +5,7 @@ commands with their output, and (Claude Code only) skill injections. From those,
 every extractor reports the same record: whether the transcript is complete,
 the models that answered, the final message, the skills the agent loaded from
 the installed copies, any same-named skills it loaded from elsewhere, the files
-it wrote, the skills the harness listed (None when it does not say), usage and cost.
+it wrote, its operations, the skills the harness listed (None when it does not say), usage and cost.
 
 A skill counts as loaded only when its instructions reached the agent: a read or
 command on a `<name>/SKILL.md` path whose output carries the `name:` frontmatter,
@@ -98,7 +98,9 @@ def summarize(harness: str, ops: list[dict], complete: bool, **fields) -> dict:
               "usage": None, "cost_usd": None, "cost_basis": None,
               "skills_loaded": sorted(loaded) if complete else None,
               "foreign_skills_loaded": sorted(foreign) if complete else None,
-              "writes": sorted({op["path"] for op in ops if op["kind"] == "write" and op["ok"]}) if complete else None}
+              "writes": sorted({op["path"] for op in ops if op["kind"] == "write" and op["ok"]}) if complete else None,
+              # Every operation with its output, for graders; the caller drops it before saving.
+              "ops": ops if complete else None}
     record.update(fields)
     return record
 

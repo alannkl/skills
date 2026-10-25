@@ -1,0 +1,40 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "keeps-steps",
+      "type": "llm",
+      "path": ".agents/skills/deploy/SKILL.md",
+      "criteria": "Judge the edited `.agents/skills/deploy/SKILL.md`. The six deploy steps keep their meaning: CI check, image build with the tag, deploy with production needing the user's go-ahead, rollout watch with the 5-minute timeout, smoke test that must exit 0, and the report."
+    },
+    {
+      "name": "names-the-action",
+      "type": "llm",
+      "path": ".agents/skills/deploy/SKILL.md",
+      "criteria": "Judge the edited `.agents/skills/deploy/SKILL.md`. The pointer names the action, such as \"follow `references/rollback.md`\" or \"apply ...\", rather than spelling out steps the agent takes on its own, such as \"open `references/rollback.md`, read it, and then follow it\"."
+    },
+    {
+      "name": "pointer-has-condition",
+      "type": "llm",
+      "path": ".agents/skills/deploy/SKILL.md",
+      "criteria": "Judge the edited `.agents/skills/deploy/SKILL.md`. The pointer to `references/rollback.md` now fires when it is needed: it sits where a failure shows up (the rollout, smoke-test or deploy step) or is otherwise tied to a condition the agent recognizes without opening the file, such as a rollout timeout, crash-looping pods or a failed smoke test, and it tells the agent to roll back instead of retrying. Pass also if the rollback procedure was inlined instead, as long as it is complete; fail if the pointer still has no recognizable condition."
+    },
+    {
+      "name": "reference-unchanged",
+      "type": "unchanged_except",
+      "allow": [
+        ".agents/skills/deploy/SKILL.md"
+      ],
+      "description": "The rollback reference and the rest of the repo stay as they are."
+    },
+    {
+      "name": "sharpened-not-inlined",
+      "type": "llm",
+      "path": ".agents/skills/deploy/SKILL.md",
+      "criteria": "Judge the edited `.agents/skills/deploy/SKILL.md`. The fix sharpens the pointer and its condition rather than copying the rollback procedure into SKILL.md: SKILL.md does not restate the rollback commands, log collection or migration warning from `references/rollback.md`. A one-line instruction to roll back rather than retry is fine."
+    }
+  ]
+}

@@ -1,0 +1,46 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "checkable-verify",
+      "type": "llm",
+      "path": ".agents/skills/add-migration/SKILL.md",
+      "criteria": "Judge the edited `.agents/skills/add-migration/SKILL.md`. The verify step now says what to check and what result counts as done, with concrete commands or observations: for example `pnpm db:status` shows the migration applied, the changed table has the new shape in `psql`, `pnpm db:rollback` then `pnpm db:migrate` succeed, and existing rows are still valid. \"Make sure everything looks good\" or similar is gone."
+    },
+    {
+      "name": "keeps-rest",
+      "type": "llm",
+      "path": ".agents/skills/add-migration/SKILL.md",
+      "criteria": "Judge the edited `.agents/skills/add-migration/SKILL.md`. Every other rule keeps its meaning and order: next numbered file with `-- up` and `-- down`, never editing an applied migration, nullable or defaulted new columns, `pnpm db:migrate`, updating `src/db/schema.ts` then `pnpm typecheck && pnpm test`, and committing the migration with the schema change."
+    },
+    {
+      "name": "no-context-split",
+      "type": "llm",
+      "path": ".agents/skills/add-migration/SKILL.md",
+      "with_final_message": true,
+      "criteria": "The fix sharpens the verify step in place. Fail if it moves verification into a separate subagent or new session, or adds such a split, without first giving the step a concrete done-condition."
+    },
+    {
+      "name": "not-emphasis-only",
+      "type": "llm",
+      "path": ".agents/skills/add-migration/SKILL.md",
+      "criteria": "Compare the original and edited `.agents/skills/add-migration/SKILL.md`. The fix changes what the verify step requires; it does not rely on emphasis alone, such as capitals, \"MUST\", \"never skip\" or \"IMPORTANT\", to stop the agent skipping it."
+    },
+    {
+      "name": "others-unchanged",
+      "type": "unchanged_except",
+      "allow": [
+        ".agents/skills/add-migration/SKILL.md"
+      ],
+      "description": "Only the add-migration skill changes."
+    },
+    {
+      "name": "suggests-check",
+      "type": "llm",
+      "criteria": "Pass if the final message suggests a concrete way to check the fix works, such as running the skill on a new migration and seeing the verify step run its commands, without reporting that it ran agent sessions or evaluations itself."
+    }
+  ]
+}

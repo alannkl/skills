@@ -569,6 +569,7 @@ def grade_trial(trial: Path, config_name: str, config: dict, artifact: dict, cas
         row.update(status="infra_error", error=evidence["terminal_error"])
         return row
     final_message = evidence.pop("final_message") if evidence["complete"] else None
+    ops = evidence.pop("ops", None)
     row.update(status="ok", final_message=final_message, evidence=evidence)
     if artifact["type"] == "skill":
         skill = artifact["name"]
@@ -585,7 +586,8 @@ def grade_trial(trial: Path, config_name: str, config: dict, artifact: dict, cas
         marker = probe_text
     if spec.get("probe"):
         row["probe_sees_artifact"] = None if final_message is None or not marker else marker in final_message
-    run = {"final_message": final_message, "writes": evidence["writes"]}
+    run = {"final_message": final_message, "writes": evidence["writes"],
+           "skills_loaded": evidence["skills_loaded"], "ops": ops}
     delivered = cases_root.parent / "tasks" / f"{case}--{variant}" / "environment" / "instructions"
     with temporary_initial_workspace(case_dir) as initial:
         if delivered.is_dir():
@@ -721,8 +723,9 @@ def cmd_rules(args) -> None:
         digest = meta.get("artifact_digest") or meta.get("skill_digest")
         if grades.is_file() and (args.all_versions or digest == current):
             runs.append((meta, [json.loads(line) for line in grades.read_text().splitlines()]))
-    untested = sum(1 for r in rules.values() if not r["graders"])
-    print(f"{len(rules)} rules, {untested} without graders; {len(runs)} runs of "
+    untestable = sum(1 for r in rules.values() if r.get("untestable"))
+    untested = sum(1 for r in rules.values() if not r["graders"]) - untestable
+    print(f"{len(rules)} rules, {untested} without graders, {untestable} untestable from outputs; {len(runs)} runs of "
           + ("any artifact text" if args.all_versions else "the current artifact text") + ".\n")
     print(tabulate(rules, runs))
 

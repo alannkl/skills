@@ -52,12 +52,30 @@ def check_rules(rules: dict, root: Path, cases_root: Path) -> list[str]:
                 problems.append(f"{name}: text occurs {count} times in {rule['file']}: {text[:60]!r}")
             elif not _whole_sentences(content, text):
                 problems.append(f"{name}: text is not whole sentences, so removing it leaves a fragment: {text[:60]!r}")
+        spans = sorted((content.find(text), content.find(text) + len(text)) for text in rule["text"]) if content else []
+        if any(a_end > b_start for (_, a_end), (b_start, _) in zip(spans, spans[1:])):
+            problems.append(f"{name}: two of its passages overlap, so one cannot be removed after the other")
+        elif content and all(content.count(text) == 1 for text in rule["text"]):
+            removed, expected = content, content
+            for text in rule["text"]:
+                removed, expected = remove_text(removed, text), expected.replace(text, " ", 1)
+            if _words(removed) != _words(expected):
+                problems.append(f"{name}: removing its text changes more than its words")
         for ref in rule["graders"]:
             case, _, grader = ref.partition("/")
             spec = cases_root / case / "graders.json"
             names = {g["name"] for g in json.loads(spec.read_text())["graders"]} if spec.is_file() else set()
             if grader not in names:
                 problems.append(f"{name}: no grader {ref}")
+    # Cumulative removal deletes one rule's text after another's, so no text may contain another rule's.
+    texts = [(name, rule["file"], text) for name, rule in rules.items() for text in rule["text"]]
+    for name, file, text in texts:
+        for other, other_file, other_text in texts:
+            if other != name and file == other_file and other_text in text:
+                problems.append(f"{name}: its text contains {other}'s text, so the two cannot both be removed")
+    for name, rule in rules.items():
+        if rule.get("untestable") and rule["graders"]:
+            problems.append(f"{name}: marked untestable but has graders")
     return problems
 
 
@@ -168,7 +186,8 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
              "| --- | --- | --- | --- | --- | --- | --- | --- |"]
     for name, rule in rules.items():
         if not rule["graders"]:
-            lines.append(f"| {name} | | | | | | | untested: no grader |")
+            lines.append(f"| {name} | | | | | | | "
+                         f"{'untestable from outputs: ' + rule['untestable'] if rule.get('untestable') else 'untested: no grader'} |")
             continue
         tested = [c for c in sorted(configs)
                   if any(counts[(name, c, col)][1] for col in columns) or unloaded[(name, c)]]

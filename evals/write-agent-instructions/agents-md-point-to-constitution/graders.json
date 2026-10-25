@@ -1,0 +1,55 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "compared-copies",
+      "type": "llm",
+      "criteria": "`AGENTS.md` and `constitution/SKILL.md` were not identical: they differ in several rules, for example the delegation rule and the taste paragraph's last sentence. Pass if the final message says the two copies differed, naming at least one difference or how it was resolved. Fail if it treats them as identical or says nothing about whether they matched."
+    },
+    {
+      "name": "consumers",
+      "type": "llm",
+      "with_final_message": true,
+      "paths": [
+        "README.md",
+        "docs/agent-communication.md",
+        "docs/working-with-agents.md"
+      ],
+      "criteria": "These documents describe `AGENTS.md` as the constitution: the README's constitution row says it mirrors `AGENTS.md`, its AGENTS.md section and install text call the skill a copy of `AGENTS.md`, and the two docs link to `../AGENTS.md` as the constitution or its Communicating section. Pass if each such reference now points to `constitution/SKILL.md` or no longer calls AGENTS.md the constitution, or the final message names the references still needing that update. Fail if stale references remain and the final message does not mention them."
+    },
+    {
+      "name": "plain-path",
+      "type": "regex",
+      "path": "AGENTS.md",
+      "pattern": "\\]\\(\\.?/?constitution/SKILL\\.md\\)",
+      "match": "not_contains",
+      "description": "The agent-facing pointer is a plain path, not a Markdown link."
+    },
+    {
+      "name": "pointer-says-when",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "criteria": "Judge the edited `AGENTS.md`. The pointer to the constitution says when it applies (for example from the start of every task), so an agent knows to load it without first reading it."
+    },
+    {
+      "name": "points-to-skill",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "criteria": "Judge the edited `AGENTS.md`. It no longer restates the constitution's rules; it tells the agent to apply `constitution/SKILL.md` (by path or as the `constitution` skill), and it keeps the project-specific instructions section."
+    },
+    {
+      "name": "skill-unchanged",
+      "type": "unchanged_except",
+      "allow": [
+        "AGENTS.md",
+        "README.md",
+        "docs/agent-communication.md",
+        "docs/working-with-agents.md"
+      ],
+      "description": "The constitution skill and CLAUDE.md stay as they are."
+    }
+  ]
+}

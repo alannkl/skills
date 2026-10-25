@@ -1,0 +1,1 @@
+briefly check how we investigated alerts before in docs/incidents/, then create a generic project skill `investigate` under .agents/skills for investigating issues/bugs/alerts for this backend, e.g. check db data, cloudwatch logs, etc

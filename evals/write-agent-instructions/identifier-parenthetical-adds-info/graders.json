@@ -17,7 +17,7 @@
       "name": "keeps-duration",
       "type": "regex",
       "path": "skills/ship/SKILL.md",
-      "pattern": "10 minutes",
+      "pattern": "(10|ten)\\s*(-\\s*)?min",
       "flags": "i",
       "match": "contains",
       "description": "The build duration survives."
@@ -59,7 +59,7 @@
       "name": "keeps-staging-script",
       "type": "regex",
       "path": "skills/ship/SKILL.md",
-      "pattern": "`deploy-staging\\.sh`",
+      "pattern": "deploy-staging\\.sh",
       "flags": "",
       "match": "contains",
       "description": "The staging alternative survives."

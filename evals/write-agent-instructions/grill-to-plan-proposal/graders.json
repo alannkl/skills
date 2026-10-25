@@ -1,0 +1,70 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "concise",
+      "type": "llm",
+      "path": "grill-to-plan/SKILL.md",
+      "criteria": "The user asked to keep the skill concise and short. Compare the original and edited `grill-to-plan/SKILL.md`. Pass if the change states the agreed behaviors without restating rules the skill already has, explaining them at length, or adding examples; fail if it expands the skill well beyond what the behaviors need."
+    },
+    {
+      "name": "implements",
+      "type": "llm",
+      "path": "grill-to-plan/SKILL.md",
+      "criteria": "Judge the edited `grill-to-plan/SKILL.md`. Unless the agent's reply gives a reason to reject one, the skill now says: questions that need a detailed or free-text answer go in normal chat, with numbered options when helpful; short choices use the question tool when it is available and permitted; after an asynchronous question-tool call the agent keeps the turn open and waits for the answer, with no closing message or repeated recommendation after the call; an expired or skipped prompt leaves the decision unresolved and the question is repeated in normal chat; recommendations sit inside the options, and a timeout or preselected option never counts as acceptance.",
+      "with_final_message": true
+    },
+    {
+      "name": "keeps-rest",
+      "type": "llm",
+      "path": "grill-to-plan/SKILL.md",
+      "criteria": "Judge the edited `grill-to-plan/SKILL.md`. Everything outside the question-channel rules keeps its meaning: modes, goal restatement, scoping, using context before asking, one question at a time, 2-4 candidates with a recommendation and a way into discussion, batching only independent light questions, switching to discussion when the reply is a question, pushback, project knowledge, the session record, the synthesis and the ADR rule."
+    },
+    {
+      "name": "no-history",
+      "type": "llm",
+      "path": "grill-to-plan/SKILL.md",
+      "criteria": "Judge the edited `grill-to-plan/SKILL.md`. It holds instructions for the executing agent only: no change history, no note of what the skill used to do or why it changed, and no commentary addressed to its author. A reason stays acceptable when it helps the executing agent make a call."
+    },
+    {
+      "name": "other-files-unchanged",
+      "type": "unchanged_except",
+      "allow": [
+        "grill-to-plan/SKILL.md"
+      ],
+      "description": "Only the grill-to-plan skill changes."
+    },
+    {
+      "name": "polish-loaded",
+      "type": "skills_loaded",
+      "skills": [
+        "refine-it",
+        "shorten-it"
+      ],
+      "description": "Process check: refine-it and shorten-it delivered their instructions; this does not show how they were applied.",
+      "variants": [
+        "with"
+      ]
+    },
+    {
+      "name": "replaces-unconditional",
+      "type": "llm",
+      "path": "grill-to-plan/SKILL.md",
+      "criteria": "Judge the edited `grill-to-plan/SKILL.md`. No instruction still tells the agent to use the ask-question tool whenever one is available regardless of the answer's shape, and the new rules do not contradict other steps."
+    },
+    {
+      "name": "reply",
+      "type": "llm",
+      "criteria": "The final message says whether the agent agrees with the proposal, naming any part it changed or rejected with a reason, and says what it implemented."
+    },
+    {
+      "name": "skill-terms",
+      "type": "llm",
+      "path": "grill-to-plan/SKILL.md",
+      "criteria": "Judge the edited `grill-to-plan/SKILL.md`. The skill calls the tool \"the ask-question tool\". Pass if the new text refers to it with that same term (or plainly as \"the tool\" where the reference is clear), and is written in the skill's own voice rather than the proposal's bullets pasted in with their labels such as \"Asynchronous questions:\" or \"Expired or skipped prompts:\"."
+    }
+  ]
+}

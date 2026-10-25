@@ -8,14 +8,10 @@
       "name": "codex-user-invoked",
       "type": "regex",
       "path": "skills/standup/agents/openai.yaml",
-      "pattern": "allow_implicit_invocation:\\s*false",
-      "flags": "i",
+      "pattern": "policy:\\s*\\n\\s+allow_implicit_invocation:\\s*false\\s*$",
+      "flags": "m",
       "match": "contains",
-      "variants": [
-        "with"
-      ],
-      "description": "Convention check, not scored: when the skill has a Codex policy file, Codex treats it as user-invoked.",
-      "optional": true
+      "description": "Codex treats the skill as user-invoked: `agents/openai.yaml` sets `policy.allow_implicit_invocation` to an unquoted false."
     },
     {
       "name": "instructions-intact",
@@ -33,6 +29,15 @@
       "description": "The user's exact gh command survives."
     },
     {
+      "name": "loads-skill-mechanics",
+      "type": "read",
+      "description": "Process check: The agent read `references/skill-mechanics.md` of the skill, as the References table requires here.",
+      "marker": "# Skill mechanics",
+      "variants": [
+        "with"
+      ]
+    },
+    {
       "name": "name-matches",
       "type": "regex",
       "path": "skills/standup/SKILL.md",
@@ -40,6 +45,24 @@
       "flags": "i",
       "match": "contains",
       "description": "The frontmatter name matches the directory."
+    },
+    {
+      "name": "no-extra-files",
+      "type": "unchanged_except",
+      "allow": [
+        "skills/standup/SKILL.md",
+        "skills/standup/agents/openai.yaml",
+        "README.md"
+      ],
+      "description": "A narrow instruction-only shortcut needs only SKILL.md, plus Codex's policy file and the inventory."
+    },
+    {
+      "name": "plain-shortcut",
+      "type": "llm",
+      "paths": [
+        "skills/standup/**/*"
+      ],
+      "criteria": "The standup skill is the user's instructions as a body, without added workflow scaffolding the user did not ask for, such as outcome sections, completion criteria, a Boundaries section or extra steps."
     },
     {
       "name": "skill-file-exists",
@@ -54,10 +77,7 @@
       "pattern": "disable-model-invocation:\\s*true",
       "flags": "i",
       "match": "contains",
-      "variants": [
-        "with"
-      ],
-      "description": "Convention check, not scored: Claude Code treats it as a user-invoked slash command."
+      "description": "Claude Code treats it as a user-invoked slash command."
     }
   ]
 }

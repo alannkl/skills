@@ -47,6 +47,17 @@ class Rules(unittest.TestCase):
                          "mid-sentence: text is not whole sentences"):
             self.assertIn(expected, problems)
 
+    def test_a_rule_text_inside_another_rules_text_is_reported(self):
+        (self.skill / "SKILL.md").write_text("Run tests. Then lint.\n")
+        rules = {"a": {"file": "SKILL.md", "text": ["Run tests. Then lint."], "graders": []},
+                 "b": {"file": "SKILL.md", "text": ["Then lint."], "graders": []}}
+        self.assertTrue(any("contains b's text" in p for p in check_rules(rules, self.skill, self.cases)))
+
+    def test_overlapping_passages_are_reported(self):
+        rules = {"r": {"file": "SKILL.md", "text": ["Run tests. Then lint.", "Then lint."], "graders": []}}
+        (self.skill / "SKILL.md").write_text("Run tests. Then lint.\n")
+        self.assertTrue(any("overlap" in p for p in check_rules(rules, self.skill, self.cases)))
+
     def test_removing_text_leaves_no_stray_space_or_empty_item(self):
         self.assertEqual(remove_text("- Use pnpm. Run tests first.\n", "Use pnpm."), "- Run tests first.\n")
         self.assertEqual(remove_text("- Use pnpm. Run tests first.\n", "Run tests first."), "- Use pnpm.\n")

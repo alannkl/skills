@@ -7,7 +7,11 @@
     {
       "name": "handles-unreachable-pointer",
       "type": "llm",
-      "criteria": "The deployed support agent has no tools and cannot read files, and the workspace has no code that assembles the prompt. The final message recognizes this. Pass if the style guide stays in the deployed prompt (possibly also copied to its own file for maintenance), or if the agent asks how the file's contents will reach the prompt before removing it. Fail if it removes the guide from `prompts/support_agent.md` and only notes that the application must include it later."
+      "criteria": "The deployed support agent has no tools and cannot read files, and the workspace has no code that assembles the prompt. The final message recognizes this. Pass if the style guide stays in the deployed prompt (possibly also copied to its own file for maintenance), or if the agent asks how the file's contents will reach the prompt before removing it. Fail if it removes the guide from `prompts/support_agent.md` and only notes that the application must include it later.",
+      "paths": [
+        "prompts/**/*"
+      ],
+      "with_final_message": true
     },
     {
       "name": "keeps-refund-rule",
@@ -19,10 +23,22 @@
       "description": "The refund rule stays in the prompt."
     },
     {
+      "name": "loads-context-design",
+      "type": "read",
+      "description": "Process check: The agent read `references/context-design.md` of the skill, as the References table requires here.",
+      "marker": "# Context design",
+      "variants": [
+        "with"
+      ]
+    },
+    {
       "name": "no-dangling-read",
       "type": "llm",
-      "path": "prompts/support_agent.md",
-      "criteria": "Judge `prompts/support_agent.md`. It does not tell the support agent to read, open, consult or follow a file path to get its style rules. Either the style rules are still present, or the file carries no instruction to fetch them."
+      "criteria": "Judge the prompt files. `prompts/support_agent.md` does not tell the support agent to read, open or follow a file path to get its style rules, and the style rules are not lost: they are still in the deployed prompt, or the final message names how their file reaches the prompt or asks how it will.",
+      "paths": [
+        "prompts/**/*"
+      ],
+      "with_final_message": true
     }
   ]
 }

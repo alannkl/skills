@@ -59,6 +59,27 @@
       "description": "The root-install safeguard survives."
     },
     {
+      "name": "loads-pruning-instructions",
+      "type": "read",
+      "description": "Process check: The agent read `references/pruning-instructions.md` of the skill, as the References table requires here.",
+      "marker": "# Pruning instructions",
+      "variants": [
+        "with"
+      ]
+    },
+    {
+      "name": "polish-loaded",
+      "type": "skills_loaded",
+      "skills": [
+        "refine-it",
+        "shorten-it"
+      ],
+      "description": "Process check: refine-it and shorten-it delivered their instructions; this does not show how they were applied.",
+      "variants": [
+        "with"
+      ]
+    },
+    {
       "name": "report",
       "type": "llm",
       "criteria": "The final message names each rule it removed, and does not claim to have removed the `npm install` rule, the `config/flags.generated.json` rule, the migrations rule, the push rule, or the lint and test rule."

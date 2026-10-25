@@ -30,6 +30,13 @@ class Extractors(unittest.TestCase):
         kept = [edit(e) for e in lines]
         path.write_text("\n".join(json.dumps(e) for e in kept if e is not None) + "\n")
 
+    def test_operations_carry_what_the_agent_read_with_its_output(self):
+        ops = claude_code(FIXTURES / "claude-code")["ops"]
+        self.assertTrue(any(op["kind"] == "read" and op["path"] == "/app/docs/onboarding.md" and op["output"] for op in ops))
+        ops = codex(FIXTURES / "codex")["ops"]
+        self.assertTrue(any(op["kind"] == "exec" and "cat /root/.agents/skills/shorten-it/SKILL.md" in op["path"]
+                            and "name: shorten-it" in op["output"] for op in ops))
+
     def test_claude_code_counts_skill_injected_from_installed_directory(self):
         e = claude_code(FIXTURES / "claude-code")
         self.assertTrue(e["complete"])

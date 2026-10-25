@@ -110,12 +110,57 @@ def no_writes(spec, workspace, initial, harness, run, judges):
     return {"pass": not writes, "detail": f"wrote {writes}" if writes else ""}
 
 
+def skills_loaded(spec, workspace, initial, harness, run, judges):
+    """The transcript shows every skill in `skills` loaded from the installed copies."""
+    if run.get("skills_loaded") is None:
+        return _UNDECIDED_NO_TRANSCRIPT
+    missing = [s for s in spec["skills"] if s not in run["skills_loaded"]]
+    return {"pass": not missing, "detail": f"not loaded {missing}" if missing else ""}
+
+
+def read(spec, workspace, initial, harness, run, judges):
+    """A file read or shell command delivered text containing `marker`, such as a file's first line.
+
+    Matching delivered content rather than paths counts wildcard and relative reads,
+    and not a listing, a failed read, or a command that only names the file.
+    """
+    if run.get("ops") is None:
+        return _UNDECIDED_NO_TRANSCRIPT
+    found = any(spec["marker"] in op["output"] for op in run["ops"]
+                if op["kind"] in ("read", "exec") and (op["ok"] or op["kind"] == "exec"))
+    wanted = spec.get("match", "contains") == "contains"
+    return {"pass": found == wanted, "detail": "" if found == wanted else f"marker {'not ' if wanted else ''}delivered"}
+
+
+def ran(spec, workspace, initial, harness, run, judges):
+    """A shell command matching `pattern` ran and succeeded."""
+    if run.get("ops") is None:
+        return _UNDECIDED_NO_TRANSCRIPT
+    found = any(re.search(spec["pattern"], op["path"]) for op in run["ops"] if op["kind"] == "exec" and op["ok"])
+    wanted = spec.get("match", "contains") == "contains"
+    return {"pass": found == wanted, "detail": "" if found == wanted else f"command {'not ' if wanted else ''}run"}
+
+
 def llm(spec, workspace, initial, harness, run, judges):
     """Hold the output for a batched judge call; `judge_pending` fills in the verdict."""
-    if spec.get("path"):
-        original = _file_text(initial, spec["path"]) or "(absent)"
-        subject = _file_text(workspace, spec["path"]) or "(file missing)"
+    if spec.get("paths"):
+        # Several files go to the judge as one document, each under its own header.
+        # A glob such as `skill/**/*.md` stands for every matching file in either workspace.
+        names = sorted({str(f.relative_to(root)) for pattern in spec["paths"] for root in (initial, workspace)
+                        for f in root.glob(pattern) if f.is_file()} if any("*" in p for p in spec["paths"]) else [])
+        names = names + [p for p in spec["paths"] if "*" not in p and p not in names]
+
+        def joined(root, missing):
+            texts = {p: _file_text(root, p) for p in names}
+            return "\n\n".join(f"=== {p}\n{missing if t is None else t}" for p, t in texts.items())
+        original, subject = joined(initial, "(absent)"), joined(workspace, "(file missing)")
+        label = "files " + ", ".join(names)
+    elif spec.get("path"):
+        original, subject = _file_text(initial, spec["path"]), _file_text(workspace, spec["path"])
+        original = "(absent)" if original is None else original
+        subject = "(file missing)" if subject is None else subject
         label = spec["path"]
+    if spec.get("path") or spec.get("paths"):
         if spec.get("with_final_message"):
             if run["final_message"] is None:
                 return _UNDECIDED_NO_TRANSCRIPT
@@ -142,7 +187,26 @@ def json_output(spec, workspace, initial, harness, run, judges):
 
 
 GRADERS = {"regex": regex, "file_exists": file_exists, "unchanged_except": unchanged_except,
-           "no_writes": no_writes, "llm": llm, "json": json_output}
+           "no_writes": no_writes, "skills_loaded": skills_loaded, "read": read, "ran": ran, "llm": llm, "json": json_output}
+
+
+# Fields each grader type cannot run without.
+REQUIRED = {"regex": ("pattern",), "file_exists": ("path",), "unchanged_except": (), "no_writes": (),
+            "skills_loaded": ("skills",), "read": ("marker",), "ran": ("pattern",), "llm": ("criteria",), "json": ()}
+
+
+def spec_problems(specs: list[dict]) -> list[str]:
+    """Grader specs that would fail or mislead at grading time; empty when all are sound."""
+    problems = []
+    for s in specs:
+        kind = s.get("type")
+        if kind not in GRADERS:
+            problems.append(f"{s.get('name')}: unknown type {kind}")
+            continue
+        problems += [f"{s['name']}: {kind} needs {f}" for f in REQUIRED[kind] if f not in s]
+        if "path" in s and "paths" in s:
+            problems.append(f"{s['name']}: give path or paths, not both")
+    return problems
 
 
 def run_graders(specs: list[dict], variant: str, workspace: Path, initial: Path, harness: str,

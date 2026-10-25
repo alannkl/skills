@@ -34,6 +34,8 @@ import re
 import shutil
 from pathlib import Path
 
+from graders import spec_problems
+
 PROBE_CASE = "probe"
 PROBE_INSTRUCTION = {
     "skill": "List the skills available to you by name, one per line, then stop. "
@@ -103,7 +105,11 @@ DEFAULT_AGENT_TIMEOUT_SEC = 900
 def load_spec(case_dir: Path) -> dict:
     if case_dir.name in (PROBE_CASE, "skill-probe"):
         return PROBE_SPEC
-    return json.loads((case_dir / "graders.json").read_text())
+    spec = json.loads((case_dir / "graders.json").read_text())
+    problems = spec_problems(spec["graders"])
+    if problems:
+        raise SystemExit(f"{case_dir.name}/graders.json: " + "; ".join(problems))
+    return spec
 
 
 def load_suite(repo: Path, name: str) -> dict:

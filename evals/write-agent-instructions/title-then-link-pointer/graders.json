@@ -32,6 +32,12 @@
       "description": "The Rollback section is still named."
     },
     {
+      "name": "leaves-tight-lines",
+      "type": "llm",
+      "path": "skills/release/SKILL.md",
+      "criteria": "Judge the edited `skills/release/SKILL.md`. Steps 1 (confirm `main` is green, otherwise stop and report the failing job), 3 (tag with `git tag vX.Y.Z` and push the tag) and 4 (run `deploy.sh production`) were already plain and tight. Pass unless one of them was reworded without becoming shorter or clearer."
+    },
+    {
       "name": "no-markdown-link",
       "type": "regex",
       "path": "skills/release/SKILL.md",

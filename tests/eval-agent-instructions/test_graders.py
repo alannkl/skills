@@ -20,9 +20,10 @@ class Graders(unittest.TestCase):
             (d / "docs" / "guide.md").write_text("Use pnpm.\nRun tests.\n")
             (d / "AGENTS.md").write_text("- Use pnpm.\n")
 
-    def grade(self, spec, harness="codex", message="", variant="with", writes=()):
+    def grade(self, spec, harness="codex", message="", variant="with", writes=(), loaded=(), ops=()):
         spec = {"name": "g", **spec}
-        run = {"final_message": message, "writes": None if writes is None else list(writes)}
+        run = {"final_message": message, "writes": None if writes is None else list(writes),
+               "skills_loaded": None if loaded is None else list(loaded), "ops": None if ops is None else list(ops)}
         return graders.run_graders([spec], variant, self.workspace, self.initial, harness, run, ["judge-a"])
 
     def test_regex_on_file_and_final_message(self):
@@ -121,6 +122,58 @@ class Graders(unittest.TestCase):
         self.assertIn("Removed the emphasis line.", self.grade(spec, message="Removed the emphasis line.")["g"]["pending"]["subject"])
         self.assertIsNone(self.grade(spec, message=None)["g"]["pass"])
         self.assertNotIn("pending", self.grade(spec, message=None)["g"])
+
+    def test_llm_can_judge_several_files_together(self):
+        (self.workspace / "docs" / "guide.md").write_text("Use pnpm.\n")
+        spec = {"type": "llm", "paths": ["AGENTS.md", "docs/guide.md", "gone.md"], "criteria": "c",
+                "with_final_message": True}
+        pending = self.grade(spec, message="Moved the test step.")["g"]["pending"]
+        self.assertIn("=== docs/guide.md\nUse pnpm.\nRun tests.\n", pending["original"])
+        self.assertIn("=== docs/guide.md\nUse pnpm.\n\n\n=== gone.md\n(file missing)", pending["subject"])
+        self.assertIn("Moved the test step.", pending["subject"])
+        self.assertEqual(pending["label"], "files AGENTS.md, docs/guide.md, gone.md")
+
+    def test_skills_loaded_needs_every_named_skill(self):
+        spec = {"type": "skills_loaded", "skills": ["refine-it", "shorten-it"]}
+        self.assertTrue(self.grade(spec, loaded=["shorten-it", "refine-it", "x"])["g"]["pass"])
+        self.assertFalse(self.grade(spec, loaded=["shorten-it"])["g"]["pass"])
+        self.assertIsNone(self.grade(spec, loaded=None)["g"]["pass"])
+
+    def test_read_needs_the_file_content_delivered(self):
+        def op(kind, ok, path, output):
+            return {"kind": kind, "ok": ok, "path": path, "output": output}
+        spec = {"type": "read", "marker": "# Pruning instructions"}
+        ref = "/skills/w/references/pruning-instructions.md"
+        self.assertTrue(self.grade(spec, ops=[op("read", True, ref, "     1\t# Pruning instructions\n")])["g"]["pass"])
+        self.assertTrue(self.grade(spec, ops=[op("exec", True, "cat /skills/w/references/*.md", "# Pruning instructions\n...")])["g"]["pass"])
+        # A listing, a failed read, or a command that only names the file is not a read.
+        self.assertFalse(self.grade(spec, ops=[op("exec", True, f"ls {ref}", ref + "\n")])["g"]["pass"])
+        self.assertFalse(self.grade(spec, ops=[op("exec", False, f"cat {ref}", "No such file or directory")])["g"]["pass"])
+        self.assertTrue(self.grade({**spec, "match": "not_contains"}, ops=[])["g"]["pass"])
+        self.assertIsNone(self.grade(spec, ops=None)["g"]["pass"])
+
+    def test_ran_needs_a_successful_matching_command(self):
+        spec = {"type": "ran", "pattern": r"release\.sh .*--dry-run"}
+        self.assertTrue(self.grade(spec, ops=[{"kind": "exec", "ok": True, "path": "./release.sh 1.2.0 --dry-run", "output": ""}])["g"]["pass"])
+        self.assertFalse(self.grade(spec, ops=[{"kind": "exec", "ok": False, "path": "./release.sh 1.2.0 --dry-run", "output": "err"}])["g"]["pass"])
+        self.assertFalse(self.grade(spec, ops=[{"kind": "read", "ok": True, "path": "release.sh --dry-run", "output": ""}])["g"]["pass"])
+
+    def test_spec_problems_catch_missing_fields_and_conflicting_paths(self):
+        self.assertEqual(graders.spec_problems([{"name": "a", "type": "llm", "criteria": "c", "path": "x"}]), [])
+        self.assertEqual(len(graders.spec_problems([{"name": "a", "type": "read", "pattern": "x"},
+                                                     {"name": "b", "type": "llm", "criteria": "c", "path": "x", "paths": ["y"]},
+                                                     {"name": "c", "type": "nope"}])), 3)
+
+    def test_llm_paths_expand_globs_over_both_workspaces(self):
+        (self.workspace / "docs" / "new.md").write_text("Added.\n")
+        pending = self.grade({"type": "llm", "paths": ["docs/*.md", "AGENTS.md"], "criteria": "c"})["g"]["pending"]
+        self.assertEqual(pending["label"], "files AGENTS.md, docs/guide.md, docs/new.md")
+        self.assertIn("=== docs/new.md\n(absent)", pending["original"])
+
+    def test_llm_shows_an_empty_file_as_empty_not_missing(self):
+        (self.workspace / "AGENTS.md").write_text("")
+        pending = self.grade({"type": "llm", "paths": ["AGENTS.md"], "criteria": "c"})["g"]["pending"]
+        self.assertEqual(pending["subject"], "=== AGENTS.md\n")
 
     def test_final_message_graders_are_undecided_without_a_complete_transcript(self):
         self.assertIsNone(self.grade({"type": "regex", "pattern": "x"}, message=None)["g"]["pass"])

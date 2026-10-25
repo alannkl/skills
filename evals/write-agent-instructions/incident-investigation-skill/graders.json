@@ -1,0 +1,212 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "clear-defaults",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. Where a choice recurs it states the default, such as production via the read replica and a default time window around the alert, and mentions alternatives only where they change what the agent does.",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ]
+    },
+    {
+      "name": "coherent-unit",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ],
+      "criteria": "Judge the new skill's files. They make one coherent investigation workflow, not a dump of every fact in the notes or general AWS or Postgres documentation."
+    },
+    {
+      "name": "coined-terms-defined",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ],
+      "criteria": "Judge the new skill's files. Any term the skill coins, one the notes and repo do not already use, is defined where it first appears. Pass if it coins none."
+    },
+    {
+      "name": "commands-for-mechanical-steps",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. Each mechanical step (searching logs, running a Logs Insights query and fetching its results, querying the database) gives a command the agent can run, with placeholders or named inputs for values that change per investigation, such as the time window, order or request IDs. Pass if no such step is left as prose only (\"check the logs\") without a command or a pointer to one.",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ]
+    },
+    {
+      "name": "completion-criterion",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. It gives a checkable done-condition for the investigation, for example that the stated cause is backed by specific log lines or query results, or that what is still unknown is stated with the next check, rather than a vague \"investigate thoroughly\" or an artificial metric such as a minimum number of queries.",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ]
+    },
+    {
+      "name": "description-out-of-body",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. The body does not repeat the description's trigger list; any activation or scope rules the description cannot carry are in a `## Boundaries` section.",
+      "path": ".agents/skills/investigate/SKILL.md"
+    },
+    {
+      "name": "description-shape",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. The frontmatter `description` is quoted, under 1024 characters, written in the third person, and has two parts: a first sentence saying what the skill does using words a user would type (investigate, alerts, bugs, errors, logs, database), then a sentence saying when to use it.",
+      "path": ".agents/skills/investigate/SKILL.md"
+    },
+    {
+      "name": "description-triggers",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. The description's trigger part names each distinct situation once (an alert from Slack or CloudWatch, a bug or support report, an error to explain) rather than piling up synonyms for one, and any exclusion it adds names a real near-miss, such as deploy reviews that `deploy-check` handles.",
+      "path": ".agents/skills/investigate/SKILL.md"
+    },
+    {
+      "name": "frontmatter-fields",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. The frontmatter holds `name` and `description`, plus only optional fields that carry information for this skill; no placeholder or empty fields.",
+      "path": ".agents/skills/investigate/SKILL.md"
+    },
+    {
+      "name": "grounded-in-notes",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. Its investigation methods come from `docs/incidents/` and the repo: CloudWatch log group `/ecs/orders-api` searched with `aws logs tail` filter patterns and Logs Insights (`aws logs start-query` then `aws logs get-query-results`), and production data read through `scripts/db-ro.sh` (read replica, read-only role), including checks such as active queries and locks in `pg_stat_activity`, table constraints with `\\d`, and order or payment rows. Pass if it keeps at least the log and database methods with these real names, and invents no tools, log groups or access paths the notes and README do not show.",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ]
+    },
+    {
+      "name": "inventory-updated",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/README.md`, which lists the project's skills. Pass if it now lists `investigate` with a one-line use.",
+      "path": ".agents/skills/README.md"
+    },
+    {
+      "name": "layout",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. Pass if any supporting files it points to live one level deep in the skill folder (`references/`, `scripts/`, `assets/`) and are referenced by relative paths, or if the skill needs and points to none.",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ]
+    },
+    {
+      "name": "leading-words",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ],
+      "criteria": "Judge the new skill's files. They use the repo's own terms for recurring things (the log group, the read replica, an alert) and keep using the same word for the same thing."
+    },
+    {
+      "name": "loads-not-copies",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/investigate/**/*",
+        ".agents/skills/deploy-check/SKILL.md"
+      ],
+      "criteria": "Where the investigation needs what `deploy-check` covers, the new skill names `deploy-check` and when to use it rather than copying its steps. Pass if it never needs it."
+    },
+    {
+      "name": "model-invoked",
+      "type": "regex",
+      "path": ".agents/skills/investigate/SKILL.md",
+      "pattern": "disable-model-invocation:\\s*true",
+      "match": "not_contains",
+      "description": "An investigation skill the agent should pick up when an alert or bug report arrives stays model-invoked."
+    },
+    {
+      "name": "name-matches",
+      "type": "regex",
+      "path": ".agents/skills/investigate/SKILL.md",
+      "pattern": "name:\\s*[\"']?investigate\\b",
+      "flags": "i",
+      "match": "contains",
+      "description": "The frontmatter name matches the directory."
+    },
+    {
+      "name": "no-incident-history",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. It is a reusable workflow, not a record of past incidents: no incident narratives, dates, or people's names (Priya, Tomás, Marco). A lesson from an incident may appear as a check to run, such as checking table constraints when duplicates appear, without the story behind it.",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ]
+    },
+    {
+      "name": "ordered-where-it-matters",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. Steps that depend on each other are in order: establish what the alert or report says and the time window before querying, gather evidence before concluding, and report at the end. Steps that do not depend on each other are not forced into a fixed sequence or a rigid template beyond what a consumer needs.",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ]
+    },
+    {
+      "name": "outcome-first",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. Before the steps, it says what a finished investigation delivers, such as the cause or the most likely cause with the log and data evidence behind it, the impact, and a recommended next action.",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ]
+    },
+    {
+      "name": "parameterized",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. Values specific to one past incident (request `req_8f2c1e`, orders `ord_55120`, `ord_60031`, customer `cus_Q81`, account `acct_test_77`, ticket SUP-2291, epoch times 1785657600/1785661200, PR #812, the backfill job name) appear only as clearly marked examples or not at all; commands use placeholders for them.",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ]
+    },
+    {
+      "name": "plain-sentences",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ],
+      "criteria": "Judge the new skill's files. Instructions are plain sentences with concrete actions, not vague advice such as \"investigate thoroughly\" or \"check the relevant logs\"."
+    },
+    {
+      "name": "present-draft",
+      "type": "llm",
+      "criteria": "The final message presents the new skill and asks the user whether it covers the investigations they run, or what is missing or should be more or less detailed.",
+      "description": "Rule-driven: the skill asks to present a draft that encodes domain-specific preferences; a plain delivery is a reasonable answer to the request, so read failures in both arms as the rule's effect."
+    },
+    {
+      "name": "skill-file-exists",
+      "type": "file_exists",
+      "path": ".agents/skills/investigate/SKILL.md",
+      "description": "The skill exists where the user asked."
+    },
+    {
+      "name": "standalone",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ],
+      "criteria": "Judge the new skill's files. The skill works with no other skill installed: any other skill it mentions is optional, or the steps that need it say what to do without it."
+    },
+    {
+      "name": "state-changes-gated",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. It keeps the investigation read-only by default: database access only through `scripts/db-ro.sh`, and any action that changes production state (restarting or redeploying the ECS service, killing jobs, writing data, refunds) only after the user or on-call lead agrees. Any prohibition is paired with what to do instead (for example, propose the restart and its impact on in-flight webhooks, then wait).",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ]
+    },
+    {
+      "name": "terminal-outcomes",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. It lets an investigation end more than one way and counts \"no real problem\" (false alarm, expected behavior, cannot reproduce) as a complete result, reported briefly with the evidence, alongside a confirmed cause and an open question that needs a person.",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ]
+    },
+    {
+      "name": "time-sensitive-facts",
+      "type": "llm",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. Facts that change over time are not frozen as standing truth: it does not name who is on call, and a version fact such as \"we're on Postgres 14\" is either left out, stated with how to check it (for example `select version()`), or tied to the reason it matters. Pass if no on-call name and no unqualified current-version claim appear.",
+      "paths": [
+        ".agents/skills/investigate/**/*"
+      ]
+    }
+  ]
+}

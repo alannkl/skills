@@ -1,0 +1,18 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "router",
+      "type": "llm",
+      "criteria": "The final message gives the user one thing to remember: it suggests or creates one entry point, such as a user-invoked router skill (for example `/review`) that names the review skills and when to use each, or explains why a short guide is enough without one."
+    },
+    {
+      "name": "when-to-use",
+      "type": "llm",
+      "criteria": "The final message tells the user when to use each review skill in the repository, consistent with their files: `review-pr` for an open GitHub pull request, `review-panel` for a multi-model panel over a chosen scope with triage and gated fixes, `code-review` for a findings report on a change, `adversarial-review` for a hunt for material failures, and `review-triage` for deciding what to do with findings already in hand."
+    }
+  ]
+}

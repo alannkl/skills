@@ -40,10 +40,13 @@ Grader types; `path` is relative to the workspace:
 | `file_exists` | the file's presence matches `exists` | `path`, `exists` (default true) |
 | `unchanged_except` | no file changed or appeared outside `allow` | `allow` |
 | `no_writes` | the transcript shows no write through an edit tool | |
-| `llm` | the judge finds `criteria` met, given the file at `path` before and after, or the final message | `criteria`, `path`, `with_final_message` (also show the final message beside the file) |
+| `skills_loaded` | the transcript shows every skill in `skills` loaded from the installed copies | `skills` |
+| `read` | a file read or shell command delivered text containing `marker`, such as the file's first line | `marker`, `match` |
+| `ran` | a shell command matching `pattern` ran and succeeded | `pattern`, `match` |
+| `llm` | the judge finds `criteria` met, given the file at `path` (or every file in `paths`, which may hold globs such as `skill/**/*.md`) before and after, or the final message | `criteria`, `path` or `paths`, `with_final_message` (also show the final message beside the files) |
 | `json` | the file at `path`, or the final message, parses as JSON whole and has every `required` top-level key | `required`, `path` |
 
-A grader with `"variants": ["with"]` runs only in that arm. A read-only case needs both `unchanged_except` and `no_writes`: an agent can write through the shell, which only the end state shows.
+A grader with `"variants": ["with"]` runs only in that arm and in `--minus` copies. Give process checks, such as `read` and `skills_loaded`, that limit: they show what the agent did, not the quality of its output, and the other arm lacks the skill they look for. A read-only case needs both `unchanged_except` and `no_writes`: an agent can write through the shell, which only the end state shows.
 
 Make each case realistic:
 
@@ -64,6 +67,7 @@ Make each case realistic:
 - `file` is relative to the skill folder, or is the instruction file's own name.
 - `text` is whole sentences copied exactly, occurring once in the file, or a list of such passages for a rule stated in several places. Removing it builds the minus copy, so a fragment would leave broken text.
 - A grader belongs to a rule only when removing that rule alone would plausibly make it fail. Graders that check general task completion stay unmapped.
+- A rule no realistic case can show in its output, such as one governing an order of steps the transcript does not record, takes `"untestable": "<why>"` and no graders. Decide it by naming the failure it prevents, not by a run. A rule whose graders show only part of it, or show it only through what it protects, takes `"partial": "<what is not shown>"`, so a removal that matches is read as weaker evidence.
 - `rules <suite>` checks the map and tabulates every run of the current text.
 
 ## Results

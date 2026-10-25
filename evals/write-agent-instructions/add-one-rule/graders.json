@@ -27,6 +27,16 @@
       "flags": "i",
       "match": "contains",
       "description": "The existing rules survive in their order; their wording may change."
+    },
+    {
+      "name": "skips-pruning-instructions",
+      "type": "read",
+      "match": "not_contains",
+      "description": "Process check: The References table's condition for `references/pruning-instructions.md` does not hold here, so the agent does not read it.",
+      "marker": "# Pruning instructions",
+      "variants": [
+        "with"
+      ]
     }
   ]
 }
