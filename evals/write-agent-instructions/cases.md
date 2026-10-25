@@ -65,6 +65,19 @@ Each replay keeps the repository's `AGENTS.md` (the collaboration constitution a
 | too-many-commands-to-remember | yes | This repo's review skills. |
 | deploy-rollback-pointer | yes | A pointer with no load condition that never fires. |
 
+## Integration cases
+
+These need a larger world, so they run only with `--all-cases` or by name. Medians without the skill, Opus / Astra:
+
+| Case | Without the skill | Why it stays large |
+| --- | --- | --- |
+| panel-persist-for-chat | 378 s / 431 s | Two merged turns over the whole panel skill and its scripts. |
+| release-script-skill | 227 s / 111 s | Writing and trying a release script is the task. |
+| trim-panel-skill | 118 s / 162 s | The request covers every instruction file of the panel skill. |
+| review-skills-scope-sweep | 135 s / 172 s | A sweep across several skills is the behavior under test. |
+
+The two staged-skill readiness reviews take 86-126 s without the skill in few tool calls, almost all of it writing the review; they stay in the quick set.
+
 ## Gaps
 
 - Near-misses: 2 of the 8 a trigger check needs.
