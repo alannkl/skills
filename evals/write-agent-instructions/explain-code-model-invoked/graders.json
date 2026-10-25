@@ -11,11 +11,6 @@
       "criteria": "Judge the edited `explain-code/SKILL.md` below the frontmatter. The body keeps its meaning and does not gain a restatement of the description or a list of trigger phrases."
     },
     {
-      "name": "codex-opt-out",
-      "type": "llm",
-      "criteria": "Codex ignores `disable-model-invocation`; a skill stays user-invoked there only with an `agents/openai.yaml` setting `policy.allow_implicit_invocation: false`, and none of the repository's user-invoked skills has one. Pass if the final message points this out or the agent added such files for the skills that stay user-invoked."
-    },
-    {
       "name": "description-pattern",
       "type": "llm",
       "path": "explain-code/SKILL.md",

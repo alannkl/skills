@@ -687,8 +687,7 @@
       "text": "Otherwise set `disable-model-invocation: true`, use a one-line human-facing description without trigger lists, and add `agents/openai.yaml` setting `policy.allow_implicit_invocation` to an unquoted `false`, because Codex ignores the frontmatter field.",
       "graders": [
         "create-standup-command/user-invoked",
-        "create-standup-command/codex-user-invoked",
-        "explain-code-model-invoked/codex-opt-out"
+        "create-standup-command/codex-user-invoked"
       ]
     },
     "readiness-triggers-need-read-only": {
@@ -917,10 +916,8 @@
         "Typing the skill's name still invokes it.",
         "A harness that honors neither setting still lists the skill to the model, so check the target harness before relying on a user-invoked skill costing no context."
       ],
-      "graders": [
-        "explain-code-model-invoked/codex-opt-out"
-      ],
-      "partial": "a harness honoring neither setting not exercised"
+      "graders": [],
+      "untestable": "no realistic request in the suite asks about a harness that honors neither setting; decide by the failure it prevents"
     },
     "router-skill": {
       "file": "references/skill-mechanics.md",
