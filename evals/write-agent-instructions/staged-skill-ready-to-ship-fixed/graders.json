@@ -36,7 +36,7 @@
         "delegate/references/dispatch.md"
       ],
       "with_final_message": true,
-      "criteria": "Judge the review against the staged files. Pass if it gives a clear verdict on both questions and every problem it calls blocking is supported by the files; non-blocking suggestions are fine. Fail if it withholds a verdict, or blocks shipping on a problem the files do not support."
+      "criteria": "Judge the review against the staged files. Pass if it gives a clear verdict on both questions and every problem it calls blocking is supported by the files or by a fact the review says it checked (a command it ran, a document it read); non-blocking suggestions are fine. Fail if it withholds a verdict, or blocks shipping on a claim it neither found in the files nor says how it checked."
     }
   ]
 }

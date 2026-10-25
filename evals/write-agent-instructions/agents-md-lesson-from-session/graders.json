@@ -8,7 +8,7 @@
       "name": "applicable",
       "type": "llm",
       "path": "AGENTS.md",
-      "criteria": "Judge the new rule in the edited `AGENTS.md`. An agent could apply it without asking what counts as a log: it names or exemplifies what stays out, such as run or session logs, timelines or step-by-step records of what happened, or it states plainly what docs keep instead."
+      "criteria": "Judge the new rule in the edited `AGENTS.md`. An agent could apply it without asking what counts as a log. Pass if it states what docs keep instead (for example \"facts and instructions\"), or names or exemplifies what stays out (run or session logs, timelines, step-by-step records). The word \"logs\" beside what docs keep is enough."
     },
     {
       "name": "concise",

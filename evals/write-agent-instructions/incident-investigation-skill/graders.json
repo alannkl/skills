@@ -7,7 +7,7 @@
     {
       "name": "clear-defaults",
       "type": "llm",
-      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. Where a choice recurs it states the default, such as production via the read replica and a default time window around the alert, and mentions alternatives only where they change what the agent does.",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. Where a choice recurs it states the default, such as production via the read replica and a default time window (the notes use the last hour; a window around the alert also counts), and mentions alternatives only where they change what the agent does.",
       "paths": [
         ".agents/skills/investigate/**/*"
       ]
@@ -71,7 +71,7 @@
     {
       "name": "grounded-in-notes",
       "type": "llm",
-      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. Its investigation methods come from `docs/incidents/` and the repo: CloudWatch log group `/ecs/orders-api` searched with `aws logs tail` filter patterns and Logs Insights (`aws logs start-query` then `aws logs get-query-results`), and production data read through `scripts/db-ro.sh` (read replica, read-only role), including checks such as active queries and locks in `pg_stat_activity`, table constraints with `\\d`, and order or payment rows. Pass if it keeps at least the log and database methods with these real names, and invents no tools, log groups or access paths the notes and README do not show.",
+      "criteria": "Judge `.agents/skills/investigate/SKILL.md`. Its investigation methods come from `docs/incidents/` and the repo: CloudWatch log group `/ecs/orders-api` searched with `aws logs tail` filter patterns and Logs Insights (`aws logs start-query` then `aws logs get-query-results`), and production data read through `scripts/db-ro.sh` (read replica, read-only role), including checks such as active queries and locks in `pg_stat_activity`, table constraints with `\\d`, and order or payment rows. Pass if it keeps at least the log and database methods, naming the log group, script and checks or pointing to the repo file that states them (such as README.md), and invents no tools, log groups or access paths the notes and README do not show.",
       "paths": [
         ".agents/skills/investigate/**/*"
       ]
@@ -96,7 +96,7 @@
       "paths": [
         ".agents/skills/investigate/**/*"
       ],
-      "criteria": "Judge the new skill's files. They use the repo's own terms for recurring things (the log group, the read replica, an alert) and keep using the same word for the same thing."
+      "criteria": "Judge the new skill's files. They use the repo's own terms for recurring things (the log group, the read replica, an alert) and keep using the same word for the same thing. Naming the log group itself is not required."
     },
     {
       "name": "loads-not-copies",

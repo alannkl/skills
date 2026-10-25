@@ -33,9 +33,10 @@
       "name": "other-files-unchanged",
       "type": "unchanged_except",
       "allow": [
-        "grill-to-plan/SKILL.md"
+        "grill-to-plan/SKILL.md",
+        "grill-to-plan/references/ALIGNMENT-QUIZ.md"
       ],
-      "description": "Only the grill-to-plan skill changes."
+      "description": "Only the grill-to-plan skill changes, plus the quiz reference's question-channel line where it would otherwise contradict the new rule."
     },
     {
       "name": "polish-loaded",

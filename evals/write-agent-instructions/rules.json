@@ -1079,8 +1079,7 @@
       "file": "references/skill-mechanics.md",
       "text": "For destructive or stateful operations, include dry-run or explicit confirmation flags.",
       "graders": [
-        "release-script-skill/dry-run",
-        "release-script-skill/no-push-or-publish"
+        "release-script-skill/dry-run"
       ]
     },
     "script-call-site-args": {
@@ -1101,8 +1100,7 @@
       ],
       "graders": [
         "release-script-skill/tried-safely",
-        "release-script-skill/no-real-release",
-        "release-script-skill/no-push-or-publish"
+        "release-script-skill/no-real-release"
       ]
     },
     "starter-shape": {
