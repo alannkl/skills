@@ -1,157 +1,48 @@
 {
   "harbor": "git+https://github.com/harbor-framework/harbor@bfc6c005e9a572ba22fd7e2d3b414bf014ae1ab0",
-  "cli_versions": {
-    "claude-code": "2.1.309",
-    "codex": "0.164.0",
-    "openclaw": "2026.10.6"
-  },
+  "cli_versions": {"claude-code": "2.1.309", "codex": "0.164.0", "openclaw": "2026.10.6"},
   "judges": ["claude-opus-5-5"],
-  "configs": {
-    "claude-code-haiku-5.5-high": {
-      "harness": "claude-code",
-      "model": "anthropic/claude-haiku-5-5",
-      "effort": "high",
-      "env": {
-        "ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}",
-        "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}"
-      }
-    },
-    "codex-gpt-6-luna-high": {
-      "harness": "codex",
-      "model": "openai/gpt-6-luna",
-      "effort": "high",
-      "env": {
-        "OPENAI_BASE_URL": "${ANTHROPIC_BASE_URL}/v1",
-        "OPENAI_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"
-      }
-    },
-    "claude-code-opus-5.5-high": {
-      "harness": "claude-code",
-      "model": "anthropic/claude-opus-5-5",
-      "effort": "high",
-      "env": {
-        "ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}",
-        "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}"
-      }
-    },
-    "codex-gpt-6-astra-high": {
-      "harness": "codex",
-      "model": "openai/gpt-6-astra",
-      "effort": "high",
-      "env": {
-        "OPENAI_BASE_URL": "${ANTHROPIC_BASE_URL}/v1",
-        "OPENAI_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"
-      }
-    },
-    "openclaw-kimi-k3.1-pro-high-moonshotai": {
-      "harness": "openclaw",
-      "model": "openrouter/moonshotai/kimi-k3.1-pro",
-      "effort": "high",
-      "openrouter_providers": ["moonshotai"],
-      "context_window": 1048576
-    },
-    "openclaw-deepseek-v4.1-flash-high-morph": {
-      "harness": "openclaw",
-      "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
-      "effort": "high",
-      "openrouter_providers": ["morph", "siliconflow", "relace"],
-      "max_tokens": 384000,
-      "context_window": 1048576
-    },
-    "openclaw-deepseek-v4.1-flash-high-deepseek": {
-      "harness": "openclaw",
-      "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
-      "effort": "high",
-      "openrouter_providers": ["deepseek"],
-      "max_tokens": 384000,
-      "context_window": 1048576
-    },
-    "openclaw-deepseek-v4.1-flash-max-morph": {
-      "harness": "openclaw",
-      "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
-      "effort": "max",
-      "openrouter_providers": ["morph", "siliconflow", "relace"],
-      "max_tokens": 384000,
-      "context_window": 1048576
-    },
-    "openclaw-deepseek-v4.1-flash-max-deepseek": {
-      "harness": "openclaw",
-      "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
-      "effort": "max",
-      "openrouter_providers": ["deepseek"],
-      "max_tokens": 384000,
-      "context_window": 1048576
-    },
-    "openclaw-glm-5.3-flash-high-venice": {
-      "harness": "openclaw",
-      "model": "openrouter/z-ai/glm-5.3-flash",
-      "effort": "high",
-      "openrouter_providers": ["venice", "inference-net", "crusoe"],
-      "max_tokens": 130000,
-      "context_window": 1048576
-    },
-    "openclaw-glm-5.3-flash-max-venice": {
-      "harness": "openclaw",
-      "model": "openrouter/z-ai/glm-5.3-flash",
-      "effort": "max",
-      "openrouter_providers": ["venice", "inference-net", "crusoe"],
-      "max_tokens": 130000,
-      "context_window": 1048576
-    },
-    "openclaw-mimo-v2.6-pro-default-xiaomi": {
-      "harness": "openclaw",
-      "model": "openrouter/xiaomi/mimo-v2.6-pro",
-      "effort": null,
-      "openrouter_providers": ["xiaomi"],
-      "context_window": 1050000
-    },
-    "openclaw-minimax-m3.1-flash-high-minimax": {
-      "harness": "openclaw",
-      "model": "openrouter/minimax/minimax-m3.1-flash",
-      "effort": "high",
-      "openrouter_providers": ["minimax"],
-      "context_window": 1048576
-    },
-    "openclaw-minimax-m3.1-flash-xhigh-minimax": {
-      "harness": "openclaw",
-      "model": "openrouter/minimax/minimax-m3.1-flash",
-      "effort": "xhigh",
-      "openrouter_providers": ["minimax"],
-      "context_window": 1048576
-    },
-    "openclaw-minimax-m3.1-flash-max-minimax": {
-      "harness": "openclaw",
-      "model": "openrouter/minimax/minimax-m3.1-flash",
-      "effort": "max",
-      "openrouter_providers": ["minimax"],
-      "context_window": 1048576
-    },
-    "api-haiku-5.5-high": {
-      "harness": "api",
-      "model": "anthropic/claude-haiku-5-5",
-      "effort": "high"
-    },
-    "api-opus-5.5-high": {
-      "harness": "api",
-      "model": "anthropic/claude-opus-5-5",
-      "effort": "high"
-    },
-    "api-gpt-6-astra-high": {
-      "harness": "api",
-      "model": "openai/gpt-6-astra",
-      "effort": "high"
-    },
-    "api-gpt-6-luna-high": {
-      "harness": "api",
-      "model": "openai/gpt-6-luna",
-      "effort": "high"
-    },
-    "api-deepseek-v4.1-flash-high-morph": {
-      "harness": "api",
-      "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
-      "effort": "high",
-      "openrouter_providers": ["morph", "siliconflow", "relace"],
-      "max_tokens": 384000
-    }
-  }
+  "defaults": {
+    "harness": {"run": ["claude-code-opus-5.5-high"], "full": ["claude-code-opus-5.5-high", "codex-gpt-6-astra-high"]},
+    "api": {"run": ["api-opus-5.5-high"], "full": ["api-opus-5.5-high", "api-gpt-6-astra-high"]}
+  },
+  "harnesses": {
+    "claude-code": {"env": {"ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}", "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}"}},
+    "codex": {"env": {"OPENAI_BASE_URL": "${ANTHROPIC_BASE_URL}/v1", "OPENAI_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"}},
+    "openclaw": {},
+    "api": {}
+  },
+  "models": {
+    "opus-5.5": {"id": "anthropic/claude-opus-5-5"},
+    "haiku-5.5": {"id": "anthropic/claude-haiku-5-5"},
+    "gpt-6-astra": {"id": "openai/gpt-6-astra"},
+    "gpt-6-luna": {"id": "openai/gpt-6-luna"},
+    "deepseek-v4.1-flash": {"id": "openrouter/deepseek/deepseek-v4.1-flash-1017", "providers": ["morph", "siliconflow", "relace"], "max_tokens": 384000, "context_window": 1048576},
+    "glm-5.3-flash": {"id": "openrouter/z-ai/glm-5.3-flash", "providers": ["venice", "inference-net", "crusoe"], "max_tokens": 130000, "context_window": 1048576},
+    "kimi-k3.1-pro": {"id": "openrouter/moonshotai/kimi-k3.1-pro", "providers": ["moonshotai"], "context_window": 1048576},
+    "mimo-v2.6-pro": {"id": "openrouter/xiaomi/mimo-v2.6-pro", "providers": ["xiaomi"], "context_window": 1050000},
+    "minimax-m3.1-flash": {"id": "openrouter/minimax/minimax-m3.1-flash", "providers": ["minimax"], "context_window": 1048576}
+  },
+  "presets": [
+    {"harness": "claude-code", "model": "opus-5.5"},
+    {"harness": "claude-code", "model": "haiku-5.5"},
+    {"harness": "codex", "model": "gpt-6-astra"},
+    {"harness": "codex", "model": "gpt-6-luna"},
+    {"harness": "openclaw", "model": "kimi-k3.1-pro"},
+    {"harness": "openclaw", "model": "deepseek-v4.1-flash"},
+    {"harness": "openclaw", "model": "deepseek-v4.1-flash", "provider": "deepseek"},
+    {"harness": "openclaw", "model": "deepseek-v4.1-flash", "effort": "max"},
+    {"harness": "openclaw", "model": "deepseek-v4.1-flash", "effort": "max", "provider": "deepseek"},
+    {"harness": "openclaw", "model": "glm-5.3-flash"},
+    {"harness": "openclaw", "model": "glm-5.3-flash", "effort": "max"},
+    {"harness": "openclaw", "model": "mimo-v2.6-pro", "effort": "default"},
+    {"harness": "openclaw", "model": "minimax-m3.1-flash"},
+    {"harness": "openclaw", "model": "minimax-m3.1-flash", "effort": "xhigh"},
+    {"harness": "openclaw", "model": "minimax-m3.1-flash", "effort": "max"},
+    {"harness": "api", "model": "opus-5.5"},
+    {"harness": "api", "model": "haiku-5.5"},
+    {"harness": "api", "model": "gpt-6-astra"},
+    {"harness": "api", "model": "gpt-6-luna"},
+    {"harness": "api", "model": "deepseek-v4.1-flash"}
+  ]
 }

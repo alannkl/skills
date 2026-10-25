@@ -3,9 +3,10 @@
 
 Run from the root of the repository that holds the artifact and its `evals/<suite>/`.
 
-  eval_instructions.py run <suite> [--config NAME... | --full] [--case NAME]... [--attempts N] [--probe] [--fresh-baseline]
+  eval_instructions.py run <suite> [--config NAME... | --full] [--harness H --model M [--effort E] [--provider P]]
+                           [--case NAME]... [--attempts N] [--probe] [--fresh-baseline]
                            [--env bwrap|docker] [--concurrency N] [--concurrency CONFIG=N]...
-  eval_instructions.py run <suite> --minus RULE [--config NAME]...
+  eval_instructions.py run <suite> --minus RULE [--config NAME]... [--harness H --model M ...]
   eval_instructions.py grade <run-dir> [--judge MODEL]...
   eval_instructions.py report <run-dir>
   eval_instructions.py rules <suite> [--all-versions]
@@ -48,14 +49,10 @@ from rules import MINUS, arm, artifact_digest, check_rules, load_rules, minus_ar
 from tasks import PROBE_CASE, artifact_root, build_tasks, load_spec, load_suite, task_digest  # noqa: E402
 from api_runner import run_api_job  # noqa: E402
 import sandbox  # noqa: E402
+import setups  # noqa: E402
 
 SETTINGS = json.loads((HERE / "configs.json").read_text())
-DEFAULT_CONFIGS = ["claude-code-opus-5.5-high"]
-DEFAULT_API_CONFIGS = ["api-opus-5.5-high"]
-# A full run, and by default a removal test, covers every everyday model: two vendors, so a result
-# that holds on both is not one model's habit. Weaker models run only when named with --config.
-FULL_CONFIGS = DEFAULT_CONFIGS + ["codex-gpt-6-astra-high"]
-FULL_API_CONFIGS = DEFAULT_API_CONFIGS + ["api-gpt-6-astra-high"]
+SETTINGS["configs"] = setups.catalog(SETTINGS)
 # bubblewrap sandboxes start faster and cost less memory than containers; Docker covers hosts without it.
 DEFAULT_ENV = "bwrap" if sys.platform == "linux" and shutil.which("bwrap") else "docker"
 # Sessions at once across all setups: at most 16 under bwrap, fewer when the host's memory cannot hold
@@ -156,7 +153,8 @@ def openclaw_model_config(config: dict) -> str:
         effort = config["effort"]
         entry["compat"] = {"supportsReasoningEffort": True, "supportedReasoningEfforts": [effort]} if effort else \
             {"supportsReasoningEffort": False}
-        entry["params"] = {"provider": {"order": config["openrouter_providers"], "allow_fallbacks": False}}
+        if config.get("openrouter_providers"):
+            entry["params"] = {"provider": {"order": config["openrouter_providers"], "allow_fallbacks": False}}
         native = {"models": [entry]}
     else:
         native = {"api": "anthropic-messages", "models": [entry]}
@@ -324,15 +322,34 @@ def check_credentials(configs: list[str]) -> None:
         raise SystemExit(f"set these in the environment or .env first: {sorted(missing)}")
 
 
+def setup_name(entry: str | dict) -> str:
+    """A preset's name, or the name of a setup given as a spec, which joins the known configs."""
+    if isinstance(entry, str):
+        return entry
+    name, config = setups.resolve(entry, SETTINGS)
+    SETTINGS["configs"][name] = config
+    return name
+
+
 def cmd_run(args) -> None:
     load_dotenv(REPO / ".env")
     suite = load_suite(REPO, args.suite)
     artifact, full = suite["artifact"], REPO / suite["artifact"]["path"]
     wants_api = artifact["type"] == "prompt" and artifact["runner"] == API
-    if args.full or (args.minus and not args.config):
-        configs = FULL_API_CONFIGS if wants_api else FULL_CONFIGS
+    if args.model and args.full:
+        raise SystemExit("--full runs the suite's setups; name another setup with --config or --harness and --model")
+    named = list(args.config or [])
+    if args.model or args.harness:
+        if not (args.model and args.harness):
+            raise SystemExit("a setup needs both --harness and --model")
+        spec = {"harness": args.harness, "model": args.model, "provider": args.provider}
+        named.append(setup_name(spec | ({"effort": args.effort} if args.effort else {})))
+    # A removal test, like a full run, covers every setup the artifact must support.
+    targets = {**SETTINGS["defaults"]["api" if wants_api else "harness"], **suite["setups"]}
+    if args.full or (args.minus and not named):
+        configs = [setup_name(s) for s in targets["full"]]
     else:
-        configs = args.config or (DEFAULT_API_CONFIGS if wants_api else DEFAULT_CONFIGS)
+        configs = named or [setup_name(s) for s in targets["run"]]
     unknown = set(configs) - set(SETTINGS["configs"])
     if unknown:
         raise SystemExit(f"unknown configs: {sorted(unknown)}")
@@ -715,12 +732,21 @@ def main() -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run")
     run.add_argument("suite", help="folder name under evals/")
-    setups = run.add_mutually_exclusive_group()
-    setups.add_argument("--config", action="append",
-                        help=f"from configs.json; default {DEFAULT_CONFIGS}, or {DEFAULT_API_CONFIGS} for an api prompt; "
-                             "with --minus, the --full setups")
-    setups.add_argument("--full", action="store_true",
-                        help=f"run {FULL_CONFIGS}, or {FULL_API_CONFIGS} for an api prompt")
+    chosen = run.add_mutually_exclusive_group()
+    chosen.add_argument("--config", action="append",
+                        help="a preset from configs.json; default the suite's `run` setups in eval.json, else "
+                             f"{SETTINGS['defaults']['harness']['run']}, or {SETTINGS['defaults']['api']['run']} "
+                             "for an api prompt; with --minus, the --full setups")
+    chosen.add_argument("--full", action="store_true",
+                        help="run the suite's `full` setups in eval.json, else "
+                             f"{SETTINGS['defaults']['harness']['full']}, or {SETTINGS['defaults']['api']['full']} "
+                             "for an api prompt")
+    run.add_argument("--harness", choices=sorted(SETTINGS["harnesses"]),
+                     help="with --model, one more setup beside any --config ones")
+    run.add_argument("--model", help="a model named in configs.json, or a full id such as openrouter/vendor/model")
+    run.add_argument("--effort", help="reasoning effort, or `default` to send none; default high")
+    run.add_argument("--provider", help="OpenRouter provider to try first, or a comma-separated order; "
+                                        "default the model's preferred providers")
     run.add_argument("--case", action="append", help="case folder name; default all")
     run.add_argument("--variants", type=lambda s: s.split(","), default=["with", "without"])
     run.add_argument("--attempts", type=int, help="runs per task; default 1, or 3 with --minus")

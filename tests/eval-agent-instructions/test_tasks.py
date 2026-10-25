@@ -88,6 +88,14 @@ class Tasks(unittest.TestCase):
         self.assertIn("List the skills", (task / "instruction.md").read_text())
         self.assertEqual(list((task / "environment" / "case").iterdir()), [])
 
+    def test_suite_names_the_setups_it_must_support(self):
+        self.assertEqual(load_suite(self.repo, "target")["setups"], {})
+        (self.cases / "eval.json").write_text(json.dumps({"setups": {"run": ["a"], "full": ["a", "b"]}}))
+        self.assertEqual(load_suite(self.repo, "target")["setups"], {"run": ["a"], "full": ["a", "b"]})
+        (self.cases / "eval.json").write_text(json.dumps({"setups": {"default": ["a"]}}))
+        with self.assertRaises(SystemExit):
+            load_suite(self.repo, "target")
+
 
 if __name__ == "__main__":
     unittest.main()

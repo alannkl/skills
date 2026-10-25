@@ -7,10 +7,12 @@ A suite is `evals/<suite>/` in the repository that holds the artifact, outside t
 ```json
 {
   "artifact": {"type": "skill", "path": "<skill folder>"},
-  "dependencies": ["<skill folder>"]
+  "dependencies": ["<skill folder>"],
+  "setups": {"run": ["<config>"], "full": ["<config>", "<config>"]}
 }
 ```
 
+- `setups` names the setups the artifact must support: `run` for edit rounds, `full` for `--full` and `--minus`. Each entry is a preset name from `scripts/configs.json` or a spec such as `{"harness": "openclaw", "model": "deepseek-v4.1-flash", "effort": "high", "provider": "morph"}`. Either key left out falls back to that file's `defaults`, which `--help` prints.
 - `artifact.type` is `skill`, `instruction-file` or `prompt`.
 - An instruction file also takes `"as"`, the name it gets in the workspace, such as `AGENTS.md` or `CLAUDE.md`; it defaults to the file's own name. A fixture must not already hold that file.
 - A prompt also takes `"role"` and `"runner"`:
@@ -43,10 +45,10 @@ Grader types; `path` is relative to the workspace:
 
 A grader with `"variants": ["with"]` runs only in that arm. A read-only case needs both `unchanged_except` and `no_writes`: an agent can write through the shell, which only the end state shows.
 
-Make each case discriminate:
+Make each case realistic:
 
-- The baseline should often fail it while the artifact passes, and it should offer a tempting wrong answer.
-- Remove hints that give the answer away, and add realistic noise such as unrelated real defects.
+- Take the request and its files from work users bring: what a typical user would ask, about files like theirs. Never shape a case so the baseline fails; text that changes nothing on realistic cases is a no-op.
+- Keep the cues and noise real work has, such as unrelated real defects.
 - Pair a case where the right result is a change with one where it is restraint.
 - Grade the end result, not its wording. Require exact text only where something depends on it, such as identifiers, commands, paths, and formats a tool parses; check everything else by meaning, so any wording with the same effect passes.
 - Write an `llm` criterion as the facts the output must state or keep, so a terse correct answer passes.

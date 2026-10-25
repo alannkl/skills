@@ -26,8 +26,9 @@ def build_request(config: dict, system: str | None, user: str) -> tuple[str, dic
     effort = config.get("effort")
     if provider == "openrouter":
         messages = ([{"role": "system", "content": system}] if system else []) + [{"role": "user", "content": user}]
-        body = {"model": model, "messages": messages, "usage": {"include": True},
-                "provider": {"order": config["openrouter_providers"], "allow_fallbacks": False}}
+        body = {"model": model, "messages": messages, "usage": {"include": True}}
+        if config.get("openrouter_providers"):
+            body["provider"] = {"order": config["openrouter_providers"], "allow_fallbacks": False}
         if "max_tokens" in config:
             body["max_tokens"] = config["max_tokens"]
         if effort:

@@ -6,7 +6,11 @@ the skills both arms install:
     {"artifact": {"type": "skill", "path": "<skill folder>"}
               | {"type": "instruction-file", "path": "<file>", "as": "AGENTS.md"}
               | {"type": "prompt", "path": "<file>", "role": "system" | "user", "runner": "harness" | "api"},
-     "dependencies": ["<skill folder>", ...]}
+     "dependencies": ["<skill folder>", ...],
+     "setups": {"run": [<preset name or setup spec>, ...], "full": [...]}}
+
+`setups` names the setups the artifact must support, replacing the defaults in
+configs.json: `run` for a plain run, `full` for --full and --minus.
 
 Without an artifact entry, the suite tests the skill in the folder of its own name.
 A skill is installed where each harness finds skills; an instruction file is
@@ -118,7 +122,10 @@ def load_suite(repo: Path, name: str) -> dict:
             raise SystemExit(f"{path}: a prompt's role is system or user, and its runner harness or api")
     else:
         raise SystemExit(f"{path}: artifact type must be skill, instruction-file or prompt")
-    return {"name": name, "artifact": artifact, "dependencies": config.get("dependencies", [])}
+    setups = config.get("setups", {})
+    if set(setups) - {"run", "full"}:
+        raise SystemExit(f"{path}: setups takes run and full")
+    return {"name": name, "artifact": artifact, "dependencies": config.get("dependencies", []), "setups": setups}
 
 
 def artifact_root(repo: Path, artifact: dict) -> Path:
