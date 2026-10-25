@@ -42,7 +42,7 @@ Grader types; `path` is relative to the workspace:
 | `no_writes` | the transcript shows no write through an edit tool | |
 | `skills_loaded` | the transcript shows every skill in `skills` loaded from the installed copies | `skills` |
 | `read` | a file read or shell command delivered text containing `marker`, such as the file's first line | `marker`, `match` |
-| `ran` | a shell command matching `pattern` ran and succeeded | `pattern`, `match` |
+| `ran` | a shell command matching `pattern` ran and succeeded; with `not_contains`, none was tried | `pattern`, `match` |
 | `llm` | the judge finds `criteria` met, given the file at `path` (or every file in `paths`, which may hold globs such as `skill/**/*.md`) before and after, or the final message | `criteria`, `path` or `paths`, `with_final_message` (also show the final message beside the files) |
 | `json` | the file at `path`, or the final message, parses as JSON whole and has every `required` top-level key | `required`, `path` |
 

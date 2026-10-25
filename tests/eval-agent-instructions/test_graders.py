@@ -159,6 +159,9 @@ class Graders(unittest.TestCase):
         self.assertTrue(self.grade(spec, ops=[{"kind": "exec", "ok": True, "path": "./release.sh 1.2.0 --dry-run", "output": ""}])["g"]["pass"])
         self.assertFalse(self.grade(spec, ops=[{"kind": "exec", "ok": False, "path": "./release.sh 1.2.0 --dry-run", "output": "err"}])["g"]["pass"])
         self.assertFalse(self.grade(spec, ops=[{"kind": "read", "ok": True, "path": "release.sh --dry-run", "output": ""}])["g"]["pass"])
+        never = {"type": "ran", "pattern": r"eas submit", "match": "not_contains"}
+        self.assertFalse(self.grade(never, ops=[{"kind": "exec", "ok": False, "path": "eas submit", "output": "not found"}])["g"]["pass"])
+        self.assertTrue(self.grade(never, ops=[{"kind": "exec", "ok": True, "path": "eas --version", "output": ""}])["g"]["pass"])
 
     def test_spec_problems_catch_missing_fields_and_conflicting_paths(self):
         self.assertEqual(graders.spec_problems([{"name": "a", "type": "llm", "criteria": "c", "path": "x"}]), [])

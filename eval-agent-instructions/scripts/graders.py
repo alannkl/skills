@@ -135,11 +135,13 @@ def read(spec, workspace, initial, harness, run, judges):
 
 
 def ran(spec, workspace, initial, harness, run, judges):
-    """A shell command matching `pattern` ran and succeeded."""
+    """A shell command matching `pattern` ran and succeeded; with `not_contains`, none was even tried,
+    since a command that failed only because its tool is missing still shows the attempt."""
     if run.get("ops") is None:
         return _UNDECIDED_NO_TRANSCRIPT
-    found = any(re.search(spec["pattern"], op["path"]) for op in run["ops"] if op["kind"] == "exec" and op["ok"])
     wanted = spec.get("match", "contains") == "contains"
+    found = any(re.search(spec["pattern"], op["path"]) for op in run["ops"]
+                if op["kind"] == "exec" and (op["ok"] or not wanted))
     return {"pass": found == wanted, "detail": "" if found == wanted else f"command {'not ' if wanted else ''}run"}
 
 
