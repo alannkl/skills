@@ -87,21 +87,15 @@ Written by an agent that never saw this skill, its cases, graders or rules, from
 | agreed-plan-claude-md-import | 2 | implement exactly the agreed plan; the earlier turns are supplied history |
 | near-miss-* (six) | near-miss | ordinary work on human-facing text or code; the skill should not load |
 
-## Reduced versions of large replays
-
-Smaller worlds for the same requests, so edit rounds stay fast; each runs beside its original before replacing it in quick rounds. Their NOTES.md map each original grader to its new one.
+## Split from a large replay
 
 | Case | From | Change |
 | --- | --- | --- |
-| trim-panel-skill-small | trim-panel-skill | instruction prose cut by a third; scripts kept |
-| review-skills-scope-sweep-small | review-skills-scope-sweep | shorter skills, every quoted phrase kept |
-| staged-skill-ready-to-ship-small, staged-skill-ready-to-ship-fixed-small | the staged-skill reviews | unrelated skills and sections removed; changed lines preserved |
-| release-script-fix-small | release-script-skill | same request; the script fix is the job |
-| release-skill-gate-small | release-script-skill | the script already fixed; updating the skill is the job; the request's first sentence names the changed interface |
+| release-skill-gate-small | release-script-skill | the script already fixed; updating the skill is the job; the request's first sentence names the changed interface. NOTES.md maps each original grader to its new one. |
 
 ## Integration cases
 
-These run only with `--all-cases` or by name while smaller versions are drafted and checked beside them; a reason below holds only if the smaller version cannot show the behavior. Medians without the skill, Opus / Astra:
+These run only with `--all-cases` or by name. Smaller worlds for trim-panel-skill, review-skills-scope-sweep, release-script-skill and the staged-skill reviews kept every failure but took as long, so their time is the work the request asks for. Medians without the skill, Opus / Astra:
 
 | Case | Without the skill | Why it stays large |
 | --- | --- | --- |
