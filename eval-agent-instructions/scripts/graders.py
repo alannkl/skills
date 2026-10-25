@@ -13,6 +13,7 @@ import json
 import os
 import random
 import re
+import shlex
 import shutil
 import subprocess
 import tempfile
@@ -134,15 +135,56 @@ def read(spec, workspace, initial, harness, run, judges):
     return {"pass": found == wanted, "detail": "" if found == wanted else f"marker {'not ' if wanted else ''}delivered"}
 
 
+# Commands that only read or print text: a pattern found in their arguments was searched for or
+# quoted, not run.
+_TEXT_COMMANDS = {"rg", "grep", "egrep", "fgrep", "cat", "head", "tail", "less", "sed", "awk", "echo", "printf",
+                  "find", "ls", "wc", "diff", "git grep", "git log", "git show", "git diff"}
+_HEREDOC = re.compile(r"<<-?\s*['\"]?(\w+)['\"]?[^\n]*\n.*?\n\s*\1\b", re.S)
+
+
+def invocations(command: str) -> list[str]:
+    """The commands a shell line runs, one per pipeline or list element, without heredoc bodies (text
+    written to a file) or commands that only read or print text."""
+    found = []
+    for line in _HEREDOC.sub("", command).splitlines():
+        try:
+            tokens = list(shlex.shlex(line, posix=True, punctuation_chars=True))
+        except ValueError:
+            tokens = line.split()
+        part = []
+        for token in tokens + [";"]:
+            if token not in (";", "&&", "||", "|", "&", "(", ")"):
+                part.append(token)
+                continue
+            while part and (re.fullmatch(r"\w+=.*", part[0]) or part[0] in ("sudo", "env", "exec", "time")):
+                part = part[1:]
+            if part and part[0] not in _TEXT_COMMANDS and " ".join(part[:2]) not in _TEXT_COMMANDS:
+                found.append(" ".join(part))
+            part = []
+    return found
+
+
 def ran(spec, workspace, initial, harness, run, judges):
     """A shell command matching `pattern` ran and succeeded; with `not_contains`, none was even tried,
-    since a command that failed only because its tool is missing still shows the attempt."""
+    since a command that failed only because its tool is missing still shows the attempt. Text the
+    agent searched for, printed or wrote through a heredoc does not count as running it."""
     if run.get("ops") is None:
         return _UNDECIDED_NO_TRANSCRIPT
     wanted = spec.get("match", "contains") == "contains"
-    found = any(re.search(spec["pattern"], op["path"]) for op in run["ops"]
-                if op["kind"] == "exec" and (op["ok"] or not wanted))
+    found = any(re.search(spec["pattern"], part) for op in run["ops"]
+                if op["kind"] == "exec" and (op["ok"] or not wanted) for part in invocations(op["path"]))
     return {"pass": found == wanted, "detail": "" if found == wanted else f"command {'not ' if wanted else ''}run"}
+
+
+def _glob_files(root: Path, pattern: str):
+    """Files matching `pattern`; a matched folder, as `dir/**` yields, stands for every file under it."""
+    for match in root.glob(pattern):
+        if ".git" in match.relative_to(root).parts:
+            continue
+        if match.is_file():
+            yield match
+        elif match.is_dir():
+            yield from (f for f in match.rglob("*") if f.is_file() and ".git" not in f.relative_to(root).parts)
 
 
 def llm(spec, workspace, initial, harness, run, judges):
@@ -151,7 +193,7 @@ def llm(spec, workspace, initial, harness, run, judges):
         # Several files go to the judge as one document, each under its own header.
         # A glob such as `skill/**/*.md` stands for every matching file in either workspace.
         names = sorted({str(f.relative_to(root)) for pattern in spec["paths"] for root in (initial, workspace)
-                        for f in root.glob(pattern) if f.is_file()} if any("*" in p for p in spec["paths"]) else [])
+                        for f in _glob_files(root, pattern)} if any("*" in p for p in spec["paths"]) else [])
         names = names + [p for p in spec["paths"] if "*" not in p and p not in names]
 
         def joined(root, missing):

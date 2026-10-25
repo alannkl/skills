@@ -159,6 +159,10 @@ class Graders(unittest.TestCase):
         self.assertTrue(self.grade(spec, ops=[{"kind": "exec", "ok": True, "path": "./release.sh 1.2.0 --dry-run", "output": ""}])["g"]["pass"])
         self.assertFalse(self.grade(spec, ops=[{"kind": "exec", "ok": False, "path": "./release.sh 1.2.0 --dry-run", "output": "err"}])["g"]["pass"])
         self.assertFalse(self.grade(spec, ops=[{"kind": "read", "ok": True, "path": "release.sh --dry-run", "output": ""}])["g"]["pass"])
+        searched = [{"kind": "exec", "ok": True, "path": 'rg -n "eas submit|git push" docs/RELEASING.md', "output": ""},
+                    {"kind": "exec", "ok": True, "path": "cat > notes.md <<'EOF'\nthen run eas submit\nEOF", "output": ""}]
+        self.assertTrue(self.grade({"type": "ran", "pattern": r"eas submit", "match": "not_contains"}, ops=searched)["g"]["pass"])
+        self.assertTrue(self.grade(spec, ops=[{"kind": "exec", "ok": True, "path": "cd x && FOO=1 ./release.sh 1.2.0 --dry-run | tail", "output": ""}])["g"]["pass"])
         never = {"type": "ran", "pattern": r"eas submit", "match": "not_contains"}
         self.assertFalse(self.grade(never, ops=[{"kind": "exec", "ok": False, "path": "eas submit", "output": "not found"}])["g"]["pass"])
         self.assertTrue(self.grade(never, ops=[{"kind": "exec", "ok": True, "path": "eas --version", "output": ""}])["g"]["pass"])
@@ -168,6 +172,13 @@ class Graders(unittest.TestCase):
         self.assertEqual(len(graders.spec_problems([{"name": "a", "type": "read", "pattern": "x"},
                                                      {"name": "b", "type": "llm", "criteria": "c", "path": "x", "paths": ["y"]},
                                                      {"name": "c", "type": "nope"}])), 3)
+
+    def test_a_folder_glob_gives_the_judge_every_file_under_it(self):
+        (self.workspace / "docs" / "sub").mkdir()
+        (self.workspace / "docs" / "sub" / "new.md").write_text("New.\n")
+        pending = self.grade({"type": "llm", "criteria": "c", "paths": ["docs/**"]})["g"]["pending"]
+        self.assertIn("=== docs/guide.md", pending["subject"])
+        self.assertIn("=== docs/sub/new.md\nNew.", pending["subject"])
 
     def test_llm_paths_expand_globs_over_both_workspaces(self):
         (self.workspace / "docs" / "new.md").write_text("Added.\n")

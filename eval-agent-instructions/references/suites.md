@@ -42,8 +42,8 @@ Grader types; `path` is relative to the workspace:
 | `no_writes` | the transcript shows no write through an edit tool | |
 | `skills_loaded` | the transcript shows every skill in `skills` loaded from the installed copies | `skills` |
 | `read` | a file read or shell command delivered text containing `marker`, such as the file's first line | `marker`, `match` |
-| `ran` | a shell command matching `pattern` ran and succeeded; with `not_contains`, none was tried | `pattern`, `match` |
-| `llm` | the judge finds `criteria` met, given the file at `path` (or every file in `paths`, which may hold globs such as `skill/**/*.md`) before and after, or the final message | `criteria`, `path` or `paths`, `with_final_message` (also show the final message beside the files) |
+| `ran` | a shell command matching `pattern` ran and succeeded; with `not_contains`, none was tried. Text the agent searched for, printed or wrote through a heredoc is not a run | `pattern`, `match` |
+| `llm` | the judge finds `criteria` met, given the file at `path` (or every file in `paths`, which may hold globs such as `skill/**/*.md`; a matched folder stands for every file under it) before and after, or the final message | `criteria`, `path` or `paths`, `with_final_message` (also show the final message beside the files) |
 | `json` | the file at `path`, or the final message, parses as JSON whole and has every `required` top-level key | `required`, `path` |
 
 A grader with `"diagnostic": true` is reported but left out of `compare`'s acceptance grades: give it to a reasonable preference the request does not state. `compare` also leaves out `read` and `skills_loaded`, since a draft may reach the same outcome another way. A grader with `"variants": ["with"]` runs only in that arm and in `--minus` copies. Give process checks, such as `read` and `skills_loaded`, that limit: they show what the agent did, not the quality of its output, and the other arm lacks the skill they look for. A read-only case needs both `unchanged_except` and `no_writes`: an agent can write through the shell, which only the end state shows.
