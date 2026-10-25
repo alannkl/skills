@@ -13,7 +13,7 @@ SCRIPTS = Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scr
 sys.path.insert(0, str(SCRIPTS))
 import sandbox  # noqa: E402
 import tasks  # noqa: E402
-from eval_instructions import mean_agent_seconds, parse_concurrency, split_slots  # noqa: E402
+from eval_instructions import choose_slots, mean_agent_seconds, parse_concurrency, split_slots  # noqa: E402
 
 # The Dockerfile every stored Docker baseline was built from; a change to its text invalidates them all.
 FROZEN_DOCKERFILE = """FROM b
@@ -109,6 +109,17 @@ class Sandbox(unittest.TestCase):
         self.assertEqual(split_slots(12, trials, seconds, {}), {"slow": 6, "fast": 2, "new": 4})
         self.assertEqual(split_slots(12, trials, seconds, {"new": 2}), {"new": 2, "slow": 8, "fast": 2})
         self.assertEqual(split_slots(2, trials, seconds, {}), {"slow": 1, "fast": 1, "new": 1})
+
+    def test_default_slots_fit_in_free_memory_and_a_given_number_runs_as_given(self):
+        trials, seconds = {"claw": 100, "codex": 100}, {"claw": 60.0, "codex": 20.0}
+        gb = {"claw": 1.0, "codex": 0.5}
+        self.assertEqual(choose_slots(None, trials, seconds, {}, gb, 100.0), {"claw": 12, "codex": 4})
+        fitted = choose_slots(None, trials, seconds, {}, gb, 8.0)
+        self.assertLessEqual(sum(n * gb[name] for name, n in fitted.items()), 8.0)
+        self.assertEqual(sum(fitted.values()), 9)
+        self.assertEqual(choose_slots(24, trials, seconds, {}, gb, 8.0), {"claw": 18, "codex": 6})
+        # Each setup keeps one session even when memory holds none.
+        self.assertEqual(choose_slots(None, trials, seconds, {}, gb, 0.0), {"claw": 1, "codex": 1})
 
     def test_agent_time_comes_from_earlier_runs_without_probes(self):
         for run, trial, end in (("r1", "case--with__a", "10:01:00"), ("r2", "case--without__b", "10:00:30"),

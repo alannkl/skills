@@ -9,7 +9,7 @@
     "claude-opus-5-5"
   ],
   "configs": {
-    "claude-haiku": {
+    "claude-code-haiku-5.5-high": {
       "harness": "claude-code",
       "model": "anthropic/claude-haiku-5-5",
       "effort": "high",
@@ -18,7 +18,7 @@
         "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}"
       }
     },
-    "codex-luna": {
+    "codex-gpt-6-luna-high": {
       "harness": "codex",
       "model": "openai/gpt-6-luna",
       "effort": "high",
@@ -27,7 +27,7 @@
         "OPENAI_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"
       }
     },
-    "openclaw-haiku": {
+    "openclaw-haiku-5.5-high": {
       "harness": "openclaw",
       "model": "anthropic/claude-haiku-5-5",
       "effort": "high",
@@ -37,7 +37,7 @@
         "ANTHROPIC_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"
       }
     },
-    "openclaw-deepseek-high": {
+    "openclaw-deepseek-v4.1-flash-high-morph": {
       "harness": "openclaw",
       "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
       "effort": "high",
@@ -45,7 +45,15 @@
       "max_tokens": 384000,
       "context_window": 1048576
     },
-    "openclaw-deepseek-max": {
+    "openclaw-deepseek-v4.1-flash-high-deepseek": {
+      "harness": "openclaw",
+      "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+      "effort": "high",
+      "openrouter_providers": ["deepseek"],
+      "max_tokens": 384000,
+      "context_window": 1048576
+    },
+    "openclaw-deepseek-v4.1-flash-max-morph": {
       "harness": "openclaw",
       "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
       "effort": "max",
@@ -53,7 +61,15 @@
       "max_tokens": 384000,
       "context_window": 1048576
     },
-    "openclaw-glm-high": {
+    "openclaw-deepseek-v4.1-flash-max-deepseek": {
+      "harness": "openclaw",
+      "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
+      "effort": "max",
+      "openrouter_providers": ["deepseek"],
+      "max_tokens": 384000,
+      "context_window": 1048576
+    },
+    "openclaw-glm-5.3-flash-high-venice": {
       "harness": "openclaw",
       "model": "openrouter/z-ai/glm-5.3-flash",
       "effort": "high",
@@ -61,7 +77,7 @@
       "max_tokens": 130000,
       "context_window": 1048576
     },
-    "openclaw-glm-max": {
+    "openclaw-glm-5.3-flash-max-venice": {
       "harness": "openclaw",
       "model": "openrouter/z-ai/glm-5.3-flash",
       "effort": "max",
@@ -69,45 +85,45 @@
       "max_tokens": 130000,
       "context_window": 1048576
     },
-    "openclaw-mimo": {
+    "openclaw-mimo-v2.6-pro-default-xiaomi": {
       "harness": "openclaw",
       "model": "openrouter/xiaomi/mimo-v2.6-pro",
       "effort": null,
       "openrouter_providers": ["xiaomi"],
       "context_window": 1050000
     },
-    "openclaw-minimax-high": {
+    "openclaw-minimax-m3.1-flash-high-minimax": {
       "harness": "openclaw",
       "model": "openrouter/minimax/minimax-m3.1-flash",
       "effort": "high",
       "openrouter_providers": ["minimax"],
       "context_window": 1048576
     },
-    "openclaw-minimax-xhigh": {
+    "openclaw-minimax-m3.1-flash-xhigh-minimax": {
       "harness": "openclaw",
       "model": "openrouter/minimax/minimax-m3.1-flash",
       "effort": "xhigh",
       "openrouter_providers": ["minimax"],
       "context_window": 1048576
     },
-    "openclaw-minimax-max": {
+    "openclaw-minimax-m3.1-flash-max-minimax": {
       "harness": "openclaw",
       "model": "openrouter/minimax/minimax-m3.1-flash",
       "effort": "max",
       "openrouter_providers": ["minimax"],
       "context_window": 1048576
     },
-    "api-haiku": {
+    "api-haiku-5.5-high": {
       "harness": "api",
       "model": "anthropic/claude-haiku-5-5",
       "effort": "high"
     },
-    "api-luna": {
+    "api-gpt-6-luna-high": {
       "harness": "api",
       "model": "openai/gpt-6-luna",
       "effort": "high"
     },
-    "api-deepseek-high": {
+    "api-deepseek-v4.1-flash-high-morph": {
       "harness": "api",
       "model": "openrouter/deepseek/deepseek-v4.1-flash-1017",
       "effort": "high",

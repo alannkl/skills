@@ -50,16 +50,21 @@ from api_runner import run_api_job  # noqa: E402
 import sandbox  # noqa: E402
 
 SETTINGS = json.loads((HERE / "configs.json").read_text())
-DEFAULT_CONFIGS = ["openclaw-deepseek-high"]
-DEFAULT_API_CONFIGS = ["api-deepseek-high"]
+DEFAULT_CONFIGS = ["openclaw-deepseek-v4.1-flash-high-morph"]
+DEFAULT_API_CONFIGS = ["api-deepseek-v4.1-flash-high-morph"]
 # A full run adds a second harness and model family to the edit-round default.
-FULL_CONFIGS = DEFAULT_CONFIGS + ["codex-luna"]
-FULL_API_CONFIGS = DEFAULT_API_CONFIGS + ["api-luna"]
+FULL_CONFIGS = DEFAULT_CONFIGS + ["codex-gpt-6-luna-high"]
+FULL_API_CONFIGS = DEFAULT_API_CONFIGS + ["api-gpt-6-luna-high"]
 # bubblewrap sandboxes start faster and cost less memory than containers; Docker covers hosts without it.
 DEFAULT_ENV = "bwrap" if sys.platform == "linux" and shutil.which("bwrap") else "docker"
-# Sessions at once across all setups. 12 bwrap sessions left about 2.4 GB of a 15 GB host free, at
-# about 330 MB each; Docker setups run one at a time, each container capped at 2 GB.
+# Sessions at once across all setups: at most 16 under bwrap, fewer when the host's memory cannot hold
+# them; Docker setups run one at a time, each container capped at 2 GB.
 DEFAULT_SLOTS = {"bwrap": 16, "docker": 6}
+# Memory a session holds midway through a run, in GB. OpenClaw's Node heap grows over a session, from
+# about 0.3 GB to 1-1.9 GB; Claude Code and Codex sessions stayed near 0.3 GB.
+SESSION_GB = {"openclaw": 1.0, "claude-code": 0.5, "codex": 0.5, "api": 0.0}
+# Kept free for the host, so sessions never push it into swap.
+RESERVE_GB = 2.0
 # Each harness ships skills of its own, such as Claude Code's code-review and the
 # skill-creator in Codex and OpenClaw. They compete with the skill under test and
 # can share its name, so they are off unless a configuration sets builtin_skills;
@@ -381,13 +386,18 @@ def cmd_run(args) -> None:
             "agent_args": {c: agent_args(SETTINGS["configs"][c]) for c in configs},
             "tasks": tasks, "reused": reused, "started_at": datetime.now(timezone.utc).isoformat()}
     plans = {name: job_plan(run_dir / "tasks", tasks, sorted(reused.get(name, {})), artifact) for name in configs}
-    budget = budget or DEFAULT_SLOTS[args.env]
     if args.env == "docker" and not wants_api:
-        slots = {name: named.get(name, budget) for name in configs}
+        slots = {name: named.get(name, budget or DEFAULT_SLOTS["docker"]) for name in configs}
     else:
         trials = {name: attempts * sum(len(job_tasks) for _, job_tasks, _ in plans[name]) for name in configs}
-        slots = split_slots(budget, trials, {name: mean_agent_seconds(run_dir.parent, name) for name in configs},
-                            named)
+        seconds = {name: mean_agent_seconds(run_dir.parent, name) for name in configs}
+        gb = {name: SESSION_GB[SETTINGS["configs"][name]["harness"]] for name in configs}
+        room = free_memory_gb() - RESERVE_GB
+        slots = choose_slots(budget, trials, seconds, named, gb, room)
+        need = sum(slots[name] * gb[name] for name in configs)
+        if need > room:
+            print(f"== warning: {sum(slots.values())} sessions need about {need:.0f} GB; "
+                  f"{room:.0f} GB is free beyond the {RESERVE_GB:.0f} GB kept for the host", file=sys.stderr)
     meta["slots"] = slots
     print(f"== sessions at once: {slots}", file=sys.stderr)
     (run_dir / "run.json").write_text(json.dumps(meta, indent=2) + "\n")
@@ -429,6 +439,28 @@ def parse_concurrency(values: list[str]) -> tuple[int | None, dict[str, int]]:
     named = {k: int(v) for k, v in (value.split("=", 1) for value in values if "=" in value)}
     bare = [int(value) for value in values if "=" not in value]
     return (bare[-1] if bare else None), named
+
+
+def choose_slots(budget: int | None, trials: dict[str, int], seconds: dict[str, float | None],
+                 named: dict[str, int], gb: dict[str, float], room: float) -> dict[str, int]:
+    """Sessions at once per setup: an explicit budget as given, otherwise the largest default-or-smaller
+    budget whose sessions fit in `room` GB, by each setup's `gb` per session."""
+    if budget is None:
+        budget = DEFAULT_SLOTS["bwrap"]
+        while budget > len(trials) and sum(n * gb[name] for name, n in
+                                           split_slots(budget, trials, seconds, named).items()) > room:
+            budget -= 1
+    return split_slots(budget, trials, seconds, named)
+
+
+def free_memory_gb() -> float:
+    """Memory the host can give new processes without swapping; unbounded where Linux does not say."""
+    try:
+        with open("/proc/meminfo") as f:
+            kib = next(int(line.split()[1]) for line in f if line.startswith("MemAvailable:"))
+    except (FileNotFoundError, StopIteration):
+        return float("inf")
+    return kib / 1024 ** 2
 
 
 def split_slots(budget: int, trials: dict[str, int], seconds: dict[str, float | None],
@@ -692,8 +724,9 @@ def main() -> None:
     run.add_argument("--attempts", type=int, help="runs per task; default 1, or 3 with --minus")
     run.add_argument("--concurrency", action="append", default=[], metavar="[CONFIG=]N",
                      help="N: sessions at once across all setups, split by each setup's agent time in recent "
-                          f"runs (default {DEFAULT_SLOTS['bwrap']} under bwrap; under Docker, per setup, default "
-                          f"{DEFAULT_SLOTS['docker']}); CONFIG=N fixes one setup's number")
+                          f"runs (default: up to {DEFAULT_SLOTS['bwrap']} under bwrap, as many as free memory holds; "
+                          f"under Docker, per setup, {DEFAULT_SLOTS['docker']}); CONFIG=N fixes one setup's number. "
+                          "A given number runs as given, with a warning when it will not fit in memory")
     run.add_argument("--env", choices=["bwrap", "docker"], default=DEFAULT_ENV,
                      help=f"where sessions run; default {DEFAULT_ENV}")
     run.add_argument("--probe", action="store_true",

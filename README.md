@@ -189,12 +189,12 @@ Background notes and research behind these skills:
 python3 eval-agent-instructions/scripts/eval_instructions.py run write-agent-instructions --case add-one-rule --probe
 python3 eval-agent-instructions/scripts/eval_instructions.py grade evals/write-agent-instructions/results/<run-id>
 python3 eval-agent-instructions/scripts/eval_instructions.py rules write-agent-instructions
-python3 eval-agent-instructions/scripts/eval_instructions.py run write-agent-instructions --minus <rule> --config claude-haiku
+python3 eval-agent-instructions/scripts/eval_instructions.py run write-agent-instructions --minus <rule> --config claude-code-haiku-5.5-high
 ```
 
-Every run is a real, billed agent session. Credentials go in the environment or the repository's `.env`: `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` for an Anthropic-compatible endpoint that also serves OpenAI's Responses API at `/v1` (Claude Code, Codex and the judges use it), and `OPENROUTER_API_KEY` for OpenClaw setups on OpenRouter. The first run builds a base image with the pinned agent CLIs, which takes a few minutes. Results go to `evals/<suite>/results/`, which git ignores.
+Every run is a real, billed agent session. Credentials go in the environment or the repository's `.env`: `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` for an Anthropic-compatible endpoint that also serves OpenAI's Responses API at `/v1` (Claude Code, Codex and the judges use it), and `OPENROUTER_API_KEY` for OpenClaw setups on OpenRouter. The first run installs the pinned agent CLIs for the sandbox, or builds a Docker base image with `--env docker`, which takes a few minutes. Results go to `evals/<suite>/results/`, which git ignores.
 
-Setups are named in `eval-agent-instructions/scripts/configs.json`: harness, model, reasoning effort, and for OpenRouter the pinned upstream provider. `openclaw-haiku` runs Claude Haiku in OpenClaw through the same Anthropic-compatible endpoint as Claude Code, so comparing it with `claude-haiku` isolates the harness. The `api-*` setups call a model once with no agent harness, for prompts an app sends. Without `--config`, a run uses `openclaw-deepseek-high` only, or `api-deepseek-high` for an API prompt suite.
+Setups are named in `eval-agent-instructions/scripts/configs.json`: harness, model, reasoning effort, and for OpenRouter the upstream providers, tried in order. Names follow `<harness>-<model>-<effort>`, ending in the first provider for OpenRouter setups. `openclaw-haiku-5.5-high` runs Claude Haiku in OpenClaw through the same Anthropic-compatible endpoint as Claude Code, so comparing it with `claude-code-haiku-5.5-high` isolates the harness. The `api-*` setups call a model once with no agent harness, for prompts an app sends. Without `--config`, a run uses `openclaw-deepseek-v4.1-flash-high-morph` only, or `api-deepseek-v4.1-flash-high-morph` for an API prompt suite.
 
 ## License
 
