@@ -5,9 +5,11 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scripts"))
-from evidence import claude_code, codex, openclaw  # noqa: E402
+import evidence  # noqa: E402
+from evidence import claude_code, codex, openclaw, openrouter_generations  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
@@ -167,6 +169,29 @@ class Extractors(unittest.TestCase):
         with events.open("a") as f:
             f.write(json.dumps({"type": "model.completed", "data": {"terminalError": "non_deliverable_terminal_turn"}}) + "\n")
         self.assertEqual(openclaw(agent)["terminal_error"], "non_deliverable_terminal_turn")
+
+    def test_openrouter_lookups_are_saved_and_only_failures_repeat(self):
+        agent = self.tmp / "agent"
+        (agent / "openclaw-trajectory").mkdir(parents=True)
+        (agent / "openclaw-trajectory" / "events.jsonl").write_text(
+            '{"responseId":"gen-a"}\n{"responseId":"gen-b"}\n{"responseId":"gen-a"}\n')
+        looked_up = []
+
+        def lookup(gen_id, key):
+            looked_up.append(gen_id)
+            return {"id": gen_id, "provider": None, "lookup_error": "down"} if gen_id == "gen-b" and \
+                looked_up.count(gen_id) == 1 else {"id": gen_id, "provider": "deepseek"}
+        with mock.patch.object(evidence, "_generation", lookup), mock.patch.dict("os.environ", {"OPENROUTER_API_KEY": "k"}):
+            self.assertEqual([g.get("lookup_error") for g in openrouter_generations(agent)], [None, "down"])
+            self.assertEqual([g["provider"] for g in openrouter_generations(agent)], ["deepseek", "deepseek"])
+        self.assertEqual(sorted(looked_up), ["gen-a", "gen-b", "gen-b"])
+        # Once every lookup succeeded, a regrade needs no key.
+        with mock.patch.dict("os.environ", clear=True):
+            self.assertEqual(len(openrouter_generations(agent)), 2)
+        # A damaged file means looking everything up again, not a crash.
+        (agent / "openrouter-generations.json").write_text('[{"id": "gen-a"')
+        with mock.patch.object(evidence, "_generation", lookup), mock.patch.dict("os.environ", {"OPENROUTER_API_KEY": "k"}):
+            self.assertEqual(len(openrouter_generations(agent)), 2)
 
     def test_missing_transcript_is_unknown_not_absent(self):
         agent = self.copy("openclaw")

@@ -71,15 +71,16 @@ mcp_servers = []
 skills_dir = "/skills"
 """
 
-# The case source is removed in the same layer that uses it, so the agent never sees it.
+# Builds the workspace in /app from the case source at /tmp/case. The source is
+# removed in the same step that uses it, so the agent never sees it.
+WORKSPACE_SETUP = ("if [ -f /tmp/case/scaffold.sh ]; then bash /tmp/case/scaffold.sh; \\\n"
+                   "    elif [ -d /tmp/case/fixture ]; then cp -a /tmp/case/fixture/. /app/; fi \\\n"
+                   "    && rm -rf /tmp/case")
 DOCKERFILE = """FROM {base_image}
 COPY skills/ /skills/
 COPY case/ /tmp/case/
 WORKDIR /app
-RUN if [ -f /tmp/case/scaffold.sh ]; then bash /tmp/case/scaffold.sh; \\
-    elif [ -d /tmp/case/fixture ]; then cp -a /tmp/case/fixture/. /app/; fi \\
-    && rm -rf /tmp/case
-"""
+RUN """ + WORKSPACE_SETUP.replace("{", "{{").replace("}", "}}") + "\n"
 # A delivered instruction file lands in the workspace after the case's own files.
 INSTRUCTIONS_LAYER = "COPY instructions/ /app/\n"
 

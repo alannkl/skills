@@ -77,11 +77,43 @@ class Graders(unittest.TestCase):
                                                     {"final_message": "", "writes": []}, ["judge-a", "judge-b"])})
         with mock.patch.object(graders, "judge", fake_judge):
             graders.judge_pending(rows, ["judge-a", "judge-b"])
+        calls.sort()
         self.assertEqual([c[0] for c in calls], ["judge-a", "judge-b"])
         self.assertEqual(calls[0][1:], ("- Use pnpm.\n", ["- Use pnpm.\n", "- Use pnpm.\n- New rule.\n"], "AGENTS.md"))
         self.assertEqual([r["graders"]["g"]["pass"] for r in rows], [False, True])
         self.assertEqual(set(rows[1]["graders"]["g"]["judges"]), {"judge-a", "judge-b"})
         self.assertNotIn("pending", rows[1]["graders"]["g"])
+
+    def test_decided_verdicts_are_reused_from_the_cache(self):
+        replies = iter([[{"pass": True, "reason": "ok"}, {"pass": None, "reason": "malformed"}]])
+        calls = []
+
+        def fake_judge(model, criteria, original, subjects, label):
+            calls.append(sorted(subjects))
+            return next(replies) if len(calls) == 1 else [{"pass": False, "reason": "again"} for _ in subjects]
+
+        def rows():
+            out = []
+            for message in ("first", "second"):
+                out.append({"graders": graders.run_graders([{"name": "g", "type": "llm", "criteria": "c"}], "with",
+                                                           self.workspace, self.initial, "codex",
+                                                           {"final_message": message, "writes": []}, ["judge-a"])})
+            return out
+        cache = self.workspace.parent / "judge-cache.jsonl"
+        with mock.patch.object(graders, "judge", fake_judge), mock.patch.object(graders.random, "shuffle"):
+            first = rows()
+            graders.judge_pending(first, ["judge-a"], cache)
+            second = rows()
+            graders.judge_pending(second, ["judge-a"], cache)
+        # Only the undecided output goes back to the judge.
+        self.assertEqual(calls, [["first", "second"], ["second"]])
+        self.assertEqual([r["graders"]["g"]["pass"] for r in second], [True, False])
+        self.assertTrue(second[0]["graders"]["g"]["judges"]["judge-a"]["cached"])
+        self.assertNotIn("cached", second[1]["graders"]["g"]["judges"]["judge-a"])
+        # A partial last line from an interrupted append costs only its own verdict.
+        with cache.open("a") as f:
+            f.write('{"key": "trunc')
+        self.assertEqual(len(graders._load_cache(cache)), 2)
 
     def test_llm_can_show_the_final_message_beside_the_file(self):
         spec = {"type": "llm", "path": "AGENTS.md", "criteria": "c", "with_final_message": True}

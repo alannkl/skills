@@ -19,6 +19,7 @@ import time
 import urllib.error
 import urllib.request
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 # Files a harness writes into the workspace on its own. They are ignored unless the
@@ -151,28 +152,82 @@ def run_graders(specs: list[dict], variant: str, workspace: Path, initial: Path,
             for s in specs if variant in s.get("variants", (variant,))}
 
 
-def judge_pending(rows: list[dict], judges: list[str]) -> None:
+# Judge calls in flight at once; more draw throttling from the proxy.
+JUDGE_WORKERS = 4
+
+
+def judge_pending(rows: list[dict], judges: list[str], cache_path: Path | None = None) -> None:
     """Judge every pending `llm` grade in `rows`, in place.
 
     Outputs that share a criterion and original go to each judge in one call, shuffled
     and unlabelled so the judge cannot tell which arm or setup produced them. A group
-    over BATCH_CHARS splits across calls.
+    over BATCH_CHARS splits across calls, and calls run JUDGE_WORKERS at a time.
+
+    A decided verdict is saved in `cache_path`; an output that already has one from the
+    same judge, prompt, criterion and original keeps it, marked "cached", instead of
+    being judged again.
     """
+    cache = _load_cache(cache_path)
     groups = defaultdict(list)
     for row in rows:
         for result in row.get("graders", {}).values():
             if "pending" in result:
                 p = result["pending"]
                 groups[(p["criteria"], p["original"], p["label"])].append(result)
+    verdicts, calls = defaultdict(dict), []
     for (criteria, original, label), results in groups.items():
         random.shuffle(results)
-        for batch in _batches(results):
-            subjects = [r.pop("pending")["subject"] for r in batch]
-            verdicts = {m: judge(m, criteria, original, subjects, label) for m in judges}
-            for i, result in enumerate(batch):
-                per_judge = {m: v[i] for m, v in verdicts.items()}
-                primary = per_judge[judges[0]]
-                result.update({"pass": primary["pass"], "detail": primary["reason"], "judges": per_judge})
+        for model in judges:
+            todo = []
+            for result in results:
+                saved = cache.get(_cache_key(model, criteria, original, label, result["pending"]["subject"]))
+                if saved:
+                    verdicts[id(result)][model] = saved | {"cached": True}
+                else:
+                    todo.append(result)
+            calls += [(model, criteria, original, label, batch) for batch in _batches(todo) if batch]
+
+    def call(c):
+        model, criteria, original, label, batch = c
+        return judge(model, criteria, original, [r["pending"]["subject"] for r in batch], label)
+
+    new = []
+    with ThreadPoolExecutor(JUDGE_WORKERS) as pool:
+        for (model, criteria, original, label, batch), replies in zip(calls, pool.map(call, calls)):
+            for result, verdict in zip(batch, replies):
+                verdicts[id(result)][model] = verdict
+                if verdict["pass"] is not None:
+                    key = _cache_key(model, criteria, original, label, result["pending"]["subject"])
+                    new.append({"key": key, "verdict": verdict})
+    for results in groups.values():
+        for result in results:
+            result.pop("pending")
+            per_judge = verdicts[id(result)]
+            primary = per_judge[judges[0]]
+            result.update({"pass": primary["pass"], "detail": primary["reason"], "judges": per_judge})
+    if cache_path and new:
+        with open(cache_path, "a") as f:
+            f.writelines(json.dumps(entry) + "\n" for entry in new)
+
+
+def _load_cache(path: Path | None) -> dict[str, dict]:
+    if not path or not path.is_file():
+        return {}
+    cache = {}
+    for line in path.read_text().splitlines():
+        # An interrupted append leaves a partial last line; its verdict is judged again.
+        try:
+            entry = json.loads(line)
+        except json.JSONDecodeError:
+            continue
+        cache[entry["key"]] = entry["verdict"]
+    return cache
+
+
+def _cache_key(model: str, criteria: str, original: str, label: str, subject: str) -> str:
+    """Everything a verdict depends on: the request settings, the prompt, and what it grades."""
+    parts = [JUDGE_PROMPT, JUDGE_EFFORT, JUDGE_MAX_TOKENS, model, criteria, original, label, subject]
+    return hashlib.sha256(json.dumps(parts).encode()).hexdigest()
 
 
 # Characters of agent output per judge call; a larger group splits.
@@ -191,23 +246,29 @@ def _batches(results: list[dict]) -> list[list[dict]]:
     return batches
 
 
+JUDGE_PROMPT = (
+    "You grade {count} outputs of AI agents against one criterion. Each output comes from a separate, "
+    "independent run on the same task; judge each on its own, never by comparison with the others. Reply with "
+    'JSON only, one object per output: [{{"id": 1, "pass": true|false, "reason": "<one sentence>"}}, ...].\n\n'
+    "Criterion:\n{criteria}\n\nOriginal {label}:\n<<<\n{original}\n>>>\n\n{outputs}"
+)
+JUDGE_EFFORT = "high"
+JUDGE_MAX_TOKENS = 32000
+
+
 def judge(model: str, criteria: str, original: str, subjects: list[str], label: str) -> list[dict]:
     """Ask one judge model through the proxy at $ANTHROPIC_BASE_URL whether each of `subjects` meets `criteria`."""
     outputs = "\n\n".join(f"Output {i}, the agent's resulting {label}:\n<<<\n{s}\n>>>"
                            for i, s in enumerate(subjects, 1))
-    prompt = (
-        f"You grade {len(subjects)} outputs of AI agents against one criterion. Each output comes from a separate, "
-        "independent run on the same task; judge each on its own, never by comparison with the others. Reply with "
-        'JSON only, one object per output: [{"id": 1, "pass": true|false, "reason": "<one sentence>"}, ...].\n\n'
-        f"Criterion:\n{criteria}\n\nOriginal {label}:\n<<<\n{original}\n>>>\n\n{outputs}"
-    )
+    prompt = JUDGE_PROMPT.format(count=len(subjects), criteria=criteria, label=label, original=original,
+                                 outputs=outputs)
     base = os.environ["ANTHROPIC_BASE_URL"].rstrip("/")
     if model.startswith("gpt-"):
         url = f"{base}/v1/responses"
-        body = {"model": model, "input": prompt, "reasoning": {"effort": "high"}}
+        body = {"model": model, "input": prompt, "reasoning": {"effort": JUDGE_EFFORT}}
     else:
         url = f"{base}/v1/messages"
-        body = {"model": model, "max_tokens": 32000, "output_config": {"effort": "high"},
+        body = {"model": model, "max_tokens": JUDGE_MAX_TOKENS, "output_config": {"effort": JUDGE_EFFORT},
                 "messages": [{"role": "user", "content": prompt}]}
     try:
         data = _post(url, body)
@@ -239,8 +300,8 @@ def parse_verdicts(text: str, count: int) -> list[dict]:
     return verdicts
 
 
-def _post(url: str, body: dict, attempts: int = 2) -> dict:
-    """POST to the proxy, retrying once on throttling or a server error."""
+def _post(url: str, body: dict, attempts: int = 4) -> dict:
+    """POST to the proxy, retrying throttling and server errors after 10, 20 and 40 s."""
     request = urllib.request.Request(url, data=json.dumps(body).encode(), headers={
         "Authorization": f"Bearer {os.environ['ANTHROPIC_AUTH_TOKEN']}",
         "content-type": "application/json", "anthropic-version": "2023-06-01"})
@@ -252,7 +313,7 @@ def _post(url: str, body: dict, attempts: int = 2) -> dict:
             retryable = exc.code == 429 or exc.code >= 500
             if not retryable or attempt + 1 == attempts:
                 raise
-            time.sleep(10)
+            time.sleep(10 * 2 ** attempt)
     return {}
 
 

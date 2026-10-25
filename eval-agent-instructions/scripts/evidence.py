@@ -21,6 +21,7 @@ import re
 import time
 import urllib.error
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 # Where each harness's Harbor adapter installs the skills from the task's skills_dir,
@@ -228,13 +229,37 @@ def _openclaw_ops(events_path: Path) -> list[dict]:
     return ops
 
 
-def openrouter_generations(events_path: Path) -> list[dict] | None:
-    """Each OpenRouter generation the run made, with its upstream provider. Needs OPENROUTER_API_KEY."""
-    key = os.environ.get("OPENROUTER_API_KEY")
-    if not key or not events_path.is_file():
+# OpenRouter lookups in flight at once for one trial.
+LOOKUP_WORKERS = 8
+
+
+def openrouter_generations(agent_dir: Path) -> list[dict] | None:
+    """Each OpenRouter generation the run made, with its upstream provider. Needs OPENROUTER_API_KEY
+    for any generation not yet looked up.
+
+    Lookups are saved beside the transcript, so a regrade repeats only the ones that failed.
+    """
+    events_path = agent_dir / "openclaw-trajectory" / "events.jsonl"
+    if not events_path.is_file():
         return None
     ids = sorted(set(re.findall(r'"responseId":"(gen-[^"]+)"', events_path.read_text(errors="replace"))))
-    return [_generation(gen_id, key) for gen_id in ids]
+    saved_path = agent_dir / "openrouter-generations.json"
+    try:
+        saved = {g["id"]: g for g in json.loads(saved_path.read_text())}
+    except (FileNotFoundError, json.JSONDecodeError):
+        saved = {}
+    todo = [i for i in ids if i not in saved or "lookup_error" in saved[i]]
+    key = os.environ.get("OPENROUTER_API_KEY")
+    if todo and not key:
+        return None
+    if todo:
+        with ThreadPoolExecutor(LOOKUP_WORKERS) as pool:
+            saved.update(zip(todo, pool.map(lambda gen_id: _generation(gen_id, key), todo)))
+        # Replace, never truncate: an interrupted write must not lose the lookups already saved.
+        partial = saved_path.with_suffix(".partial")
+        partial.write_text(json.dumps([saved[i] for i in ids]))
+        partial.replace(saved_path)
+    return [saved[i] for i in ids]
 
 
 def _generation(gen_id: str, key: str, attempts: int = 3) -> dict:
@@ -264,7 +289,7 @@ def openclaw(agent_dir: Path) -> dict:
     receipt = agent_meta.get("terminalReceipt", {})
     effective = receipt.get("effective", {})
     # Only OpenRouter has a generation endpoint naming the upstream provider.
-    generations = openrouter_generations(events_path) if effective.get("provider") == "openrouter" else None
+    generations = openrouter_generations(agent_dir) if effective.get("provider") == "openrouter" else None
     payloads = envelope.get("payloads") or []
     return summarize(
         "openclaw", _openclaw_ops(events_path), _openclaw_export_complete(events_path),

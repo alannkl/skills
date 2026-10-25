@@ -4,6 +4,9 @@ This module imports Harbor, so it runs only inside Harbor's environment. It uses
 Harbor internals (`_nvm24`, `self._version`); recheck them when the pinned Harbor
 commit in configs.json changes.
 """
+import re
+
+from harbor.agents.installed.codex import Codex
 from harbor.agents.installed.openclaw import OpenClaw, _nvm24
 from harbor.environments.base import BaseEnvironment
 
@@ -38,3 +41,16 @@ class PreinstalledOpenClaw(OpenClaw):
             await super().run(instruction, environment, context)
         finally:
             await self.exec_as_agent(environment, command=_nvm24(_EXPORT_TRAJECTORY))
+
+
+class PreinstalledCodex(Codex):
+    """Codex that finds the base image's pinned install.
+
+    In Docker, `codex --version` first warns on stderr, which Harbor's exec merges
+    into stdout; upstream reads the first line as the version, finds a mismatch, and
+    reinstalls nvm, Node and Codex on every trial.
+    """
+
+    def parse_version(self, stdout: str) -> str:
+        found = re.search(r"^codex-cli (\S+)", stdout, re.M)
+        return found.group(1) if found else super().parse_version(stdout)

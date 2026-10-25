@@ -4,6 +4,7 @@
 Run from the root of the repository that holds the artifact and its `evals/<suite>/`.
 
   eval_instructions.py run <suite> [--config NAME]... [--case NAME]... [--attempts N] [--probe] [--fresh-baseline]
+                           [--env bwrap|docker] [--concurrency N] [--concurrency CONFIG=N]...
   eval_instructions.py run <suite> --minus RULE [--config NAME]...
   eval_instructions.py grade <run-dir> [--judge MODEL]...
   eval_instructions.py report <run-dir>
@@ -33,6 +34,7 @@ import subprocess
 import sys
 import time
 from collections import defaultdict
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -45,10 +47,16 @@ from graders import judge_pending, run_graders, temporary_initial_workspace  # n
 from rules import MINUS, arm, artifact_digest, check_rules, load_rules, minus_artifact, rule_cases, tabulate  # noqa: E402
 from tasks import PROBE_CASE, artifact_root, build_tasks, load_spec, load_suite, task_digest  # noqa: E402
 from api_runner import run_api_job  # noqa: E402
+import sandbox  # noqa: E402
 
 SETTINGS = json.loads((HERE / "configs.json").read_text())
 DEFAULT_CONFIGS = ["openclaw-deepseek-high"]
 DEFAULT_API_CONFIGS = ["api-deepseek-high"]
+# bubblewrap sandboxes start faster and cost less memory than containers; Docker covers hosts without it.
+DEFAULT_ENV = "bwrap" if sys.platform == "linux" and shutil.which("bwrap") else "docker"
+# Sessions at once across all setups. 12 bwrap sessions left about 2.4 GB of a 15 GB host free, at
+# about 330 MB each; Docker setups run one at a time, each container capped at 2 GB.
+DEFAULT_SLOTS = {"bwrap": 16, "docker": 6}
 # Each harness ships skills of its own, such as Claude Code's code-review and the
 # skill-creator in Codex and OpenClaw. They compete with the skill under test and
 # can share its name, so they are off unless a configuration sets builtin_skills;
@@ -60,7 +68,8 @@ BLOCK_BUILTIN_SKILLS = {
 }
 # Names the installed copy by path: a harness may ship a built-in skill with the same name.
 USE_SKILL = "Use the skill at /skills/{skill}/SKILL.md for this task.\n\n"
-HARBOR_AGENT = {"claude-code": "claude-code", "codex": "codex", "openclaw": "harbor_agents:PreinstalledOpenClaw"}
+HARBOR_AGENT = {"claude-code": "claude-code", "codex": "harbor_agents:PreinstalledCodex",
+                "openclaw": "harbor_agents:PreinstalledOpenClaw"}
 API = "api"
 
 
@@ -72,6 +81,22 @@ def load_dotenv(path: Path) -> None:
         key, sep, value = line.strip().partition("=")
         if sep and key and not key.startswith("#"):
             os.environ.setdefault(key, value.strip().strip('"').strip("'"))
+
+
+def task_environment(kind: str) -> tuple[str, list[str], str]:
+    """(image name for the task Dockerfiles, Harbor environment arguments, description) for `kind`.
+
+    The image name lands in every task's Dockerfile, so it keys baseline reuse:
+    trials from another environment or toolchain never stand in for this one's.
+    """
+    if kind == "docker":
+        image = base_image()
+        return image, [], image
+    sandbox.sweep_scratch()
+    toolchain = sandbox.toolchain(SETTINGS["cli_versions"])
+    image = sandbox.environment_id(toolchain)
+    versions = ", ".join((toolchain / "versions.txt").read_text().split())
+    return image, ["--env", "bwrap_env:BwrapEnvironment", "--ek", f"toolchain={toolchain}"], f"{image} ({versions})"
 
 
 def base_image() -> str:
@@ -167,9 +192,10 @@ def agent_args(config: dict, system_prompt: str | None = None) -> list[str]:
 
 
 def harbor_command(config: dict, tasks_dir: Path, jobs_dir: Path, job: str, attempts: int, concurrency: int,
-                   exclude: list[str] = (), include: list[str] = (), system_prompt: str | None = None) -> list[str]:
+                   exclude: list[str] = (), include: list[str] = (), system_prompt: str | None = None,
+                   environment: list[str] = ()) -> list[str]:
     cmd = ["uv", "tool", "run", "--python", "3.12", "--from", f"harbor @ {SETTINGS['harbor']}", "harbor", "run",
-           "-p", str(tasks_dir), *agent_args(config, system_prompt),
+           "-p", str(tasks_dir), *agent_args(config, system_prompt), *environment,
            "-k", str(attempts), "-n", str(concurrency), "-o", str(jobs_dir), "--job-name", job, "-y", "-q"]
     for task in include:
         cmd += ["-i", task, "-i", f"*/{task}"]
@@ -296,6 +322,12 @@ def cmd_run(args) -> None:
     unknown = set(configs) - set(SETTINGS["configs"])
     if unknown:
         raise SystemExit(f"unknown configs: {sorted(unknown)}")
+    try:
+        budget, named = parse_concurrency(args.concurrency)
+    except ValueError:
+        raise SystemExit(f"--concurrency takes N or CONFIG=N, not {args.concurrency}")
+    if set(named) - set(configs):
+        raise SystemExit(f"--concurrency names setups this run does not use: {sorted(set(named) - set(configs))}")
     check_credentials(configs)
     run_id = args.run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     run_dir = REPO / "evals" / args.suite / "results" / run_id
@@ -326,8 +358,8 @@ def cmd_run(args) -> None:
         if artifact["type"] == "skill":
             preamble = USE_SKILL.format(skill=artifact["name"])
     cases = case_dirs(args.suite, case_names, args.probe)
-    # An API run starts no container, so it needs no image.
-    image = "none" if wants_api else base_image()
+    # An API run starts no sandbox, so it needs no image.
+    image, environment, described = ("none", [], "none") if wants_api else task_environment(args.env)
     tasks = build_tasks(REPO, suite, cases, variants, image, run_dir / "tasks", sources, preamble)
     archive_cases(args.suite, cases, run_dir / "cases")
     reused = {} if args.fresh_baseline else reuse_baselines(run_dir, configs, tasks, attempts, under_test)
@@ -337,30 +369,104 @@ def cmd_run(args) -> None:
             "configs": {c: SETTINGS["configs"][c] for c in configs},
             "cases": [c.name for c in cases], "variants": variants, "attempts": attempts,
             "harbor": SETTINGS["harbor"], "cli_versions": SETTINGS["cli_versions"], "base_image": image,
+            "environment": described,
             "agent_args": {c: agent_args(SETTINGS["configs"][c]) for c in configs},
             "tasks": tasks, "reused": reused, "started_at": datetime.now(timezone.utc).isoformat()}
+    plans = {name: job_plan(run_dir / "tasks", tasks, sorted(reused.get(name, {})), artifact) for name in configs}
+    budget = budget or DEFAULT_SLOTS[args.env]
+    if args.env == "docker" and not wants_api:
+        slots = {name: named.get(name, budget) for name in configs}
+    else:
+        trials = {name: attempts * sum(len(job_tasks) for _, job_tasks, _ in plans[name]) for name in configs}
+        slots = split_slots(budget, trials, {name: mean_agent_seconds(run_dir.parent, name) for name in configs},
+                            named)
+    meta["slots"] = slots
+    print(f"== sessions at once: {slots}", file=sys.stderr)
     (run_dir / "run.json").write_text(json.dumps(meta, indent=2) + "\n")
-    for name in configs:
+
+    def run_setup(name: str) -> None:
         config = SETTINGS["configs"][name]
-        plan = job_plan(run_dir / "tasks", tasks, sorted(reused.get(name, {})), artifact)
+        plan = plans[name]
         if not plan:
             print(f"== {name}: every task reused", file=sys.stderr)
-            continue
+            return
         print(f"== {name}", file=sys.stderr)
         if config["harness"] == API:
             run_api_job(config, run_dir / "tasks", [t for _, job_tasks, _ in plan for t in job_tasks], attempts,
-                        run_dir / "jobs" / name / API, args.concurrency)
-            continue
+                        run_dir / "jobs" / name / API, slots[name])
+            return
         env = dict(os.environ, PYTHONPATH=str(HERE))
         env.update({k: os.path.expandvars(v) for k, v in config.get("env", {}).items()})
         with open(run_dir / f"harbor-{name}.log", "w") as log:
             for job, job_tasks, system_prompt in plan:
-                wait_for_docker()
+                if args.env == "docker":
+                    wait_for_docker()
                 subprocess.run(harbor_command(config, run_dir / "tasks", run_dir / "jobs" / name, job, attempts,
-                                              args.concurrency, include=job_tasks, system_prompt=system_prompt),
+                                              slots[name], include=job_tasks,
+                                              system_prompt=system_prompt,
+                                              environment=environment),
                                env=env, stdout=log, stderr=subprocess.STDOUT, check=False)
+        print(f"== {name}: done", file=sys.stderr)
+
+    # Setups run side by side, sharing the slots. Under Docker they run one at a time:
+    # concurrent Harbor jobs would race to build the same task images.
+    with ThreadPoolExecutor(max_workers=1 if args.env == "docker" else len(configs)) as pool:
+        list(pool.map(run_setup, configs))
     grade(run_dir, args.judge or SETTINGS["judges"])
     print(report(run_dir))
+
+
+def parse_concurrency(values: list[str]) -> tuple[int | None, dict[str, int]]:
+    """(the last bare N, {CONFIG: N}) from --concurrency values."""
+    named = {k: int(v) for k, v in (value.split("=", 1) for value in values if "=" in value)}
+    bare = [int(value) for value in values if "=" not in value]
+    return (bare[-1] if bare else None), named
+
+
+def split_slots(budget: int, trials: dict[str, int], seconds: dict[str, float | None],
+                named: dict[str, int]) -> dict[str, int]:
+    """Sessions at once per setup. A named setup gets its own number; the rest share what is left of
+    the budget in proportion to their expected agent time: trials times mean seconds per trial, or the
+    other setups' mean for a setup with no history. Each setup gets at least one.
+
+    Each setup is its own Harbor job, so a setup that finishes early leaves its slots idle; splitting
+    by expected time makes the setups finish together.
+    """
+    rest = [name for name in trials if name not in named]
+    known = [seconds[name] for name in rest if seconds.get(name)]
+    fallback = sum(known) / len(known) if known else 1.0
+    work = {name: trials[name] * (seconds.get(name) or fallback) for name in rest}
+    total = sum(work.values()) or 1.0
+    left = max(budget - sum(named.values()), len(rest))
+    shares = {name: left * work[name] / total for name in rest}
+    slots = {name: max(1, int(share)) for name, share in shares.items()}
+    # Hand out what rounding down left over, largest remainder first.
+    for name in sorted(rest, key=lambda n: shares[n] - int(shares[n]), reverse=True):
+        if sum(slots.values()) >= left:
+            break
+        slots[name] += 1
+    return {name: named[name] for name in trials if name in named} | slots
+
+
+def mean_agent_seconds(results: Path, config_name: str, sample: int = 20) -> float | None:
+    """Mean agent time per trial for the setup, from Harbor's result.json in the suite's newest runs
+    until `sample` trials are counted: speeds change with the sandbox, harness and provider.
+
+    Probe trials are left out: they are short by design and would understate a real case.
+    """
+    seconds = []
+    for jobs in sorted(results.glob(f"*/jobs/{config_name}"), key=lambda p: p.stat().st_mtime, reverse=True):
+        for path in jobs.glob("*/*/result.json"):
+            if path.parent.name.startswith(f"{PROBE_CASE}--"):
+                continue
+            phase = json.loads(path.read_text()).get("agent_execution") or {}
+            if phase.get("started_at") and phase.get("finished_at"):
+                start, end = (datetime.fromisoformat(phase[k].replace("Z", "+00:00"))
+                              for k in ("started_at", "finished_at"))
+                seconds.append((end - start).total_seconds())
+        if len(seconds) >= sample:
+            break
+    return sum(seconds) / len(seconds) if seconds else None
 
 
 def first_line(path: Path) -> str:
@@ -452,8 +558,8 @@ def grade(run_dir: Path, judges: list[str], graders_from_repo: bool = False) -> 
             if trial.relative_to(run_dir).parts[0] == "reused":
                 graded[-1]["reused_from"] = sources.get(trial.name)
         rows += graded + missing_trials(meta, config_name, config, graded)
-    # Judge calls batch across every setup in the run.
-    judge_pending(rows, judges)
+    # Judge calls batch across every setup in the run; verdicts are shared across the suite's runs.
+    judge_pending(rows, judges, run_dir.parent / "judge-cache.jsonl")
     (run_dir / "grades.jsonl").write_text("".join(json.dumps(row) + "\n" for row in rows))
     (run_dir / "report.md").write_text(report(run_dir))
 
@@ -479,6 +585,7 @@ def report(run_dir: Path) -> str:
         cells[(row["case"], row["config"], row["variant"])].append(row)
     lines = [f"# {run_dir.name}", ""]
     disagreements, collisions = [], []
+    verdicts, cached = 0, 0
     cost, cost_known = defaultdict(float), defaultdict(bool)
     for (case, config, variant), trials in sorted(cells.items()):
         ok = [t for t in trials if t["status"] == "ok"]
@@ -499,9 +606,11 @@ def report(run_dir: Path) -> str:
                 collisions.append(f"{case} / {config} / without: the harness lists a skill with this name")
             for name, g in t["graders"].items():
                 grader_counts[name][0 if g["pass"] else (2 if g["pass"] is None else 1)] += 1
-                verdicts = {m: v["pass"] for m, v in g.get("judges", {}).items()}
-                if len(set(verdicts.values())) > 1:
-                    disagreements.append(f"{case} / {config} / {variant} / {name}: {verdicts}")
+                by_judge = {m: v["pass"] for m, v in g.get("judges", {}).items()}
+                if len(set(by_judge.values())) > 1:
+                    disagreements.append(f"{case} / {config} / {variant} / {name}: {by_judge}")
+                verdicts += len(by_judge)
+                cached += sum(1 for v in g.get("judges", {}).values() if v.get("cached"))
         grades = ", ".join(f"{n} {p}/{p + f}" + (f" ({u} undecided)" if u else "")
                            for n, (p, f, u) in grader_counts.items())
         probe = ""
@@ -521,6 +630,8 @@ def report(run_dir: Path) -> str:
     lines += ["", "Cost reported by the harness (USD):"]
     lines += [f"- {config}: " + (f"{cost[config]:.4f}" if cost_known[config] else "not reported")
               for config in sorted({k[1] for k in cells})]
+    if cached:
+        lines += ["", f"Judge verdicts reused from earlier grading of the same output: {cached} of {verdicts}."]
     if collisions:
         lines += ["", "Same-named skill collisions:"] + [f"- {c}" for c in sorted(set(collisions))]
     if disagreements:
@@ -568,7 +679,12 @@ def main() -> None:
     run.add_argument("--case", action="append", help="case folder name; default all")
     run.add_argument("--variants", type=lambda s: s.split(","), default=["with", "without"])
     run.add_argument("--attempts", type=int, help="runs per task; default 1, or 3 with --minus")
-    run.add_argument("--concurrency", type=int, default=2)
+    run.add_argument("--concurrency", action="append", default=[], metavar="[CONFIG=]N",
+                     help="N: sessions at once across all setups, split by each setup's agent time in recent "
+                          f"runs (default {DEFAULT_SLOTS['bwrap']} under bwrap; under Docker, per setup, default "
+                          f"{DEFAULT_SLOTS['docker']}); CONFIG=N fixes one setup's number")
+    run.add_argument("--env", choices=["bwrap", "docker"], default=DEFAULT_ENV,
+                     help=f"where sessions run; default {DEFAULT_ENV}")
     run.add_argument("--probe", action="store_true",
                      help="add a case asking the agent to list its skills or quote its instruction file")
     run.add_argument("--judge", action="append")
