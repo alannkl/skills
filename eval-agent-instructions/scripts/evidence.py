@@ -5,7 +5,8 @@ commands with their output, and (Claude Code only) skill injections. From those,
 every extractor reports the same record: whether the transcript is complete,
 the models that answered, the final message, the skills the agent loaded from
 the installed copies, any same-named skills it loaded from elsewhere, the files
-it wrote, its operations, the skills the harness listed (None when it does not say), usage and cost.
+it wrote, its operations, the skills the harness listed (None when it does not say), usage and cost,
+its tool calls, and the provider retries the harness logged (None where it logs none).
 
 A skill counts as loaded only when its instructions reached the agent: a read or
 command on a `<name>/SKILL.md` path whose output carries the `name:` frontmatter,
@@ -95,7 +96,7 @@ def summarize(harness: str, ops: list[dict], complete: bool, **fields) -> dict:
             installed = any(origin.startswith(root) for root in INSTALLED_ROOTS[harness])
             (loaded if installed else foreign).add(name)
     record = {"complete": complete, "models": [], "final_message": "", "skills_listed": None,
-              "usage": None, "cost_usd": None, "cost_basis": None,
+              "usage": None, "cost_usd": None, "cost_basis": None, "tool_calls": None, "retries": None,
               "skills_loaded": sorted(loaded) if complete else None,
               "foreign_skills_loaded": sorted(foreign) if complete else None,
               "writes": sorted({op["path"] for op in ops if op["kind"] == "write" and op["ok"]}) if complete else None,
@@ -124,15 +125,28 @@ def input_tokens(usage: dict | None) -> int | None:
     return None
 
 
+def output_tokens(usage: dict | None) -> int | None:
+    """Every output token a run's model calls produced, reasoning included; None when unreported."""
+    if not usage:
+        return None
+    for key in ("output_tokens", "completion_tokens", "output"):
+        if key in usage:
+            return usage[key] or 0
+    return None
+
+
 def claude_code(agent_dir: Path) -> dict:
     events = list(_json_lines(agent_dir / "claude-code.txt"))
     ops, models, texts, listed, calls = [], set(), [], None, {}
     usage = cost = None
+    tool_calls = retries = 0
     complete = False
     for e in events:
         kind = e.get("type")
         if kind == "system" and e.get("subtype") == "init":
             listed = e.get("skills")
+        elif kind == "system" and e.get("subtype") == "api_retry":
+            retries += 1
         elif kind == "assistant":
             message = e.get("message", {})
             models.add(message.get("model"))
@@ -141,6 +155,7 @@ def claude_code(agent_dir: Path) -> dict:
                     texts.append(block["text"])
                 elif block.get("type") == "tool_use":
                     calls[block["id"]] = (block["name"], block.get("input", {}))
+                    tool_calls += 1
         elif kind == "user":
             content = e.get("message", {}).get("content", [])
             blocks = [{"type": "text", "text": content}] if isinstance(content, str) else content
@@ -164,13 +179,20 @@ def claude_code(agent_dir: Path) -> dict:
             usage, cost, complete = e.get("usage"), e.get("total_cost_usd"), True
     return summarize("claude-code", ops, complete, models=sorted(m for m in models if m),
                      final_message=texts[-1] if texts else "", skills_listed=listed, usage=usage,
-                     cost_usd=cost, cost_basis="Claude Code estimate from model name")
+                     cost_usd=cost, cost_basis="Claude Code estimate from model name",
+                     tool_calls=tool_calls, retries=retries)
 
 
 def codex(agent_dir: Path) -> dict:
     ops, texts, usage, complete = [], [], None, False
+    tool_calls = retries = 0
     for e in _json_lines(agent_dir / "codex.txt"):
         item = e.get("item") or {}
+        # Codex reports a dropped or timed-out model call as an error event and retries it.
+        if e.get("type") == "error" and str(e.get("message", "")).startswith("Reconnecting"):
+            retries += 1
+        if e.get("type") == "item.completed" and item.get("type") not in ("agent_message", "reasoning"):
+            tool_calls += 1
         if e.get("type") == "item.completed":
             if item.get("type") == "agent_message":
                 texts.append(item.get("text", ""))
@@ -189,7 +211,8 @@ def codex(agent_dir: Path) -> dict:
                 models.add(e.get("payload", {}).get("model"))
     return summarize("codex", ops, complete, models=sorted(m for m in models if m),
                      model_basis="requested; Codex logs no response model",
-                     final_message=texts[-1] if texts else "", usage=usage, cost_basis="tokens only")
+                     final_message=texts[-1] if texts else "", usage=usage, cost_basis="tokens only",
+                     tool_calls=tool_calls, retries=retries)
 
 
 # Harbor captures OpenClaw's stderr into the same file, so a log line such as

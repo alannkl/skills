@@ -17,7 +17,8 @@ SCRIPTS = Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scr
 sys.path.insert(0, str(SCRIPTS))
 import sandbox  # noqa: E402
 import tasks  # noqa: E402
-from eval_instructions import expected_seconds, parse_concurrency, run_queue, session_budget  # noqa: E402
+import eval_instructions  # noqa: E402
+from eval_instructions import case_dirs, expected_seconds, parse_concurrency, run_queue, session_budget  # noqa: E402
 
 # The Dockerfile every stored Docker baseline was built from; a change to its text invalidates them all.
 FROZEN_DOCKERFILE = """FROM b
@@ -146,6 +147,18 @@ class Sandbox(unittest.TestCase):
         self.assertEqual(expected_seconds(self.tmp / "results", "slow"),
                          {"case--with": 45.0, "other--with": 10.0, None: 100 / 3})
         self.assertEqual(expected_seconds(self.tmp / "results", "other"), {})
+
+    def test_case_selection_leaves_out_integration_and_trigger_only_cases_unless_asked(self):
+        suite = self.tmp / "evals" / "s"
+        for name, spec in (("quick", {}), ("big", {"integration": True}), ("near", {"trigger_only": True})):
+            (suite / name).mkdir(parents=True)
+            (suite / name / "graders.json").write_text(json.dumps({**spec, "graders": []}))
+        with mock.patch.object(eval_instructions, "REPO", self.tmp):
+            names = lambda **kw: [p.name for p in case_dirs("s", probe=False, **kw)]
+            self.assertEqual(names(names=None, integration=False), ["quick"])
+            self.assertEqual(names(names=None), ["big", "quick"])
+            self.assertEqual(names(names=None, trigger=True, integration=False), ["near", "quick"])
+            self.assertEqual(names(names=["big"], integration=False), [])
 
     def test_concurrency_values(self):
         self.assertEqual(parse_concurrency(["a=4", "16"]), (16, {"a": 4}))

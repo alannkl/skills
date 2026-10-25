@@ -30,7 +30,7 @@ Each case is a folder in the suite:
 - `instruction.md`: the user's request, exactly as the agent receives it.
 - The workspace: `fixture/`, copied into it, or `scaffold.sh`, run in the empty workspace with `fixture/` beside it. An API case needs none.
 - `vars.json`: values for a prompt's placeholders.
-- `graders.json`: `expect_skill_loaded` with `with` and `without` booleans (skills only), optional `agent_timeout_sec`, `trigger_only` (true for a near-miss that only `--trigger` runs), and `graders`.
+- `graders.json`: `expect_skill_loaded` with `with` and `without` booleans (skills only), optional `agent_timeout_sec`, `trigger_only` (true for a near-miss that only `--trigger` runs), `integration` (true for a case that needs a larger world, which runs only with `--all-cases` or by name), and `graders`.
 
 Grader types; `path` is relative to the workspace:
 
@@ -55,6 +55,14 @@ Make each case realistic:
 - Pair a case where the right result is a change with one where it is restraint.
 - Grade the end result, not its wording. Require exact text only where something depends on it, such as identifiers, commands, paths, and formats a tool parses; check everything else by meaning, so any wording with the same effect passes.
 - Write an `llm` criterion as the facts the output must state or keep, so a terse correct answer passes.
+- Give each case one primary behavior, plus a grader for every requirement the user would still expect kept; those catch one rule breaking another.
+
+Keep each case small, so edit rounds stay fast:
+
+- Include the files the task's decisions depend on: the target, its consumers, sibling files that show local conventions, the code that loads a prompt. Leave out the rest, and add no unrelated files by quota.
+- Aim for a median, without the artifact, under a minute for a routine edit and under two for creating or reviewing a skill. Mark a case that needs a larger world `integration` and say why in the suite's notes.
+- A reduced case is a new case: run it beside the original on every supported setup before replacing it.
+- Before raising `--concurrency`, run one short case at rising levels and stay below the level where time per run or retries climb.
 
 ## Rule map
 

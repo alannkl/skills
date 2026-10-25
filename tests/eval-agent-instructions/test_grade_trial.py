@@ -107,20 +107,23 @@ class GradeTrial(unittest.TestCase):
         self.assertIn("Judge disagreements:", text)
         self.assertIn("claude-haiku: 0.0300", text)
 
-    def test_report_gives_median_input_tokens_per_arm_and_trigger_rates(self):
+    def test_report_gives_median_work_per_arm_retries_and_trigger_rates(self):
         run_dir = Path(self._tmp.name) / "run-2"
         run_dir.mkdir()
         (run_dir / "run.json").write_text(json.dumps({"trigger": True}))
         base = {"config": "opus", "status": "ok", "variant": "with", "graders": {}, "evidence": {}}
-        usage = lambda n: {"evidence": {"usage": {"input_tokens": 1, "cache_read_input_tokens": n - 1}}}
+        usage = lambda n: {"agent_seconds": n / 1000, "evidence": {
+            "usage": {"input_tokens": 1, "cache_read_input_tokens": n - 1, "output_tokens": n // 100},
+            "tool_calls": n // 10_000, "retries": 2 if n == 300_000 else 0}}
         rows = [{**base, **usage(100_000), "case": "a", "skill_loaded": True, "skill_loaded_expected": True},
                 {**base, **usage(300_000), "case": "a", "skill_loaded": False, "skill_loaded_expected": True},
                 {**base, **usage(50_000), "case": "near", "skill_loaded": True, "skill_loaded_expected": False},
                 {**base, "case": "near", "skill_loaded": None, "skill_loaded_expected": False}]
         (run_dir / "grades.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
         text = report(run_dir)
-        self.assertIn("a | opus | with: 2 ok | skill loaded 1/2 (expected True) | input 200k", text)
-        self.assertIn("- opus: with 100k", text)
+        self.assertIn("a | opus | with: 2 ok | skill loaded 1/2 (expected True) | 200s 20 calls in 200k out 2.0k", text)
+        self.assertIn("- opus: with 100s 10 calls in 100k out 1.0k", text)
+        self.assertIn("- a / opus / with: 2 retries", text)
         self.assertIn("- opus: should-trigger 1/2, near-miss 1/1", text)
 
 

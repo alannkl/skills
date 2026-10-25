@@ -4,7 +4,7 @@
 Run from the root of the repository that holds the artifact and its `evals/<suite>/`.
 
   eval_instructions.py run <suite> [--config NAME... | --full] [--harness H --model M [--effort E] [--provider P]]
-                           [--case NAME]... [--attempts N] [--probe] [--fresh]
+                           [--case NAME]... [--rule RULE]... [--all-cases] [--attempts N] [--probe] [--fresh]
                            [--env bwrap|docker] [--concurrency N] [--concurrency CONFIG=N]...
   eval_instructions.py run <suite> --minus RULE [--config NAME]... [--harness H --model M ...]
   eval_instructions.py run <suite> --trigger [--config NAME... | --full] [--case NAME]...
@@ -15,7 +15,9 @@ Run from the root of the repository that holds the artifact and its `evals/<suit
 `run` builds one Harbor task per case and variant, runs each configuration as a
 Harbor job, then grades and reports. A skill under test is named by path in the
 instruction of every arm that installs it, so the run measures its text; cases
-marked `trigger_only` are left out. Every arm reuses earlier graded trials when
+marked `trigger_only` are left out, and so are those marked `integration` unless
+--all-cases is set. `--rule` runs only the cases whose graders test the named rules,
+as an edit round does. Every arm reuses earlier graded trials when
 its task directory, configuration, Harbor version and agent arguments all match,
 so only what changed runs. Results go to evals/<suite>/results/<run-id>/. Grading reads only saved artifacts and
 the run's own copy of its cases, so `grade` reruns with other judges, or with
@@ -52,7 +54,7 @@ HERE = Path(__file__).resolve().parent
 REPO = Path.cwd()
 sys.path.insert(0, str(HERE))
 
-from evidence import EXTRACTORS, input_tokens  # noqa: E402
+from evidence import EXTRACTORS, input_tokens, output_tokens  # noqa: E402
 from graders import judge_pending, run_graders, temporary_initial_workspace  # noqa: E402
 from rules import MINUS, arm, artifact_digest, check_rules, load_rules, minus_artifact, rule_cases, tabulate  # noqa: E402
 from tasks import PROBE_CASE, USE_SKILL, artifact_root, build_tasks, load_spec, load_suite, task_digest  # noqa: E402
@@ -293,10 +295,12 @@ def reuse_baselines(run_dir: Path, configs: list[str], tasks: list[str], attempt
     return reused
 
 
-def case_dirs(suite: str, names: list[str] | None, probe: bool, trigger: bool = False) -> list[Path]:
+def case_dirs(suite: str, names: list[str] | None, probe: bool, trigger: bool = False,
+              integration: bool = True) -> list[Path]:
     """The named cases, or all of them; the probe joins when --probe is set or named as a case.
 
-    `trigger_only` cases test a description, so only a trigger check runs them.
+    `trigger_only` cases test a description, so only a trigger check runs them; `integration`
+    cases, the long ones kept for breadth, run only when `integration` is set.
     """
     root = REPO / "evals" / suite
     found = sorted(p for p in root.iterdir() if (p / "graders.json").is_file())
@@ -309,6 +313,8 @@ def case_dirs(suite: str, names: list[str] | None, probe: bool, trigger: bool = 
         if missing:
             raise SystemExit(f"unknown cases{'' if trigger else ' outside --trigger'}: {sorted(missing)}")
         found = [p for p in found if p.name in names]
+    if not integration:
+        found = [p for p in found if not load_spec(p).get("integration")]
     return found + ([root / PROBE_CASE] if probe else [])
 
 
@@ -388,7 +394,14 @@ def cmd_run(args) -> None:
             raise SystemExit(f"OpenClaw has no system prompt setting, so {openclaw} cannot run this suite; "
                              "evaluate the text as an AGENTS.md instead")
     variants, sources, attempts = args.variants, {}, args.attempts or 1
-    case_names = args.case
+    # Cases named outright, or a removal test's cases, run even when marked integration.
+    case_names, integration = args.case, bool(args.case) or args.all_cases or bool(args.minus)
+    if args.rule:
+        rules = checked_rules(suite)
+        unknown_rules = sorted(set(args.rule) - set(rules))
+        if unknown_rules:
+            raise SystemExit(f"not rules in evals/{args.suite}/rules.json: {unknown_rules}")
+        case_names = sorted({case for name in args.rule for case in rule_cases(rules, name)} | set(case_names or []))
     if args.trigger and (args.minus or artifact["type"] != "skill"):
         raise SystemExit("--trigger checks a skill's description, on its own")
     if args.trigger:
@@ -402,7 +415,7 @@ def cmd_run(args) -> None:
         case_names = case_names or rule_cases(rules, args.minus)
         sources[minus] = run_dir / "minus" / full.name
         minus_artifact(full, rules[args.minus], sources[minus])
-    cases = case_dirs(args.suite, case_names, args.probe, args.trigger)
+    cases = case_dirs(args.suite, case_names, args.probe, args.trigger, integration)
     # A body run measures the text, so a skill is named rather than left to trigger.
     # An instruction file or prompt is always in context.
     pinned = artifact["type"] == "skill" and not args.trigger
@@ -548,6 +561,15 @@ def free_memory_gb() -> float:
     return kib / 1024 ** 2
 
 
+def agent_seconds(result: dict) -> float | None:
+    """How long the agent ran, from a Harbor trial's result.json."""
+    phase = result.get("agent_execution") or {}
+    if not (phase.get("started_at") and phase.get("finished_at")):
+        return None
+    start, end = (datetime.fromisoformat(phase[k].replace("Z", "+00:00")) for k in ("started_at", "finished_at"))
+    return (end - start).total_seconds()
+
+
 def expected_seconds(results: Path, config_name: str) -> dict[str | None, float]:
     """Mean agent time per task for the setup over the suite's earlier runs, from Harbor's result.json,
     with the mean over every task under None for tasks never run. Probe trials are left out: they are
@@ -559,11 +581,9 @@ def expected_seconds(results: Path, config_name: str) -> dict[str | None, float]
             task = Path(json.loads((path.parent / "config.json").read_text())["task"]["path"]).name
         except (json.JSONDecodeError, FileNotFoundError, KeyError):
             continue
-        phase = result.get("agent_execution") or {}
-        if task.startswith(f"{PROBE_CASE}--") or not (phase.get("started_at") and phase.get("finished_at")):
-            continue
-        start, end = (datetime.fromisoformat(phase[k].replace("Z", "+00:00")) for k in ("started_at", "finished_at"))
-        seconds[task].append((end - start).total_seconds())
+        elapsed = agent_seconds(result)
+        if not task.startswith(f"{PROBE_CASE}--") and elapsed is not None:
+            seconds[task].append(elapsed)
     means = {task: sum(v) / len(v) for task, v in seconds.items()}
     every = [x for v in seconds.values() for x in v]
     return means | ({None: sum(every) / len(every)} if every else {})
@@ -603,6 +623,7 @@ def grade_trial(trial: Path, config_name: str, config: dict, artifact: dict, cas
         row.update(status="missing_evidence", error=error)
         return row
     row["timed_out"] = error == "AgentTimeoutError"
+    row["agent_seconds"] = agent_seconds(result)
     case_dir = cases_root / case
     spec = load_spec((specs_root or cases_root) / case)
     evidence = EXTRACTORS[config["harness"]](trial / "agent")
@@ -680,11 +701,11 @@ def missing_trials(meta: dict, config_name: str, config: dict, graded: list[dict
 
 
 def report(run_dir: Path) -> str:
-    """Pass counts per case, configuration and variant; infra errors and undecided grades apart; input
-    tokens per run; and for a trigger check, how often each kind of case loaded the skill."""
+    """Pass counts per case, configuration and variant; infra errors and undecided grades apart; the
+    work each run took; and for a trigger check, how often each kind of case loaded the skill."""
     rows = [json.loads(line) for line in (run_dir / "grades.jsonl").read_text().splitlines()]
     cells = defaultdict(list)
-    tokens = defaultdict(list)  # (config, variant) -> input tokens per run
+    arms = defaultdict(list)  # (config, variant) -> ok rows
     for row in rows:
         cells[(row["case"], row["config"], row["variant"])].append(row)
     lines = [f"# {run_dir.name}", ""]
@@ -699,8 +720,7 @@ def report(run_dir: Path) -> str:
         loaded = sum(1 for t in ok if t["skill_loaded"])
         unknown = sum(1 for t in ok if t["skill_loaded"] is None and "delivered" not in t)
         grader_counts = defaultdict(lambda: [0, 0, 0])
-        cell_tokens = [n for n in (input_tokens(t["evidence"].get("usage")) for t in ok) if n is not None]
-        tokens[(config, variant)] += cell_tokens
+        arms[(config, variant)] += ok
         for t in ok:
             # A reused trial's cost was paid by the run it came from.
             if t["evidence"].get("cost_usd") is not None and not t.get("reused_from"):
@@ -733,15 +753,24 @@ def report(run_dir: Path) -> str:
                      + (f" ({timed_out} timed out)" if timed_out else "")
                      + (f", {len(errors)} not graded {errors}" if errors else "")
                      + load + probe
-                     + (f" | input {median(cell_tokens) / 1000:.0f}k" if cell_tokens else "")
+                     + (f" | {describe_work(work(ok))}" if work(ok) else "")
                      + f" | {grades}")
-    if tokens:
-        lines += ["", "Median input tokens per run, cached or not, summed over the run's model calls:"]
-        for config in sorted({c for c, _ in tokens}):
-            arms = {v: median(n) for (c, v), n in tokens.items() if c == config and n}
-            change = (f" ({arms['with'] / arms['without'] - 1:+.0%} with the artifact)"
-                      if arms.get("with") and arms.get("without") else "")
-            lines.append(f"- {config}: " + ", ".join(f"{v} {n / 1000:.0f}k" for v, n in sorted(arms.items())) + change)
+    if any(work(ok) for ok in arms.values()):
+        lines += ["", "Median work per run: agent time, tool calls, and input (cached or not) and output tokens "
+                      "summed over the run's model calls:"]
+        for config in sorted({c for c, _ in arms}):
+            medians = {v: work(ok) for (c, v), ok in arms.items() if c == config and work(ok)}
+            with_, without = medians.get("with", {}), medians.get("without", {})
+            change = ", ".join(f"{label} {with_[key] / without[key] - 1:+.0%}"
+                               for key, label in (("input", "input"), ("seconds", "time"))
+                               if with_.get(key) and without.get(key))
+            lines.append(f"- {config}: " + "; ".join(f"{v} {describe_work(m)}" for v, m in sorted(medians.items()))
+                         + (f" ({change} with the artifact)" if change else ""))
+    retried = [f"{t['case']} / {t['config']} / {t['variant']}: {t['evidence']['retries']} retries"
+               for ok in arms.values() for t in ok if t["evidence"].get("retries") and not t.get("reused_from")]
+    if retried:
+        lines += ["", "Runs whose harness retried failed model calls; their time includes the provider's delay:"]
+        lines += [f"- {r}" for r in retried]
     meta_path = run_dir / "run.json"
     if meta_path.is_file() and json.loads(meta_path.read_text()).get("trigger"):
         lines += ["", "Triggering, runs that loaded the skill:"] + trigger_counts(rows)
@@ -755,6 +784,21 @@ def report(run_dir: Path) -> str:
     if disagreements:
         lines += ["", "Judge disagreements:"] + [f"- {d}" for d in disagreements]
     return "\n".join(lines) + "\n"
+
+
+def work(rows: list[dict]) -> dict[str, float]:
+    """Median agent seconds, tool calls, and input and output tokens over the rows that report each."""
+    values = {"seconds": [r.get("agent_seconds") for r in rows],
+              "calls": [r["evidence"].get("tool_calls") for r in rows],
+              "input": [input_tokens(r["evidence"].get("usage")) for r in rows],
+              "output": [output_tokens(r["evidence"].get("usage")) for r in rows]}
+    return {key: median(known) for key, v in values.items() if (known := [x for x in v if x is not None])}
+
+
+def describe_work(m: dict[str, float]) -> str:
+    parts = [f"{m['seconds']:.0f}s" if "seconds" in m else "", f"{m['calls']:.0f} calls" if "calls" in m else "",
+             f"in {m['input'] / 1000:.0f}k" if "input" in m else "", f"out {m['output'] / 1000:.1f}k" if "output" in m else ""]
+    return " ".join(p for p in parts if p)
 
 
 def trigger_counts(rows: list[dict]) -> list[str]:
@@ -821,7 +865,11 @@ def main() -> None:
     run.add_argument("--effort", help="reasoning effort, or `default` to send none; default high")
     run.add_argument("--provider", help="OpenRouter provider to try first, or a comma-separated order; "
                                         "default the model's preferred providers")
-    run.add_argument("--case", action="append", help="case folder name; default all")
+    run.add_argument("--case", action="append", help="case folder name; default every case not marked integration")
+    run.add_argument("--rule", action="append",
+                     help="a rule from rules.json: run the cases whose graders test it (an edit round's cases)")
+    run.add_argument("--all-cases", action="store_true",
+                     help="also run the cases marked integration, as an acceptance run does")
     run.add_argument("--variants", type=lambda s: s.split(","), default=["with", "without"])
     run.add_argument("--attempts", type=int, help="runs per task; default 1, or 3 with --minus")
     run.add_argument("--concurrency", action="append", default=[], metavar="[CONFIG=]N",

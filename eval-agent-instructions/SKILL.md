@@ -25,13 +25,14 @@ What it delivers, per `references/suites.md`:
 
 ## Workflow
 
-1. Scope the evaluation: the artifact and its path, the harnesses and models it must work on, and the question. When those setups differ from the defaults, name them in the suite's `eval.json`. Run edit rounds on the `run` setups and a full evaluation with `--full`. Removal decisions use every setup the artifact must support; a portability question uses every setup that matters.
+1. Scope the evaluation: the artifact and its path, the harnesses and models it must work on, and the question. When those setups differ from the defaults, name them in the suite's `eval.json`. Run edit rounds on the `run` setups with `--rule` for each rule the change touches, which selects the cases that test it, and a full evaluation with `--full --all-cases`. Removal decisions use every setup the artifact must support; a portability question uses every setup that matters.
 2. Build or extend the suite in `evals/<suite>/` per `references/suites.md`. Choose cases from requests users make before seeing any results.
 3. Before the first paid run, show the plan: cases, arms, setups, attempts, and the number of sessions. Start when the user agrees.
 4. Probe each harness setup new to the suite with `--probe`, and confirm the artifact is visible in the with arm and absent in the without arm. A user prompt or an API call passes the text straight into the request and has no probe.
 5. Run at least three attempts per arm, and treat the result as a first sample, not proof. To compare two versions of the text, run the with arm (`--variants with`) on each version with the same cases and setups.
 6. Check the runs before reading grades:
    - Infrastructure errors and runs Harbor never produced are not failures.
+   - The report lists runs whose harness retried failed model calls; their time includes the provider's delay. Classify a run as infrastructure only from such evidence, never from its length: a skill that makes the agent search or polish more is slow for real.
    - A with-arm run that never loaded a skill tests triggering, not the skill's text.
    - A run that loaded a same-named skill from elsewhere is invalid.
    - An API call through a proxy may carry the proxy's own system text; read one transcript before trusting a bare-call result.
@@ -66,7 +67,7 @@ What it delivers, per `references/suites.md`:
 Open with the answer to the user's question and the decision it supports. Then, for each setup:
 
 - pass counts per case and arm, and the table from `rules` when the suite has a rule map;
-- median input tokens per run in each arm: what the artifact adds to every run's context;
+- median work per run in each arm: agent time, tool calls, and input and output tokens, which show what the artifact adds to every run;
 - removal candidates and untested rules;
 - runs set apart: infrastructure errors, runs that never loaded the skill, undecided grades, judge disagreements;
 - cost as the harnesses report it, naming setups that report none;
