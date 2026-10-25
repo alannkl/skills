@@ -165,12 +165,6 @@
       "criteria": "Judge the new skill's files. Instructions are plain sentences with concrete actions, not vague advice such as \"investigate thoroughly\" or \"check the relevant logs\"."
     },
     {
-      "name": "present-draft",
-      "type": "llm",
-      "criteria": "The final message presents the new skill and asks the user whether it covers the investigations they run, or what is missing or should be more or less detailed.",
-      "description": "Rule-driven: the skill asks to present a draft that encodes domain-specific preferences; a plain delivery is a reasonable answer to the request, so read failures in both arms as the rule's effect."
-    },
-    {
       "name": "skill-file-exists",
       "type": "file_exists",
       "path": ".agents/skills/investigate/SKILL.md",
