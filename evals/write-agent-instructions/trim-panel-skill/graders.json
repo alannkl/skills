@@ -10,10 +10,7 @@
       "name": "cited-sections-resolve",
       "type": "llm",
       "paths": [
-        "panel/SKILL.md",
-        "panel/references/usage.md",
-        "panel/references/skill-collaboration.md",
-        "panel/references/brief-examples.md"
+        "panel/**/*.md"
       ],
       "criteria": "The references cite `SKILL.md` sections by name: Keep the panel in the chat, Prepare and Pair mode, and `usage.md` sections such as Consultant and Continuing the conversation. Pass if every section a file still cites exists under that name, or the citation was updated."
     },
@@ -30,10 +27,7 @@
       "name": "no-fragmenting",
       "type": "llm",
       "paths": [
-        "panel/SKILL.md",
-        "panel/references/usage.md",
-        "panel/references/skill-collaboration.md",
-        "panel/references/brief-examples.md"
+        "panel/**/*.md"
       ],
       "criteria": "The trim does not add headings or split a section into several pieces to make it look shorter; any new file or section carries material with a load condition of its own."
     },
