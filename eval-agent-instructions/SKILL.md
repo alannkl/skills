@@ -15,7 +15,7 @@ A measured evaluation runs real, billed sessions with and without the instructio
 
 ## Runner
 
-`scripts/eval_instructions.py` runs each agent session through Harbor in its own sandbox, or calls a model API directly, and grades on the host. The sandbox is bubblewrap where it is installed, seeing only the host's system files, the pinned agent CLIs and the task; elsewhere, or with `--env docker`, a Docker container. Under bubblewrap the setups run side by side and share `--concurrency` sessions, 16 by default, in proportion to each setup's agent time in earlier runs; `CONFIG=N` fixes one setup's number. Run it from the root of the repository that holds the artifact; `--help` lists its commands. It needs bubblewrap on Linux or Docker, `uv`, and credentials in the environment or in that repository's `.env`: `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` for Claude Code, Codex, Anthropic and OpenAI API calls, and the judge, and `OPENROUTER_API_KEY` for OpenRouter setups. Setups are named in `scripts/configs.json`; without `--config`, a run uses `openclaw-deepseek-high`, or `api-deepseek-high` for a prompt the API runs.
+`scripts/eval_instructions.py` runs each agent session through Harbor in its own sandbox, or calls a model API directly, and grades on the host. The sandbox is bubblewrap where it is installed, seeing only the host's system files, the pinned agent CLIs and the task; elsewhere, or with `--env docker`, a Docker container. Under bubblewrap the setups run side by side and share `--concurrency` sessions, 16 by default, in proportion to each setup's agent time in earlier runs; `CONFIG=N` fixes one setup's number. Run it from the root of the repository that holds the artifact; `--help` lists its commands. It needs bubblewrap on Linux or Docker, `uv`, and credentials in the environment or in that repository's `.env`: `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` for Claude Code, Codex, Anthropic and OpenAI API calls, and the judge, and `OPENROUTER_API_KEY` for OpenRouter setups. Setups are named in `scripts/configs.json`; without `--config`, a run uses `openclaw-deepseek-high`, or `api-deepseek-high` for a prompt the API runs, and `--full` adds `codex-luna` or `api-luna`.
 
 What it delivers, per `references/suites.md`:
 
@@ -25,7 +25,7 @@ What it delivers, per `references/suites.md`:
 
 ## Workflow
 
-1. Scope the evaluation: the artifact and its path, the harnesses and models it must work on, and the question. Removal decisions use the weakest setup the artifact must support; a portability question uses every setup that matters.
+1. Scope the evaluation: the artifact and its path, the harnesses and models it must work on, and the question. Run edit rounds on the default setup and a full evaluation with `--full`. Removal decisions use the weakest setup the artifact must support; a portability question uses every setup that matters.
 2. Build or extend the suite in `evals/<suite>/` per `references/suites.md`. Choose cases from the behavior in question before seeing any results.
 3. Before the first paid run, show the plan: cases, arms, setups, attempts, and the number of sessions. Start when the user agrees.
 4. Probe each harness setup new to the suite with `--probe`, and confirm the artifact is visible in the with arm and absent in the without arm. A user prompt or an API call passes the text straight into the request and has no probe.

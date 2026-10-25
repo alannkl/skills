@@ -17,7 +17,7 @@ from tasks import PROBE_CASE, build_tasks, load_suite  # noqa: E402
 CLAUDE = {"harness": "claude-code", "model": "anthropic/claude-haiku-5-5", "effort": "high"}
 CODEX = {"harness": "codex", "model": "openai/gpt-6-luna", "effort": "high"}
 OPENCLAW = {"harness": "openclaw", "model": "openrouter/deepseek/x", "effort": "high",
-            "openrouter_provider": "deepseek", "context_window": 1000}
+            "openrouter_providers": ["deepseek"], "context_window": 1000}
 
 
 class Prompts(unittest.TestCase):
@@ -84,9 +84,10 @@ class Prompts(unittest.TestCase):
             url, body, _ = api_runner.build_request({"model": "openai/gpt-6-luna"}, "S", "U")
             self.assertEqual((url, body["instructions"], body["input"]), ("http://proxy/v1/responses", "S", "U"))
             url, body, _ = api_runner.build_request({"model": "openrouter/deepseek/x", "effort": "max",
-                                                     "openrouter_provider": "deepseek"}, None, "U")
+                                                     "openrouter_providers": ["a", "b"], "max_tokens": 9}, None, "U")
             self.assertEqual(body["messages"], [{"role": "user", "content": "U"}])
-            self.assertEqual((body["reasoning"], body["provider"]["allow_fallbacks"]), ({"effort": "max"}, False))
+            self.assertEqual((body["reasoning"], body["provider"], body["max_tokens"]),
+                             ({"effort": "max"}, {"order": ["a", "b"], "allow_fallbacks": False}, 9))
 
     def test_api_trial_is_graded_like_a_harness_trial(self):
         self.build("system", "api")

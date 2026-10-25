@@ -3,7 +3,7 @@
 
 Run from the root of the repository that holds the artifact and its `evals/<suite>/`.
 
-  eval_instructions.py run <suite> [--config NAME]... [--case NAME]... [--attempts N] [--probe] [--fresh-baseline]
+  eval_instructions.py run <suite> [--config NAME... | --full] [--case NAME]... [--attempts N] [--probe] [--fresh-baseline]
                            [--env bwrap|docker] [--concurrency N] [--concurrency CONFIG=N]...
   eval_instructions.py run <suite> --minus RULE [--config NAME]...
   eval_instructions.py grade <run-dir> [--judge MODEL]...
@@ -52,6 +52,9 @@ import sandbox  # noqa: E402
 SETTINGS = json.loads((HERE / "configs.json").read_text())
 DEFAULT_CONFIGS = ["openclaw-deepseek-high"]
 DEFAULT_API_CONFIGS = ["api-deepseek-high"]
+# A full run adds a second harness and model family to the edit-round default.
+FULL_CONFIGS = DEFAULT_CONFIGS + ["codex-luna"]
+FULL_API_CONFIGS = DEFAULT_API_CONFIGS + ["api-luna"]
 # bubblewrap sandboxes start faster and cost less memory than containers; Docker covers hosts without it.
 DEFAULT_ENV = "bwrap" if sys.platform == "linux" and shutil.which("bwrap") else "docker"
 # Sessions at once across all setups. 12 bwrap sessions left about 2.4 GB of a 15 GB host free, at
@@ -134,7 +137,7 @@ def openclaw_model_config(config: dict) -> str:
     without it OpenClaw rejects --thinking. Harbor adds the provider's base URL
     and key from <PROVIDER>_BASE_URL and <PROVIDER>_API_KEY.
 
-    For OpenRouter it also pins the upstream provider with no fallbacks, and
+    For OpenRouter it also limits the upstream providers to the configured ones, tried in order, and
     declares the one supported effort so OpenClaw sends it as `reasoning.effort`
     verbatim. Without that, the levels stop at high plus OpenClaw's own `ultra`
     (sent as max), there is no xhigh, and some models get medium sent as low.
@@ -142,12 +145,12 @@ def openclaw_model_config(config: dict) -> str:
     provider, model_id = config["model"].split("/", 1)
     # OpenClaw's default output cap of 8192 tokens can go entirely to reasoning, ending the turn with nothing done.
     entry = {"id": model_id, "name": model_id, "reasoning": True, "contextWindow": config["context_window"],
-             "maxTokens": 64000}
+             "maxTokens": config.get("max_tokens", 64000)}
     if provider == "openrouter":
         effort = config["effort"]
         entry["compat"] = {"supportsReasoningEffort": True, "supportedReasoningEfforts": [effort]} if effort else \
             {"supportsReasoningEffort": False}
-        entry["params"] = {"provider": {"order": [config["openrouter_provider"]], "allow_fallbacks": False}}
+        entry["params"] = {"provider": {"order": config["openrouter_providers"], "allow_fallbacks": False}}
         native = {"models": [entry]}
     else:
         native = {"api": "anthropic-messages", "models": [entry]}
@@ -168,7 +171,9 @@ def agent_args(config: dict, system_prompt: str | None = None) -> list[str]:
     """
     harness = config["harness"]
     if harness == API:
-        return [API, config["model"], f"effort={config.get('effort')}", f"provider={config.get('openrouter_provider')}"]
+        args = [API, config["model"], f"effort={config.get('effort')}",
+                f"provider={','.join(config.get('openrouter_providers') or ['None'])}"]
+        return args + [f"max_tokens={config['max_tokens']}"] if "max_tokens" in config else args
     args = ["-a", HARBOR_AGENT[harness], "-m", config["model"],
             "--ak", f"version={SETTINGS['cli_versions'][harness]}",
             # The OpenClaw adapter reads its config from a bind-mounted /logs/agent.
@@ -318,7 +323,10 @@ def cmd_run(args) -> None:
     suite = load_suite(REPO, args.suite)
     artifact, full = suite["artifact"], REPO / suite["artifact"]["path"]
     wants_api = artifact["type"] == "prompt" and artifact["runner"] == API
-    configs = args.config or (DEFAULT_API_CONFIGS if wants_api else DEFAULT_CONFIGS)
+    if args.full:
+        configs = FULL_API_CONFIGS if wants_api else FULL_CONFIGS
+    else:
+        configs = args.config or (DEFAULT_API_CONFIGS if wants_api else DEFAULT_CONFIGS)
     unknown = set(configs) - set(SETTINGS["configs"])
     if unknown:
         raise SystemExit(f"unknown configs: {sorted(unknown)}")
@@ -674,8 +682,11 @@ def main() -> None:
     sub = parser.add_subparsers(dest="command", required=True)
     run = sub.add_parser("run")
     run.add_argument("suite", help="folder name under evals/")
-    run.add_argument("--config", action="append",
-                     help=f"from configs.json; default {DEFAULT_CONFIGS}, or {DEFAULT_API_CONFIGS} for an api prompt")
+    setups = run.add_mutually_exclusive_group()
+    setups.add_argument("--config", action="append",
+                        help=f"from configs.json; default {DEFAULT_CONFIGS}, or {DEFAULT_API_CONFIGS} for an api prompt")
+    setups.add_argument("--full", action="store_true",
+                        help=f"run {FULL_CONFIGS}, or {FULL_API_CONFIGS} for an api prompt")
     run.add_argument("--case", action="append", help="case folder name; default all")
     run.add_argument("--variants", type=lambda s: s.split(","), default=["with", "without"])
     run.add_argument("--attempts", type=int, help="runs per task; default 1, or 3 with --minus")
