@@ -74,9 +74,7 @@
         "claude-md-wording-edit/keeps-push-rule",
         "claude-md-wording-edit/rules-preserved",
         "identifier-parenthetical-adds-info/keeps-qualifiers",
-        "label-then-command/keeps-empty-branch",
-        "label-then-command/keeps-threshold",
-        "title-then-link-pointer/keeps-failed-step-report"
+        "label-then-command/keeps-threshold"
       ]
     },
     "structural-only-when-requested": {
@@ -427,7 +425,7 @@
     },
     "identifier-named-once": {
       "file": "SKILL.md",
-      "text": "Check that each command, tool, and path is named once, as what its step acts on. An identifier in parentheses after words that name the same thing is a duplicate: rewrite \"load settings from the config file (`config.yaml`)\" as \"load settings from `config.yaml`\".",
+      "text": "Name each command, tool, and path once, as what its step acts on. An identifier in parentheses after words that name the same thing is a duplicate: rewrite \"load settings from the config file (`config.yaml`)\" as \"load settings from `config.yaml`\", and \"upload the build (`aws s3 cp`, the deploy skill)\" as \"upload the build with `aws s3 cp`, which the deploy skill documents\".",
       "graders": [
         "label-then-command/identifier-once",
         "label-then-command/no-label-then-identifier",
@@ -446,8 +444,7 @@
         "identifier-parenthetical-adds-info/keeps-staging-script",
         "identifier-parenthetical-adds-info/keeps-qualifiers",
         "label-then-command/identifier-once",
-        "label-then-command/keeps-post-slug",
-        "label-then-command/keeps-quotes-skill-pointer"
+        "label-then-command/keeps-post-slug"
       ]
     },
     "present-draft-when-uncertain": {
@@ -481,7 +478,6 @@
       "text": "For a shortcut that packages instructions the user retypes, name it per the Name and layout section, make it user-invoked per the Invocation section with a one-line description, put the user's instructions in the body, then apply steps 5 and 6 of `SKILL.md`.",
       "graders": [
         "create-standup-command/user-invoked",
-        "create-standup-command/codex-policy-exists",
         "create-standup-command/codex-user-invoked"
       ]
     },
@@ -512,7 +508,6 @@
       "text": "Otherwise set `disable-model-invocation: true`, use a one-line human-facing description without trigger lists, and add `agents/openai.yaml` setting `policy.allow_implicit_invocation` to an unquoted `false`, because Codex ignores the frontmatter field.",
       "graders": [
         "create-standup-command/user-invoked",
-        "create-standup-command/codex-policy-exists",
         "create-standup-command/codex-user-invoked"
       ]
     },

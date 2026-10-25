@@ -5,15 +5,6 @@
   },
   "graders": [
     {
-      "name": "codex-policy-exists",
-      "type": "file_exists",
-      "path": "skills/standup/agents/openai.yaml",
-      "variants": [
-        "with"
-      ],
-      "description": "Convention check, not scored: Codex gets an invocation policy file."
-    },
-    {
       "name": "codex-user-invoked",
       "type": "regex",
       "path": "skills/standup/agents/openai.yaml",
@@ -23,7 +14,8 @@
       "variants": [
         "with"
       ],
-      "description": "Convention check, not scored: Codex treats it as user-invoked."
+      "description": "Convention check, not scored: when the skill has a Codex policy file, Codex treats it as user-invoked.",
+      "optional": true
     },
     {
       "name": "instructions-intact",

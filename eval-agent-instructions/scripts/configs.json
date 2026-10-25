@@ -5,9 +5,7 @@
     "codex": "0.164.0",
     "openclaw": "2026.10.6"
   },
-  "judges": [
-    "claude-opus-5-5"
-  ],
+  "judges": ["claude-opus-5-5"],
   "configs": {
     "claude-code-haiku-5.5-high": {
       "harness": "claude-code",
@@ -27,15 +25,30 @@
         "OPENAI_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"
       }
     },
-    "openclaw-haiku-5.5-high": {
-      "harness": "openclaw",
-      "model": "anthropic/claude-haiku-5-5",
+    "claude-code-opus-5.5-high": {
+      "harness": "claude-code",
+      "model": "anthropic/claude-opus-5-5",
       "effort": "high",
-      "context_window": 1000000,
       "env": {
         "ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}",
-        "ANTHROPIC_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"
+        "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}"
       }
+    },
+    "codex-gpt-6-astra-high": {
+      "harness": "codex",
+      "model": "openai/gpt-6-astra",
+      "effort": "high",
+      "env": {
+        "OPENAI_BASE_URL": "${ANTHROPIC_BASE_URL}/v1",
+        "OPENAI_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"
+      }
+    },
+    "openclaw-kimi-k3.1-pro-high-moonshotai": {
+      "harness": "openclaw",
+      "model": "openrouter/moonshotai/kimi-k3.1-pro",
+      "effort": "high",
+      "openrouter_providers": ["moonshotai"],
+      "context_window": 1048576
     },
     "openclaw-deepseek-v4.1-flash-high-morph": {
       "harness": "openclaw",
@@ -116,6 +129,16 @@
     "api-haiku-5.5-high": {
       "harness": "api",
       "model": "anthropic/claude-haiku-5-5",
+      "effort": "high"
+    },
+    "api-opus-5.5-high": {
+      "harness": "api",
+      "model": "anthropic/claude-opus-5-5",
+      "effort": "high"
+    },
+    "api-gpt-6-astra-high": {
+      "harness": "api",
+      "model": "openai/gpt-6-astra",
       "effort": "high"
     },
     "api-gpt-6-luna-high": {

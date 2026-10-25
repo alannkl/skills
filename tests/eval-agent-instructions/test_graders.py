@@ -32,6 +32,7 @@ class Graders(unittest.TestCase):
         self.assertTrue(self.grade({"type": "regex", "pattern": "^Done", "flags": "m"},
                                    message="Summary\nDone.")["g"]["pass"])
         self.assertFalse(self.grade({"type": "regex", "path": "missing.md", "pattern": "x"})["g"]["pass"])
+        self.assertTrue(self.grade({"type": "regex", "path": "missing.md", "pattern": "x", "optional": True})["g"]["pass"])
 
     def test_unchanged_except_detects_edits_and_new_files(self):
         spec = {"type": "unchanged_except", "allow": []}

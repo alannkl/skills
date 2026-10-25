@@ -65,7 +65,7 @@ def regex(spec, workspace, initial, harness, run, judges):
     if spec.get("path"):
         text = _file_text(workspace, spec["path"])
         if text is None:
-            return {"pass": False, "detail": f"{spec['path']} missing"}
+            return {"pass": bool(spec.get("optional")), "detail": f"{spec['path']} missing"}
     elif run["final_message"] is None:
         return _UNDECIDED_NO_TRANSCRIPT
     else:
@@ -248,7 +248,9 @@ def _batches(results: list[dict]) -> list[list[dict]]:
 
 JUDGE_PROMPT = (
     "You grade {count} outputs of AI agents against one criterion. Each output comes from a separate, "
-    "independent run on the same task; judge each on its own, never by comparison with the others. Reply with "
+    "independent run on the same task; judge each on its own, never by comparison with the others. Judge the "
+    "end result and its meaning, not its wording: any phrasing with the same effect passes unless the criterion "
+    "requires exact text. Reply with "
     'JSON only, one object per output: [{{"id": 1, "pass": true|false, "reason": "<one sentence>"}}, ...].\n\n'
     "Criterion:\n{criteria}\n\nOriginal {label}:\n<<<\n{original}\n>>>\n\n{outputs}"
 )

@@ -15,7 +15,7 @@ A measured evaluation runs real, billed sessions with and without the instructio
 
 ## Runner
 
-`scripts/eval_instructions.py` runs each agent session through Harbor in its own sandbox, or calls a model API directly, and grades on the host. The sandbox is bubblewrap where it is installed, seeing only the host's system files, the pinned agent CLIs and the task; elsewhere, or with `--env docker`, a Docker container. Under bubblewrap the setups run side by side and share `--concurrency` sessions in proportion to each setup's agent time in earlier runs: by default up to 16, as many as free memory holds; a given number runs as given, with a warning when it will not fit; `CONFIG=N` fixes one setup's number. Run it from the root of the repository that holds the artifact; `--help` lists its commands. It needs bubblewrap on Linux or Docker, `uv`, and credentials in the environment or in that repository's `.env`: `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` for Claude Code, Codex, Anthropic and OpenAI API calls, and the judge, and `OPENROUTER_API_KEY` for OpenRouter setups. Setups are named in `scripts/configs.json`; without `--config`, a run uses `openclaw-deepseek-v4.1-flash-high-morph`, or `api-deepseek-v4.1-flash-high-morph` for a prompt the API runs, and `--full` adds `codex-gpt-6-luna-high` or `api-gpt-6-luna-high`.
+`scripts/eval_instructions.py` runs each agent session through Harbor in its own sandbox, or calls a model API directly, and grades on the host. The sandbox is bubblewrap where it is installed, seeing only the host's system files, the pinned agent CLIs and the task; elsewhere, or with `--env docker`, a Docker container. Under bubblewrap the setups run side by side and share `--concurrency` sessions in proportion to each setup's agent time in earlier runs: by default up to 16, as many as free memory holds; a given number runs as given, with a warning when it will not fit; `CONFIG=N` fixes one setup's number. Run it from the root of the repository that holds the artifact; `--help` lists its commands. It needs bubblewrap on Linux or Docker, `uv`, and credentials in the environment or in that repository's `.env`: `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` for Claude Code, Codex, Anthropic and OpenAI API calls, and the judge, and `OPENROUTER_API_KEY` for OpenRouter setups. Setups are named in `scripts/configs.json`; without `--config`, a run uses `openclaw-deepseek-v4.1-flash-high-morph`, or `api-deepseek-v4.1-flash-high-morph` for a prompt the API runs, `--full` adds a strong model, `claude-code-opus-5.5-high` or `api-opus-5.5-high`.
 
 What it delivers, per `references/suites.md`:
 
@@ -25,7 +25,7 @@ What it delivers, per `references/suites.md`:
 
 ## Workflow
 
-1. Scope the evaluation: the artifact and its path, the harnesses and models it must work on, and the question. Run edit rounds on the default setup and a full evaluation with `--full`. Removal decisions use the weakest setup the artifact must support; a portability question uses every setup that matters.
+1. Scope the evaluation: the artifact and its path, the harnesses and models it must work on, and the question. Run edit rounds on the default setup and a full evaluation, which sets it beside a strong model, with `--full`. Removal decisions use the weakest setup the artifact must support; a portability question uses every setup that matters.
 2. Build or extend the suite in `evals/<suite>/` per `references/suites.md`. Choose cases from the behavior in question before seeing any results.
 3. Before the first paid run, show the plan: cases, arms, setups, attempts, and the number of sessions. Start when the user agrees.
 4. Probe each harness setup new to the suite with `--probe`, and confirm the artifact is visible in the with arm and absent in the without arm. A user prompt or an API call passes the text straight into the request and has no probe.
@@ -41,8 +41,13 @@ What it delivers, per `references/suites.md`:
 
 - Report each harness and model pair separately; never pool runs across them.
 - A case the baseline passes reliably cannot show improvement; report it as a regression guard.
-- When no version passes, find the cause before blaming the instructions: model capability, evidence the fixture does not supply, an ambiguous grader, or a tooling failure.
-- A weaker model is a cheap regression screen, but its failures on judgment-heavy behavior can reflect capability rather than the instructions.
+- Before changing the text over a case that fails with the artifact, read the judge's reasons, then read the strong setup's result on that case in both arms, from a `--full` run:
+  - Passes with the artifact, fails without: the text is clear; a weaker setup's failure is its capability. Keep the text.
+  - Fails with the artifact, or its transcript misreads the rule as the weaker setup's does: the wording is at fault. Reword the existing text rather than adding to it.
+  - Passes in both arms: the case cannot show what the text does. Make it tempt the failure before drawing conclusions.
+  - Fails in both arms: look for evidence the fixture lacks, an ambiguous grader, or a tooling failure.
+
+  When the judge is a strong setup's model, check that setup's verdicts by hand.
 - Read the transcript behind an undecided grade or a judge disagreement before counting it either way.
 
 ## Removing a rule

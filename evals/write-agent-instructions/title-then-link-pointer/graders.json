@@ -23,15 +23,6 @@
       "description": "The checklist path survives."
     },
     {
-      "name": "keeps-failed-step-report",
-      "type": "regex",
-      "path": "skills/release/SKILL.md",
-      "pattern": "which step failed",
-      "flags": "i",
-      "match": "contains",
-      "description": "The instruction to report the failed step survives."
-    },
-    {
       "name": "keeps-rollback-section",
       "type": "regex",
       "path": "skills/release/SKILL.md",

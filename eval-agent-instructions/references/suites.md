@@ -34,7 +34,7 @@ Grader types; `path` is relative to the workspace:
 
 | type | passes when | fields |
 | --- | --- | --- |
-| `regex` | `pattern` is found in the file at `path`, or in the final message when `path` is absent | `pattern`, `path`, `flags` (letters such as `im`), `match` (`contains` or `not_contains`) |
+| `regex` | `pattern` is found in the file at `path`, or in the final message when `path` is absent; a missing file passes only when `optional` is true | `pattern`, `path`, `flags` (letters such as `im`), `match` (`contains` or `not_contains`), `optional` |
 | `file_exists` | the file's presence matches `exists` | `path`, `exists` (default true) |
 | `unchanged_except` | no file changed or appeared outside `allow` | `allow` |
 | `no_writes` | the transcript shows no write through an edit tool | |
@@ -48,6 +48,7 @@ Make each case discriminate:
 - The baseline should often fail it while the artifact passes, and it should offer a tempting wrong answer.
 - Remove hints that give the answer away, and add realistic noise such as unrelated real defects.
 - Pair a case where the right result is a change with one where it is restraint.
+- Grade the end result, not its wording. Require exact text only where something depends on it, such as identifiers, commands, paths, and formats a tool parses; check everything else by meaning, so any wording with the same effect passes.
 - Write an `llm` criterion as the facts the output must state or keep, so a terse correct answer passes.
 
 ## Rule map

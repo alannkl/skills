@@ -52,9 +52,9 @@ import sandbox  # noqa: E402
 SETTINGS = json.loads((HERE / "configs.json").read_text())
 DEFAULT_CONFIGS = ["openclaw-deepseek-v4.1-flash-high-morph"]
 DEFAULT_API_CONFIGS = ["api-deepseek-v4.1-flash-high-morph"]
-# A full run adds a second harness and model family to the edit-round default.
-FULL_CONFIGS = DEFAULT_CONFIGS + ["codex-gpt-6-luna-high"]
-FULL_API_CONFIGS = DEFAULT_API_CONFIGS + ["api-gpt-6-luna-high"]
+# A full run sets the edit-round default beside a strong model, so every case compares weak with strong.
+FULL_CONFIGS = DEFAULT_CONFIGS + ["claude-code-opus-5.5-high"]
+FULL_API_CONFIGS = DEFAULT_API_CONFIGS + ["api-opus-5.5-high"]
 # bubblewrap sandboxes start faster and cost less memory than containers; Docker covers hosts without it.
 DEFAULT_ENV = "bwrap" if sys.platform == "linux" and shutil.which("bwrap") else "docker"
 # Sessions at once across all setups: at most 16 under bwrap, fewer when the host's memory cannot hold

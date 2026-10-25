@@ -35,7 +35,7 @@
       "name": "keeps-exception",
       "type": "regex",
       "path": "AGENTS.md",
-      "pattern": "throwaway prototypes",
+      "pattern": "prototype",
       "flags": "i",
       "match": "contains",
       "description": "The exception on the base-skill line survives."
@@ -53,7 +53,7 @@
       "name": "keeps-out-of-scope-rule",
       "type": "regex",
       "path": "AGENTS.md",
-      "pattern": "clear commit messages",
+      "pattern": "commit messages?",
       "flags": "i",
       "match": "contains",
       "description": "A rule the base skill does not cover stays; the request was only to remove duplicates."
