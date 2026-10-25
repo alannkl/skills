@@ -65,6 +65,40 @@ Each replay keeps the repository's `AGENTS.md` (the collaboration constitution a
 | too-many-commands-to-remember | yes | This repo's review skills. |
 | deploy-rollback-pointer | yes | A pointer with no load condition that never fires. |
 
+## Constructed blind, for finding gaps
+
+Written by an agent that never saw this skill, its cases, graders or rules, from the request families above and what a careful reviewer would accept; reviewed by two models before running. They test what users want, not the skill's rules, so `rules.json` does not map them. A gap they find is weaker evidence than one from a real episode. Graders marked `diagnostic` record a reasonable preference the request does not state.
+
+| Case | Family | Right outcome |
+| --- | --- | --- |
+| claude-md-db-reset-lesson | 4 | a short guardrail against destructive database commands |
+| agents-md-integration-db-lesson | 4 | a one-line prerequisite for integration tests |
+| support-bot-refund-window | 1 | fix a prompt in TypeScript and its tool description |
+| ticket-classifier-prompt-trim | 6 | trim a classifier prompt, labels and routing unchanged |
+| expo-release-command | 7 | a `/release` command from a runbook, no release run |
+| rotate-db-creds-skill | 7 | a Codex skill from a runbook, no rotation run |
+| should-we-split-claude-md | 2 | a grounded recommendation; any split keeps shared rules reachable |
+| should-we-move-endpoint-guide-to-skill | 2 | a grounded recommendation; a move keeps handler rules reachable |
+| pr-skill-drop-file-list | 1 | remove a section in two places |
+| launch-experiment-skill-review | 8 | advice only: the skill's real defects |
+| commands-sweep-master-to-main | 3 | fix three commands, leave the fourth |
+| package-claude-md-dedupe | 5 | remove duplicates, keep the one that adds a qualifier |
+| ui-string-skill-ready-review | 8 | "ship it", no edits |
+| agreed-plan-claude-md-import | 2 | implement exactly the agreed plan; the earlier turns are supplied history |
+| near-miss-* (six) | near-miss | ordinary work on human-facing text or code; the skill should not load |
+
+## Reduced versions of large replays
+
+Smaller worlds for the same requests, so edit rounds stay fast; each runs beside its original before replacing it in quick rounds. Their NOTES.md map each original grader to its new one.
+
+| Case | From | Change |
+| --- | --- | --- |
+| trim-panel-skill-small | trim-panel-skill | instruction prose cut by a third; scripts kept |
+| review-skills-scope-sweep-small | review-skills-scope-sweep | shorter skills, every quoted phrase kept |
+| staged-skill-ready-to-ship-small, staged-skill-ready-to-ship-fixed-small | the staged-skill reviews | unrelated skills and sections removed; changed lines preserved |
+| release-script-fix-small | release-script-skill | same request; the script fix is the job |
+| release-skill-gate-small | release-script-skill | the script already fixed; updating the skill is the job; the request's first sentence names the changed interface |
+
 ## Integration cases
 
 These run only with `--all-cases` or by name while smaller versions are drafted and checked beside them; a reason below holds only if the smaller version cannot show the behavior. Medians without the skill, Opus / Astra:
@@ -80,7 +114,6 @@ The two staged-skill readiness reviews take 86-126 s without the skill in few to
 
 ## Gaps
 
-- Near-misses: 2 of the 8 a trigger check needs.
 - A skill-directory rename with its inventory and router (this repo's only one, agent-panel to panel, has no recorded request).
 
 ## Coverage

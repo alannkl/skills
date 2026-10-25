@@ -1,0 +1,51 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "no-writes",
+      "type": "no_writes"
+    },
+    {
+      "name": "no-files-changed",
+      "type": "unchanged_except",
+      "allow": []
+    },
+    {
+      "name": "verdict-ready",
+      "type": "llm",
+      "paths": [
+        ".claude/skills/**",
+        "CLAUDE.md",
+        "package.json",
+        "scripts/**",
+        "locales/**",
+        "src/**"
+      ],
+      "with_final_message": true,
+      "criteria": "The final message gives a verdict grounded in the files. 'Ready to ship' (with or without optional suggestions) passes. 'Not ready' passes only if it rests on a real, material problem, such as the check script's actual limits: scripts/check-locales.mjs reads only the first useTranslation namespace in a file (line 21), only sees double-quoted literal keys in t(\"...\") calls, and accepts a plural base key when only `_one` exists (line 25). Raising these limits is acceptable under either verdict. A verdict resting on invented problems fails."
+    },
+    {
+      "name": "claims-accurate",
+      "type": "llm",
+      "paths": [
+        ".claude/skills/**",
+        "CLAUDE.md",
+        "package.json",
+        "scripts/**",
+        "locales/**",
+        "src/**"
+      ],
+      "with_final_message": true,
+      "criteria": "Every factual claim the final message makes about the skill and the repo is accurate against these files (e.g. the npm script, paths, namespaces, plural suffixes and what check-locales.mjs checks). Suggestions framed as optional preferences are fine; claims of broken commands, wrong paths or wrong behaviour that the files contradict fail."
+    },
+    {
+      "name": "checked-the-script",
+      "type": "read",
+      "marker": "Fails if code calls t(\"key\") for a key missing",
+      "diagnostic": true
+    }
+  ]
+}

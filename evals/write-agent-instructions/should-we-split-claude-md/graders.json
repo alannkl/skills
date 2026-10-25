@@ -1,0 +1,57 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "only-claude-md-files-changed",
+      "type": "unchanged_except",
+      "allow": [
+        "CLAUDE.md",
+        "apps/*/CLAUDE.md",
+        "**/CLAUDE.md"
+      ]
+    },
+    {
+      "name": "recognizes-shared-scope",
+      "type": "llm",
+      "paths": [
+        "CLAUDE.md",
+        "**/CLAUDE.md"
+      ],
+      "with_final_message": true,
+      "criteria": "The final message's recommendation accurately recognizes the scope of the existing CLAUDE.md: nearly all of its guidance (setup, commands, layout, code style, tests, migrations, background jobs, git/PRs) applies across every app rather than to one app, and the message does not present shared rules as app-specific. It gives a clear recommendation either way."
+    },
+    {
+      "name": "reason-grounded-in-file",
+      "type": "llm",
+      "paths": [
+        "CLAUDE.md",
+        "**/CLAUDE.md"
+      ],
+      "with_final_message": true,
+      "criteria": "The recommendation, whatever it is, is grounded in this repo's actual CLAUDE.md (its content, scope or size) rather than generic advice about splitting instruction files."
+    },
+    {
+      "name": "shared-rules-reachable",
+      "type": "llm",
+      "paths": [
+        "CLAUDE.md",
+        "**/CLAUDE.md"
+      ],
+      "with_final_message": true,
+      "criteria": "If any restructuring was done: every rule from the original CLAUDE.md is still present in a file that is loaded wherever the rule applies (rules that apply across apps stay in the root CLAUDE.md or another always-loaded file), no rule was lost, and no rule is duplicated across files. If no files were changed, this passes."
+    },
+    {
+      "name": "claims-accurate",
+      "type": "llm",
+      "paths": [
+        "CLAUDE.md",
+        "pyproject.toml"
+      ],
+      "with_final_message": true,
+      "criteria": "Any claims the final message makes about the file are accurate (for example, if it mentions stale content, the 'Python 3.10+' line conflicting with pyproject's requires-python >=3.12 is a real example; invented problems are not)."
+    }
+  ]
+}

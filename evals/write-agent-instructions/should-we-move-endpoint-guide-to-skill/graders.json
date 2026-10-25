@@ -1,0 +1,71 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "other-files-unchanged",
+      "type": "unchanged_except",
+      "allow": [
+        "AGENTS.md",
+        ".agents/skills/**"
+      ]
+    },
+    {
+      "name": "grounded-verdict",
+      "type": "llm",
+      "paths": [
+        "AGENTS.md",
+        ".agents/skills/**"
+      ],
+      "with_final_message": true,
+      "criteria": "The final message gives a clear recommendation on whether to move the 'Adding an endpoint' section into a skill (yes, yes with a caveat, no, or a different organization), with reasons grounded in this repo's AGENTS.md and code, and says what was done (if anything) and where the guidance now lives."
+    },
+    {
+      "name": "action-matches-verdict",
+      "type": "llm",
+      "paths": [
+        "AGENTS.md",
+        ".agents/skills/**"
+      ],
+      "with_final_message": true,
+      "criteria": "The files match the recommendation. If the agent agreed to the move, a new skill exists under .agents/skills/ (other than db-migration) and AGENTS.md no longer contains the step-by-step endpoint procedure (a short pointer is fine). If it reasonably disagreed or proposed a different organization with grounded reasons and did not implement it, AGENTS.md and .agents/skills/ are unchanged. If it implemented its alternative organization, the files reflect that alternative as described."
+    },
+    {
+      "name": "new-skill-with-trigger",
+      "type": "llm",
+      "paths": [
+        "AGENTS.md",
+        ".agents/skills/**"
+      ],
+      "with_final_message": true,
+      "criteria": "If a new skill was created: its frontmatter has a name and a description saying it applies when adding (or changing) an HTTP endpoint/route/handler in fleetapi. In every case the existing db-migration skill is unchanged. If no skill was created, this passes."
+    },
+    {
+      "name": "all-steps-preserved",
+      "type": "llm",
+      "paths": [
+        "AGENTS.md",
+        ".agents/skills/**"
+      ],
+      "criteria": "Across the combined instruction set an agent can reach (AGENTS.md plus every file under .agents/skills/, including any references the skills point to), every step of the original 'Adding an endpoint' section survives with its concrete details: OpenAPI first in api/openapi.yaml reusing Error and Page; make generate and satisfying the generated interface; one handler file per resource; httpx.WriteError (never http.Error), httpx.DecodeJSON, auth.FromContext; httpx.ParsePage and Page with max 100 for lists; registering in routes.go under the right group, admin routes under RequireRole(\"admin\"); new queries in internal/store/queries plus make generate; table-driven test with testutil.NewServer covering happy path, 404 and a validation error; CHANGELOG Unreleased line; make lint test."
+    },
+    {
+      "name": "agents-md-rest-kept",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "criteria": "AGENTS.md's Commands, Layout and Conventions sections keep their original content and meaning (additions such as handler rules moved up into Conventions, or a pointer to the skill, are fine)."
+    },
+    {
+      "name": "handler-rules-still-reachable",
+      "type": "llm",
+      "paths": [
+        "AGENTS.md",
+        ".agents/skills/**"
+      ],
+      "with_final_message": true,
+      "criteria": "If the agent restructured the files, the handler rules that apply to any handler code, not just new endpoints (return errors via httpx.WriteError and never http.Error; decode with httpx.DecodeJSON; caller from auth.FromContext), still reach an agent editing an existing handler: they remain in AGENTS.md, or AGENTS.md has a pointer telling the agent to load the skill when editing handlers, or the new skill's description explicitly covers changing existing handlers. If the agent recommended against moving and left the files intact, this passes."
+    }
+  ]
+}

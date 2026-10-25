@@ -1,0 +1,41 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "other-files-unchanged",
+      "type": "unchanged_except",
+      "allow": [
+        "triage/classifier.py",
+        "*__pycache__/*",
+        ".pytest_cache/*"
+      ]
+    },
+    {
+      "name": "labels-and-format-kept",
+      "type": "llm",
+      "path": "triage/classifier.py",
+      "criteria": "SYSTEM_PROMPT still asks for exactly one of the six categories spelled exactly billing, bug, how_to, account_access, feature_request, other, each still with its meaning; urgency as one of low, normal, high; and a JSON object with exactly the keys category, urgency and confidence (confidence between 0 and 1)."
+    },
+    {
+      "name": "decision-rules-kept",
+      "type": "llm",
+      "path": "triage/classifier.py",
+      "criteria": "Every distinct decision rule from the original prompt survives with the same meaning: bug plus billing/charge goes to billing; can't log in is account_access even if it looks like a bug; admin SSO setup questions are how_to, while locked-out users are account_access; non-English tickets are classified normally; complaint-phrased requests are feature_request unless something that used to work broke; high urgency only for production blocked for multiple users, data loss, or security; low for feature requests and general questions; everything else normal."
+    },
+    {
+      "name": "prompt-shorter-no-duplicates",
+      "type": "llm",
+      "path": "triage/classifier.py",
+      "criteria": "SYSTEM_PROMPT is materially shorter than before while every classification decision keeps its meaning. Avoidable repetition that remains (e.g. the category list stated twice, the login rule twice, the JSON-only instruction twice) is evidence of poor compression, weighed overall rather than as an exact-once rule. Keeping a brief example response is fine."
+    },
+    {
+      "name": "code-behavior-unchanged",
+      "type": "llm",
+      "path": "triage/classifier.py",
+      "criteria": "Judging meaning only (not by running anything), the Python code outside SYSTEM_PROMPT is unchanged in behaviour: model, temperature, response_format, message construction, CATEGORIES, URGENCIES and parse_response."
+    }
+  ]
+}

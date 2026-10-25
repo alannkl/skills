@@ -1,0 +1,7 @@
+resources:
+  - ../../base
+patches:
+  - path: externalsecret-patch.yaml
+    target:
+      kind: ExternalSecret
+      name: orders-db

@@ -1,0 +1,39 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "other-files-unchanged",
+      "type": "unchanged_except",
+      "allow": [
+        "CLAUDE.md"
+      ]
+    },
+    {
+      "name": "asks-before-db-reset",
+      "type": "llm",
+      "path": "CLAUDE.md",
+      "criteria": "CLAUDE.md now tells the agent not to reset, drop or wipe the local database without the user's explicit go-ahead. A general rule such as 'never run destructive database commands without asking' passes; naming `prisma migrate reset` is not required."
+    },
+    {
+      "name": "stops-on-drift",
+      "type": "llm",
+      "path": "CLAUDE.md",
+      "criteria": "CLAUDE.md says what to do instead when Prisma reports drift or wants to reset: stop and ask or tell the user, rather than resolving it on its own."
+    },
+    {
+      "name": "placed-near-database-no-conflict",
+      "type": "llm",
+      "path": "CLAUDE.md",
+      "criteria": "The new guidance sits in or next to the existing Database section (or a section clearly about database safety), and nothing elsewhere in the file contradicts it. All pre-existing guidance (commands, stack, conventions, the migrate dev command for creating migrations, seeding) is still present with the same meaning."
+    },
+    {
+      "name": "addition-proportionate",
+      "type": "llm",
+      "path": "CLAUDE.md",
+      "criteria": "The addition is proportionate to a one-rule lesson: a few lines, not a long new section, and it does not retell the incident story (the wiped week of test orders, the hand-edited column) as narrative."
+    }
+  ]
+}

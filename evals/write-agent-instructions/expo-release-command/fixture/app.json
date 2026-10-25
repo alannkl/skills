@@ -1,0 +1,16 @@
+{
+  "expo": {
+    "name": "Trailmate",
+    "slug": "trailmate",
+    "version": "2.3.1",
+    "orientation": "portrait",
+    "ios": {
+      "bundleIdentifier": "app.trailmate",
+      "buildNumber": "47"
+    },
+    "android": {
+      "package": "app.trailmate",
+      "versionCode": 47
+    }
+  }
+}

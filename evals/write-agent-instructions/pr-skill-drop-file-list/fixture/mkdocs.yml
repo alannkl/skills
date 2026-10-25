@@ -1,0 +1,14 @@
+site_name: Hollow Docs
+repo_url: https://github.com/hollow-dev/hollow
+theme:
+  name: material
+nav:
+  - Home: index.md
+  - Guides:
+      - Quickstart: guides/quickstart.md
+      - Self-hosting: guides/self-hosting.md
+      - Webhooks: guides/webhooks.md
+  - API reference: api/index.md
+markdown_extensions:
+  - admonition
+  - pymdownx.superfences

@@ -1,0 +1,42 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "consumers-consistent",
+      "type": "llm",
+      "criteria": "The staged change adds a `delegate` skill and touches three files that refer to it: a new rule 5 \"Delegate when it pays\" in both `constitution/SKILL.md` and `AGENTS.md` (which renumbers the rule after it), and a README row plus the model-invoked count and list. Pass if the review checks these against the new skill, either confirming they agree or naming a real mismatch."
+    },
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": [],
+      "description": "A review request changes no files."
+    },
+    {
+      "name": "no-padding",
+      "type": "llm",
+      "criteria": "The final message is proportionate to a sound change: it leads with the verdict and does not pad the report with speculative risks, style preferences or restated content presented as gaps."
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes",
+      "description": "The transcript shows no file writes, even ones later undone."
+    },
+    {
+      "name": "ship-verdict",
+      "type": "llm",
+      "paths": [
+        "README.md",
+        "AGENTS.md",
+        "constitution/SKILL.md",
+        "delegate/SKILL.md",
+        "delegate/references/dispatch.md"
+      ],
+      "with_final_message": true,
+      "criteria": "Judge the review against the staged files. Pass if it gives a clear verdict on both questions and every problem it calls blocking is supported by the files or by a fact the review says it checked (a command it ran, a document it read); non-blocking suggestions are fine. Fail if it withholds a verdict, or blocks shipping on a claim it neither found in the files nor says how it checked."
+    }
+  ]
+}

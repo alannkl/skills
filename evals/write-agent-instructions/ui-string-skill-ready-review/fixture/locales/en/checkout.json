@@ -1,0 +1,8 @@
+{
+  "summary": {
+    "totalLabel": "Total",
+    "itemCount_one": "{{count}} item",
+    "itemCount_other": "{{count}} items"
+  },
+  "payNow": "Pay now"
+}

@@ -1,0 +1,39 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "other-files-unchanged",
+      "type": "unchanged_except",
+      "allow": [
+        "AGENTS.md"
+      ]
+    },
+    {
+      "name": "mentions-make-db-up",
+      "type": "regex",
+      "path": "AGENTS.md",
+      "pattern": "make db-up"
+    },
+    {
+      "name": "db-up-before-integration-tests",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "criteria": "AGENTS.md tells the agent to make sure the local Postgres is up (e.g. with `make db-up`) before running the integration tests. Running them via `make test-integration` or pytest are both fine; it need not say to restart a database that is already running."
+    },
+    {
+      "name": "no-duplicate-db-statement",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "criteria": "The integration-test database guidance is clear and consistent. Passing designs: the existing 'Integration tests need a database.' line was updated or replaced, or a concise prerequisite was added right next to it. Fail only if the file now states the same requirement twice in full (e.g. the old line plus a separate full restatement elsewhere), contradicts itself, or adds overgeneralized claims such as 'connection errors always mean the DB is down'."
+    },
+    {
+      "name": "rest-of-file-kept",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "criteria": "Every other section of AGENTS.md (Project, Layout, Setup, the rest of Testing, Conventions) keeps its original content and meaning, and the addition is a line or a few lines, not a new long section."
+    }
+  ]
+}

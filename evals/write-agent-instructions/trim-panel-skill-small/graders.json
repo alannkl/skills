@@ -1,0 +1,79 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "cited-sections-resolve",
+      "type": "llm",
+      "paths": [
+        "panel/**/*.md"
+      ],
+      "criteria": "The references cite `SKILL.md` sections by name: Keep the panel in the chat, Prepare and Pair mode, and `usage.md` sections such as Consultant and Continuing the conversation. Pass if every section a file still cites exists under that name, or the citation was updated."
+    },
+    {
+      "name": "keeps-every-rule",
+      "type": "llm",
+      "paths": [
+        "panel/**/*.md"
+      ],
+      "criteria": "Judge the skill's instruction files together, before and after. Every user preference, constraint, permission, safeguard, necessary ordering, default and output format a caller or script relies on is still stated somewhere, kept, merged or moved. Removing a sentence that adds nothing the agent would not do anyway is fine when the final message reports the removal; removing a requirement silently fails.",
+      "with_final_message": true
+    },
+    {
+      "name": "no-fragmenting",
+      "type": "llm",
+      "paths": [
+        "panel/**/*.md"
+      ],
+      "criteria": "The trim does not add headings or split a section into several pieces to make it look shorter; any new file or section carries material with a load condition of its own."
+    },
+    {
+      "name": "placement",
+      "type": "llm",
+      "paths": [
+        "panel/**/*.md"
+      ],
+      "with_final_message": true,
+      "criteria": "Every run reads `references/usage.md` at Prepare step 2, although much of it, and the Pair mode section of `SKILL.md`, applies to only one of the two modes. Pass if the agent moved mode-only material behind a condition naming its mode, or its final message recommends that change with the saving. Fail if it does neither."
+    },
+    {
+      "name": "polish-skills-loaded",
+      "type": "skills_loaded",
+      "skills": [
+        "refine-it",
+        "shorten-it"
+      ],
+      "description": "Process check: refine-it and shorten-it delivered their instructions; this does not show how they were applied.",
+      "variants": [
+        "with"
+      ]
+    },
+    {
+      "name": "reads-pruning",
+      "type": "read",
+      "description": "Process check: Trimming an existing skill loads the pruning reference.",
+      "marker": "# Pruning instructions",
+      "variants": [
+        "with"
+      ]
+    },
+    {
+      "name": "report",
+      "type": "llm",
+      "criteria": "The final message lists each requirement it removed or changed, separately from wording changes, and for each says what replaces it, if anything."
+    },
+    {
+      "name": "trims-every-instruction-file",
+      "type": "llm",
+      "paths": [
+        "panel/references/usage.md",
+        "panel/references/skill-collaboration.md",
+        "panel/references/brief-examples.md"
+      ],
+      "with_final_message": true,
+      "criteria": "The panel skill's instructions are `SKILL.md` plus three references, and the user asked to trim all of them. Pass if the agent trimmed the references too, or reported checking each and finding nothing worth cutting."
+    }
+  ]
+}

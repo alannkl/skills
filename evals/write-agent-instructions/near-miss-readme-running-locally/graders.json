@@ -1,0 +1,9 @@
+{
+  "expect_skill_loaded": {"with": false, "without": false},
+  "trigger_only": true,
+  "graders": [
+    {"name": "only-readme-changed", "type": "unchanged_except", "allow": ["README.md"]},
+    {"name": "running-locally-matches-makefile", "type": "llm", "paths": ["README.md", "Makefile"], "criteria": "README's Running locally section no longer tells readers to use Docker / docker compose; it says to run `make setup` once (which creates the venv and downloads the sample dataset) and then `make dev`, and gives http://localhost:8080 as the address."},
+    {"name": "other-sections-kept", "type": "llm", "path": "README.md", "criteria": "The intro, Configuration and License sections are unchanged in content."}
+  ]
+}

@@ -1,0 +1,28 @@
+{
+  "expect_skill_loaded": {
+    "with": false,
+    "without": false
+  },
+  "trigger_only": true,
+  "graders": [
+    {
+      "name": "only-pagination-changed",
+      "type": "unchanged_except",
+      "allow": [
+        "api/pagination.py"
+      ]
+    },
+    {
+      "name": "docs-match-1-based-code",
+      "type": "llm",
+      "path": "api/pagination.py",
+      "criteria": "The module docstring, paginate's docstring (page argument and Raises section) and the inline comments in has_next and paginate describe 1-based pages consistent with the code: the first page is 1, page < 1 raises ValueError, the start offset is (page - 1) * per_page, and has_next is true while page * per_page < total. Deleting a redundant stale inline comment instead of rewriting it is fine. No remaining docstring or comment says 0-based or 'page 0 is the first page'."
+    },
+    {
+      "name": "logic-unchanged",
+      "type": "llm",
+      "path": "api/pagination.py",
+      "criteria": "Judging meaning only, the executable code is unchanged: has_next, the page < 1 check and its message, the per_page cap, the start computation and the returned Page are the same as before."
+    }
+  ]
+}

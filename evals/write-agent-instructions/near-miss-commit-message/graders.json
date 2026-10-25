@@ -1,0 +1,34 @@
+{
+  "expect_skill_loaded": {
+    "with": false,
+    "without": false
+  },
+  "trigger_only": true,
+  "graders": [
+    {
+      "name": "message-describes-staged-change",
+      "type": "llm",
+      "criteria": "The final message contains a commit message that accurately describes the staged change: deploy.sh gains a --dry-run option that shows a helm diff without deploying, and the /deploy command now runs the dry run first and asks before the real deploy. It does not describe changes that are not staged."
+    },
+    {
+      "name": "follows-repo-style",
+      "type": "llm",
+      "criteria": "The commit message's subject follows the repo's Conventional Commits style seen in its history: `type(scope): subject` (e.g. `feat(deploy): ...`) or a scope-less `type: subject`."
+    },
+    {
+      "name": "no-commit-made",
+      "type": "ran",
+      "pattern": "^git commit\\b",
+      "match": "not_contains"
+    },
+    {
+      "name": "no-files-changed",
+      "type": "unchanged_except",
+      "allow": []
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes"
+    }
+  ]
+}
