@@ -113,7 +113,7 @@ class Sandbox(unittest.TestCase):
     def test_default_slots_fit_in_free_memory_and_a_given_number_runs_as_given(self):
         trials, seconds = {"claw": 100, "codex": 100}, {"claw": 60.0, "codex": 20.0}
         gb = {"claw": 1.0, "codex": 0.5}
-        self.assertEqual(choose_slots(None, trials, seconds, {}, gb, 100.0), {"claw": 12, "codex": 4})
+        self.assertEqual(choose_slots(None, trials, seconds, {}, gb, 100.0), {"claw": 24, "codex": 8})
         fitted = choose_slots(None, trials, seconds, {}, gb, 8.0)
         self.assertLessEqual(sum(n * gb[name] for name, n in fitted.items()), 8.0)
         self.assertEqual(sum(fitted.values()), 9)

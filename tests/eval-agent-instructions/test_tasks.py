@@ -54,12 +54,21 @@ class Tasks(unittest.TestCase):
         copy.mkdir(parents=True)
         (copy / "SKILL.md").write_text("---\nname: target\n---\ntrimmed\n")
         build_tasks(self.repo, load_suite(self.repo, "target"), [self.cases / "edit-case"], ["minus-x"], "base:test", self.out,
-                    {"minus-x": copy}, "Use the target skill for this task.\n\n")
+                    {"minus-x": copy}, pin=True)
         task = self.out / "edit-case--minus-x"
         skills = task / "environment" / "skills"
         self.assertEqual(sorted(p.name for p in skills.iterdir()), ["dep", "target"])
         self.assertIn("trimmed", (skills / "target" / "SKILL.md").read_text())
-        self.assertEqual((task / "instruction.md").read_text(), "Use the target skill for this task.\n\nAdd a rule.\n")
+        self.assertEqual((task / "instruction.md").read_text(),
+                         "Use the skill at /skills/target/SKILL.md for this task.\n\nAdd a rule.\n")
+
+    def test_pinned_build_names_the_skill_only_where_it_is_installed(self):
+        build_tasks(self.repo, load_suite(self.repo, "target"), [self.cases / "edit-case", self.cases / PROBE_CASE],
+                    ["with", "without"], "base:test", self.out, pin=True)
+        read = lambda task: (self.out / task / "instruction.md").read_text()
+        self.assertEqual(read("edit-case--with"), "Use the skill at /skills/target/SKILL.md for this task.\n\nAdd a rule.\n")
+        self.assertEqual(read("edit-case--without"), "Add a rule.\n")
+        self.assertTrue(read(f"{PROBE_CASE}--with").startswith("List the skills"))
 
     def test_instruction_file_is_placed_in_the_workspace_only_in_the_with_arm(self):
         (self.repo / "docs").mkdir()

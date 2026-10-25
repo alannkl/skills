@@ -13,7 +13,7 @@ Each case's request family, where its request and files come from, and whether i
 | 7. Create a skill | ~4 | incident-investigation-skill, design-doc-to-skill, create-skill-from-doc, create-standup-command |
 | 8. Review or readiness check | ~2 | staged-skill-ready-to-ship, staged-skill-ready-to-ship-fixed, review-only, evaluate-only |
 | none | | agents-md-billing-split, toolless-prompt-pointer (general-user restructures) |
-| trigger only | | blog-post-near-miss, commands-doc-near-miss |
+| near-miss (`trigger_only`) | | blog-post-near-miss, commands-doc-near-miss |
 
 Report results by family; family 6 has the most cases and the fewest requests.
 
@@ -53,7 +53,7 @@ Each replay keeps the repository's `AGENTS.md` (the collaboration constitution a
 | app-code-system-prompt, templated-prompt-rule | yes | |
 | agents-md-billing-split | partly | The request spells out which requirements other code needs, which a typical user would not say. |
 | toolless-prompt-pointer | yes | |
-| blog-post-near-miss, commands-doc-near-miss | n/a | They test the description, not the body; read them with the trigger set, from the with arm. |
+| blog-post-near-miss, commands-doc-near-miss | n/a | They test the description, not the body, so only `--trigger` runs them. |
 | incident-investigation-skill | yes | From a request in a private repo ("check how we investigate alerts [...] create a generic project skill"); general backend with past incident notes; the request names the skill `investigate`. |
 | release-script-skill | yes | An existing release skill whose script prompts and floods output. |
 | precommit-error-lesson | yes | From "update precommit skill to avoid this error" with the CI error pasted. |
@@ -67,6 +67,7 @@ Each replay keeps the repository's `AGENTS.md` (the collaboration constitution a
 
 ## Gaps
 
+- Near-misses: 2 of the 8 a trigger check needs.
 - A skill-directory rename with its inventory and router (this repo's only one, agent-panel to panel, has no recorded request).
 
 ## Coverage

@@ -207,6 +207,16 @@ class Extractors(unittest.TestCase):
         self.assertIsNone(claude_code(self.tmp / "empty")["skills_loaded"])
         self.assertIsNone(codex(self.tmp / "empty")["skills_loaded"])
 
+    def test_input_tokens_count_cached_input_once_per_harness(self):
+        self.assertEqual(evidence.input_tokens({"input_tokens": 8, "cache_creation_input_tokens": 6926,
+                                                "cache_read_input_tokens": 90784, "output_tokens": 979}), 97718)
+        # Codex and OpenAI count cached input inside input_tokens.
+        self.assertEqual(evidence.input_tokens({"input_tokens": 64175, "cached_input_tokens": 46336}), 64175)
+        self.assertEqual(evidence.input_tokens({"input": 13497, "output": 1700, "cacheRead": 102656,
+                                                "cacheWrite": 0, "total": 117853}), 116153)
+        self.assertEqual(evidence.input_tokens({"prompt_tokens": 900, "completion_tokens": 50}), 900)
+        self.assertIsNone(evidence.input_tokens(None))
+
 
 if __name__ == "__main__":
     unittest.main()

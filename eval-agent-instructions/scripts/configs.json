@@ -8,7 +8,9 @@
   },
   "harnesses": {
     "claude-code": {"env": {"ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}", "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}"}},
-    "codex": {"env": {"OPENAI_BASE_URL": "${ANTHROPIC_BASE_URL}/v1", "OPENAI_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"}},
+    "codex": {"env": {"OPENAI_BASE_URL": "${ANTHROPIC_BASE_URL}/v1", "OPENAI_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"},
+              "native_config": {"model_provider": "proxy",
+                                "model_providers": {"proxy": {"name": "proxy", "wire_api": "responses", "env_key": "OPENAI_API_KEY", "supports_websockets": false}}}},
     "openclaw": {},
     "api": {}
   },

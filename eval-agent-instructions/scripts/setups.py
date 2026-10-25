@@ -1,6 +1,7 @@
 """Setups: a harness, a model, a reasoning effort and, for OpenRouter models, the upstream providers.
 
-configs.json holds what each harness needs (`harnesses`), what each known model
+configs.json holds what each harness needs (`harnesses`: its environment and any
+settings for its own config file), what each known model
 needs (`models`, keyed by short name), and the presets runs name often
 (`presets`). A setup is written as a spec, `{"harness", "model", "effort",
 "provider"}`, or as the name of a preset. A model missing from `models` is
@@ -29,8 +30,9 @@ def resolve(spec: dict, settings: dict) -> tuple[str, dict]:
     effort = spec.get("effort") or "high"
     effort = None if effort == "default" else effort
     config = {"harness": harness, "model": model["id"], "effort": effort}
-    if "env" in settings["harnesses"][harness]:
-        config["env"] = settings["harnesses"][harness]["env"]
+    for key in ("env", "native_config"):
+        if key in settings["harnesses"][harness]:
+            config[key] = settings["harnesses"][harness][key]
     name = f"{harness}-{short}-{effort or 'default'}"
     if model["id"].startswith("openrouter/"):
         providers = provider_order(spec.get("provider"), model.get("providers", []))

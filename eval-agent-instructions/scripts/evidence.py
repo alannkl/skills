@@ -105,6 +105,25 @@ def summarize(harness: str, ops: list[dict], complete: bool, **fields) -> dict:
     return record
 
 
+def input_tokens(usage: dict | None) -> int | None:
+    """Every input token a run sent its model, cached or not, summed over its calls; None when unreported.
+
+    Anthropic counts cache reads and writes apart from `input_tokens`, OpenAI's
+    `input_tokens` already includes cached ones, and OpenClaw reports `input`,
+    `cacheRead` and `cacheWrite` apart.
+    """
+    if not usage:
+        return None
+    if "prompt_tokens" in usage:
+        return usage["prompt_tokens"]
+    if "input" in usage:
+        return (usage["input"] or 0) + (usage.get("cacheRead") or 0) + (usage.get("cacheWrite") or 0)
+    if "input_tokens" in usage:
+        return ((usage["input_tokens"] or 0) + (usage.get("cache_creation_input_tokens") or 0)
+                + (usage.get("cache_read_input_tokens") or 0))
+    return None
+
+
 def claude_code(agent_dir: Path) -> dict:
     events = list(_json_lines(agent_dir / "claude-code.txt"))
     ops, models, texts, listed, calls = [], set(), [], None, {}

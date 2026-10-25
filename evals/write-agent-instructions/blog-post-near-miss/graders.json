@@ -1,4 +1,5 @@
 {
+  "trigger_only": true,
   "expect_skill_loaded": {
     "with": false,
     "without": false

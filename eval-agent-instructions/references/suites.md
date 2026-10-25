@@ -30,7 +30,7 @@ Each case is a folder in the suite:
 - `instruction.md`: the user's request, exactly as the agent receives it.
 - The workspace: `fixture/`, copied into it, or `scaffold.sh`, run in the empty workspace with `fixture/` beside it. An API case needs none.
 - `vars.json`: values for a prompt's placeholders.
-- `graders.json`: `expect_skill_loaded` with `with` and `without` booleans (skills only), optional `agent_timeout_sec`, and `graders`.
+- `graders.json`: `expect_skill_loaded` with `with` and `without` booleans (skills only), optional `agent_timeout_sec`, `trigger_only` (true for a near-miss that only `--trigger` runs), and `graders`.
 
 Grader types; `path` is relative to the workspace:
 
@@ -76,5 +76,5 @@ Make each case realistic:
 
 - Judge calls go in batches: every output graded against the same criterion and original, across runs and setups, goes to the judge in one call, shuffled and unlabelled by arm. An output the same judge already decided under the same criterion and original keeps that verdict, from `results/judge-cache.jsonl`; the report counts these. The cache knows judges by the name requested, so delete it when the proxy starts serving another model under that name.
 - `grade <run-dir>` regrades from the saved files without running any agent: `--judge` adds or swaps judges, and `--graders-from-repo` applies edited graders.
-- Arms not under test reuse earlier runs when their task, including the sandbox or image it runs on, setup, Harbor version and agent arguments all match; `--fresh-baseline` reruns them, for example after a provider updates a model behind the same name.
+- Every arm reuses earlier runs when its task, including the sandbox or image it runs on, setup, Harbor version and agent arguments all match, so a run spends sessions only on what changed; `--fresh` reruns them, for example after a provider updates a model behind the same name.
 - Each harness's built-in skills are off, so they cannot compete with the skill under test or share its name. A setup with `"builtin_skills": true` keeps them.

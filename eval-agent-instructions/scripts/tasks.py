@@ -26,7 +26,9 @@ image; graders and expected files stay on the host.
 
 Variants: `with` delivers the artifact plus the dependencies; `without` only the
 dependencies, so the arms differ by the artifact alone; `minus-<rule>` delivers a
-copy of the artifact with that rule's text removed.
+copy of the artifact with that rule's text removed. A pinned build tells the agent
+in the `with` and minus arms to use the skill by path, so a run measures the
+skill's text rather than whether its description triggers.
 """
 import hashlib
 import json
@@ -47,6 +49,8 @@ PROBE_INSTRUCTION = {
               "added by whoever set you up, beyond your defaults. If they do, quote its first line exactly; "
               "otherwise say there is none.\n",
 }
+# Names the installed copy by path: a harness may ship a built-in skill with the same name.
+USE_SKILL = "Use the skill at /skills/{skill}/SKILL.md for this task.\n\n"
 PROBE_SPEC = {
     "expect_skill_loaded": {"with": False, "without": False},
     "probe": True,
@@ -157,12 +161,15 @@ def render(text: str, case_dir: Path) -> str:
 
 
 def build_task(repo: Path, suite: dict, case_dir: Path, variant: str, base_image: str, out: Path,
-               source: Path | None = None, preamble: str = "") -> str:
+               source: Path | None = None, pin: bool = False) -> str:
     """One task; `source` replaces the repo's copy of the artifact, as a minus variant does.
 
-    `preamble` goes before the case's instruction.
+    `pin` names a skill artifact in the instruction of every arm that installs it.
     """
     artifact = suite["artifact"]
+    probe = case_dir.name == PROBE_CASE
+    preamble = USE_SKILL.format(skill=artifact["name"]) if (
+        pin and not probe and variant != "without" and artifact["type"] == "skill") else ""
     name = f"{case_dir.name}--{variant}"
     task = out / name
     env = task / "environment"
@@ -198,7 +205,6 @@ def build_task(repo: Path, suite: dict, case_dir: Path, variant: str, base_image
     tests.mkdir()
     (tests / "test.sh").write_text(TEST_SH)
     (tests / "test.sh").chmod(0o755)
-    probe = case_dir.name == PROBE_CASE
     if probe and artifact["type"] == "prompt" and (artifact["role"] == "user" or artifact["runner"] == "api"):
         raise SystemExit("a user prompt or an API call passes the text straight into the request, so it has no "
                          "probe; check its effect with a case")
@@ -218,8 +224,8 @@ def task_digest(task: Path) -> str:
 
 
 def build_tasks(repo: Path, suite: dict, case_dirs: list[Path], variants: list[str],
-                base_image: str, out: Path, sources: dict[str, Path] | None = None, preamble: str = "") -> list[str]:
+                base_image: str, out: Path, sources: dict[str, Path] | None = None, pin: bool = False) -> list[str]:
     """Every case in every variant; `sources` maps a variant to the artifact copy it delivers."""
     out.mkdir(parents=True, exist_ok=True)
-    return [build_task(repo, suite, case_dir, variant, base_image, out, (sources or {}).get(variant), preamble)
+    return [build_task(repo, suite, case_dir, variant, base_image, out, (sources or {}).get(variant), pin)
             for case_dir in case_dirs for variant in variants]

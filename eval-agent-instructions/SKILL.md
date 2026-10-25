@@ -15,11 +15,11 @@ A measured evaluation runs real, billed sessions with and without the instructio
 
 ## Runner
 
-`scripts/eval_instructions.py` runs each agent session through Harbor in its own sandbox, or calls a model API directly, and grades on the host. The sandbox is bubblewrap where it is installed, seeing only the host's system files, the pinned agent CLIs and the task; elsewhere, or with `--env docker`, a Docker container. Under bubblewrap the setups run side by side and share `--concurrency` sessions in proportion to each setup's agent time in earlier runs: by default up to 16, as many as free memory holds; a given number runs as given, with a warning when it will not fit; `CONFIG=N` fixes one setup's number. Run it from the root of the repository that holds the artifact; `--help` lists its commands. It needs bubblewrap on Linux or Docker, `uv`, and credentials in the environment or in that repository's `.env`: `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` for Claude Code, Codex, Anthropic and OpenAI API calls, and the judge, and `OPENROUTER_API_KEY` for OpenRouter setups. A setup is a harness, a model, a reasoning effort and, for OpenRouter models, the upstream providers: `--harness`, `--model`, `--effort` and `--provider` give one, and `--config` names a preset from `scripts/configs.json`, which also holds what each harness and model needs. Without either, a run uses the suite's `run` setups and `--full` its `full` setups, as `references/suites.md` describes, and a `--minus` run uses the `full` setups. Name a setup to measure the text on that model alone.
+`scripts/eval_instructions.py` runs each agent session through Harbor in its own sandbox, or calls a model API directly, and grades on the host. The sandbox is bubblewrap where it is installed, seeing only the host's system files, the pinned agent CLIs and the task; elsewhere, or with `--env docker`, a Docker container. Under bubblewrap the setups run side by side and share `--concurrency` sessions in proportion to each setup's agent time in earlier runs: by default up to 32, as many as free memory holds; a given number runs as given, with a warning when it will not fit; `CONFIG=N` fixes one setup's number. Run it from the root of the repository that holds the artifact; `--help` lists its commands. It needs bubblewrap on Linux or Docker, `uv`, and credentials in the environment or in that repository's `.env`: `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` for Claude Code, Codex, Anthropic and OpenAI API calls, and the judge, and `OPENROUTER_API_KEY` for OpenRouter setups. A setup is a harness, a model, a reasoning effort and, for OpenRouter models, the upstream providers: `--harness`, `--model`, `--effort` and `--provider` give one, and `--config` names a preset from `scripts/configs.json`, which also holds what each harness and model needs. Without either, a run uses the suite's `run` setups and `--full` its `full` setups, as `references/suites.md` describes, and a `--minus` run uses the `full` setups. Name a setup to measure the text on that model alone.
 
 What it delivers, per `references/suites.md`:
 
-- a skill, installed where each harness finds skills;
+- a skill, installed where each harness finds skills and named by path in the request of every arm that has it, so a run measures its text, not its description;
 - an instruction file such as AGENTS.md or CLAUDE.md, placed in the workspace;
 - a prompt: a system prompt passed to Claude Code or Codex, or sent with an API call, or a user prompt placed before the request. An app's prompt runs through the API, since no agent harness runs it in practice.
 
@@ -59,13 +59,14 @@ What it delivers, per `references/suites.md`:
 
 ## Trigger checks
 
-For a skill description, write 8-10 should-trigger requests and 8-10 near-misses as cases, with varied phrasing, casual language, typos, file paths, and intent buried in a larger task. Run the with arm only on the old and new description and compare how often each loads the skill. When a boundary fails, fix the broader intent rather than the exact wording that failed.
+`--trigger` checks a skill's description: it runs the with arm alone, leaves the skill to trigger, and counts how often should-trigger cases and near-misses load it. Every case whose `expect_skill_loaded.with` is true is a should-trigger request; near-misses are cases marked `trigger_only`, which body runs leave out. Keep at least 8 of each, with varied phrasing, casual language, typos, file paths, and intent buried in a larger task. Run it on the old and new description and compare. When a boundary fails, fix the broader intent rather than the exact wording that failed.
 
 ## Report
 
 Open with the answer to the user's question and the decision it supports. Then, for each setup:
 
 - pass counts per case and arm, and the table from `rules` when the suite has a rule map;
+- median input tokens per run in each arm: what the artifact adds to every run's context;
 - removal candidates and untested rules;
 - runs set apart: infrastructure errors, runs that never loaded the skill, undecided grades, judge disagreements;
 - cost as the harnesses report it, naming setups that report none;

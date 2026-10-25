@@ -4,18 +4,20 @@
 Run from the root of the repository that holds the artifact and its `evals/<suite>/`.
 
   eval_instructions.py run <suite> [--config NAME... | --full] [--harness H --model M [--effort E] [--provider P]]
-                           [--case NAME]... [--attempts N] [--probe] [--fresh-baseline]
+                           [--case NAME]... [--attempts N] [--probe] [--fresh]
                            [--env bwrap|docker] [--concurrency N] [--concurrency CONFIG=N]...
   eval_instructions.py run <suite> --minus RULE [--config NAME]... [--harness H --model M ...]
+  eval_instructions.py run <suite> --trigger [--config NAME... | --full] [--case NAME]...
   eval_instructions.py grade <run-dir> [--judge MODEL]...
   eval_instructions.py report <run-dir>
   eval_instructions.py rules <suite> [--all-versions]
 
 `run` builds one Harbor task per case and variant, runs each configuration as a
-Harbor job, then grades and reports. The arms not under test (without the
-artifact; with it, for --minus) reuse earlier graded trials when their task
-directory, configuration, Harbor version and agent arguments all match. Results
-go to evals/<suite>/results/<run-id>/. Grading reads only saved artifacts and
+Harbor job, then grades and reports. A skill under test is named by path in the
+instruction of every arm that installs it, so the run measures its text; cases
+marked `trigger_only` are left out. Every arm reuses earlier graded trials when
+its task directory, configuration, Harbor version and agent arguments all match,
+so only what changed runs. Results go to evals/<suite>/results/<run-id>/. Grading reads only saved artifacts and
 the run's own copy of its cases, so `grade` reruns with other judges, or with
 the repo's current graders through --graders-from-repo, without rerunning any agent.
 
@@ -24,6 +26,11 @@ from evals/<suite>/rules.json, three times each by default, on the cases whose
 graders test the rule and on the --full setups unless --config names others; for a skill, both arms are told to use it. `rules` checks
 the map and tabulates each rule's grader results over every run of the current
 artifact text.
+
+`--trigger` checks a skill's description instead: the with arm only, the skill
+left to trigger on its own, on every case including `trigger_only` ones, and the
+report counts how often should-trigger cases (`expect_skill_loaded.with` true)
+and near-misses loaded it.
 """
 import argparse
 import hashlib
@@ -38,15 +45,16 @@ from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 from pathlib import Path
+from statistics import median
 
 HERE = Path(__file__).resolve().parent
 REPO = Path.cwd()
 sys.path.insert(0, str(HERE))
 
-from evidence import EXTRACTORS  # noqa: E402
+from evidence import EXTRACTORS, input_tokens  # noqa: E402
 from graders import judge_pending, run_graders, temporary_initial_workspace  # noqa: E402
 from rules import MINUS, arm, artifact_digest, check_rules, load_rules, minus_artifact, rule_cases, tabulate  # noqa: E402
-from tasks import PROBE_CASE, artifact_root, build_tasks, load_spec, load_suite, task_digest  # noqa: E402
+from tasks import PROBE_CASE, USE_SKILL, artifact_root, build_tasks, load_spec, load_suite, task_digest  # noqa: E402
 from api_runner import run_api_job  # noqa: E402
 import sandbox  # noqa: E402
 import setups  # noqa: E402
@@ -55,12 +63,12 @@ SETTINGS = json.loads((HERE / "configs.json").read_text())
 SETTINGS["configs"] = setups.catalog(SETTINGS)
 # bubblewrap sandboxes start faster and cost less memory than containers; Docker covers hosts without it.
 DEFAULT_ENV = "bwrap" if sys.platform == "linux" and shutil.which("bwrap") else "docker"
-# Sessions at once across all setups: at most 16 under bwrap, fewer when the host's memory cannot hold
+# Sessions at once across all setups: at most 32 under bwrap, fewer when the host's memory cannot hold
 # them; Docker setups run one at a time, each container capped at 2 GB.
-DEFAULT_SLOTS = {"bwrap": 16, "docker": 6}
+DEFAULT_SLOTS = {"bwrap": 32, "docker": 6}
 # Memory a session holds midway through a run, in GB. OpenClaw's Node heap grows over a session, from
 # about 0.3 GB to 1-1.9 GB; Claude Code and Codex sessions stayed near 0.3 GB.
-SESSION_GB = {"openclaw": 1.0, "claude-code": 0.5, "codex": 0.5, "api": 0.0}
+SESSION_GB = {"openclaw": 1.0, "claude-code": 0.3, "codex": 0.3, "api": 0.0}
 # Kept free for the host, so sessions never push it into swap.
 RESERVE_GB = 2.0
 # Each harness ships skills of its own, such as Claude Code's code-review and the
@@ -72,8 +80,6 @@ BLOCK_BUILTIN_SKILLS = {
     "claude-code": {"skillOverrides": {"doctor": "off", "plugin-authoring": "off"}},
     "codex": {"skills": {"bundled": {"enabled": False}}},
 }
-# Names the installed copy by path: a harness may ship a built-in skill with the same name.
-USE_SKILL = "Use the skill at /skills/{skill}/SKILL.md for this task.\n\n"
 HARBOR_AGENT = {"claude-code": "claude-code", "codex": "harbor_agents:PreinstalledCodex",
                 "openclaw": "harbor_agents:PreinstalledOpenClaw"}
 API = "api"
@@ -189,6 +195,9 @@ def agent_args(config: dict, system_prompt: str | None = None) -> list[str]:
             raise SystemExit("OpenClaw has no system prompt setting; evaluate the text as an AGENTS.md instead")
         return args + ["--ak", f"openclaw_config={openclaw_model_config(config)}"]
     native = {} if config.get("builtin_skills") else dict(BLOCK_BUILTIN_SKILLS[harness])
+    # Codex otherwise streams over a websocket and sends requests the proxy rejects mid-run
+    # (`response.interrupt`), failing the session; Harbor fills the provider's base_url.
+    native |= config.get("native_config", {})
     if harness == "claude-code" and not config.get("builtin_skills"):
         args += ["--ae", "CLAUDE_CODE_DISABLE_BUNDLED_SKILLS=1"]
     if system_prompt is not None and harness == "claude-code":
@@ -265,14 +274,13 @@ def stored_baseline(results: Path, run_id: str, config: dict, task: str, digest:
     return found[:attempts] if len(found) >= attempts else []
 
 
-def reuse_baselines(run_dir: Path, configs: list[str], tasks: list[str], attempts: int, under_test: str) -> dict:
-    """Copy matching earlier trials of every arm but the one under test into run_dir/reused/<config>/.
+def reuse_baselines(run_dir: Path, configs: list[str], tasks: list[str], attempts: int) -> dict:
+    """Copy matching earlier trials of every task into run_dir/reused/<config>/.
 
     Returns {config: {task: [source]}}.
     """
     results = run_dir.parent
-    digests = {task: task_digest(run_dir / "tasks" / task) for task in tasks
-               if not task.endswith(f"--{under_test}")}
+    digests = {task: task_digest(run_dir / "tasks" / task) for task in tasks}
     reused = {}
     for name in configs:
         for task, digest in digests.items():
@@ -284,16 +292,21 @@ def reuse_baselines(run_dir: Path, configs: list[str], tasks: list[str], attempt
     return reused
 
 
-def case_dirs(suite: str, names: list[str] | None, probe: bool) -> list[Path]:
-    """The named cases, or all of them; the probe joins when --probe is set or named as a case."""
+def case_dirs(suite: str, names: list[str] | None, probe: bool, trigger: bool = False) -> list[Path]:
+    """The named cases, or all of them; the probe joins when --probe is set or named as a case.
+
+    `trigger_only` cases test a description, so only a trigger check runs them.
+    """
     root = REPO / "evals" / suite
     found = sorted(p for p in root.iterdir() if (p / "graders.json").is_file())
+    if not trigger:
+        found = [p for p in found if not load_spec(p).get("trigger_only")]
     if names:
         probe = probe or PROBE_CASE in names
         names = [n for n in names if n != PROBE_CASE]
         missing = set(names) - {p.name for p in found}
         if missing:
-            raise SystemExit(f"unknown cases: {sorted(missing)}")
+            raise SystemExit(f"unknown cases{'' if trigger else ' outside --trigger'}: {sorted(missing)}")
         found = [p for p in found if p.name in names]
     return found + ([root / PROBE_CASE] if probe else [])
 
@@ -373,30 +386,34 @@ def cmd_run(args) -> None:
         if openclaw:
             raise SystemExit(f"OpenClaw has no system prompt setting, so {openclaw} cannot run this suite; "
                              "evaluate the text as an AGENTS.md instead")
-    variants, under_test, sources, attempts, preamble = args.variants, "with", {}, args.attempts or 1, ""
+    variants, sources, attempts = args.variants, {}, args.attempts or 1
     case_names = args.case
+    if args.trigger and (args.minus or artifact["type"] != "skill"):
+        raise SystemExit("--trigger checks a skill's description, on its own")
+    if args.trigger:
+        variants = ["with"]
     if args.minus:
         rules = checked_rules(suite)
         if args.minus not in rules or not rules[args.minus]["graders"]:
             raise SystemExit(f"{args.minus} is not a rule with graders in evals/{args.suite}/rules.json")
-        under_test = MINUS + args.minus
-        variants, attempts = ["with", under_test], args.attempts or 3
+        minus = MINUS + args.minus
+        variants, attempts = ["with", minus], args.attempts or 3
         case_names = case_names or rule_cases(rules, args.minus)
-        sources[under_test] = run_dir / "minus" / full.name
-        minus_artifact(full, rules[args.minus], sources[under_test])
-        # A removal test measures the text, so a skill is named rather than left to trigger.
-        # An instruction file is always in context.
-        if artifact["type"] == "skill":
-            preamble = USE_SKILL.format(skill=artifact["name"])
-    cases = case_dirs(args.suite, case_names, args.probe)
+        sources[minus] = run_dir / "minus" / full.name
+        minus_artifact(full, rules[args.minus], sources[minus])
+    cases = case_dirs(args.suite, case_names, args.probe, args.trigger)
+    # A body run measures the text, so a skill is named rather than left to trigger.
+    # An instruction file or prompt is always in context.
+    pinned = artifact["type"] == "skill" and not args.trigger
     # An API run starts no sandbox, so it needs no image.
     image, environment, described = ("none", [], "none") if wants_api else task_environment(args.env)
-    tasks = build_tasks(REPO, suite, cases, variants, image, run_dir / "tasks", sources, preamble)
+    tasks = build_tasks(REPO, suite, cases, variants, image, run_dir / "tasks", sources, pinned)
     archive_cases(args.suite, cases, run_dir / "cases")
-    reused = {} if args.fresh_baseline else reuse_baselines(run_dir, configs, tasks, attempts, under_test)
+    reused = {} if args.fresh else reuse_baselines(run_dir, configs, tasks, attempts)
     meta = {"suite": args.suite, "artifact": artifact, "artifact_digest": artifact_digest(full),
             "probe_text": None if artifact["type"] == "skill" else first_line(full),
-            "minus": args.minus, "preamble": preamble,
+            "minus": args.minus, "trigger": args.trigger,
+            "preamble": USE_SKILL.format(skill=artifact["name"]) if pinned else "",
             "configs": {c: SETTINGS["configs"][c] for c in configs},
             "cases": [c.name for c in cases], "variants": variants, "attempts": attempts,
             "harbor": SETTINGS["harbor"], "cli_versions": SETTINGS["cli_versions"], "base_image": image,
@@ -638,9 +655,11 @@ def missing_trials(meta: dict, config_name: str, config: dict, graded: list[dict
 
 
 def report(run_dir: Path) -> str:
-    """Pass counts per case, configuration and variant; infra errors and undecided grades apart."""
+    """Pass counts per case, configuration and variant; infra errors and undecided grades apart; input
+    tokens per run; and for a trigger check, how often each kind of case loaded the skill."""
     rows = [json.loads(line) for line in (run_dir / "grades.jsonl").read_text().splitlines()]
     cells = defaultdict(list)
+    tokens = defaultdict(list)  # (config, variant) -> input tokens per run
     for row in rows:
         cells[(row["case"], row["config"], row["variant"])].append(row)
     lines = [f"# {run_dir.name}", ""]
@@ -655,6 +674,8 @@ def report(run_dir: Path) -> str:
         loaded = sum(1 for t in ok if t["skill_loaded"])
         unknown = sum(1 for t in ok if t["skill_loaded"] is None and "delivered" not in t)
         grader_counts = defaultdict(lambda: [0, 0, 0])
+        cell_tokens = [n for n in (input_tokens(t["evidence"].get("usage")) for t in ok) if n is not None]
+        tokens[(config, variant)] += cell_tokens
         for t in ok:
             # A reused trial's cost was paid by the run it came from.
             if t["evidence"].get("cost_usd") is not None and not t.get("reused_from"):
@@ -686,7 +707,19 @@ def report(run_dir: Path) -> str:
                      + (f" ({reused} reused)" if reused else "")
                      + (f" ({timed_out} timed out)" if timed_out else "")
                      + (f", {len(errors)} not graded {errors}" if errors else "")
-                     + load + probe + f" | {grades}")
+                     + load + probe
+                     + (f" | input {median(cell_tokens) / 1000:.0f}k" if cell_tokens else "")
+                     + f" | {grades}")
+    if tokens:
+        lines += ["", "Median input tokens per run, cached or not, summed over the run's model calls:"]
+        for config in sorted({c for c, _ in tokens}):
+            arms = {v: median(n) for (c, v), n in tokens.items() if c == config and n}
+            change = (f" ({arms['with'] / arms['without'] - 1:+.0%} with the artifact)"
+                      if arms.get("with") and arms.get("without") else "")
+            lines.append(f"- {config}: " + ", ".join(f"{v} {n / 1000:.0f}k" for v, n in sorted(arms.items())) + change)
+    meta_path = run_dir / "run.json"
+    if meta_path.is_file() and json.loads(meta_path.read_text()).get("trigger"):
+        lines += ["", "Triggering, runs that loaded the skill:"] + trigger_counts(rows)
     lines += ["", "Cost reported by the harness (USD):"]
     lines += [f"- {config}: " + (f"{cost[config]:.4f}" if cost_known[config] else "not reported")
               for config in sorted({k[1] for k in cells})]
@@ -697,6 +730,19 @@ def report(run_dir: Path) -> str:
     if disagreements:
         lines += ["", "Judge disagreements:"] + [f"- {d}" for d in disagreements]
     return "\n".join(lines) + "\n"
+
+
+def trigger_counts(rows: list[dict]) -> list[str]:
+    """Per setup, loads among should-trigger cases and among near-misses; transcripts that do not say are left out."""
+    counts = defaultdict(lambda: [0, 0])  # (config, expected) -> [loaded, known]
+    for row in rows:
+        if row["status"] == "ok" and row.get("skill_loaded") is not None:
+            cell = counts[(row["config"], row["skill_loaded_expected"])]
+            cell[0] += row["skill_loaded"]
+            cell[1] += 1
+    return [f"- {config}: should-trigger {counts[(config, True)][0]}/{counts[(config, True)][1]}, "
+            f"near-miss {counts[(config, False)][0]}/{counts[(config, False)][1]}"
+            for config in sorted({c for c, _ in counts})]
 
 
 def checked_rules(suite: dict) -> dict:
@@ -764,8 +810,11 @@ def main() -> None:
                      help="add a case asking the agent to list its skills or quote its instruction file")
     run.add_argument("--judge", action="append")
     run.add_argument("--run-id")
-    run.add_argument("--fresh-baseline", action="store_true",
-                     help="rerun the arms not under test instead of reusing matching earlier trials")
+    run.add_argument("--fresh", action="store_true",
+                     help="rerun every task instead of reusing matching earlier trials")
+    run.add_argument("--trigger", action="store_true",
+                     help="check the skill's description: the with arm only, left to trigger, on every case "
+                          "including trigger_only ones")
     run.add_argument("--minus", metavar="RULE",
                      help="compare the full artifact with a copy lacking this rule from rules.json, on the rule's cases")
     regrade = sub.add_parser("grade")
