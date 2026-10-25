@@ -332,6 +332,15 @@ def judge(model: str, criteria: str, original: str, subjects: list[str], label: 
                            for i, s in enumerate(subjects, 1))
     prompt = JUDGE_PROMPT.format(count=len(subjects), criteria=criteria, label=label, original=original,
                                  outputs=outputs)
+    try:
+        text, served = complete(model, prompt)
+    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
+        return [{"pass": None, "reason": f"judge call failed: {exc}", "model": model}] * len(subjects)
+    return [v | {"model": served} for v in parse_verdicts(text, len(subjects))]
+
+
+def complete(model: str, prompt: str) -> tuple[str, str | None]:
+    """(reply text, model that answered) for one judge prompt through the proxy at $ANTHROPIC_BASE_URL."""
     base = os.environ["ANTHROPIC_BASE_URL"].rstrip("/")
     if model.startswith("gpt-"):
         url = f"{base}/v1/responses"
@@ -340,16 +349,13 @@ def judge(model: str, criteria: str, original: str, subjects: list[str], label: 
         url = f"{base}/v1/messages"
         body = {"model": model, "max_tokens": JUDGE_MAX_TOKENS, "output_config": {"effort": JUDGE_EFFORT},
                 "messages": [{"role": "user", "content": prompt}]}
-    try:
-        data = _post(url, body)
-    except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-        return [{"pass": None, "reason": f"judge call failed: {exc}", "model": model}] * len(subjects)
+    data = _post(url, body)
     if model.startswith("gpt-"):
         text = "".join(c.get("text", "") for o in data.get("output", []) if o.get("type") == "message"
                        for c in o.get("content", []))
     else:
         text = "".join(c.get("text", "") for c in data.get("content", []) if c.get("type") == "text")
-    return [v | {"model": data.get("model")} for v in parse_verdicts(text, len(subjects))]
+    return text, data.get("model")
 
 
 def parse_verdicts(text: str, count: int) -> list[dict]:

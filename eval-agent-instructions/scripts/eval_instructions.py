@@ -8,8 +8,10 @@ Run from the root of the repository that holds the artifact and its `evals/<suit
                            [--env bwrap|docker] [--concurrency N] [--concurrency CONFIG=N]...
   eval_instructions.py run <suite> --minus RULE [--config NAME]... [--harness H --model M ...]
   eval_instructions.py run <suite> --trigger [--config NAME... | --full] [--case NAME]...
+  eval_instructions.py run <suite> --artifact DRAFT --variants with [--rule RULE]... [--full]
   eval_instructions.py grade <run-dir> [--judge MODEL]...
   eval_instructions.py report <run-dir>
+  eval_instructions.py compare --baseline <run-dir>... --candidate <run-dir>... [--pairwise JUDGE]
   eval_instructions.py rules <suite> [--all-versions]
 
 `run` builds one Harbor task per case and variant, runs each configuration as a
@@ -54,7 +56,8 @@ HERE = Path(__file__).resolve().parent
 REPO = Path.cwd()
 sys.path.insert(0, str(HERE))
 
-from evidence import EXTRACTORS, input_tokens, output_tokens  # noqa: E402
+from compare import compare, describe_work, work  # noqa: E402
+from evidence import EXTRACTORS  # noqa: E402
 from graders import judge_pending, run_graders, temporary_initial_workspace  # noqa: E402
 from rules import MINUS, arm, artifact_digest, check_rules, load_rules, minus_artifact, rule_cases, tabulate  # noqa: E402
 from tasks import PROBE_CASE, USE_SKILL, artifact_root, build_tasks, load_spec, load_suite, task_digest  # noqa: E402
@@ -355,6 +358,13 @@ def cmd_run(args) -> None:
     load_dotenv(REPO / ".env")
     suite = load_suite(REPO, args.suite)
     artifact, full = suite["artifact"], REPO / suite["artifact"]["path"]
+    if args.artifact:
+        # A draft runs in the artifact's place, under its name, so every arm differs from earlier runs by its text.
+        full = Path(args.artifact).resolve()
+        if not (full / "SKILL.md" if artifact["type"] == "skill" else full).is_file():
+            raise SystemExit(f"--artifact {args.artifact} is not a {'skill folder' if artifact['type'] == 'skill' else 'file'}")
+        if args.minus:
+            raise SystemExit("--minus removes a rule from the suite's own artifact; it does not take --artifact")
     wants_api = artifact["type"] == "prompt" and artifact["runner"] == API
     if args.model and args.full:
         raise SystemExit("--full runs the suite's setups; name another setup with --config or --harness and --model")
@@ -406,6 +416,8 @@ def cmd_run(args) -> None:
         raise SystemExit("--trigger checks a skill's description, on its own")
     if args.trigger:
         variants = ["with"]
+    if args.artifact:
+        sources["with"] = full
     if args.minus:
         rules = checked_rules(suite)
         if args.minus not in rules or not rules[args.minus]["graders"]:
@@ -425,6 +437,7 @@ def cmd_run(args) -> None:
     archive_cases(args.suite, cases, run_dir / "cases")
     reused = {} if args.fresh else reuse_baselines(run_dir, configs, tasks, attempts)
     meta = {"suite": args.suite, "artifact": artifact, "artifact_digest": artifact_digest(full),
+            "artifact_source": str(full) if args.artifact else None,
             "probe_text": None if artifact["type"] == "skill" else first_line(full),
             "minus": args.minus, "trigger": args.trigger,
             "preamble": USE_SKILL.format(skill=artifact["name"]) if pinned else "",
@@ -786,21 +799,6 @@ def report(run_dir: Path) -> str:
     return "\n".join(lines) + "\n"
 
 
-def work(rows: list[dict]) -> dict[str, float]:
-    """Median agent seconds, tool calls, and input and output tokens over the rows that report each."""
-    values = {"seconds": [r.get("agent_seconds") for r in rows],
-              "calls": [r["evidence"].get("tool_calls") for r in rows],
-              "input": [input_tokens(r["evidence"].get("usage")) for r in rows],
-              "output": [output_tokens(r["evidence"].get("usage")) for r in rows]}
-    return {key: median(known) for key, v in values.items() if (known := [x for x in v if x is not None])}
-
-
-def describe_work(m: dict[str, float]) -> str:
-    parts = [f"{m['seconds']:.0f}s" if "seconds" in m else "", f"{m['calls']:.0f} calls" if "calls" in m else "",
-             f"in {m['input'] / 1000:.0f}k" if "input" in m else "", f"out {m['output'] / 1000:.1f}k" if "output" in m else ""]
-    return " ".join(p for p in parts if p)
-
-
 def trigger_counts(rows: list[dict]) -> list[str]:
     """Per setup, loads among should-trigger cases and among near-misses; transcripts that do not say are left out."""
     counts = defaultdict(lambda: [0, 0])  # (config, expected) -> [loaded, known]
@@ -888,6 +886,9 @@ def main() -> None:
     run.add_argument("--trigger", action="store_true",
                      help="check the skill's description: the with arm only, left to trigger, on every case "
                           "including trigger_only ones")
+    run.add_argument("--artifact", metavar="PATH",
+                     help="run this draft in place of the suite's artifact, under its name; compare its with arm "
+                          "against the artifact's runs with `compare`")
     run.add_argument("--minus", metavar="RULE",
                      help="compare the full artifact with a copy lacking this rule from rules.json, on the rule's cases")
     regrade = sub.add_parser("grade")
@@ -897,6 +898,12 @@ def main() -> None:
                          help="grade with the repo's current graders.json instead of the run's copy")
     show = sub.add_parser("report")
     show.add_argument("run_dir", type=Path)
+    versus = sub.add_parser("compare", help="compare a candidate's with-arm runs against a baseline's")
+    versus.add_argument("--baseline", action="append", type=Path, required=True, metavar="RUN_DIR")
+    versus.add_argument("--candidate", action="append", type=Path, required=True, metavar="RUN_DIR")
+    versus.add_argument("--pairwise", metavar="JUDGE",
+                        help="also judge whole outputs pairwise, blinded, with this judge model")
+    versus.add_argument("--case", action="append", help="compare only this case; default every case")
     table = sub.add_parser("rules")
     table.add_argument("suite", help="folder name under evals/")
     table.add_argument("--all-versions", action="store_true", help="include runs of earlier artifact text")
@@ -908,6 +915,12 @@ def main() -> None:
     elif args.command == "grade":
         grade(args.run_dir, args.judge or SETTINGS["judges"], args.graders_from_repo)
         print(report(args.run_dir))
+    elif args.command == "compare":
+        load_dotenv(REPO / ".env")
+        meta = json.loads((args.candidate[0] / "run.json").read_text())
+        text = compare(args.baseline, args.candidate, REPO / "evals" / meta["suite"], args.pairwise, args.case)
+        (args.candidate[0] / "compare.md").write_text(text)
+        print(text)
     else:
         print(report(args.run_dir))
 

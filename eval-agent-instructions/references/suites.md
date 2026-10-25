@@ -46,7 +46,7 @@ Grader types; `path` is relative to the workspace:
 | `llm` | the judge finds `criteria` met, given the file at `path` (or every file in `paths`, which may hold globs such as `skill/**/*.md`) before and after, or the final message | `criteria`, `path` or `paths`, `with_final_message` (also show the final message beside the files) |
 | `json` | the file at `path`, or the final message, parses as JSON whole and has every `required` top-level key | `required`, `path` |
 
-A grader with `"variants": ["with"]` runs only in that arm and in `--minus` copies. Give process checks, such as `read` and `skills_loaded`, that limit: they show what the agent did, not the quality of its output, and the other arm lacks the skill they look for. A read-only case needs both `unchanged_except` and `no_writes`: an agent can write through the shell, which only the end state shows.
+A grader with `"diagnostic": true` is reported but left out of `compare`'s acceptance grades: give it to a reasonable preference the request does not state. `compare` also leaves out `read` and `skills_loaded`, since a draft may reach the same outcome another way. A grader with `"variants": ["with"]` runs only in that arm and in `--minus` copies. Give process checks, such as `read` and `skills_loaded`, that limit: they show what the agent did, not the quality of its output, and the other arm lacks the skill they look for. A read-only case needs both `unchanged_except` and `no_writes`: an agent can write through the shell, which only the end state shows.
 
 Make each case realistic:
 
