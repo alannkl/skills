@@ -40,6 +40,7 @@ import re
 import shutil
 import subprocess
 import sys
+import threading
 import time
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
@@ -63,8 +64,8 @@ SETTINGS = json.loads((HERE / "configs.json").read_text())
 SETTINGS["configs"] = setups.catalog(SETTINGS)
 # bubblewrap sandboxes start faster and cost less memory than containers; Docker covers hosts without it.
 DEFAULT_ENV = "bwrap" if sys.platform == "linux" and shutil.which("bwrap") else "docker"
-# Sessions at once across all setups: at most 32 under bwrap, fewer when the host's memory cannot hold
-# them; Docker setups run one at a time, each container capped at 2 GB.
+# Sessions at once: under bwrap at most 32 across all setups, fewer when the host's memory cannot hold
+# them; under Docker per setup, the setups running one at a time, each container capped at 2 GB.
 DEFAULT_SLOTS = {"bwrap": 32, "docker": 6}
 # Memory a session holds midway through a run, in GB. OpenClaw's Node heap grows over a session, from
 # about 0.3 GB to 1-1.9 GB; Claude Code and Codex sessions stayed near 0.3 GB.
@@ -421,21 +422,24 @@ def cmd_run(args) -> None:
             "agent_args": {c: agent_args(SETTINGS["configs"][c]) for c in configs},
             "tasks": tasks, "reused": reused, "started_at": datetime.now(timezone.utc).isoformat()}
     plans = {name: job_plan(run_dir / "tasks", tasks, sorted(reused.get(name, {})), artifact) for name in configs}
-    if args.env == "docker" and not wants_api:
-        slots = {name: named.get(name, budget or DEFAULT_SLOTS["docker"]) for name in configs}
-    else:
-        trials = {name: attempts * sum(len(job_tasks) for _, job_tasks, _ in plans[name]) for name in configs}
-        seconds = {name: mean_agent_seconds(run_dir.parent, name) for name in configs}
-        gb = {name: SESSION_GB[SETTINGS["configs"][name]["harness"]] for name in configs}
+    queued = args.env == "bwrap" and not wants_api
+    if queued:
+        gb = max(SESSION_GB[SETTINGS["configs"][name]["harness"]] for name in configs)
         room = free_memory_gb() - RESERVE_GB
-        slots = choose_slots(budget, trials, seconds, named, gb, room)
-        need = sum(slots[name] * gb[name] for name in configs)
-        if need > room:
-            print(f"== warning: {sum(slots.values())} sessions need about {need:.0f} GB; "
+        slots = {"all": budget or session_budget(gb, room)} | named
+        if slots["all"] * gb > room:
+            print(f"== warning: {slots['all']} sessions need about {slots['all'] * gb:.0f} GB; "
                   f"{room:.0f} GB is free beyond the {RESERVE_GB:.0f} GB kept for the host", file=sys.stderr)
+    else:
+        slots = {name: named.get(name, budget or DEFAULT_SLOTS[args.env]) for name in configs}
     meta["slots"] = slots
     print(f"== sessions at once: {slots}", file=sys.stderr)
     (run_dir / "run.json").write_text(json.dumps(meta, indent=2) + "\n")
+
+    def harbor_env(config: dict) -> dict:
+        env = dict(os.environ, PYTHONPATH=str(HERE))
+        env.update({k: os.path.expandvars(v) for k, v in config.get("env", {}).items()})
+        return env
 
     def run_setup(name: str) -> None:
         config = SETTINGS["configs"][name]
@@ -448,8 +452,6 @@ def cmd_run(args) -> None:
             run_api_job(config, run_dir / "tasks", [t for _, job_tasks, _ in plan for t in job_tasks], attempts,
                         run_dir / "jobs" / name / API, slots[name])
             return
-        env = dict(os.environ, PYTHONPATH=str(HERE))
-        env.update({k: os.path.expandvars(v) for k, v in config.get("env", {}).items()})
         with open(run_dir / f"harbor-{name}.log", "w") as log:
             for job, job_tasks, system_prompt in plan:
                 if args.env == "docker":
@@ -458,13 +460,34 @@ def cmd_run(args) -> None:
                                               slots[name], include=job_tasks,
                                               system_prompt=system_prompt,
                                               environment=environment),
-                               env=env, stdout=log, stderr=subprocess.STDOUT, check=False)
+                               env=harbor_env(config), stdout=log, stderr=subprocess.STDOUT, check=False)
         print(f"== {name}: done", file=sys.stderr)
 
-    # Setups run side by side, sharing the slots. Under Docker they run one at a time:
-    # concurrent Harbor jobs would race to build the same task images.
-    with ThreadPoolExecutor(max_workers=1 if args.env == "docker" else len(configs)) as pool:
-        list(pool.map(run_setup, configs))
+    def run_session(session: tuple[str, str, int, str | None]) -> None:
+        name, task, attempt, system_prompt = session
+        config = SETTINGS["configs"][name]
+        with open(run_dir / f"harbor-{name}.log", "a") as log:
+            subprocess.run(harbor_command(config, run_dir / "tasks", run_dir / "jobs" / name, f"{task}.{attempt}", 1, 1,
+                                          include=[task], system_prompt=system_prompt, environment=environment),
+                           env=harbor_env(config), stdout=log, stderr=subprocess.STDOUT, check=False)
+
+    if queued:
+        # Every session of every setup is its own Harbor job, drawn from one queue, longest
+        # expected first: no slot idles while another setup still has work, and the slowest
+        # sessions do not start last.
+        sessions = [(name, task, attempt, system_prompt) for name in configs
+                    for _, job_tasks, system_prompt in plans[name] for task in job_tasks
+                    for attempt in range(attempts)]
+        expected = {name: expected_seconds(run_dir.parent, name) for name in configs}
+        sessions.sort(key=lambda s: expected[s[0]].get(s[1], expected[s[0]].get(None, 0.0)), reverse=True)
+        print(f"== {len(sessions)} sessions", file=sys.stderr)
+        run_queue(sessions, slots["all"], named, run_session)
+        print("== sessions done", file=sys.stderr)
+    else:
+        # Under Docker setups run one at a time: concurrent Harbor jobs would race to build the same
+        # task images.
+        with ThreadPoolExecutor(max_workers=1 if args.env == "docker" else len(configs)) as pool:
+            list(pool.map(run_setup, configs))
     grade(run_dir, args.judge or SETTINGS["judges"])
     print(report(run_dir))
 
@@ -476,16 +499,43 @@ def parse_concurrency(values: list[str]) -> tuple[int | None, dict[str, int]]:
     return (bare[-1] if bare else None), named
 
 
-def choose_slots(budget: int | None, trials: dict[str, int], seconds: dict[str, float | None],
-                 named: dict[str, int], gb: dict[str, float], room: float) -> dict[str, int]:
-    """Sessions at once per setup: an explicit budget as given, otherwise the largest default-or-smaller
-    budget whose sessions fit in `room` GB, by each setup's `gb` per session."""
-    if budget is None:
-        budget = DEFAULT_SLOTS["bwrap"]
-        while budget > len(trials) and sum(n * gb[name] for name, n in
-                                           split_slots(budget, trials, seconds, named).items()) > room:
-            budget -= 1
-    return split_slots(budget, trials, seconds, named)
+def session_budget(gb: float, room: float) -> int:
+    """Sessions at once: the default, or as many as fit in `room` GB at `gb` each, but at least one."""
+    if gb <= 0:
+        return DEFAULT_SLOTS["bwrap"]
+    return max(1, min(DEFAULT_SLOTS["bwrap"], int(room / gb)))
+
+
+def run_queue(items: list[tuple], budget: int, caps: dict[str, int], launch) -> None:
+    """Run `launch(item)` for every item, `budget` at once and in the given order, with at most
+    `caps[setup]` of one setup's items at once; an item's first field names its setup."""
+    pending, running = list(items), defaultdict(int)
+    ready = threading.Condition()
+
+    def worker() -> None:
+        while True:
+            with ready:
+                while True:
+                    item = next((i for i in pending if running[i[0]] < caps.get(i[0], budget)), None)
+                    if item or not pending:
+                        break
+                    ready.wait()
+                if item is None:
+                    return
+                pending.remove(item)
+                running[item[0]] += 1
+            try:
+                launch(item)
+            finally:
+                with ready:
+                    running[item[0]] -= 1
+                    ready.notify_all()
+
+    threads = [threading.Thread(target=worker) for _ in range(min(budget, len(items)))]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
 
 
 def free_memory_gb() -> float:
@@ -498,50 +548,25 @@ def free_memory_gb() -> float:
     return kib / 1024 ** 2
 
 
-def split_slots(budget: int, trials: dict[str, int], seconds: dict[str, float | None],
-                named: dict[str, int]) -> dict[str, int]:
-    """Sessions at once per setup. A named setup gets its own number; the rest share what is left of
-    the budget in proportion to their expected agent time: trials times mean seconds per trial, or the
-    other setups' mean for a setup with no history. Each setup gets at least one.
-
-    Each setup is its own Harbor job, so a setup that finishes early leaves its slots idle; splitting
-    by expected time makes the setups finish together.
-    """
-    rest = [name for name in trials if name not in named]
-    known = [seconds[name] for name in rest if seconds.get(name)]
-    fallback = sum(known) / len(known) if known else 1.0
-    work = {name: trials[name] * (seconds.get(name) or fallback) for name in rest}
-    total = sum(work.values()) or 1.0
-    left = max(budget - sum(named.values()), len(rest))
-    shares = {name: left * work[name] / total for name in rest}
-    slots = {name: max(1, int(share)) for name, share in shares.items()}
-    # Hand out what rounding down left over, largest remainder first.
-    for name in sorted(rest, key=lambda n: shares[n] - int(shares[n]), reverse=True):
-        if sum(slots.values()) >= left:
-            break
-        slots[name] += 1
-    return {name: named[name] for name in trials if name in named} | slots
-
-
-def mean_agent_seconds(results: Path, config_name: str, sample: int = 20) -> float | None:
-    """Mean agent time per trial for the setup, from Harbor's result.json in the suite's newest runs
-    until `sample` trials are counted: speeds change with the sandbox, harness and provider.
-
-    Probe trials are left out: they are short by design and would understate a real case.
-    """
-    seconds = []
-    for jobs in sorted(results.glob(f"*/jobs/{config_name}"), key=lambda p: p.stat().st_mtime, reverse=True):
-        for path in jobs.glob("*/*/result.json"):
-            if path.parent.name.startswith(f"{PROBE_CASE}--"):
-                continue
-            phase = json.loads(path.read_text()).get("agent_execution") or {}
-            if phase.get("started_at") and phase.get("finished_at"):
-                start, end = (datetime.fromisoformat(phase[k].replace("Z", "+00:00"))
-                              for k in ("started_at", "finished_at"))
-                seconds.append((end - start).total_seconds())
-        if len(seconds) >= sample:
-            break
-    return sum(seconds) / len(seconds) if seconds else None
+def expected_seconds(results: Path, config_name: str) -> dict[str | None, float]:
+    """Mean agent time per task for the setup over the suite's earlier runs, from Harbor's result.json,
+    with the mean over every task under None for tasks never run. Probe trials are left out: they are
+    short by design."""
+    seconds = defaultdict(list)
+    for path in results.glob(f"*/jobs/{config_name}/*/*/result.json"):
+        try:
+            result = json.loads(path.read_text())
+            task = Path(json.loads((path.parent / "config.json").read_text())["task"]["path"]).name
+        except (json.JSONDecodeError, FileNotFoundError, KeyError):
+            continue
+        phase = result.get("agent_execution") or {}
+        if task.startswith(f"{PROBE_CASE}--") or not (phase.get("started_at") and phase.get("finished_at")):
+            continue
+        start, end = (datetime.fromisoformat(phase[k].replace("Z", "+00:00")) for k in ("started_at", "finished_at"))
+        seconds[task].append((end - start).total_seconds())
+    means = {task: sum(v) / len(v) for task, v in seconds.items()}
+    every = [x for v in seconds.values() for x in v]
+    return means | ({None: sum(every) / len(every)} if every else {})
 
 
 def first_line(path: Path) -> str:
@@ -800,9 +825,9 @@ def main() -> None:
     run.add_argument("--variants", type=lambda s: s.split(","), default=["with", "without"])
     run.add_argument("--attempts", type=int, help="runs per task; default 1, or 3 with --minus")
     run.add_argument("--concurrency", action="append", default=[], metavar="[CONFIG=]N",
-                     help="N: sessions at once across all setups, split by each setup's agent time in recent "
-                          f"runs (default: up to {DEFAULT_SLOTS['bwrap']} under bwrap, as many as free memory holds; "
-                          f"under Docker, per setup, {DEFAULT_SLOTS['docker']}); CONFIG=N fixes one setup's number. "
+                     help="N: sessions at once across all setups, longest expected first "
+                          f"(default: up to {DEFAULT_SLOTS['bwrap']} under bwrap, as many as free memory holds; "
+                          f"under Docker, per setup, {DEFAULT_SLOTS['docker']}); CONFIG=N caps one setup. "
                           "A given number runs as given, with a warning when it will not fit in memory")
     run.add_argument("--env", choices=["bwrap", "docker"], default=DEFAULT_ENV,
                      help=f"where sessions run; default {DEFAULT_ENV}")

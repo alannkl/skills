@@ -1,11 +1,15 @@
 """The bubblewrap sandbox exposes only system files, the toolchain and the caller's binds, and its identity
 tracks everything a run depends on."""
+import json
 import os
 import shutil
 import subprocess
 import sys
 import tempfile
+import threading
+import time
 import unittest
+from collections import defaultdict
 from pathlib import Path
 from unittest import mock
 
@@ -13,7 +17,7 @@ SCRIPTS = Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scr
 sys.path.insert(0, str(SCRIPTS))
 import sandbox  # noqa: E402
 import tasks  # noqa: E402
-from eval_instructions import choose_slots, mean_agent_seconds, parse_concurrency, split_slots  # noqa: E402
+from eval_instructions import expected_seconds, parse_concurrency, run_queue, session_budget  # noqa: E402
 
 # The Dockerfile every stored Docker baseline was built from; a change to its text invalidates them all.
 FROZEN_DOCKERFILE = """FROM b
@@ -102,36 +106,46 @@ class Sandbox(unittest.TestCase):
     def test_task_dockerfile_text_is_unchanged(self):
         self.assertEqual(tasks.DOCKERFILE.format(base_image="b"), FROZEN_DOCKERFILE)
 
-    def test_slots_follow_each_setups_expected_agent_time(self):
-        trials = {"slow": 100, "fast": 100, "new": 100}
-        seconds = {"slow": 60.0, "fast": 20.0, "new": None}
-        # "new" has no history, so it counts at the others' mean of 40 s.
-        self.assertEqual(split_slots(12, trials, seconds, {}), {"slow": 6, "fast": 2, "new": 4})
-        self.assertEqual(split_slots(12, trials, seconds, {"new": 2}), {"new": 2, "slow": 8, "fast": 2})
-        self.assertEqual(split_slots(2, trials, seconds, {}), {"slow": 1, "fast": 1, "new": 1})
+    def test_queue_runs_in_order_within_the_budget_and_each_setups_cap(self):
+        lock, running, peak, order = threading.Lock(), defaultdict(int), defaultdict(int), []
 
-    def test_default_slots_fit_in_free_memory_and_a_given_number_runs_as_given(self):
-        trials, seconds = {"claw": 100, "codex": 100}, {"claw": 60.0, "codex": 20.0}
-        gb = {"claw": 1.0, "codex": 0.5}
-        self.assertEqual(choose_slots(None, trials, seconds, {}, gb, 100.0), {"claw": 24, "codex": 8})
-        fitted = choose_slots(None, trials, seconds, {}, gb, 8.0)
-        self.assertLessEqual(sum(n * gb[name] for name, n in fitted.items()), 8.0)
-        self.assertEqual(sum(fitted.values()), 9)
-        self.assertEqual(choose_slots(24, trials, seconds, {}, gb, 8.0), {"claw": 18, "codex": 6})
-        # Each setup keeps one session even when memory holds none.
-        self.assertEqual(choose_slots(None, trials, seconds, {}, gb, 0.0), {"claw": 1, "codex": 1})
+        def launch(item):
+            with lock:
+                order.append(item[1])
+                running[item[0]] += 1
+                running["all"] += 1
+                for key in (item[0], "all"):
+                    peak[key] = max(peak[key], running[key])
+            time.sleep(0.02)
+            with lock:
+                running[item[0]] -= 1
+                running["all"] -= 1
 
-    def test_agent_time_comes_from_earlier_runs_without_probes(self):
-        for run, trial, end in (("r1", "case--with__a", "10:01:00"), ("r2", "case--without__b", "10:00:30"),
-                                ("r2", "probe--with__c", "10:00:02")):
-            path = self.tmp / "results" / run / "jobs" / "slow" / "main" / trial
+        items = [("a", f"a{i}") for i in range(6)] + [("b", f"b{i}") for i in range(6)]
+        run_queue(items, 4, {"a": 1}, launch)
+        self.assertEqual(sorted(order), sorted(i[1] for i in items))
+        self.assertEqual((peak["a"], peak["all"]), (1, 4))
+        self.assertEqual(order[0], "a0")
+
+    def test_budget_fits_in_free_memory(self):
+        self.assertEqual(session_budget(0.3, 100.0), 32)
+        self.assertEqual(session_budget(0.3, 6.0), 20)
+        self.assertEqual(session_budget(1.0, 0.0), 1)
+        self.assertEqual(session_budget(0.0, 0.0), 32)
+
+    def test_expected_time_per_task_comes_from_earlier_runs_without_probes(self):
+        for run, task, trial, end in (("r1", "case--with", "case--wi__a", "10:01:00"),
+                                      ("r2", "case--with", "case--wi__b", "10:00:30"),
+                                      ("r2", "other--with", "other--w__d", "10:00:10"),
+                                      ("r2", "probe--with", "probe--with__c", "10:00:02")):
+            path = self.tmp / "results" / run / "jobs" / "slow" / "job" / trial
             path.mkdir(parents=True)
+            (path / "config.json").write_text(json.dumps({"task": {"path": f"/x/tasks/{task}"}}))
             (path / "result.json").write_text('{"agent_execution": {"started_at": "2026-10-25T10:00:00Z", '
                                               f'"finished_at": "2026-10-25T{end}Z"}}}}')
-        self.assertEqual(mean_agent_seconds(self.tmp / "results", "slow"), 45.0)
-        os.utime(self.tmp / "results" / "r2" / "jobs" / "slow", (0, 0))  # r1 is now the newest run
-        self.assertEqual(mean_agent_seconds(self.tmp / "results", "slow", sample=1), 60.0)
-        self.assertIsNone(mean_agent_seconds(self.tmp / "results", "other"))
+        self.assertEqual(expected_seconds(self.tmp / "results", "slow"),
+                         {"case--with": 45.0, "other--with": 10.0, None: 100 / 3})
+        self.assertEqual(expected_seconds(self.tmp / "results", "other"), {})
 
     def test_concurrency_values(self):
         self.assertEqual(parse_concurrency(["a=4", "16"]), (16, {"a": 4}))

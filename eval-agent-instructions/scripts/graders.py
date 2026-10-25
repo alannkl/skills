@@ -218,8 +218,8 @@ def run_graders(specs: list[dict], variant: str, workspace: Path, initial: Path,
             for s in specs if variant in s.get("variants", (variant,))}
 
 
-# Judge calls in flight at once; more draw throttling from the proxy.
-JUDGE_WORKERS = 4
+# Judge calls in flight at once; throttled calls retry with backoff.
+JUDGE_WORKERS = 12
 
 
 def judge_pending(rows: list[dict], judges: list[str], cache_path: Path | None = None) -> None:
