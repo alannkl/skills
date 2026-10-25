@@ -43,6 +43,8 @@ class Graders(unittest.TestCase):
         self.assertTrue(self.grade({**spec, "allow": ["docs/guide.md"]})["g"]["pass"])
         (self.workspace / "notes.md").write_text("new")
         self.assertFalse(self.grade({**spec, "allow": ["docs/guide.md"]})["g"]["pass"])
+        self.assertTrue(self.grade({**spec, "allow": ["docs/*", "*.md"]})["g"]["pass"])
+        self.assertFalse(self.grade({**spec, "allow": ["docs/*"]})["g"]["pass"])
 
     def test_unchanged_except_ignores_harness_side_files_and_git(self):
         (self.workspace / "SOUL.md").write_text("openclaw bootstrap")

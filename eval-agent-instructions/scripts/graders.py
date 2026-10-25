@@ -7,6 +7,7 @@ from a failure. `run` is the trial's evidence: its final message and the files
 it wrote, each None when the transcript is incomplete.
 """
 import contextlib
+import fnmatch
 import hashlib
 import json
 import os
@@ -85,10 +86,11 @@ def file_exists(spec, workspace, initial, harness, run, judges):
 
 def unchanged_except(spec, workspace, initial, harness, run, judges):
     before, after = _file_hashes(initial), _file_hashes(workspace)
-    allowed = set(spec.get("allow", []))
+    # An entry may be a glob, such as `.agents/skills/*`, for files whose names the agent picks.
+    allowed = lambda path: any(fnmatch.fnmatchcase(path, pattern) for pattern in spec.get("allow", []))
     ignored = HARNESS_FILES.get(harness, set())
-    changed = sorted(p for p in before if p not in allowed and after.get(p) != before[p])
-    added = sorted(p for p in after if p not in before and p not in allowed
+    changed = sorted(p for p in before if not allowed(p) and after.get(p) != before[p])
+    added = sorted(p for p in after if p not in before and not allowed(p)
                    and p.split("/", 1)[0] not in ignored)
     ok = not changed and not added
     return {"pass": ok, "detail": "" if ok else f"changed {changed} added {added}"}

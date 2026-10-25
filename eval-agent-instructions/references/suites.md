@@ -38,7 +38,7 @@ Grader types; `path` is relative to the workspace:
 | --- | --- | --- |
 | `regex` | `pattern` is found in the file at `path`, or in the final message when `path` is absent; a missing file passes only when `optional` is true | `pattern`, `path`, `flags` (letters such as `im`), `match` (`contains` or `not_contains`), `optional` |
 | `file_exists` | the file's presence matches `exists` | `path`, `exists` (default true) |
-| `unchanged_except` | no file changed or appeared outside `allow` | `allow` |
+| `unchanged_except` | no file changed or appeared outside `allow`, whose entries may be globs such as `.agents/skills/*` | `allow` |
 | `no_writes` | the transcript shows no write through an edit tool | |
 | `skills_loaded` | the transcript shows every skill in `skills` loaded from the installed copies | `skills` |
 | `read` | a file read or shell command delivered text containing `marker`, such as the file's first line | `marker`, `match` |
