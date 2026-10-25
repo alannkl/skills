@@ -20,7 +20,7 @@ the repo's current graders through --graders-from-repo, without rerunning any ag
 
 `--minus RULE` runs the full artifact against a copy lacking that rule's text
 from evals/<suite>/rules.json, three times each by default, on the cases whose
-graders test the rule; for a skill, both arms are told to use it. `rules` checks
+graders test the rule and on the --full setups unless --config names others; for a skill, both arms are told to use it. `rules` checks
 the map and tabulates each rule's grader results over every run of the current
 artifact text.
 """
@@ -50,11 +50,12 @@ from api_runner import run_api_job  # noqa: E402
 import sandbox  # noqa: E402
 
 SETTINGS = json.loads((HERE / "configs.json").read_text())
-DEFAULT_CONFIGS = ["openclaw-deepseek-v4.1-flash-high-morph"]
-DEFAULT_API_CONFIGS = ["api-deepseek-v4.1-flash-high-morph"]
-# A full run sets the edit-round default beside a strong model, so every case compares weak with strong.
-FULL_CONFIGS = DEFAULT_CONFIGS + ["claude-code-opus-5.5-high"]
-FULL_API_CONFIGS = DEFAULT_API_CONFIGS + ["api-opus-5.5-high"]
+DEFAULT_CONFIGS = ["claude-code-opus-5.5-high"]
+DEFAULT_API_CONFIGS = ["api-opus-5.5-high"]
+# A full run, and by default a removal test, covers every everyday model: two vendors, so a result
+# that holds on both is not one model's habit. Weaker models run only when named with --config.
+FULL_CONFIGS = DEFAULT_CONFIGS + ["codex-gpt-6-astra-high"]
+FULL_API_CONFIGS = DEFAULT_API_CONFIGS + ["api-gpt-6-astra-high"]
 # bubblewrap sandboxes start faster and cost less memory than containers; Docker covers hosts without it.
 DEFAULT_ENV = "bwrap" if sys.platform == "linux" and shutil.which("bwrap") else "docker"
 # Sessions at once across all setups: at most 16 under bwrap, fewer when the host's memory cannot hold
@@ -328,7 +329,7 @@ def cmd_run(args) -> None:
     suite = load_suite(REPO, args.suite)
     artifact, full = suite["artifact"], REPO / suite["artifact"]["path"]
     wants_api = artifact["type"] == "prompt" and artifact["runner"] == API
-    if args.full:
+    if args.full or (args.minus and not args.config):
         configs = FULL_API_CONFIGS if wants_api else FULL_CONFIGS
     else:
         configs = args.config or (DEFAULT_API_CONFIGS if wants_api else DEFAULT_CONFIGS)
@@ -716,7 +717,8 @@ def main() -> None:
     run.add_argument("suite", help="folder name under evals/")
     setups = run.add_mutually_exclusive_group()
     setups.add_argument("--config", action="append",
-                        help=f"from configs.json; default {DEFAULT_CONFIGS}, or {DEFAULT_API_CONFIGS} for an api prompt")
+                        help=f"from configs.json; default {DEFAULT_CONFIGS}, or {DEFAULT_API_CONFIGS} for an api prompt; "
+                             "with --minus, the --full setups")
     setups.add_argument("--full", action="store_true",
                         help=f"run {FULL_CONFIGS}, or {FULL_API_CONFIGS} for an api prompt")
     run.add_argument("--case", action="append", help="case folder name; default all")

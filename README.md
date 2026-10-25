@@ -189,12 +189,12 @@ Background notes and research behind these skills:
 python3 eval-agent-instructions/scripts/eval_instructions.py run write-agent-instructions --case add-one-rule --probe
 python3 eval-agent-instructions/scripts/eval_instructions.py grade evals/write-agent-instructions/results/<run-id>
 python3 eval-agent-instructions/scripts/eval_instructions.py rules write-agent-instructions
-python3 eval-agent-instructions/scripts/eval_instructions.py run write-agent-instructions --minus <rule> --config claude-code-haiku-5.5-high
+python3 eval-agent-instructions/scripts/eval_instructions.py run write-agent-instructions --minus <rule>
 ```
 
 Every run is a real, billed agent session. Credentials go in the environment or the repository's `.env`: `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` for an Anthropic-compatible endpoint that also serves OpenAI's Responses API at `/v1` (Claude Code, Codex and the judges use it), and `OPENROUTER_API_KEY` for OpenClaw setups on OpenRouter. The first run installs the pinned agent CLIs for the sandbox, or builds a Docker base image with `--env docker`, which takes a few minutes. Results go to `evals/<suite>/results/`, which git ignores.
 
-Setups are named in `eval-agent-instructions/scripts/configs.json`: harness, model, reasoning effort, and for OpenRouter the upstream providers, tried in order. Names follow `<harness>-<model>-<effort>`, ending in the first provider for OpenRouter setups. The `api-*` setups call a model once with no agent harness, for prompts an app sends. Without `--config`, a run uses `openclaw-deepseek-v4.1-flash-high-morph` only, or `api-deepseek-v4.1-flash-high-morph` for an API prompt suite. `--full` adds Opus 5.5 in Claude Code, so each case compares the weak default with a strong model and tells unclear text from a weaker model's limits.
+Setups are named in `eval-agent-instructions/scripts/configs.json`: harness, model, reasoning effort, and for OpenRouter the upstream providers, tried in order. Names follow `<harness>-<model>-<effort>`, ending in the first provider for OpenRouter setups. The `api-*` setups call a model once with no agent harness, for prompts an app sends. Without `--config`, a run uses the everyday model, Opus 5.5 in Claude Code (`claude-code-opus-5.5-high`), or `api-opus-5.5-high` for an API prompt suite. `--full` adds the other everyday model, GPT-6 Astra in Codex (`codex-gpt-6-astra-high`), so each case compares two vendors' models and tells unclear text from one model's habits; a `--minus` run uses both by default. Weaker models, such as DeepSeek V4.1 Flash in OpenClaw, run only when `--config` names them, to test that model.
 
 ## License
 
