@@ -60,7 +60,8 @@ Make each case realistic:
 Keep each case small, so edit rounds stay fast:
 
 - Include the files the task's decisions depend on: the target, its consumers, sibling files that show local conventions, the code that loads a prompt. Leave out the rest, and add no unrelated files by quota.
-- Aim for a median, without the artifact, under a minute for a routine edit and under two for creating or reviewing a skill. Mark a case that needs a larger world `integration` and say why in the suite's notes.
+- Aim for a median, without the artifact, under a minute for a routine edit and under two for creating or reviewing a skill.
+- Shrink a case over budget: cut the files and lengths its graders do not depend on, and split a request that bundles several jobs into cases a user would send separately. Time without the artifact shows only that a world is large, not that the behavior needs it. Mark a case `integration` only when its behavior cannot occur in a smaller world, and say why in the suite's notes.
 - A reduced case is a new case: run it beside the original on every supported setup before replacing it.
 - Before raising `--concurrency`, run one short case at rising levels and stay below the level where time per run or retries climb.
 

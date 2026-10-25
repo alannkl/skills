@@ -67,7 +67,7 @@ Each replay keeps the repository's `AGENTS.md` (the collaboration constitution a
 
 ## Integration cases
 
-These need a larger world, so they run only with `--all-cases` or by name. Medians without the skill, Opus / Astra:
+These run only with `--all-cases` or by name while smaller versions are drafted and checked beside them; a reason below holds only if the smaller version cannot show the behavior. Medians without the skill, Opus / Astra:
 
 | Case | Without the skill | Why it stays large |
 | --- | --- | --- |
