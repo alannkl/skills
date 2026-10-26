@@ -93,6 +93,10 @@ Written by an agent that never saw this skill, its cases, graders or rules, from
 | --- | --- | --- |
 | release-skill-gate-small | release-script-skill | the script already fixed; updating the skill is the job; the request's first sentence names the changed interface. NOTES.md maps each original grader to its new one. |
 
+## Reserve cases
+
+Marked `reserve` because the other regular cases already cover every rule they test and they show no gap (`rules write-agent-instructions --min-set`); they run with `--all-cases` or by name: add-one-rule, agents-md-integration-db-lesson, agreed-plan-claude-md-import, app-code-system-prompt, claude-md-db-reset-lesson, commands-sweep-master-to-main, create-skill-from-doc, delegate-tier-list-question, expo-release-command, identifier-parenthetical-adds-info, launch-experiment-skill-review, pr-skill-drop-file-list, review-only, rotate-db-creds-skill, should-we-split-claude-md, support-bot-refund-window, ticket-classifier-prompt-trim, ui-string-skill-ready-review.
+
 ## Integration cases
 
 These run only with `--all-cases` or by name. Smaller worlds for trim-panel-skill, review-skills-scope-sweep, release-script-skill and the staged-skill reviews kept every failure but took as long, so their time is the work the request asks for. Medians without the skill, Opus / Astra:

@@ -12,12 +12,12 @@ Run from the root of the repository that holds the artifact and its `evals/<suit
   eval_instructions.py grade <run-dir> [--judge MODEL]...
   eval_instructions.py report <run-dir>
   eval_instructions.py compare --baseline <run-dir>... --candidate <run-dir>... [--pairwise JUDGE]
-  eval_instructions.py rules <suite> [--all-versions]
+  eval_instructions.py rules <suite> [--all-versions | --min-set]
 
 `run` builds one Harbor task per case and variant, runs each configuration as a
 Harbor job, then grades and reports. A skill under test is named by path in the
 instruction of every arm that installs it, so the run measures its text; cases
-marked `trigger_only` are left out, and so are those marked `integration` unless
+marked `trigger_only` are left out, and so are those marked `integration` or `reserve` unless
 --all-cases is set. `--rule` runs only the cases whose graders test the named rules,
 as an edit round does. Every arm reuses earlier graded trials when
 its task directory, configuration, Harbor version and agent arguments all match,
@@ -56,10 +56,10 @@ HERE = Path(__file__).resolve().parent
 REPO = Path.cwd()
 sys.path.insert(0, str(HERE))
 
-from compare import compare, describe_work, work  # noqa: E402
+from compare import acceptance_graders, compare, describe_work, work  # noqa: E402
 from evidence import EXTRACTORS  # noqa: E402
 from graders import judge_pending, run_graders, temporary_initial_workspace  # noqa: E402
-from rules import MINUS, arm, artifact_digest, check_rules, load_rules, minus_artifact, rule_cases, tabulate  # noqa: E402
+from rules import MINUS, arm, artifact_digest, check_rules, load_rules, min_set, minus_artifact, rule_cases, tabulate  # noqa: E402
 from tasks import PROBE_CASE, USE_SKILL, artifact_root, build_tasks, load_spec, load_suite, task_digest  # noqa: E402
 from api_runner import run_api_job  # noqa: E402
 import sandbox  # noqa: E402
@@ -303,7 +303,8 @@ def case_dirs(suite: str, names: list[str] | None, probe: bool, trigger: bool = 
     """The named cases, or all of them; the probe joins when --probe is set or named as a case.
 
     `trigger_only` cases test a description, so only a trigger check runs them; `integration`
-    cases, the long ones kept for breadth, run only when `integration` is set.
+    cases, the long ones kept for breadth, and `reserve` cases, whose coverage the regular set
+    already has, run only when `integration` is set.
     """
     root = REPO / "evals" / suite
     found = sorted(p for p in root.iterdir() if (p / "graders.json").is_file())
@@ -317,7 +318,7 @@ def case_dirs(suite: str, names: list[str] | None, probe: bool, trigger: bool = 
             raise SystemExit(f"unknown cases{'' if trigger else ' outside --trigger'}: {sorted(missing)}")
         found = [p for p in found if p.name in names]
     if not integration:
-        found = [p for p in found if not load_spec(p).get("integration")]
+        found = [p for p in found if not (load_spec(p).get("integration") or load_spec(p).get("reserve"))]
     return found + ([root / PROBE_CASE] if probe else [])
 
 
@@ -840,7 +841,23 @@ def cmd_rules(args) -> None:
     untested = sum(1 for r in rules.values() if not r["graders"]) - untestable
     print(f"{len(rules)} rules, {untested} without graders, {untestable} untestable from outputs; {len(runs)} runs of "
           + ("any artifact text" if args.all_versions else "the current artifact text") + ".\n")
-    print(tabulate(rules, runs))
+    if not args.min_set:
+        print(tabulate(rules, runs))
+        return
+    suite_dir = REPO / "evals" / args.suite
+    # Reserve cases stay candidates, so a later map or run can bring one back.
+    acceptance = {p.name: acceptance_graders(suite_dir, p.name) for p in case_dirs(args.suite, None, False)
+                  if not load_spec(p).get("integration")}
+    targets = {**SETTINGS["defaults"]["harness"], **suite["setups"]}
+    chosen = min_set(rules, runs, acceptance, {setup_name(s) for s in targets["full"]})
+    print(f"Regular set: {len(chosen['kept'])} of {len(acceptance)} cases cover every mapped rule they test and every gap on the --full setups.\n")
+    for case in chosen["kept"]:
+        own = sorted(u[1] if u[0] == "rule" else f"gap {u[2]}" for u in chosen["units"][case]
+                     if all(u not in chosen["units"][c] for c in chosen["kept"] if c != case))
+        print(f"- {case} ({chosen['cost'][case] / 1000:.0f}k tokens): only it covers {', '.join(own)}")
+    print(f"\nMark `reserve`: {', '.join(chosen['dropped']) or 'none'}")
+    if chosen["rules_outside"]:
+        print(f"\nRules tested only outside the regular set: {', '.join(chosen['rules_outside'])}")
 
 
 def main() -> None:
@@ -863,11 +880,11 @@ def main() -> None:
     run.add_argument("--effort", help="reasoning effort, or `default` to send none; default high")
     run.add_argument("--provider", help="OpenRouter provider to try first, or a comma-separated order; "
                                         "default the model's preferred providers")
-    run.add_argument("--case", action="append", help="case folder name; default every case not marked integration")
+    run.add_argument("--case", action="append", help="case folder name; default every case not marked integration or reserve")
     run.add_argument("--rule", action="append",
                      help="a rule from rules.json: run the cases whose graders test it (an edit round's cases)")
     run.add_argument("--all-cases", action="store_true",
-                     help="also run the cases marked integration, as an acceptance run does")
+                     help="also run the cases marked integration or reserve, as an acceptance run does")
     run.add_argument("--variants", type=lambda s: s.split(","), default=["with", "without"])
     run.add_argument("--attempts", type=int, help="runs per task; default 1, or 3 with --minus")
     run.add_argument("--concurrency", action="append", default=[], metavar="[CONFIG=]N",
@@ -907,6 +924,8 @@ def main() -> None:
     table = sub.add_parser("rules")
     table.add_argument("suite", help="folder name under evals/")
     table.add_argument("--all-versions", action="store_true", help="include runs of earlier artifact text")
+    table.add_argument("--min-set", action="store_true",
+                       help="list the cheapest regular cases that keep every rule and gap covered")
     args = parser.parse_args()
     if args.command == "run":
         cmd_run(args)

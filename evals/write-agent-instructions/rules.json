@@ -140,7 +140,8 @@
         "rushed-verification-step/keeps-rest",
         "deploy-rollback-pointer/keeps-steps",
         "review-skills-scope-sweep/keeps-code-review",
-        "agents-md-billing-split/money-rules-kept"
+        "agents-md-billing-split/money-rules-kept",
+        "release-skill-gate-small/keeps-release-steps"
       ]
     },
     "establish-delivery-path": {
@@ -1026,7 +1027,8 @@
       "text": "Script a mechanical step when it replaces several tool rounds with one, handles ordering, exact flags, or cleanup the agent would otherwise get wrong, condenses verbose output to what the next decision needs, or enforces a rule the skill would otherwise state in prose.",
       "graders": [
         "release-script-skill/keeps-script",
-        "multi-vendor-skill-plan/script-keeps-judgment"
+        "multi-vendor-skill-plan/script-keeps-judgment",
+        "release-skill-gate-small/keeps-script"
       ]
     },
     "direct-call-when-script-wont-pay": {
@@ -1046,7 +1048,9 @@
         "release-script-skill/judgment-stays-with-agent",
         "release-script-skill/publish-needs-explicit-ok",
         "release-script-skill/help-and-failures",
-        "multi-vendor-skill-plan/script-keeps-judgment"
+        "multi-vendor-skill-plan/script-keeps-judgment",
+        "release-skill-gate-small/judgment-stays-with-agent",
+        "release-skill-gate-small/publish-needs-explicit-ok"
       ]
     },
     "scripts-self-contained": {
@@ -1084,7 +1088,8 @@
         "Keep these summaries aligned with the scripts; leave implementation details in code."
       ],
       "graders": [
-        "release-script-skill/call-site-args"
+        "release-script-skill/call-site-args",
+        "release-skill-gate-small/call-site-args"
       ]
     },
     "run-scripts-before-delivery": {

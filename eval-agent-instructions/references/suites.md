@@ -30,7 +30,7 @@ Each case is a folder in the suite:
 - `instruction.md`: the user's request, exactly as the agent receives it.
 - The workspace: `fixture/`, copied into it, or `scaffold.sh`, run in the empty workspace with `fixture/` beside it. An API case needs none.
 - `vars.json`: values for a prompt's placeholders.
-- `graders.json`: `expect_skill_loaded` with `with` and `without` booleans (skills only), optional `agent_timeout_sec`, `trigger_only` (true for a near-miss that only `--trigger` runs), `integration` (true for a case that needs a larger world, which runs only with `--all-cases` or by name), and `graders`.
+- `graders.json`: `expect_skill_loaded` with `with` and `without` booleans (skills only), optional `agent_timeout_sec`, `trigger_only` (true for a near-miss that only `--trigger` runs), `integration` (true for a case that needs a larger world) or `reserve` (true for a case the regular set does not need), either of which runs only with `--all-cases` or by name, and `graders`.
 
 Grader types; `path` is relative to the workspace:
 
@@ -63,6 +63,7 @@ Keep each case small, so edit rounds stay fast:
 - Aim for a median, without the artifact, under a minute for a routine edit and under two for creating or reviewing a skill.
 - Shrink a case over budget: cut the files and lengths its graders do not depend on, and split a request that bundles several jobs into cases a user would send separately. Time without the artifact shows only that a world is large, not that the behavior needs it. Mark a case `integration` only when its behavior cannot occur in a smaller world, and say why in the suite's notes.
 - A reduced case is a new case: run it beside the original on every supported setup before replacing it.
+- Keep the regular set, the cases without `integration` or `reserve`, to the fewest that still cover every rule mapped in `rules.json` and every gap: an acceptance grader the current text fails in most runs on a `--full` setup. `rules <suite> --min-set` lists the cheapest such set by input tokens; mark every other case `reserve`. Map a new case's graders before adding it, and rerun `--min-set` after the map or a run changes.
 - Before raising `--concurrency`, run one short case at rising levels and stay below the level where time per run or retries climb.
 
 ## Rule map

@@ -1,4 +1,5 @@
-"""The rule map resolves to exact text and real graders, minus copies lose only that text, and results tabulate per rule."""
+"""The rule map resolves to exact text and real graders, minus copies lose only that text, results tabulate per rule,
+and the regular set shrinks to the cheapest cases that keep every rule and gap covered."""
 import json
 import sys
 import tempfile
@@ -6,7 +7,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scripts"))
-from rules import check_rules, minus_artifact, remove_text, tabulate  # noqa: E402
+from rules import check_rules, min_set, minus_artifact, remove_text, tabulate  # noqa: E402
 
 SKILL = """---
 name: target
@@ -110,6 +111,31 @@ class Rules(unittest.TestCase):
         short = full + [row("minus-use-pnpm", True, "m1"), row("minus-use-pnpm", True, "m2"),
                         row("minus-use-pnpm", True, "m2")]
         self.assertIn("removal: fewer than 3 runs per arm", tabulate(rules, [({"minus": "use-pnpm"}, short)]))
+
+
+
+class MinSet(unittest.TestCase):
+    @staticmethod
+    def row(case, tokens, **passes):
+        return {"status": "ok", "variant": "with", "case": case, "config": "opus", "skill_loaded": True,
+                "evidence": {"usage": {"input_tokens": tokens}},
+                "graders": {g: {"pass": p} for g, p in passes.items()}}
+
+    def test_keeps_the_cheapest_cover_and_every_gap(self):
+        rules = {"a": {"graders": ["big/x", "small/x"]}, "b": {"graders": ["big/y"]}, "c": {"graders": []}}
+        acceptance = {"big": {"x", "y"}, "small": {"x"}, "redundant": {"z"}, "gappy": {"g"}}
+        rows = [self.row("big", 900, x=True, y=True), self.row("small", 100, x=True),
+                self.row("redundant", 50, z=True), self.row("gappy", 500, g=False)]
+        chosen = min_set(rules, [({}, rows)], acceptance)
+        # big alone covers a and b, so the cheaper small adds nothing; gappy holds a failing grader only it shows.
+        self.assertEqual(chosen["kept"], ["big", "gappy"])
+        self.assertEqual(chosen["dropped"], ["redundant", "small"])
+
+    def test_a_rule_tested_only_outside_the_candidates_is_reported(self):
+        rules = {"a": {"graders": ["integration-case/x"]}}
+        chosen = min_set(rules, [], {"other": {"y"}})
+        self.assertEqual(chosen["rules_outside"], ["a"])
+        self.assertEqual(chosen["kept"], [])
 
 
 if __name__ == "__main__":

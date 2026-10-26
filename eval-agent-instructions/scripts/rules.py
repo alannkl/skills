@@ -15,6 +15,9 @@ import re
 import shutil
 from collections import defaultdict
 from pathlib import Path
+from statistics import median
+
+from evidence import input_tokens
 
 MINUS = "minus-"
 RULE_NAME = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -202,6 +205,54 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
                          f"{shown['minus']} | "
                          f"{len(unloaded[(name, config)]) or ''} | {status(cells, fewest)} |")
     return "\n".join(lines) + "\n"
+
+
+def min_set(rules: dict, runs: list[tuple[dict, list[dict]]], acceptance: dict[str, set[str]],
+            setups: set[str] | None = None) -> dict:
+    """The cheapest cases in `acceptance` (case -> its acceptance graders) that still cover every mapped
+    rule a case there tests and every gap: an acceptance grader the current text fails in most with runs on
+    some setup in `setups` (default every setup), which only its own case can show. Cost is a case's median input tokens per with run, summed
+    over setups. Greedy cover by units per token, then any case whose units others cover is dropped,
+    costliest first. `runs` holds runs of the current text, as `tabulate` takes them.
+    """
+    units = {case: {("rule", name) for name, rule in rules.items()
+                    for ref in rule["graders"] if ref.partition("/")[0] == case} for case in acceptance}
+    passes = defaultdict(lambda: [0, 0])  # (case, grader, config) -> [passed, graded]
+    tokens = defaultdict(list)  # (case, config) -> input tokens per with run
+    for meta, rows in runs:
+        for row in rows:
+            if (row.get("status") != "ok" or row.get("reused_from") or row["variant"] != "with"
+                    or row["case"] not in acceptance or not (row.get("skill_loaded") or row.get("delivered"))
+                    or (setups is not None and row["config"] not in setups)):
+                continue
+            if (used := input_tokens(row["evidence"].get("usage"))) is not None:
+                tokens[(row["case"], row["config"])].append(used)
+            for grader, result in row["graders"].items():
+                if grader in acceptance[row["case"]] and result.get("pass") is not None:
+                    passes[(row["case"], grader, row["config"])][0] += bool(result["pass"])
+                    passes[(row["case"], grader, row["config"])][1] += 1
+    for (case, grader, _), (passed, graded) in passes.items():
+        if passed < graded / 2:
+            units[case].add(("gap", case, grader))
+    cost = defaultdict(float)
+    for (case, _), used in tokens.items():
+        cost[case] += median(used)
+    known = [c for c in cost.values() if c]
+    default = median(known) if known else 1.0
+    cost = {case: cost.get(case) or default for case in acceptance}
+    wanted, kept = set().union(*units.values()) if units else set(), []
+    while wanted:
+        best = max((c for c in acceptance if c not in kept), key=lambda c: (len(units[c] & wanted) / cost[c], -cost[c]))
+        kept.append(best)
+        wanted -= units[best]
+    for case in sorted(kept, key=lambda c: -cost[c]):
+        others = set().union(*(units[c] for c in kept if c != case))
+        if units[case] <= others:
+            kept.remove(case)
+    mapped = {name for name, rule in rules.items() if rule["graders"]}
+    covered = {u[1] for c in acceptance for u in units[c] if u[0] == "rule"}
+    return {"kept": sorted(kept), "dropped": sorted(set(acceptance) - set(kept)), "cost": cost,
+            "units": units, "rules_outside": sorted(mapped - covered)}
 
 
 def status(cells: dict, fewest: dict) -> str:
