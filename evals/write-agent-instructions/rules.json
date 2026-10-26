@@ -7,7 +7,8 @@
         "app-code-system-prompt/parser-unchanged",
         "app-code-system-prompt/test-unchanged",
         "templated-prompt-rule/policy-unchanged",
-        "ticket-classifier-prompt-trim/code-behavior-unchanged"
+        "ticket-classifier-prompt-trim/code-behavior-unchanged",
+        "memory-capture-scope/rest-of-prompt-kept"
       ]
     },
     "planning-only-in-conversation": {
@@ -153,7 +154,8 @@
         "package-claude-md-dedupe/web-specific-rules-kept",
         "pr-skill-drop-file-list/rest-of-skill-kept",
         "should-we-move-endpoint-guide-to-skill/all-steps-preserved",
-        "support-bot-refund-window/rest-of-prompt-kept"
+        "support-bot-refund-window/rest-of-prompt-kept",
+        "memory-capture-scope/rest-of-prompt-kept"
       ]
     },
     "establish-delivery-path": {
@@ -246,7 +248,8 @@
         "grill-to-plan-proposal/skill-terms",
         "rename-pair-to-consult-mode/no-stale-name",
         "agents-md-lesson-from-session/leading-words",
-        "incident-investigation-skill/leading-words"
+        "incident-investigation-skill/leading-words",
+        "memory-capture-scope/short-rule"
       ]
     },
     "define-coined-terms": {
@@ -493,7 +496,8 @@
       "text": "When creating an artifact or making a structural revision, remove within the requested scope the requirements and sub-steps the agent can reliably infer from the outcome, whole sentences that change no behavior relative to the executing agent's default, and material that no longer bears on the task.",
       "graders": [
         "prune-release-notes/drops-history",
-        "prune-unexplained-safeguard/drops-filler"
+        "prune-unexplained-safeguard/drops-filler",
+        "memory-capture-scope/short-rule"
       ]
     },
     "preserve-protected-requirements": {
@@ -680,7 +684,8 @@
         "prune-unexplained-safeguard/report",
         "agents-md-billing-split/report",
         "create-skill-from-doc/reference-created",
-        "trim-panel-skill/report"
+        "trim-panel-skill/report",
+        "memory-capture-scope/report-states-wording"
       ]
     },
     "shortcut-user-invoked": {

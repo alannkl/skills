@@ -1,0 +1,36 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "other-files-unchanged",
+      "type": "unchanged_except",
+      "allow": ["src/memory/capturePrompt.ts"]
+    },
+    {
+      "name": "standing-only",
+      "type": "llm",
+      "path": "src/memory/capturePrompt.ts",
+      "criteria": "The capture prompt now tells the model to store only things that hold beyond the current task, so an instruction for one task, such as sending a given report to someone on a given day, is not stored. The `preference` kind no longer invites one-off task details (the original listed 'schedule' among its examples)."
+    },
+    {
+      "name": "short-rule",
+      "type": "llm",
+      "path": "src/memory/capturePrompt.ts",
+      "criteria": "Compare the original and edited prompt. The fix is a short rule: about one to three sentences added or changed, with at most one example, and no enumerated list of the kinds of task details to leave out."
+    },
+    {
+      "name": "rest-of-prompt-kept",
+      "type": "llm",
+      "path": "src/memory/capturePrompt.ts",
+      "criteria": "Everything else in the prompt keeps its meaning: a <memory> block at the end of every reply, one item per line starting with its kind, the three kinds `preference`, `fact` and `correction` spelled exactly so (capture.ts parses them), short third-person sentences, no repeats of known items, an empty block when there is nothing new, and the rule never to store passwords, payment details, health information or anything the user asks to forget."
+    },
+    {
+      "name": "report-states-wording",
+      "type": "llm",
+      "criteria": "The final message states the new or changed prompt wording, quoted or closely paraphrased, so the user can see what the fix says without opening the file."
+    }
+  ]
+}

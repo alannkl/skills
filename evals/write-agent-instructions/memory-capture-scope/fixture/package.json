@@ -1,0 +1,5 @@
+{
+  "name": "helper-assistant",
+  "private": true,
+  "scripts": { "test": "vitest run" }
+}
