@@ -7,13 +7,15 @@
     {
       "name": "other-files-unchanged",
       "type": "unchanged_except",
-      "allow": ["src/memory/capturePrompt.ts"]
+      "allow": [
+        "src/memory/capturePrompt.ts"
+      ]
     },
     {
       "name": "standing-only",
       "type": "llm",
       "path": "src/memory/capturePrompt.ts",
-      "criteria": "The capture prompt now tells the model to store only things that hold beyond the current task, so an instruction for one task, such as sending a given report to someone on a given day, is not stored. The `preference` kind no longer invites one-off task details (the original listed 'schedule' among its examples)."
+      "criteria": "The capture prompt now tells the model to store only things that hold beyond the current task, so an instruction for one task, such as sending a given report to someone on a given day, is not stored. The rule covers every kind, including `preference` (whose original examples list 'schedule'): either it is stated for all items, or `preference` itself is narrowed to lasting preferences."
     },
     {
       "name": "short-rule",
