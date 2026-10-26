@@ -124,6 +124,7 @@ The two staged-skill readiness reviews take 86-126 s without the skill in few to
 
 ## Gaps
 
+- memory-capture-scope/short-rule: with or without the skill, both models write a multi-sentence fix with several examples or a list (the user's correction in the source session). Adding "State a rule by its principle, with at most one example and no list of instances." did not change it (0/3 on each model). Wait for another real request showing it before trying more wording.
 - A skill-directory rename with its inventory and router (this repo's only one, agent-panel to panel, has no recorded request).
 
 ## Coverage
