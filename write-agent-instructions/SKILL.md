@@ -73,6 +73,5 @@ Load a reference at the step named here when its condition holds, or where anoth
 
 6. Check and report.
    - Check the artifact against its job and every format a consumer requires. Keep terminology consistent across the main file and its references, and verify each pointer, documented command, argument, and output against its target.
-   - Present the draft when scope is uncertain or the instructions encode domain-specific preferences. Ask whether it covers the use cases, what is missing or unclear, and what should be more or less detailed.
    - A wording edit needs a meaning review, not behavior runs. Outside the evaluation reference's conditions, suggest useful behavior checks rather than running them.
    - Report what changed, each intentionally removed requirement separately from wording changes, suggested removals, the checks performed, and material limits.

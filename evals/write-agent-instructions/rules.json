@@ -657,11 +657,6 @@
         "label-then-command/keeps-post-slug"
       ]
     },
-    "present-draft-when-uncertain": {
-      "file": "SKILL.md",
-      "text": "Present the draft when scope is uncertain or the instructions encode domain-specific preferences. Ask whether it covers the use cases, what is missing or unclear, and what should be more or less detailed.",
-      "graders": []
-    },
     "wording-edit-meaning-review": {
       "file": "SKILL.md",
       "text": "A wording edit needs a meaning review, not behavior runs.",
