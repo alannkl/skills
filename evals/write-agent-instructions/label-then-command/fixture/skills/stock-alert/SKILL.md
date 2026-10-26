@@ -11,5 +11,8 @@ Run these steps in order.
 2. Fetch quotes for the watchlist (`quotes-cli fetch`, the quotes skill).
 3. If any ticker moved more than 5% since the previous close, publish one post (`publish_post`, post_slug `moves`) naming each such ticker and its move.
 4. Otherwise, finish without a post.
+5. If publishing fails, follow the Retry section ([Retry](references/publishing.md#retry)) and stop.
+
+Write the post in the house style ([post style](references/publishing.md)).
 
 Make sure that you always follow every one of the steps above carefully and in the correct order.

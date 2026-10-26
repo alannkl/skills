@@ -3,6 +3,7 @@
     "with": true,
     "without": false
   },
+  "reserve": true,
   "graders": [
     {
       "name": "consumers-consistent",

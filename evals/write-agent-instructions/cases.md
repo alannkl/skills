@@ -87,6 +87,16 @@ Written by an agent that never saw this skill, its cases, graders or rules, from
 | agreed-plan-claude-md-import | 2 | implement exactly the agreed plan; the earlier turns are supplied history |
 | near-miss-* (six) | near-miss | ordinary work on human-facing text or code; the skill should not load |
 
+## Written for rule coverage
+
+Small worlds for rules that only integration cases tested (see each NOTES.md for the rules).
+
+| Case | Behavior | Right outcome |
+| --- | --- | --- |
+| skill-long-main-file | tighten a long skill | branch-only sections move behind pointers with load conditions; every-run rules stay inline; no rule lost |
+| review-council-compaction | fix lost review state and an obeyed reviewer reply | state kept in a named file and restored; replies treated as evidence; merging only on the user's request |
+| prune-branches-script | script the mechanical steps of a skill | non-interactive script with dry run, quiet output, `--help`; tried safely; approval stays in the chat |
+
 ## Split from a large replay
 
 | Case | From | Change |
@@ -95,7 +105,9 @@ Written by an agent that never saw this skill, its cases, graders or rules, from
 
 ## Reserve cases
 
-Marked `reserve` because the other regular cases already cover every rule they test and they show no gap (`rules write-agent-instructions --min-set`); they run with `--all-cases` or by name: add-one-rule, agents-md-integration-db-lesson, agreed-plan-claude-md-import, app-code-system-prompt, claude-md-db-reset-lesson, commands-sweep-master-to-main, create-skill-from-doc, delegate-tier-list-question, expo-release-command, identifier-parenthetical-adds-info, launch-experiment-skill-review, pr-skill-drop-file-list, review-only, rotate-db-creds-skill, should-we-split-claude-md, support-bot-refund-window, ticket-classifier-prompt-trim, ui-string-skill-ready-review.
+Marked `reserve` because the regular set already tests every rule they test (`rules write-agent-instructions --min-set`); they run with `--all-cases` or by name. Cases that show a gap are here too: run one by name when a draft targets its gap. `label-then-command` absorbed `title-then-link-pointer`'s pointer and tight-line checks, and `prune-release-notes` absorbed the uncommitted-work check of `rename-pair-to-consult-mode`.
+
+add-one-rule, agents-md-billing-split, agents-md-integration-db-lesson, agents-md-point-to-constitution, agreed-plan-claude-md-import, app-code-system-prompt, claude-md-db-reset-lesson, commands-sweep-master-to-main, create-skill-from-doc, delegate-tier-list-question, design-doc-to-skill, expo-release-command, grill-to-plan-proposal, identifier-parenthetical-adds-info, launch-experiment-skill-review, package-claude-md-dedupe, pr-skill-drop-file-list, release-skill-gate-small, rename-pair-to-consult-mode, review-only, rotate-db-creds-skill, should-we-move-endpoint-guide-to-skill, should-we-split-claude-md, staged-skill-ready-to-ship, staged-skill-ready-to-ship-fixed, support-bot-refund-window, ticket-classifier-prompt-trim, title-then-link-pointer, ui-string-skill-ready-review.
 
 ## Integration cases
 

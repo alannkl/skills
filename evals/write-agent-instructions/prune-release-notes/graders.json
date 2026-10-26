@@ -81,6 +81,12 @@
         "docs/releasing.md"
       ],
       "with_final_message": true
+    },
+    {
+      "name": "keeps-uncommitted-rule",
+      "type": "llm",
+      "path": "release-notes/SKILL.md",
+      "criteria": "The working tree held an uncommitted line in step 4 of `release-notes/SKILL.md`: end each entry with its pull request number, such as `(#123)`. Pass if the pruned file still requires that, in any wording."
     }
   ]
 }
