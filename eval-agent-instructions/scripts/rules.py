@@ -208,10 +208,10 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
 
 
 def min_set(rules: dict, runs: list[tuple[dict, list[dict]]], acceptance: dict[str, set[str]],
-            setups: set[str] | None = None) -> dict:
+            setups: set[str] | None = None, gaps: bool = False) -> dict:
     """The cheapest cases in `acceptance` (case -> its acceptance graders) that still cover every mapped
-    rule a case there tests and every gap: an acceptance grader the current text fails in most with runs on
-    some setup in `setups` (default every setup), which only its own case can show. Cost is a case's median input tokens per with run, summed
+    rule a case there tests, and with `gaps` every gap: an acceptance grader the current text fails in most
+    with runs on some setup in `setups` (default every setup), which only its own case can show. Cost is a case's median input tokens per with run, summed
     over setups. Greedy cover by units per token, then any case whose units others cover is dropped,
     costliest first. `runs` holds runs of the current text, as `tabulate` takes them.
     """
@@ -232,7 +232,7 @@ def min_set(rules: dict, runs: list[tuple[dict, list[dict]]], acceptance: dict[s
                     passes[(row["case"], grader, row["config"])][0] += bool(result["pass"])
                     passes[(row["case"], grader, row["config"])][1] += 1
     for (case, grader, _), (passed, graded) in passes.items():
-        if passed < graded / 2:
+        if gaps and passed < graded / 2:
             units[case].add(("gap", case, grader))
     cost = defaultdict(float)
     for (case, _), used in tokens.items():

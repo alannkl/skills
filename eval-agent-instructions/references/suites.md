@@ -25,6 +25,14 @@ A suite is `evals/<suite>/` in the repository that holds the artifact, outside t
 
 ## Cases
 
+Build a suite in this order:
+
+1. List every rule of the artifact in `rules.json` (see Rule map) with no graders yet; `rules <suite>` reports each as untested.
+2. Write the fewest realistic cases that together test every rule not marked untestable, mapping each case's graders as you add it.
+3. Add real requests users made as further cases. They find gaps and show which rules matter in real work; a rule only written cases show is weaker evidence for keeping its words.
+4. Have the user approve the cases, the rule map and every grader before any run.
+5. Run, then mark `reserve` every case outside `rules <suite> --min-set`.
+
 Each case is a folder in the suite:
 
 - `instruction.md`: the user's request, exactly as the agent receives it.
@@ -51,11 +59,12 @@ A grader with `"diagnostic": true` is reported but left out of `compare`'s accep
 Make each case realistic:
 
 - Take the request and its files from work users bring: what a typical user would ask, about files like theirs. Never shape a case so the baseline fails; text that changes nothing on realistic cases is a no-op.
+- Write the request as users do: short and casual, naming the target and the goal. Report a symptom only as users would, never its cause or the fix.
 - Keep the cues and noise real work has, such as unrelated real defects.
 - Pair a case where the right result is a change with one where it is restraint.
 - Grade the end result, not its wording. Require exact text only where something depends on it, such as identifiers, commands, paths, and formats a tool parses; check everything else by meaning, so any wording with the same effect passes.
 - Write an `llm` criterion as the facts the output must state or keep, so a terse correct answer passes.
-- Give each case one primary behavior, plus a grader for every requirement the user would still expect kept; those catch one rule breaking another.
+- Give each case the behaviors one realistic request would involve together, plus a grader for every requirement the user would still expect kept; those catch one rule breaking another.
 
 Keep each case small, so edit rounds stay fast:
 
@@ -63,7 +72,8 @@ Keep each case small, so edit rounds stay fast:
 - Aim for a median, without the artifact, under a minute for a routine edit and under two for creating or reviewing a skill.
 - Shrink a case over budget: cut the files and lengths its graders do not depend on, and split a request that bundles several jobs into cases a user would send separately. Time without the artifact shows only that a world is large, not that the behavior needs it. Mark a case `integration` only when its behavior cannot occur in a smaller world, and say why in the suite's notes.
 - A reduced case is a new case: run it beside the original on every supported setup before replacing it.
-- Keep the regular set, the cases without `integration` or `reserve`, to the fewest that still cover every rule mapped in `rules.json` and every gap: an acceptance grader the current text fails in most runs on a `--full` setup. `rules <suite> --min-set` lists the cheapest such set by input tokens; mark every other case `reserve`. Map a new case's graders before adding it, and rerun `--min-set` after the map or a run changes.
+- Keep the regular set, the cases without `integration` or `reserve`, to the fewest that still cover every rule mapped in `rules.json`. `rules <suite> --min-set` lists the cheapest such set by input tokens; mark every other case `reserve`. Map a new case's graders before adding it, and rerun `--min-set` after the map or a run changes. A rule only one small case tests is cheaper folded into a related case than kept in its own.
+- A gap is an acceptance grader the current text fails in most runs on a `--full` setup. Confirm its criterion is right, then run its case by name when a draft targets it; `--min-set --gaps` keeps every gap's case in the set.
 - Before raising `--concurrency`, run one short case at rising levels and stay below the level where time per run or retries climb.
 
 ## Rule map

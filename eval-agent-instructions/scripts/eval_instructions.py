@@ -12,7 +12,7 @@ Run from the root of the repository that holds the artifact and its `evals/<suit
   eval_instructions.py grade <run-dir> [--judge MODEL]...
   eval_instructions.py report <run-dir>
   eval_instructions.py compare --baseline <run-dir>... --candidate <run-dir>... [--pairwise JUDGE]
-  eval_instructions.py rules <suite> [--all-versions | --min-set]
+  eval_instructions.py rules <suite> [--all-versions | --min-set [--gaps]]
 
 `run` builds one Harbor task per case and variant, runs each configuration as a
 Harbor job, then grades and reports. A skill under test is named by path in the
@@ -849,8 +849,8 @@ def cmd_rules(args) -> None:
     acceptance = {p.name: acceptance_graders(suite_dir, p.name) for p in case_dirs(args.suite, None, False)
                   if not load_spec(p).get("integration")}
     targets = {**SETTINGS["defaults"]["harness"], **suite["setups"]}
-    chosen = min_set(rules, runs, acceptance, {setup_name(s) for s in targets["full"]})
-    print(f"Regular set: {len(chosen['kept'])} of {len(acceptance)} cases cover every mapped rule they test and every gap on the --full setups.\n")
+    chosen = min_set(rules, runs, acceptance, {setup_name(s) for s in targets["full"]}, args.gaps)
+    print(f"Regular set: {len(chosen['kept'])} of {len(acceptance)} cases cover every mapped rule they test" + (" and every gap on the --full setups" if args.gaps else "") + ".\n")
     for case in chosen["kept"]:
         own = sorted(u[1] if u[0] == "rule" else f"gap {u[2]}" for u in chosen["units"][case]
                      if all(u not in chosen["units"][c] for c in chosen["kept"] if c != case))
@@ -925,7 +925,9 @@ def main() -> None:
     table.add_argument("suite", help="folder name under evals/")
     table.add_argument("--all-versions", action="store_true", help="include runs of earlier artifact text")
     table.add_argument("--min-set", action="store_true",
-                       help="list the cheapest regular cases that keep every rule and gap covered")
+                       help="list the cheapest regular cases that keep every mapped rule covered")
+    table.add_argument("--gaps", action="store_true",
+                       help="with --min-set, also keep every case the current text fails in most runs")
     args = parser.parse_args()
     if args.command == "run":
         cmd_run(args)

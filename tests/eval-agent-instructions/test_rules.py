@@ -121,15 +121,16 @@ class MinSet(unittest.TestCase):
                 "evidence": {"usage": {"input_tokens": tokens}},
                 "graders": {g: {"pass": p} for g, p in passes.items()}}
 
-    def test_keeps_the_cheapest_cover_and_every_gap(self):
+    def test_keeps_the_cheapest_cover_and_gaps_only_when_asked(self):
         rules = {"a": {"graders": ["big/x", "small/x"]}, "b": {"graders": ["big/y"]}, "c": {"graders": []}}
         acceptance = {"big": {"x", "y"}, "small": {"x"}, "redundant": {"z"}, "gappy": {"g"}}
         rows = [self.row("big", 900, x=True, y=True), self.row("small", 100, x=True),
                 self.row("redundant", 50, z=True), self.row("gappy", 500, g=False)]
-        chosen = min_set(rules, [({}, rows)], acceptance)
+        chosen = min_set(rules, [({}, rows)], acceptance, gaps=True)
         # big alone covers a and b, so the cheaper small adds nothing; gappy holds a failing grader only it shows.
         self.assertEqual(chosen["kept"], ["big", "gappy"])
         self.assertEqual(chosen["dropped"], ["redundant", "small"])
+        self.assertEqual(min_set(rules, [({}, rows)], acceptance)["kept"], ["big"])
 
     def test_a_rule_tested_only_outside_the_candidates_is_reported(self):
         rules = {"a": {"graders": ["integration-case/x"]}}
