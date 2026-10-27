@@ -816,12 +816,13 @@
     },
     "ref-skill-mechanics-condition": {
       "file": "SKILL.md",
-      "text": "| `references/skill-mechanics.md` | 1 | Creating or reviewing a skill or slash command, or changing its name, invocation, description, packaging, bundled scripts, or interfaces. Not for changes to body wording. |",
+      "text": "| `references/skill-mechanics.md` | 1 | Creating or reviewing a skill or slash command, or changing its name, invocation, description, packaging, bundled scripts, interfaces, or how its body tells the agent to run a bundled script. Not for other changes to body wording. |",
       "graders": [
         "design-doc-to-skill/loads-skill-mechanics",
         "create-skill-from-doc/loads-skill-mechanics",
         "create-standup-command/loads-skill-mechanics",
-        "explain-code-model-invoked/reads-skill-mechanics"
+        "explain-code-model-invoked/reads-skill-mechanics",
+        "release-skill-gate-small/call-site-args"
       ]
     },
     "ref-pruning-condition": {

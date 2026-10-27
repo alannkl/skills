@@ -128,7 +128,7 @@ Acceptance graders the current text fails in most runs on Opus or Astra (pinned 
 
 The skill makes it worse (passes without the skill):
 
-- release-skill-gate-small/call-site-args, Opus 0/6 with, 3/3 without: checked. Runs with the skill never load `references/skill-mechanics.md`, whose condition excludes body wording, and leave `--dry-run` and the exit codes out of the call site. Widening that condition to "how its body tells the agent to run a bundled script" made Opus load it in 3/3 and state the exit codes, but it still left out `--dry-run` in 2/3.
+- release-skill-gate-small/call-site-args, Opus 0/6 with, 3/3 without: checked. Runs with the skill never load `references/skill-mechanics.md`, whose condition excludes body wording, and leave `--dry-run` and the exit codes out of the call site. Widening that condition to "how its body tells the agent to run a bundled script" made Opus load it in 3/3 and state the exit codes, but it still left out `--dry-run` in 2/3. The wider condition is adopted.
 - trim-panel-skill/keeps-every-rule, Opus 1/3 with, 3/3 without: drops operative instructions without reporting them.
 - claude-md-wording-edit/report, Astra 0/6 with, 2/3 without: checked, borderline. The skill's runs cut emphasis and report "removed filler and repeated emphasis" without saying whether a sentence went outright; runs without it cut less.
 
