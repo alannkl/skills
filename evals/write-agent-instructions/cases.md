@@ -128,7 +128,6 @@ Acceptance graders the current text fails in most runs on Opus or Astra (pinned 
 
 The skill makes it worse (passes without the skill):
 
-- incident-investigation-skill/plain-sentences, Astra 0/6 with, 3/3 without: checked. The skill's outputs give vague steps ("correlate events with records") where outputs without it give the real log group and query commands. Removing the environment-facts rule alone gave 3/3 on Astra (clear-defaults 3/3 too), and templated-prompt-rule, the other case testing that rule, still passed on both models (one run each).
 - release-skill-gate-small/call-site-args, Opus 0/6 with, 3/3 without: checked. Runs with the skill never load `references/skill-mechanics.md`, whose condition excludes body wording, and leave `--dry-run` and the exit codes out of the call site. Widening that condition to "how its body tells the agent to run a bundled script" made Opus load it in 3/3 and state the exit codes, but it still left out `--dry-run` in 2/3.
 - trim-panel-skill/keeps-every-rule, Opus 1/3 with, 3/3 without: drops operative instructions without reporting them.
 - claude-md-wording-edit/report, Astra 0/6 with, 2/3 without: checked, borderline. The skill's runs cut emphasis and report "removed filler and repeated emphasis" without saying whether a sentence went outright; runs without it cut less.
