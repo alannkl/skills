@@ -67,7 +67,7 @@ What it delivers, per `references/suites.md`:
 Open with the answer to the user's question and the decision it supports. Then, for each setup:
 
 - pass counts per case and arm, and the table from `rules` when the suite has a rule map;
-- median work per run in each arm: agent time, tool calls, and input and output tokens, which show what the artifact adds to every run;
+- the counted tokens of the text each run loads, per load path; median work per run (agent time, tool calls, input and output tokens), compared case by case, only to flag a structural change such as an added load call;
 - removal candidates and untested rules;
 - runs set apart: infrastructure errors, runs that never loaded the skill, undecided grades, judge disagreements;
 - cost as the harnesses report it, naming setups that report none;
