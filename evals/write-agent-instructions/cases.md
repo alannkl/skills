@@ -124,8 +124,27 @@ The two staged-skill readiness reviews take 86-126 s without the skill in few to
 
 ## Gaps
 
-- memory-capture-scope/short-rule: with or without the skill, both models write a multi-sentence fix with several examples or a list (the user's correction in the source session). Adding "State a rule by its principle, with at most one example and no list of instances." did not change it (0/3 on each model). Wait for another real request showing it before trying more wording.
-- A skill-directory rename with its inventory and router (this repo's only one, agent-panel to panel, has no recorded request).
+Acceptance graders the current text fails in most runs on Opus or Astra (pinned runs through 2026-10-27). Only the criteria marked checked have been read against outputs; a check every version fails may be a wrong criterion.
+
+The skill makes it worse (passes without the skill):
+
+- incident-investigation-skill/plain-sentences, Astra 0/6 with, 3/3 without: checked. The skill's outputs give vague steps ("correlate events with records") where outputs without it give the real log group and query commands. Removing the environment-facts rule alone gave 3/3 on Astra (clear-defaults 3/3 too), and templated-prompt-rule, the other case testing that rule, still passed on both models (one run each).
+- release-skill-gate-small/call-site-args, Opus 0/6 with, 3/3 without: checked. Runs with the skill never load `references/skill-mechanics.md`, whose condition excludes body wording, and leave `--dry-run` and the exit codes out of the call site. Widening that condition to "how its body tells the agent to run a bundled script" made Opus load it in 3/3 and state the exit codes, but it still left out `--dry-run` in 2/3.
+- trim-panel-skill/keeps-every-rule, Opus 1/3 with, 3/3 without: drops operative instructions without reporting them.
+- claude-md-wording-edit/report, Astra 0/6 with, 2/3 without: checked, borderline. The skill's runs cut emphasis and report "removed filler and repeated emphasis" without saying whether a sentence went outright; runs without it cut less.
+
+The skill does not fix it (fails in both arms):
+
+- Consumers: staged-skill-ready-to-ship(-fixed)/consumers-consistent (Astra); agents-md-point-to-constitution/compared-copies (Astra); explain-code-model-invoked/readme-inventory (Opus); rename-pair-to-consult-mode/pair-still-selects (Astra) and dated-records-kept (Opus).
+- Reports: design-doc-to-skill/report (Astra); trim-panel-skill/report (Astra).
+- Behavior checks: rushed-verification-step/suggests-check (Astra); review-panel-gate-fixes/suggests-check (Opus) and check-declares-expected (Astra).
+- Placement: trim-panel-skill/placement (both); should-we-move-endpoint-guide-to-skill/handler-rules-still-reachable and grounded-verdict (Astra; a load-condition line and a premise-check line did not change it).
+- Descriptions and triggers: explain-code-model-invoked/trigger-check and description-pattern (Astra); too-many-commands-to-remember/router (Astra).
+- Other: skill-too-many-round-trips/stops-at-decisions (Astra); package-claude-md-dedupe/web-specific-rules-kept (Astra); staged-skill-ready-to-ship-fixed/no-padding (Opus); panel-persist-for-chat/prior-replies-are-evidence (both); noop-dispute/depends-on-executor (Astra); agents-md-lesson-from-session/concise (Opus).
+- memory-capture-scope/short-rule (both): checked. Both models write a multi-sentence fix with several examples or a list (the user's correction in the source session). Adding "State a rule by its principle, with at most one example and no list of instances." did not change it (0/3 on each model). Wait for another real request showing it before trying more wording.
+- Scripts, integration case only: release-script-skill dry-run, help-and-failures, non-interactive, quiet-output, keeps-script, judgment-stays-with-agent (Astra) and dry-run, tried-safely (Opus). Astra passes the same checks in the smaller prune-branches-script, so the size of the case may be the cause.
+
+Not covered by any case: a skill-directory rename with its inventory and router (this repo's only one, agent-panel to panel, has no recorded request).
 
 ## Coverage
 
