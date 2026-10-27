@@ -21,9 +21,9 @@ Load a reference at the step named here when its condition holds, or where anoth
 | Reference | Step | Load when |
 | --- | --- | --- |
 | `references/skill-mechanics.md` | 1 | Creating or reviewing a skill or slash command, or changing its name, invocation, description, packaging, bundled scripts, interfaces, or how its body tells the agent to run a bundled script. Not for other changes to body wording. |
-| `references/pruning-instructions.md` | 2 | Pruning or structurally reorganizing an existing artifact, including changes to its required sections, ordering, output formats, or loading behavior; recommending such a change in a review; or uncertainty about whether a change is structural. |
+| `references/pruning-instructions.md` | 2 | Pruning, renaming, or structurally reorganizing an existing artifact, including changes to its required sections, ordering, output formats, or loading behavior; recommending such a change in a review; or uncertainty about whether a change is structural. |
 | `references/context-design.md` | 4 | Designing or changing retrieval or loading paths, such as choosing which sources an agent reads or retrieves at run time, moving an existing artifact's material into or out of a conditional reference, adding a load condition, or changing which branches reach an existing pointer's target; designing retained context or continuation state; an explicit request to design context management; or uncertainty about one of these decisions. Rewording a condition without changing its target or the branches it covers, and the ordinary placement of a new skill's own references, follow step 4 alone. A persistent file, a long task, or several agents are not reasons on their own. |
-| `references/evaluating-instructions.md` | 1 for an explicit evaluation request, otherwise 5 or 6 | An explicit evaluation request, a consequential authorized behavior change (a removed or changed safeguard, consumer format, ordering, or load condition whose effect a meaning review cannot settle), a disputed no-op, or a change to an existing description or pointer condition that alters which cases reach it. Use the section that applies. |
+| `references/evaluating-instructions.md` | 1 for an explicit evaluation request, otherwise 5 or 6 | An explicit evaluation request, a consequential authorized behavior change (a removed, added, or changed safeguard or approval gate, consumer format, ordering, or load condition), a disputed no-op, or a change to an existing description or pointer condition that alters which cases reach it. Use the section that applies. |
 
 ## Workflow
 
@@ -50,6 +50,7 @@ Load a reference at the step named here when its condition holds, or where anoth
    - Keep a concept's definition, rules, and caveats together under one heading. Make defaults clear; mention alternatives only when they change a decision.
    - Make the workflow batch independent operations into one tool round. Batches stop at steps that need judgment or user authorization, and failures stay visible.
    - Make included examples concrete and realistic.
+   - A rule the user dictates goes in as one line in the file's own terms, as short as its neighbours, with no examples or directives they did not give.
    - Prefer instructions that work with no other skill installed. When the workflow needs another skill or document, name it and load it at the step that uses it, rather than copying or summarizing its guidance.
 
 4. Place the material.
