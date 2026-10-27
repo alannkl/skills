@@ -165,9 +165,18 @@ def compare(base_runs: list[Path], cand_runs: list[Path], suite_dir: Path, judge
                   + (f"; baseline only: {', '.join(g['only_base'])}" if g["only_base"] else "")
                   + (f"; candidate only: {', '.join(g['only_cand'])}" if g["only_cand"] else ""),
                   f"- Acceptance grades passed: baseline {totals[0]}/{totals[1]}, candidate {totals[2]}/{totals[3]}"]
-        for side, rows in (("baseline", base), ("candidate", cand)):
-            lines.append(f"- Median work, {side}: "
-                         + describe_work(work([r for r in rows if r["config"] == config and r["case"] in g["shared"]])))
+        # Each case counts once, so a case run more often on one side does not shift that side's median.
+        per_side = [{case: work([r for r in rows if r["config"] == config and r["case"] == case])
+                     for case in g["shared"]} for rows in (base, cand)]
+        for side, by_case in zip(("baseline", "candidate"), per_side):
+            lines.append(f"- Median work over cases, {side}: " + describe_work(
+                {k: median(v) for k in ("seconds", "calls", "input", "output")
+                 if (v := [m[k] for m in by_case.values() if k in m])}))
+        changes = [per_side[1][c]["input"] - per_side[0][c]["input"] for c in g["shared"]
+                   if "input" in per_side[0][c] and "input" in per_side[1][c]]
+        if changes:
+            lines.append(f"- Median change in input per case: {median(changes) / 1000:+.0f}k "
+                         f"({sum(x < 0 for x in changes)} of {len(changes)} cases lower)")
         per_case = defaultdict(lambda: [0, 0, 0, 0])
         for (case, _), c in cells.items():
             per_case[case] = [x + y for x, y in zip(per_case[case], c)]
