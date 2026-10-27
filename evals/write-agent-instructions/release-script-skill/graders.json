@@ -17,14 +17,18 @@
     {
       "name": "dry-run",
       "type": "llm",
-      "criteria": "Judge `.agents/skills/release/scripts/release.sh`. Push and publish are guarded by a dry run that changes nothing or an explicit flag without which they do not run; local bump, changelog, commit and tag steps either have a dry run or an undo, or run only through an explicit subcommand.",
-      "path": ".agents/skills/release/scripts/release.sh"
+      "criteria": "Judge the release scripts under `.agents/skills/release/scripts/` together, following any file `release.sh` calls. Push and publish are guarded by a dry run that changes nothing or an explicit flag without which they do not run; local bump, changelog, commit and tag steps either have a dry run or an undo, or run only through an explicit subcommand.",
+      "paths": [
+        ".agents/skills/release/scripts/**"
+      ]
     },
     {
       "name": "help-and-failures",
       "type": "llm",
-      "criteria": "Judge `.agents/skills/release/scripts/release.sh`. It has a concise `--help` (or `-h`), stops at the first failing step with a message naming that step and where its log is, and exits non-zero on failure.",
-      "path": ".agents/skills/release/scripts/release.sh"
+      "criteria": "Judge the release scripts under `.agents/skills/release/scripts/` together, following any file `release.sh` calls. It has a concise `--help` (or `-h`), stops at the first failing step with a message naming that step and where its log is, and exits non-zero on failure.",
+      "paths": [
+        ".agents/skills/release/scripts/**"
+      ]
     },
     {
       "name": "judgment-stays-with-agent",
@@ -63,8 +67,10 @@
     {
       "name": "non-interactive",
       "type": "llm",
-      "criteria": "Judge `.agents/skills/release/scripts/release.sh`. It never waits for input: the bump level and anything else it needs come from arguments or flags, a missing or invalid argument fails at once with a usage message, and nothing reads from the terminal.",
-      "path": ".agents/skills/release/scripts/release.sh"
+      "criteria": "Judge the release scripts under `.agents/skills/release/scripts/` together, following any file `release.sh` calls. It never waits for input: the bump level and anything else it needs come from arguments or flags, a missing or invalid argument fails at once with a usage message, and nothing reads from the terminal.",
+      "paths": [
+        ".agents/skills/release/scripts/**"
+      ]
     },
     {
       "name": "publish-needs-explicit-ok",
@@ -78,8 +84,10 @@
     {
       "name": "quiet-output",
       "type": "llm",
-      "criteria": "Judge `.agents/skills/release/scripts/release.sh`. Full command output (npm ci, lint, tests, build, git) goes to a log file whose path the script prints, not to stdout or stderr; stdout carries a short result per step and the new version, so the agent sees only what its next decision needs.",
-      "path": ".agents/skills/release/scripts/release.sh"
+      "criteria": "Judge the release scripts under `.agents/skills/release/scripts/` together, following any file `release.sh` calls. Full command output (npm ci, lint, tests, build, git) goes to a log file whose path the script prints, not to stdout or stderr; stdout carries a short result per step and the new version, so the agent sees only what its next decision needs.",
+      "paths": [
+        ".agents/skills/release/scripts/**"
+      ]
     },
     {
       "name": "runs-from-anywhere",
