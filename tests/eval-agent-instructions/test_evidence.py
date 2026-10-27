@@ -54,6 +54,20 @@ class Extractors(unittest.TestCase):
         e = claude_code(agent)
         self.assertEqual((e["skills_loaded"], e["foreign_skills_loaded"]), ([], ["shorten-it"]))
 
+    def test_claude_code_final_message_keeps_every_turns_reply_but_no_subagent_text(self):
+        agent = self.tmp / "turns"
+        agent.mkdir()
+        say = lambda text, parent=None: {"type": "assistant", "parent_tool_use_id": parent,
+                                         "message": {"model": "m", "content": [{"type": "text", "text": text}]}}
+        result = lambda tokens: {"type": "result", "usage": {"input_tokens": tokens, "service_tier": "standard"},
+                                 "total_cost_usd": 1.0}
+        events = [say("working"), say("subagent report", parent="toolu_1"), say("full report"), result(10),
+                  result(5), say("see my last message"), result(1)]
+        (agent / "claude-code.txt").write_text("".join(json.dumps(e) + "\n" for e in events))
+        e = claude_code(agent)
+        self.assertEqual(e["final_message"], "full report\n\nsee my last message")
+        self.assertEqual(e["usage"]["input_tokens"], 16)
+
     def test_codex_counts_a_read_that_returned_the_skill(self):
         e = codex(FIXTURES / "codex")
         self.assertEqual(e["skills_loaded"], ["shorten-it"])

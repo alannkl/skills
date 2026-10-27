@@ -129,7 +129,7 @@ Acceptance graders the current text fails in most runs on Opus or Astra (runs th
 The skill makes it worse (passes without the skill):
 
 - release-skill-gate-small/call-site-args, Opus 0/6 with, 3/3 without. Runs with the skill leave `--dry-run` and the exit codes out of the call site. Widening the skill-mechanics condition to "how its body tells the agent to run a bundled script" made Opus load it and state the exit codes, but it still left out `--dry-run` in 2/3.
-- trim-panel-skill/keeps-every-rule, Opus 1/3 with, 3/3 without. One failure is real (a qualifier and a pause rule cut without a report); the other is partly the harness: only the last message is graded, and the full report was in the turn before it.
+- trim-panel-skill/keeps-every-rule and /report, Opus: with the skill 2/3 and 1/3, without 3/3 and 3/3. With the skill Opus cuts about 22% against about 3%; one run drops the conditions on skipping a failed participant and the allowance-pause rule without reporting them, and another reports its cuts only by category.
 - claude-md-wording-edit/report, Astra. The skill's runs cut emphasis and report "removed filler and repeated emphasis" without saying whether a sentence went outright.
 
 The skill does not fix it (fails in both arms), with what was tried:

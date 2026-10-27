@@ -137,7 +137,9 @@ def output_tokens(usage: dict | None) -> int | None:
 
 def claude_code(agent_dir: Path) -> dict:
     events = list(_json_lines(agent_dir / "claude-code.txt"))
-    ops, models, texts, listed, calls = [], set(), [], None, {}
+    # A scheduled wakeup or task notification can start another turn after the first result, whose
+    # reply may only point back at the report; the final message is the last reply of every turn.
+    ops, models, texts, finals, listed, calls = [], set(), [], [], None, {}
     usage = cost = None
     tool_calls = retries = 0
     complete = False
@@ -151,7 +153,8 @@ def claude_code(agent_dir: Path) -> dict:
             message = e.get("message", {})
             models.add(message.get("model"))
             for block in message.get("content", []):
-                if block.get("type") == "text":
+                # Text a subagent wrote is not a reply to the user.
+                if block.get("type") == "text" and not e.get("parent_tool_use_id"):
                     texts.append(block["text"])
                 elif block.get("type") == "tool_use":
                     calls[block["id"]] = (block["name"], block.get("input", {}))
@@ -176,9 +179,15 @@ def claude_code(agent_dir: Path) -> dict:
                     for m in re.finditer(r"Base directory for this skill: (\S+)", block.get("text", "")):
                         ops.append(_op("skill", True, m.group(1)))
         elif kind == "result":
-            usage, cost, complete = e.get("usage"), e.get("total_cost_usd"), True
+            # Each result's usage covers its own turn, while its cost is the session's running total.
+            turn = e.get("usage") or {}
+            usage = {k: (usage or {}).get(k, 0) + v if isinstance(v, (int, float)) else v for k, v in turn.items()}
+            cost, complete = e.get("total_cost_usd"), True
+            if texts:
+                finals.append(texts[-1])
+            texts = []
     return summarize("claude-code", ops, complete, models=sorted(m for m in models if m),
-                     final_message=texts[-1] if texts else "", skills_listed=listed, usage=usage,
+                     final_message="\n\n".join(finals), skills_listed=listed, usage=usage,
                      cost_usd=cost, cost_basis="Claude Code estimate from model name",
                      tool_calls=tool_calls, retries=retries)
 
