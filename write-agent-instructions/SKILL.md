@@ -1,6 +1,6 @@
 ---
 name: write-agent-instructions
-description: "Writes, edits, reviews, evaluates, and prunes agent instructions: skills (SKILL.md), slash commands, AGENTS.md, CLAUDE.md, system or developer prompts, and prompt files or prompts inside application code. Use for any change to one of these, however small, including wording-only polishing or shortening and adding one rule to AGENTS.md; for any request to review, critique, evaluate, or improve one, including requests for advice only; and when packaging repeated instructions behind a name. Not for ordinary conversation or human-facing prose."
+description: "Writes, edits, reviews, evaluates, and prunes agent instructions: skills, slash commands, AGENTS.md, CLAUDE.md, system or developer prompts, and prompt files or prompts inside application code. Use for any change to one of these, however small, including wording-only polishing or shortening and adding one rule to AGENTS.md; for any request to review, critique, evaluate, or improve one, including requests for advice only; and when packaging repeated instructions behind a name. Not for ordinary conversation or human-facing prose."
 ---
 
 # Write agent instructions
@@ -46,7 +46,7 @@ Load a reference at the step named here when its condition holds, or where anoth
    - Write plain, precise sentences with concrete actions. Keep commands, flags, paths, and identifiers exact, and state real uncertainty.
    - State the target behavior. Keep a prohibition only as a guardrail, paired with what to do instead.
    - Write every line for the executing agent. Omit authoring rationale, request history, and explanations of the artifact's shape; keep a reason only when it informs a call the agent must make unaided.
-   - Keep environment-derived facts, such as config values, `--help` output, or the directory layout, in the environment that owns them; document the conventions, reasons, and gotchas it cannot supply. Avoid time-sensitive facts unless the instructions say how to refresh them.
+   - Avoid time-sensitive facts unless the instructions say how to refresh them.
    - Keep a concept's definition, rules, and caveats together under one heading. Make defaults clear; mention alternatives only when they change a decision.
    - Make the workflow batch independent operations into one tool round. Batches stop at steps that need judgment or user authorization, and failures stay visible.
    - Make included examples concrete and realistic.

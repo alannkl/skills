@@ -318,14 +318,6 @@
         "claude-md-db-reset-lesson/addition-proportionate"
       ]
     },
-    "environment-facts-stay": {
-      "file": "SKILL.md",
-      "text": "Keep environment-derived facts, such as config values, `--help` output, or the directory layout, in the environment that owns them; document the conventions, reasons, and gotchas it cannot supply.",
-      "graders": [
-        "templated-prompt-rule/no-hardcoded-cap",
-        "templated-prompt-rule/rule-added"
-      ]
-    },
     "avoid-time-sensitive-facts": {
       "file": "SKILL.md",
       "text": "Avoid time-sensitive facts unless the instructions say how to refresh them.",
