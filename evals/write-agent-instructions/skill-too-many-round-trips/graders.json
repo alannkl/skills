@@ -41,7 +41,8 @@
       "name": "stops-at-decisions",
       "type": "llm",
       "path": ".agents/skills/prepare-pr/SKILL.md",
-      "criteria": "Judge the edited `.agents/skills/prepare-pr/SKILL.md`. The workflow still stops for every decision the original had: asking the user about uncommitted changes, stopping on any lint, typecheck, test or build failure, stopping on rebase conflicts, and waiting for the user to approve the PR draft before `gh pr create`. No batch runs past one of these points."
+      "criteria": "Judge the edited `.agents/skills/prepare-pr/SKILL.md` with the final message. Each user stop of the original (asking about uncommitted changes, approving the PR draft before `gh pr create`) is either kept or named as removed in the final message. Lint, typecheck, test or build failures and rebase conflicts still stop the run.",
+      "with_final_message": true
     }
   ]
 }

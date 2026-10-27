@@ -34,7 +34,7 @@
       "name": "web-specific-rules-kept",
       "type": "llm",
       "path": "packages/web/CLAUDE.md",
-      "criteria": "The web-only guidance is kept with its meaning: Next.js 14 app router; server components by default with \"use client\" only for state, effects or browser APIs; Tailwind, no CSS modules or styled-components; all data fetching through lib/api.ts, never fetch directly in components."
+      "criteria": "The web-only guidance is kept with its meaning: the app router (the Next.js version may be dropped, since the root CLAUDE.md states Next.js 14); server components by default with \"use client\" only for state, effects or browser APIs; Tailwind, no CSS modules or styled-components; all data fetching through lib/api.ts, never fetch directly in components."
     }
   ]
 }

@@ -8,7 +8,7 @@
     {
       "name": "consumers-consistent",
       "type": "llm",
-      "criteria": "The staged change adds a `delegate` skill and touches three files that refer to it: a new rule 5 \"Delegate when it pays\" in both `constitution/SKILL.md` and `AGENTS.md` (which renumbers the rule after it), and a README row plus the model-invoked count and list. Pass if the review checks these against the new skill, either confirming they agree or naming a real mismatch."
+      "criteria": "The staged change adds a `delegate` skill and touches files that refer to it: rule 5 \"Delegate when it pays\" in both `constitution/SKILL.md` and `AGENTS.md`, and a README row plus the model-invoked count and list. Fail if the review misses a real mismatch between `delegate` and these files, or reports a mismatch the files do not show. Totals the checkout cannot confirm do not count as mismatches."
     },
     {
       "name": "finds-takeover-gap",

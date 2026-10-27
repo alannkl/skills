@@ -64,7 +64,11 @@
     {
       "name": "report",
       "type": "llm",
-      "criteria": "The final message lists each requirement it removed or changed, separately from wording changes, and for each says what replaces it, if anything."
+      "criteria": "Judge the final message against the edited files. It names each requirement it removed or changed, separately from wording changes, and says what replaces it, if anything. A statement that no requirement was removed or changed passes when the files bear it out, and fails when a requirement was in fact removed or changed.",
+      "paths": [
+        "panel/**/*.md"
+      ],
+      "with_final_message": true
     },
     {
       "name": "trims-every-instruction-file",

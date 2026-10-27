@@ -7,7 +7,7 @@
     {
       "name": "depends-on-executor",
       "type": "llm",
-      "criteria": "The reply says that whether the sentence changes behavior depends on the model and harness executing `code-review`, so the answer can differ between them."
+      "criteria": "The reply ties the answer to the executor: it recommends checking on the model and harness that run `code-review`, or says the effect can differ between them."
     },
     {
       "name": "keep-until-shown",

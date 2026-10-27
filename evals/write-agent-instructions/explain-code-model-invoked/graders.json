@@ -14,7 +14,7 @@
       "name": "description-pattern",
       "type": "llm",
       "path": "explain-code/SKILL.md",
-      "criteria": "Judge the frontmatter description of the edited `explain-code/SKILL.md`. It is in third person and under 1024 characters; its first sentence says what the skill does using words a user would type (explain, code, a change, module, flow or codebase); a second sentence states when to use it, one trigger per distinct kind of request."
+      "criteria": "Judge the frontmatter description of the edited `explain-code/SKILL.md`. It is in third person and under 1024 characters. Its first sentence says what the skill does, starting with explain and code. Together the two sentences keep the scopes the original names (a change, module, flow, codebase). The second sentence states when to use it."
     },
     {
       "name": "description-tight",
@@ -89,7 +89,7 @@
     {
       "name": "trigger-check",
       "type": "llm",
-      "criteria": "Pass if the final message checks the new description against a few realistic requests that should load it and a few near-misses that should not (or proposes that check), and says how the description was adjusted for any that would misroute."
+      "criteria": "Pass if the final message reports or proposes a check of the new description against requests that should load it and near-misses that should not, naming example requests or the boundary checked (such as explanation versus review, fixing or documentation). If it reports a request that would misroute, it says how the description changed. Fail if it mentions no trigger check, or only says a check passed without saying what it covered."
     },
     {
       "name": "trigger-prompts-varied",

@@ -21,7 +21,7 @@
         ".agents/skills/**"
       ],
       "with_final_message": true,
-      "criteria": "The final message gives a clear recommendation on whether to move the 'Adding an endpoint' section into a skill (yes, yes with a caveat, no, or a different organization), with reasons grounded in this repo's AGENTS.md and code, and says what was done (if anything) and where the guidance now lives."
+      "criteria": "The final message says whether it agrees with moving the 'Adding an endpoint' section into a skill. Where it qualifies or rejects the user's premise, it gives a reason grounded in this repo's AGENTS.md and code. It says what was done, if anything, and where the guidance now lives."
     },
     {
       "name": "action-matches-verdict",

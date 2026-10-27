@@ -62,7 +62,7 @@
     {
       "name": "report",
       "type": "llm",
-      "criteria": "The final message says what the agent did with the retry count the doc left provisional (\"start with 3 and lower it later\"): it chose a number and says so, or asks the user. It also mentions the reviewer's open question about the changelog check, or keeps that check without claiming the question of whether it is needed was settled for good; saying it stays in for now is fine."
+      "criteria": "The final message names the retry count used, or says the doc's provisional value was kept. It also mentions the reviewer's open changelog question, or says the check was kept for now as the doc left it, without claiming the question was settled."
     },
     {
       "name": "skill-file-exists",

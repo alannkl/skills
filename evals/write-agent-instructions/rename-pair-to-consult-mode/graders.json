@@ -12,7 +12,7 @@
         "tests/panel/VALIDATION.md",
         "docs/agent-communication.md"
       ],
-      "criteria": "Earlier dated entries in these files record past work under the name \"pair\". Pass if those earlier entries keep their wording; a new entry or a note about the rename is fine."
+      "criteria": "Entries committed before this session (the 2026-09-11 entry in `tests/panel/VALIDATION.md` and the 2026-09-29 row in `docs/agent-communication.md`) keep their \"pair\" wording. The uncommitted 2026-10-23 entry describes the change in progress: updating it to the new names, or leaving it with a rename note, both pass."
     },
     {
       "name": "keeps-uncommitted-work",

@@ -7,7 +7,7 @@
     {
       "name": "check-declares-expected",
       "type": "llm",
-      "criteria": "Pass if the final message's behavior check, run or proposed, states its scenario and the expected result beforehand, such as: triage returns findings with fix dispositions, and the agent presents them and stops before fixing. Fail if it names no check or gives no expected result."
+      "criteria": "Pass if the final message reports a behavior check, run or proposed, that names its scenario at least as \"triage proposed fixes\" and states the expected or observed result, such as the agent stopping before any fix. A one-line summary suffices. Fail if it names no behavior check or only a consistency read of the text."
     },
     {
       "name": "gate",
@@ -82,7 +82,7 @@
     {
       "name": "suggests-check",
       "type": "llm",
-      "criteria": "The change gates a safeguard, so it warrants one bounded behavior check. Pass if the final message reports running one, or names a concrete one it could not run and why (such as a review-panel run on a change whose triage returns fix dispositions). Saying only that it could be tested fails."
+      "criteria": "The change gates a safeguard, so it warrants one bounded behavior check. Pass if the final message reports running one that exercises the gate (a scenario where triage returns fix dispositions, with the expected stop before fixing), or names that check and a concrete obstacle to running it. Fail if it only suggests testing, or names a check whose scenario need not produce a fix disposition."
     }
   ]
 }
