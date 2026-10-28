@@ -30,7 +30,7 @@ marked `trigger_only` are left out, and so are those marked `integration` or `re
 --all-cases is set. `--rule` runs only the cases whose graders test the named rules,
 as an edit round does. Every arm reuses earlier graded trials when
 its task directory, configuration, Harbor version and agent arguments all match,
-so only what changed runs. Results go to evals/<suite>/results/<run-id>/. Grading reads only saved artifacts and
+so only what changed, and the attempts earlier runs lack, run. Results go to evals/<suite>/results/<run-id>/. Grading reads only saved artifacts and
 the run's own copy of its cases, so `grade` reruns with other judges, or with
 the repo's current graders through --graders-from-repo, without rerunning any agent.
 
@@ -267,10 +267,10 @@ def trial_dirs(job_root: Path) -> list[Path]:
 
 
 def stored_baseline(results: Path, run_id: str, config: dict, task: str, digest: str, attempts: int) -> list[Path]:
-    """Graded trials of the same task from earlier runs, newest first, when at least `attempts` exist.
+    """Up to `attempts` graded trials of the same task from earlier runs, newest first.
 
     A trial matches when its task directory hashes the same and it ran under the same
-    configuration, Harbor version and agent arguments; with fewer matches the task runs fresh.
+    configuration, Harbor version and agent arguments; the run tops up the attempts it lacks.
     """
     case, variant = task.split("--")
     metas = [(p.parent, json.loads(p.read_text())) for p in results.glob("*/run.json") if p.parent.name != run_id]
@@ -289,7 +289,7 @@ def stored_baseline(results: Path, run_id: str, config: dict, task: str, digest:
             if (row["config"] in names and (row["case"], row["variant"]) == (case, variant)
                     and row["status"] == "ok" and not row.get("reused_from")):
                 found.append(prior / row.get("trial_path", f"jobs/{row['config']}/{row['trial']}"))
-    return found[:attempts] if len(found) >= attempts else []
+    return found[:attempts]
 
 
 def reuse_baselines(run_dir: Path, configs: list[str], tasks: list[str], attempts: int,
@@ -484,7 +484,9 @@ def cmd_run(args) -> None:
             "tasks": tasks, "task_dirs": task_dirs, "reused": reused,
             "loaded_tokens": loaded_tokens(texts, {c: SETTINGS["configs"][c]["model"] for c in configs}),
             "started_at": datetime.now(timezone.utc).isoformat()}
-    plans = {name: job_plan(run_dir / task_dirs[name], tasks, sorted(reused.get(name, {})), artifact)
+    # Each task runs only the attempts its reused trials leave open.
+    remaining = {name: {t: attempts - len(reused.get(name, {}).get(t, [])) for t in tasks} for name in configs}
+    plans = {name: job_plan(run_dir / task_dirs[name], tasks, [t for t in tasks if not remaining[name][t]], artifact)
              for name in configs}
     queued = args.env == "bwrap" and not wants_api
     if queued:
@@ -513,18 +515,20 @@ def cmd_run(args) -> None:
             return
         print(f"== {name}", file=sys.stderr)
         if config["harness"] == API:
-            run_api_job(config, run_dir / task_dirs[name], [t for _, job_tasks, _ in plan for t in job_tasks], attempts,
-                        run_dir / "jobs" / name / API, slots[name])
+            for n, group in by_remaining(remaining[name], [t for _, job_tasks, _ in plan for t in job_tasks]):
+                run_api_job(config, run_dir / task_dirs[name], group, n, run_dir / "jobs" / name / API, slots[name])
             return
         with open(run_dir / f"harbor-{name}.log", "w") as log:
             for job, job_tasks, system_prompt in plan:
-                if args.env == "docker":
-                    wait_for_docker()
-                subprocess.run(harbor_command(config, run_dir / task_dirs[name], run_dir / "jobs" / name, job, attempts,
-                                              slots[name], include=job_tasks,
-                                              system_prompt=system_prompt,
-                                              environment=environment),
-                               env=harbor_env(config), stdout=log, stderr=subprocess.STDOUT, check=False)
+                groups = by_remaining(remaining[name], job_tasks)
+                for n, group in groups:
+                    if args.env == "docker":
+                        wait_for_docker()
+                    subprocess.run(harbor_command(config, run_dir / task_dirs[name], run_dir / "jobs" / name,
+                                                  job if len(groups) == 1 else f"{job}-{n}", n, slots[name],
+                                                  include=group, system_prompt=system_prompt,
+                                                  environment=environment),
+                                   env=harbor_env(config), stdout=log, stderr=subprocess.STDOUT, check=False)
         print(f"== {name}: done", file=sys.stderr)
 
     def run_session(session: tuple[str, str, int, str | None]) -> None:
@@ -541,7 +545,7 @@ def cmd_run(args) -> None:
         # sessions do not start last.
         sessions = [(name, task, attempt, system_prompt) for name in configs
                     for _, job_tasks, system_prompt in plans[name] for task in job_tasks
-                    for attempt in range(attempts)]
+                    for attempt in range(remaining[name][task])]
         expected = {name: expected_seconds(run_dir.parent, name) for name in configs}
         sessions.sort(key=lambda s: expected[s[0]].get(s[1], expected[s[0]].get(None, 0.0)), reverse=True)
         print(f"== {len(sessions)} sessions", file=sys.stderr)
@@ -554,6 +558,14 @@ def cmd_run(args) -> None:
             list(pool.map(run_setup, configs))
     grade([run_dir], args.judge or SETTINGS["judges"])
     print(report(run_dir))
+
+
+def by_remaining(remaining: dict[str, int], tasks: list[str]) -> list[tuple[int, list[str]]]:
+    """`tasks` grouped by the attempts each still needs, as (attempts, tasks); a Harbor job runs one count."""
+    groups = defaultdict(list)
+    for task in tasks:
+        groups[remaining[task]].append(task)
+    return sorted(groups.items())
 
 
 def parse_concurrency(values: list[str]) -> tuple[int | None, dict[str, int]]:

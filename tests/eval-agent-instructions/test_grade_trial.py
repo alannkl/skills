@@ -230,9 +230,13 @@ class StoredBaseline(unittest.TestCase):
         self.prior_run("named", "2026-10-22", ["ok"], folder=task_folder("CLAUDE.md"))
         self.assertEqual(self.find(1), ["named-t0"])
 
-    def test_too_few_matches_runs_fresh(self):
+    def test_too_few_matches_are_reused_and_topped_up(self):
         self.prior_run("old", "2026-10-20", ["ok", "missing"])
-        self.assertEqual(self.find(2), [])
+        self.assertEqual(len(self.find(2)), 1)
+
+    def test_tasks_group_by_the_attempts_they_still_need(self):
+        from eval_instructions import by_remaining
+        self.assertEqual(by_remaining({"a": 2, "b": 3, "c": 2}, ["a", "b", "c"]), [(2, ["a", "c"]), (3, ["b"])])
 
     def test_changed_task_other_config_or_reused_rows_do_not_count(self):
         self.prior_run("edited", "2026-10-21", ["ok"], instruction="Shorten it more.")
