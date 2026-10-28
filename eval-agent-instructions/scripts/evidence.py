@@ -346,12 +346,21 @@ def openclaw(agent_dir: Path) -> dict:
     # Only OpenRouter has a generation endpoint naming the upstream provider.
     generations = openrouter_generations(agent_dir) if effective.get("provider") == "openrouter" else None
     payloads = envelope.get("payloads") or []
+    final_message = payloads[-1].get("text", "") if payloads else ""
+    messages = _openclaw_messages(events_path)
+    terminal_error = _openclaw_terminal_error(events_path)
+    # OpenClaw's log redaction replaces transcript text holding a JSON fragment it cannot parse, such as
+    # `curl -d '{"email":...}'`, then finds no reply and calls the turn non-deliverable. The reply payload
+    # still reached the user, so it is graded; the redacted messages are unknown.
+    redacted = any(_OPENCLAW_REDACTED.fullmatch(t) for t in messages)
+    if redacted and terminal_error == "non_deliverable_terminal_turn" and final_message.strip():
+        terminal_error = None
     return summarize(
         "openclaw", _openclaw_ops(events_path), _openclaw_export_complete(events_path),
         models=sorted({m for m in (effective.get("responseModel"), effective.get("model")) if m}),
-        final_message=payloads[-1].get("text", "") if payloads else "",
+        final_message=final_message,
         # An export without transcript text still has the reply's payloads.
-        messages=_openclaw_messages(events_path) or [p.get("text", "") for p in payloads],
+        messages=None if redacted else messages or [p.get("text", "") for p in payloads],
         skills_listed=[s.get("name") for s in meta.get("systemPromptReport", {}).get("skills", {}).get("entries", [])],
         usage=agent_meta.get("usage"),
         cost_usd=agent_meta.get("costUsd"),
@@ -361,8 +370,11 @@ def openclaw(agent_dir: Path) -> dict:
         thinking=meta.get("requestShaping", {}).get("thinking"),
         upstream_providers=None if generations is None else sorted({str(g["provider"]) for g in generations}),
         generations=generations,
-        terminal_error=_openclaw_terminal_error(events_path),
+        terminal_error=terminal_error,
     )
+
+
+_OPENCLAW_REDACTED = re.compile(r"\[(Malformed|Oversized) diagnostic JSON redacted\]")
 
 
 def _openclaw_messages(events_path: Path) -> list[str]:

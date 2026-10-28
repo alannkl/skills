@@ -214,6 +214,18 @@ class Extractors(unittest.TestCase):
             f.write(json.dumps({"type": "model.completed", "data": {"terminalError": "non_deliverable_terminal_turn"}}) + "\n")
         self.assertEqual(openclaw(agent)["terminal_error"], "non_deliverable_terminal_turn")
 
+    def test_openclaw_reply_its_log_redaction_hid_is_graded_from_the_payload(self):
+        agent = self.copy("openclaw")
+        events = agent / "openclaw-trajectory" / "events.jsonl"
+        with events.open("a") as f:
+            f.write(json.dumps({"source": "transcript", "type": "assistant.message", "data": {"message": {
+                "role": "assistant", "content": [{"type": "text", "text": "[Malformed diagnostic JSON redacted]"}]}}}) + "\n")
+            f.write(json.dumps({"type": "model.completed", "data": {"terminalError": "non_deliverable_terminal_turn"}}) + "\n")
+        e = openclaw(agent)
+        self.assertIsNone(e["terminal_error"])
+        self.assertEqual(e["final_message"], openclaw(FIXTURES / "openclaw")["final_message"])
+        self.assertIsNone(e["messages"])
+
     def test_openrouter_lookups_are_saved_and_only_failures_repeat(self):
         agent = self.tmp / "agent"
         (agent / "openclaw-trajectory").mkdir(parents=True)
