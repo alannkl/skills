@@ -4,19 +4,36 @@
       "name": "logger-used",
       "type": "llm",
       "path": "src/handlers/webhooks.js",
-      "criteria": "Every `console.log` call is replaced by a call to `logger` from `src/log.js`, keeping the same information (as message and fields) at a sensible level, and the handler's behavior is otherwise unchanged."
+      "criteria": "Every `console.log` call is replaced by a call to `logger` from `src/log.js`, keeping the same information (as message and fields) at a sensible level, and the handler's behavior is otherwise unchanged. Dropping the payment-failed line instead also passes when the final message says `markFailed` already logs the same order ID and reason.",
+      "with_final_message": true
     },
     {
       "name": "persisted",
       "type": "llm",
-      "paths": ["AGENTS.md", "CLAUDE.md", "*.md", "docs/**", ".eslintrc*", "eslint.config.*"],
+      "paths": [
+        "AGENTS.md",
+        "CLAUDE.md",
+        "*.md",
+        "docs/**",
+        ".eslintrc*",
+        "eslint.config.*"
+      ],
       "with_final_message": true,
       "criteria": "The user is correcting a repeated mistake. Pass if the convention (log through `logger` from `src/log.js`, not `console.log`) is now recorded where future sessions will see it: a project instruction file such as AGENTS.md or CLAUDE.md, a lint rule, or the agent's memory as the final message reports; or if the final message offers to record it. Fail if it is neither recorded nor offered."
     },
     {
       "name": "scope-files",
       "type": "unchanged_except",
-      "allow": ["src/handlers/webhooks.js", "AGENTS.md", "CLAUDE.md", "eslint.config.*", ".eslintrc*", "package.json", "package-lock.json", "node_modules/*"],
+      "allow": [
+        "src/handlers/webhooks.js",
+        "AGENTS.md",
+        "CLAUDE.md",
+        "eslint.config.*",
+        ".eslintrc*",
+        "package.json",
+        "package-lock.json",
+        "node_modules/*"
+      ],
       "description": "Only the webhook handler and places that record or enforce the convention change."
     }
   ]
