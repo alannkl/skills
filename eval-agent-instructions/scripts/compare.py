@@ -10,6 +10,7 @@ Regrade both sides with --graders-from-repo first, so they are judged by the sam
 import difflib
 import json
 import random
+import shutil
 from collections import defaultdict
 from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
@@ -98,10 +99,16 @@ def compare_graders(base: list[dict], cand: list[dict], suite_dir: Path) -> dict
 def output_text(row: dict) -> str:
     """What a run delivered: a diff of every file it changed, then its final message."""
     run_dir = Path(row["run_dir"])
-    workspace = run_dir / row["trial_path"] / "verifier" / "workspace"
+    trial = run_dir / row["trial_path"]
+    workspace = trial / "verifier" / "workspace"
     ignored = HARNESS_FILES.get(row["harness"], set())
     parts = []
+    # The instruction file a task delivered is in the workspace from the start, so it is no change of the run's.
+    task = Path(json.loads((trial / "config.json").read_text())["task"]["path"])
+    delivered = task / "environment" / "instructions"
     with temporary_initial_workspace(run_dir / "cases" / row["case"]) as initial:
+        if delivered.is_dir():
+            shutil.copytree(delivered, initial, dirs_exist_ok=True)
         before, after = _file_hashes(initial), _file_hashes(workspace)
         for name in sorted(set(before) | set(after)):
             if before.get(name) == after.get(name) or name.split("/", 1)[0] in ignored:

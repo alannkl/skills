@@ -33,6 +33,23 @@ class Compare(unittest.TestCase):
         (run / "grades.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
         return run
 
+    def test_the_pairwise_diff_leaves_out_the_instruction_file_the_task_delivered(self):
+        run = self.root / "run"
+        (run / "cases" / "c" / "fixture").mkdir(parents=True)
+        (run / "cases" / "c" / "fixture" / "app.js").write_text("old\n")
+        task = run / "tasks" / "CLAUDE_md" / "c--with"
+        (task / "environment" / "instructions").mkdir(parents=True)
+        (task / "environment" / "instructions" / "CLAUDE.md").write_text("Rules.\n")
+        trial = run / "jobs" / "t0"
+        (trial / "verifier" / "workspace").mkdir(parents=True)
+        (trial / "config.json").write_text(json.dumps({"task": {"path": str(task)}}))
+        (trial / "verifier" / "workspace" / "app.js").write_text("new\n")
+        (trial / "verifier" / "workspace" / "CLAUDE.md").write_text("Rules.\n")
+        text = compare.output_text({"run_dir": str(run), "trial_path": "jobs/t0", "case": "c", "harness": "claude-code",
+                                    "final_message": "done"})
+        self.assertIn("b/app.js", text)
+        self.assertNotIn("CLAUDE.md", text)
+
     def test_only_acceptance_graders_count_and_drops_are_listed(self):
         base, cand = self.run_dir("base", [True, True, True]), self.run_dir("cand", [True, False, False])
         text = compare.compare([base], [cand], self.root / "suite")
