@@ -291,8 +291,8 @@ def run_graders(specs: list[dict], variant: str, workspace: Path, initial: Path,
 JUDGE_WORKERS = 12
 
 
-def judge_pending(rows: list[dict], judges: list[str], cache_path: Path | None = None) -> None:
-    """Judge every pending `llm` grade in `rows`, in place.
+def judge_pending(rows: list[dict], judges: list[str], cache_path: Path | None = None) -> list[dict]:
+    """Judge every pending `llm` grade in `rows`, in place; return one usage record per judge call.
 
     Outputs that share a criterion and original go to each judge in one call, shuffled
     and unlabelled so the judge cannot tell which arm or setup produced them. A group
@@ -326,9 +326,10 @@ def judge_pending(rows: list[dict], judges: list[str], cache_path: Path | None =
         model, criteria, original, label, batch = c
         return judge(model, criteria, original, [r["pending"]["subject"] for r in batch], label)
 
-    new = []
+    new, usage = [], []
     with ThreadPoolExecutor(JUDGE_WORKERS) as pool:
-        for (model, criteria, original, label, batch), replies in zip(calls, pool.map(call, calls)):
+        for (model, criteria, original, label, batch), (replies, used) in zip(calls, pool.map(call, calls)):
+            usage.append({"judge": model, "outputs": len(batch)} | used)
             for result, verdict in zip(batch, replies):
                 verdicts[id(result)][model] = verdict
                 if verdict["pass"] is not None:
@@ -343,6 +344,7 @@ def judge_pending(rows: list[dict], judges: list[str], cache_path: Path | None =
     if cache_path and new:
         with open(cache_path, "a") as f:
             f.writelines(json.dumps(entry) + "\n" for entry in new)
+    return usage
 
 
 def _load_cache(path: Path | None) -> dict[str, dict]:
@@ -393,21 +395,23 @@ JUDGE_EFFORT = "high"
 JUDGE_MAX_TOKENS = 32000
 
 
-def judge(model: str, criteria: str, original: str, subjects: list[str], label: str) -> list[dict]:
-    """Ask one judge model through the proxy at $ANTHROPIC_BASE_URL whether each of `subjects` meets `criteria`."""
+def judge(model: str, criteria: str, original: str, subjects: list[str], label: str) -> tuple[list[dict], dict]:
+    """Ask one judge model through the proxy at $ANTHROPIC_BASE_URL whether each of `subjects` meets `criteria`;
+    return the verdicts and the call's token usage."""
     outputs = "\n\n".join(f"Output {i}, the agent's resulting {label}:\n<<<\n{s}\n>>>"
                            for i, s in enumerate(subjects, 1))
     prompt = JUDGE_PROMPT.format(count=len(subjects), criteria=criteria, label=label, original=original,
                                  outputs=outputs)
     try:
-        text, served = complete(model, prompt)
+        text, served, used = complete(model, prompt)
     except (urllib.error.URLError, TimeoutError, json.JSONDecodeError) as exc:
-        return [{"pass": None, "reason": f"judge call failed: {exc}", "model": model}] * len(subjects)
-    return [v | {"model": served} for v in parse_verdicts(text, len(subjects))]
+        return [{"pass": None, "reason": f"judge call failed: {exc}", "model": model}] * len(subjects), {}
+    return [v | {"model": served} for v in parse_verdicts(text, len(subjects))], used
 
 
-def complete(model: str, prompt: str) -> tuple[str, str | None]:
-    """(reply text, model that answered) for one judge prompt through the proxy at $ANTHROPIC_BASE_URL."""
+def complete(model: str, prompt: str) -> tuple[str, str | None, dict]:
+    """(reply text, model that answered, input and output tokens) for one judge prompt through the proxy at
+    $ANTHROPIC_BASE_URL."""
     base = os.environ["ANTHROPIC_BASE_URL"].rstrip("/")
     if model.startswith("gpt-"):
         url = f"{base}/v1/responses"
@@ -422,7 +426,12 @@ def complete(model: str, prompt: str) -> tuple[str, str | None]:
                        for c in o.get("content", []))
     else:
         text = "".join(c.get("text", "") for c in data.get("content", []) if c.get("type") == "text")
-    return text, data.get("model")
+    reported = data.get("usage") or {}
+    # Anthropic counts cached input apart from input_tokens; the Responses API includes it.
+    used = {"input_tokens": sum(reported.get(k) or 0 for k in
+                                ("input_tokens", "cache_creation_input_tokens", "cache_read_input_tokens")),
+            "output_tokens": reported.get("output_tokens") or 0} if reported else {}
+    return text, data.get("model"), used
 
 
 def parse_verdicts(text: str, count: int) -> list[dict]:

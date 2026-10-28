@@ -73,7 +73,8 @@ class Graders(unittest.TestCase):
 
         def fake_judge(model, criteria, original, subjects, label):
             calls.append((model, original, sorted(subjects), label))
-            return [{"pass": model == "judge-a" and s.endswith("New rule.\n"), "reason": model} for s in subjects]
+            return ([{"pass": model == "judge-a" and s.endswith("New rule.\n"), "reason": model} for s in subjects],
+                    {"input_tokens": 100, "output_tokens": 10})
         spec = [{"name": "g", "type": "llm", "path": "AGENTS.md", "criteria": "c"}]
         rows = [{"graders": graders.run_graders(spec, "with", self.workspace, self.initial, "codex",
                                                 {"final_message": "", "writes": []}, ["judge-a", "judge-b"])}]
@@ -81,7 +82,9 @@ class Graders(unittest.TestCase):
         rows.append({"graders": graders.run_graders(spec, "with", self.workspace, self.initial, "codex",
                                                     {"final_message": "", "writes": []}, ["judge-a", "judge-b"])})
         with mock.patch.object(graders, "judge", fake_judge):
-            graders.judge_pending(rows, ["judge-a", "judge-b"])
+            usage = graders.judge_pending(rows, ["judge-a", "judge-b"])
+        self.assertEqual(sorted(u["judge"] for u in usage), ["judge-a", "judge-b"])
+        self.assertEqual(usage[0] | {"judge": "x"}, {"judge": "x", "outputs": 2, "input_tokens": 100, "output_tokens": 10})
         calls.sort()
         self.assertEqual([c[0] for c in calls], ["judge-a", "judge-b"])
         self.assertEqual(calls[0][1:], ("- Use pnpm.\n", ["- Use pnpm.\n", "- Use pnpm.\n- New rule.\n"], "AGENTS.md"))
@@ -95,7 +98,7 @@ class Graders(unittest.TestCase):
 
         def fake_judge(model, criteria, original, subjects, label):
             calls.append(sorted(subjects))
-            return next(replies) if len(calls) == 1 else [{"pass": False, "reason": "again"} for _ in subjects]
+            return (next(replies) if len(calls) == 1 else [{"pass": False, "reason": "again"} for _ in subjects]), {}
 
         def rows():
             out = []
@@ -249,7 +252,18 @@ class Graders(unittest.TestCase):
     def test_failed_judge_call_is_undecided(self):
         import urllib.error
         with mock.patch.object(graders, "_post", side_effect=urllib.error.URLError("down")):
-            self.assertEqual([v["pass"] for v in graders.judge("claude-x", "c", "o", ["s", "t"], "f")], [None, None])
+            verdicts, used = graders.judge("claude-x", "c", "o", ["s", "t"], "f")
+            self.assertEqual([v["pass"] for v in verdicts], [None, None])
+            self.assertEqual(used, {})
+
+    def test_judge_reports_each_calls_tokens_cached_input_included(self):
+        reply = {"content": [{"type": "text", "text": '[{"id": 1, "pass": true, "reason": "ok"}]'}],
+                 "model": "claude-x", "usage": {"input_tokens": 5, "cache_read_input_tokens": 900, "output_tokens": 40}}
+        with mock.patch.object(graders, "_post", return_value=reply), \
+                mock.patch.dict(graders.os.environ, {"ANTHROPIC_BASE_URL": "http://proxy", "ANTHROPIC_AUTH_TOKEN": "t"}):
+            verdicts, used = graders.judge("claude-x", "c", "o", ["s"], "f")
+        self.assertTrue(verdicts[0]["pass"])
+        self.assertEqual(used, {"input_tokens": 905, "output_tokens": 40})
 
     def test_large_groups_split_across_calls(self):
         results = [{"pending": {"subject": "x" * (graders.BATCH_CHARS // 2 + 1)}} for _ in range(3)]

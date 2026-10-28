@@ -134,7 +134,7 @@ def pairwise(base: list[dict], cand: list[dict], judge: str, seed: int = 0) -> l
         request = (Path(pair["cand"]["run_dir"]) / "cases" / pair["case"] / "instruction.md").read_text()
         a, b = (pair["cand"], pair["base"]) if pair["cand_is_a"] else (pair["base"], pair["cand"])
         try:
-            text, _ = complete(judge, PAIRWISE_PROMPT.format(request=request, a=output_text(a), b=output_text(b)))
+            text, _, _ = complete(judge, PAIRWISE_PROMPT.format(request=request, a=output_text(a), b=output_text(b)))
             reply = json.loads(text[text.index("{"):text.rindex("}") + 1])
             better = {"A": "cand" if pair["cand_is_a"] else "base", "B": "base" if pair["cand_is_a"] else "cand",
                       "tie": "tie"}.get(reply.get("better"))

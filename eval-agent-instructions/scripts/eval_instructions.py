@@ -13,7 +13,7 @@ Run from the root of the repository that holds the artifact and its `evals/<suit
   eval_instructions.py run <suite> --minus RULE [--config NAME]... [--harness H --model M ...]
   eval_instructions.py run <suite> --trigger [--config NAME... | --full] [--case NAME]...
   eval_instructions.py run <suite> --artifact DRAFT --variants with [--rule RULE]... [--full]
-  eval_instructions.py grade <run-dir> [--judge MODEL]...
+  eval_instructions.py grade <run-dir>... [--judge MODEL]...
   eval_instructions.py report <run-dir>
   eval_instructions.py compare --baseline <run-dir>... --candidate <run-dir>... [--pairwise JUDGE]
   eval_instructions.py rules <suite> [--all-versions | --min-set [--gaps]]
@@ -552,7 +552,7 @@ def cmd_run(args) -> None:
         # task images.
         with ThreadPoolExecutor(max_workers=1 if args.env == "docker" else len(configs)) as pool:
             list(pool.map(run_setup, configs))
-    grade(run_dir, args.judge or SETTINGS["judges"])
+    grade([run_dir], args.judge or SETTINGS["judges"])
     print(report(run_dir))
 
 
@@ -716,9 +716,28 @@ def grade_trial(trial: Path, config_name: str, config: dict, artifact: dict, cas
     return row
 
 
-def grade(run_dir: Path, judges: list[str], graders_from_repo: bool = False) -> None:
-    """Grade every trial from the run's archived cases; optionally with the repo's current graders.json."""
+def grade(run_dirs: list[Path], judges: list[str], graders_from_repo: bool = False) -> None:
+    """Grade every trial of each run from its archived cases; optionally with the repo's current graders.json.
+
+    The runs share one batch of judge calls, so outputs graded against the same criterion go to the judge
+    together, and each run records the token usage of the calls it shared in `judge-usage.json`.
+    """
     load_dotenv(REPO / ".env")
+    if len({run_dir.resolve().parent for run_dir in run_dirs}) > 1:
+        raise SystemExit("grade runs of one suite together; these runs sit in different results folders")
+    rows = {run_dir: grade_rows(run_dir, judges, graders_from_repo) for run_dir in run_dirs}
+    # Judge calls batch across every setup in the runs; verdicts are shared across the suite's runs.
+    usage = judge_pending([row for run in rows.values() for row in run], judges,
+                          run_dirs[0].parent / "judge-cache.jsonl")
+    for run_dir, run in rows.items():
+        (run_dir / "grades.jsonl").write_text("".join(json.dumps(row) + "\n" for row in run))
+        (run_dir / "judge-usage.json").write_text(json.dumps(
+            {"graded_with": sorted(r.name for r in run_dirs), "calls": usage}, indent=1) + "\n")
+        (run_dir / "report.md").write_text(report(run_dir))
+
+
+def grade_rows(run_dir: Path, judges: list[str], graders_from_repo: bool) -> list[dict]:
+    """One row per trial of the run, and per attempt it never produced, with `llm` grades left pending."""
     meta = json.loads((run_dir / "run.json").read_text())
     cases_root = run_dir / "cases"
     suite = meta.get("suite") or meta["skill"]
@@ -738,10 +757,7 @@ def grade(run_dir: Path, judges: list[str], graders_from_repo: bool = False) -> 
             if trial.relative_to(run_dir).parts[0] == "reused":
                 graded[-1]["reused_from"] = sources.get(trial.name)
         rows += graded + missing_trials(meta, config_name, config, graded)
-    # Judge calls batch across every setup in the run; verdicts are shared across the suite's runs.
-    judge_pending(rows, judges, run_dir.parent / "judge-cache.jsonl")
-    (run_dir / "grades.jsonl").write_text("".join(json.dumps(row) + "\n" for row in rows))
-    (run_dir / "report.md").write_text(report(run_dir))
+    return rows
 
 
 def missing_trials(meta: dict, config_name: str, config: dict, graded: list[dict]) -> list[dict]:
@@ -844,11 +860,30 @@ def report(run_dir: Path) -> str:
               for config in sorted({k[1] for k in cells})]
     if cached:
         lines += ["", f"Judge verdicts reused from earlier grading of the same output: {cached} of {verdicts}."]
+    usage_path = run_dir / "judge-usage.json"
+    if usage_path.is_file():
+        lines += judge_usage(json.loads(usage_path.read_text()), run_dir.name)
     if collisions:
         lines += ["", "Same-named skill collisions:"] + [f"- {c}" for c in sorted(set(collisions))]
     if disagreements:
         lines += ["", "Judge disagreements:"] + [f"- {d}" for d in disagreements]
     return "\n".join(lines) + "\n"
+
+
+def judge_usage(usage: dict, run: str) -> list[str]:
+    """Report lines for the judge calls of the grading that last wrote this run, per judge."""
+    shared = [r for r in usage["graded_with"] if r != run]
+    totals = defaultdict(lambda: [0, 0, 0, 0])  # judge -> [calls, outputs, input, output]
+    for call in usage["calls"]:
+        t = totals[call["judge"]]
+        t[0] += 1
+        t[1] += call["outputs"]
+        t[2] += call.get("input_tokens", 0)
+        t[3] += call.get("output_tokens", 0)
+    lines = ["", "Judge calls in the last grading" + (f", shared with {', '.join(shared)}" if shared else "") + ":"]
+    lines += [f"- {judge}: {calls} calls, {outputs} outputs, in {inp / 1000:.1f}k out {out / 1000:.1f}k tokens"
+              for judge, (calls, outputs, inp, out) in sorted(totals.items())] or ["- none: every verdict was reused"]
+    return lines
 
 
 def trigger_counts(rows: list[dict]) -> list[str]:
@@ -962,7 +997,8 @@ def main() -> None:
     run.add_argument("--minus", metavar="RULE",
                      help="compare the full artifact with a copy lacking this rule from rules.json, on the rule's cases")
     regrade = sub.add_parser("grade")
-    regrade.add_argument("run_dir", type=Path)
+    regrade.add_argument("run_dirs", nargs="+", type=Path, metavar="run_dir",
+                         help="one or more runs of the suite, graded with shared judge calls")
     regrade.add_argument("--judge", action="append")
     regrade.add_argument("--graders-from-repo", action="store_true",
                          help="grade with the repo's current graders.json instead of the run's copy")
@@ -987,8 +1023,9 @@ def main() -> None:
     elif args.command == "rules":
         cmd_rules(args)
     elif args.command == "grade":
-        grade(args.run_dir, args.judge or SETTINGS["judges"], args.graders_from_repo)
-        print(report(args.run_dir))
+        grade(args.run_dirs, args.judge or SETTINGS["judges"], args.graders_from_repo)
+        for run_dir in args.run_dirs:
+            print(report(run_dir))
     elif args.command == "compare":
         load_dotenv(REPO / ".env")
         meta = json.loads((args.candidate[0] / "run.json").read_text())

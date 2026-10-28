@@ -5,8 +5,10 @@ import sys
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scripts"))
+import eval_instructions  # noqa: E402
 from eval_instructions import (SETTINGS, agent_args, first_line, grade_trial, harbor_command,  # noqa: E402
                                instruction_files, missing_trials, report, stored_baseline, task_folder)
 from tasks import task_digest, without_frontmatter  # noqa: E402
@@ -90,6 +92,27 @@ class GradeTrial(unittest.TestCase):
         self.assertIn("| load path | setup | tokens | method |", text)
         self.assertIn("| CLAUDE.md | claude-code-opus-5.5-high | 1200 | count_tokens endpoint |", text)
         self.assertIn("| AGENTS.md | codex-gpt-6-astra-high | not counted | tiktoken is not installed |", text)
+
+    def test_runs_graded_together_share_judge_calls_and_record_their_usage(self):
+        results = Path(self._tmp.name) / "results"
+        runs = [results / "run-a", results / "run-b"]
+        for run_dir in runs:
+            run_dir.mkdir(parents=True)
+        judged = []
+
+        def judge_pending(rows, judges, cache_path):
+            judged.append([r["run"] for r in rows])
+            return [{"judge": "opus", "outputs": 2, "input_tokens": 1500, "output_tokens": 200}]
+        with mock.patch.object(eval_instructions, "grade_rows", lambda run_dir, judges, gfr: [{"run": run_dir.name}]), \
+                mock.patch.object(eval_instructions, "judge_pending", judge_pending), \
+                mock.patch.object(eval_instructions, "report", lambda run_dir: ""):
+            eval_instructions.grade(runs, ["opus"])
+        self.assertEqual(judged, [["run-a", "run-b"]])
+        usage = json.loads((runs[1] / "judge-usage.json").read_text())
+        self.assertEqual(usage["graded_with"], ["run-a", "run-b"])
+        lines = eval_instructions.judge_usage(usage, "run-b")
+        self.assertIn("Judge calls in the last grading, shared with run-a:", lines)
+        self.assertIn("- opus: 1 calls, 2 outputs, in 1.5k out 0.2k tokens", lines)
 
     def test_infrastructure_failure_is_not_graded(self):
         (self.trial / "result.json").write_text(json.dumps({"exception_info": {"exception_type": "AgentSetupTimeoutError"}}))

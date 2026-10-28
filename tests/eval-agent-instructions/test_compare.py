@@ -68,7 +68,7 @@ class Compare(unittest.TestCase):
         rows = lambda side: [{"config": "opus", "case": "c", "run_dir": side, "side": side}]
         for draw, expected in ((0.0, "cand"), (0.9, "base")):
             with mock.patch.object(compare.random.Random, "random", lambda self: draw), \
-                    mock.patch.object(compare, "complete", lambda model, prompt: ('{"better": "A"}', model)), \
+                    mock.patch.object(compare, "complete", lambda model, prompt: ('{"better": "A"}', model, {})), \
                     mock.patch.object(compare, "output_text", lambda row: row["side"]), \
                     mock.patch.object(Path, "read_text", lambda self: "request"):
                 self.assertEqual(compare.pairwise(rows("base"), rows("cand"), "judge")[0]["better"], expected)
