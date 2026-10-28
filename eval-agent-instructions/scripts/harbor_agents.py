@@ -6,8 +6,10 @@ commit in configs.json changes.
 """
 import re
 
+from pydantic import Field
+
 from harbor.agents.installed.codex import Codex
-from harbor.agents.installed.openclaw import OpenClaw, _nvm24
+from harbor.agents.installed.openclaw import OpenClaw, OpenClawOptions, _nvm24
 from harbor.environments.base import BaseEnvironment
 
 # OpenClaw keeps sessions in a database and reports a session key, so the upstream
@@ -23,12 +25,18 @@ _EXPORT_TRAJECTORY = (
 )
 
 
+class _OpenClawOptions(OpenClawOptions):
+    workspace_setup: str | None = Field(default=None, description="Shell command that prepares the workspace.")
+
+
 class PreinstalledOpenClaw(OpenClaw):
     """OpenClaw that uses the base image's pinned install and exports its trajectory.
 
     Upstream reinstalls nvm, Node and openclaw on every trial, which exceeds the
     setup timeout on a local Docker engine.
     """
+
+    options_model = _OpenClawOptions
 
     def __init__(self, *args, workspace_setup: str | None = None, **kwargs):
         super().__init__(*args, **kwargs)
