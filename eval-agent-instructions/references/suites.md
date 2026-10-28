@@ -64,7 +64,7 @@ Make each case realistic:
 - Write the request as users do: short and casual, naming the target and the goal. Report a symptom only as users would, never its cause or the fix.
 - Keep the cues and noise real work has, such as unrelated real defects.
 - Pair a case where the right result is a change with one where it is restraint.
-- Grade the end result, not its wording. Require exact text only where something depends on it, such as identifiers, commands, paths, and formats a tool parses; check everything else by meaning, so any wording with the same effect passes.
+- Grade the end result, not its wording. Require only what the request asks for or the user needs to act on, not every name an answer could cite. Require exact text only where something depends on it, such as identifiers, commands, paths, and formats a tool parses; check everything else by meaning, so any wording with the same effect passes.
 - Write an `llm` criterion as the facts the output must state or keep, so a terse correct answer passes.
 - Give each case the behaviors one realistic request would involve together, plus a grader for every requirement the user would still expect kept; those catch one rule breaking another.
 
