@@ -9,8 +9,9 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scripts"))
 import eval_instructions  # noqa: E402
-from eval_instructions import (SETTINGS, agent_args, first_line, grade_trial, harbor_command,  # noqa: E402
-                               instruction_files, missing_trials, report, stored_baseline, task_folder)
+from eval_instructions import (SETTINGS, agent_args, check_instruction_limit, first_line, grade_trial,  # noqa: E402
+                               harbor_command, instruction_files, missing_trials, probe_says_truncated, report,
+                               stored_baseline, task_folder)
 from tasks import task_digest, without_frontmatter  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
@@ -80,6 +81,10 @@ class GradeTrial(unittest.TestCase):
         self.assertEqual(first_line(text), "Collaboration Constitution")
         self.assertEqual(first_line("\n\nYou answer support questions.\n"), "You answer support questions.")
         self.assertEqual(first_line(""), "")
+
+    def test_probe_fails_when_the_agent_says_its_instructions_were_truncated(self):
+        self.assertTrue(probe_says_truncated("# Collaboration Constitution\n\n**TRUNCATED:** yes"))
+        self.assertFalse(probe_says_truncated("# Collaboration Constitution\nTRUNCATED: no"))
 
     def test_report_lists_the_tokens_of_each_loaded_text(self):
         run_dir = Path(self._tmp.name) / "run-tokens"
@@ -223,6 +228,23 @@ class InstructionFiles(unittest.TestCase):
         setup = next(a for a in args if a.startswith("workspace_setup="))
         self.assertIn("mkdir -p memory", setup)
         self.assertIn("rm -f BOOTSTRAP.md", setup)
+
+
+    def test_openclaw_puts_the_whole_instruction_file_in_context(self):
+        args = agent_args(SETTINGS["configs"]["openclaw-kimi-k3.1-pro-high-moonshotai"])
+        overlay = json.loads(next(a for a in args if a.startswith("openclaw_config=")).split("=", 1)[1])
+        cap = overlay["agents"]["defaults"]["bootstrapMaxChars"]
+        self.assertEqual(SETTINGS["harnesses"]["openclaw"]["instruction_limit"], {"chars": cap})
+        self.assertIn("models", overlay)
+
+    def test_a_delivered_file_over_its_harness_cap_stops_the_run(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            delivered = Path(tmp) / "case--with" / "environment" / "instructions"
+            delivered.mkdir(parents=True)
+            (delivered / "AGENTS.md").write_text("é" * 10)
+            check_instruction_limit(Path(tmp), "AGENTS.md", {"chars": 10}, "setup")
+            with self.assertRaisesRegex(SystemExit, "case--with delivers AGENTS.md at 20 bytes"):
+                check_instruction_limit(Path(tmp), "AGENTS.md", {"bytes": 10}, "setup")
 
 
 class StoredBaseline(unittest.TestCase):

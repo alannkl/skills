@@ -187,7 +187,8 @@ def openclaw_model_config(config: dict) -> str:
         # The two plugin skills are not bundled and need their own switch.
         overlay["skills"] = {"allowBundled": ["none"],
                              "entries": {name: {"enabled": False} for name in ("browser-automation", "canvas")}}
-    return json.dumps(overlay)
+    # The harness's own settings, such as the raised cap on injected AGENTS.md, share no top-level key with the overlay.
+    return json.dumps(config.get("native_config", {}) | overlay)
 
 
 def agent_args(config: dict, system_prompt: str | None = None) -> list[str]:
@@ -380,6 +381,22 @@ def instruction_files(artifact: dict, configs: list[str]) -> dict[str, str | Non
             for c in configs}
 
 
+def check_instruction_limit(tasks_dir: Path, file_name: str, limit: dict, config: str) -> None:
+    """Stop when a task delivers `file_name` longer than the setup's harness puts in context whole.
+
+    `limit` is the harness's `instruction_limit` in configs.json, {"chars": n} or {"bytes": n}.
+    A harness cuts a longer file silently, so its agent would be graded on part of the artifact.
+    """
+    (unit, most), = limit.items()
+    for path in sorted(tasks_dir.glob(f"*/environment/instructions/{file_name}")):
+        data = path.read_bytes()
+        size = len(data) if unit == "bytes" else len(data.decode())
+        if size > most:
+            raise SystemExit(f"{config}: task {path.parents[2].name} delivers {file_name} at {size} {unit}, over the "
+                             f"{most} its harness puts in context whole; raise the harness's cap and its "
+                             f"instruction_limit in configs.json, or shorten the artifact")
+
+
 def instruction_templates(names: dict[str, str | None], kind: str) -> dict[str, str | None]:
     """Per setup, the harness's own starter text the instruction file goes under, or None.
 
@@ -504,6 +521,10 @@ def cmd_run(args) -> None:
     for c in {deliveries[c]: c for c in configs}.values():
         tasks = build_tasks(REPO, suite, cases, variants, image, run_dir / task_dirs[c], sources, pinned, names[c],
                             templates[c])
+    for c in configs:
+        limit = SETTINGS["harnesses"][SETTINGS["configs"][c]["harness"]].get("instruction_limit")
+        if names[c] and limit:
+            check_instruction_limit(run_dir / task_dirs[c], names[c], limit, c)
     archive_cases(args.suite, cases, run_dir / "cases")
     reused = {} if args.fresh else reuse_baselines(run_dir, configs, tasks, attempts, task_dirs)
     texts = {c: loaded_texts(artifact, full, names[c]) for c in configs}
@@ -694,6 +715,11 @@ def first_line(text: str) -> str:
     return next((line.strip().lstrip("#").strip() for line in text.splitlines() if line.strip()), "")
 
 
+def probe_says_truncated(final_message: str) -> bool:
+    """Whether the probe's reply answers `TRUNCATED: yes`, as PROBE_INSTRUCTION asks."""
+    return bool(re.search(r"TRUNCATED:\W*yes", final_message, re.I))
+
+
 def grade_trial(trial: Path, config_name: str, config: dict, artifact: dict, cases_root: Path,
                 judges: list[str], specs_root: Path | None = None, probe_text: str | None = None,
                 tasks_root: Path | None = None) -> dict:
@@ -754,6 +780,8 @@ def grade_trial(trial: Path, config_name: str, config: dict, artifact: dict, cas
         marker = probe_text
     if spec.get("probe"):
         row["probe_sees_artifact"] = None if final_message is None or not marker else marker in final_message
+        if artifact["type"] == "instruction-file":
+            row["probe_truncated"] = None if final_message is None else probe_says_truncated(final_message)
     run = {"final_message": final_message, "messages": messages, "writes": evidence["writes"],
            "skills_loaded": evidence["skills_loaded"], "ops": ops}
     delivered = (tasks_root or cases_root.parent / "tasks") / f"{case}--{variant}" / "environment" / "instructions"
@@ -865,6 +893,8 @@ def report(run_dir: Path) -> str:
         probe = ""
         if ok and "probe_sees_artifact" in ok[0]:
             probe = f" | visible {sum(1 for t in ok if t['probe_sees_artifact'])}/{len(ok)}"
+        if ok and "probe_truncated" in ok[0]:
+            probe += f" | truncated {sum(1 for t in ok if t['probe_truncated'])}/{len(ok)}"
         if ok and "delivered" in ok[0]:
             load = " | artifact " + ("delivered" if ok[0]["delivered"] else "absent")
         else:

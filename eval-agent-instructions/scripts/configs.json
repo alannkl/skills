@@ -9,11 +9,13 @@
   "harnesses": {
     "claude-code": {"instruction_file": "CLAUDE.md",
                     "env": {"ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}", "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}"}},
-    "codex": {"instruction_file": "AGENTS.md",
+    "codex": {"instruction_file": "AGENTS.md", "instruction_limit": {"bytes": 32768},
               "env": {"OPENAI_BASE_URL": "${ANTHROPIC_BASE_URL}/v1", "OPENAI_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"},
               "native_config": {"model_provider": "proxy",
                                 "model_providers": {"proxy": {"name": "proxy", "wire_api": "responses", "env_key": "OPENAI_API_KEY", "supports_websockets": false}}}},
     "openclaw": {"instruction_file": "AGENTS.md", "instruction_template": "docs/reference/templates/AGENTS.md",
+                 "instruction_limit": {"chars": 200000},
+                 "native_config": {"agents": {"defaults": {"bootstrapMaxChars": 200000, "bootstrapTotalMaxChars": 400000}}},
                  "workspace_setup": "mkdir -p memory && openclaw setup --baseline --workspace . && rm -f BOOTSTRAP.md"},
     "api": {}
   },

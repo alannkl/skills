@@ -47,7 +47,9 @@ PROBE_INSTRUCTION = {
              "Do not read, create, or change any files.\n",
     "instruction-file": "Without reading, creating, or changing any files, say whether your context holds "
                         "project instructions from a file such as AGENTS.md or CLAUDE.md. If it does, quote "
-                        "their first line and every top-level heading exactly; otherwise say there are none.\n",
+                        "their first line and every top-level heading exactly; otherwise say there are none. "
+                        "End with a line `TRUNCATED: yes` if your context says any of those files was truncated "
+                        "or shortened, otherwise `TRUNCATED: no`.\n",
     "prompt": "Without reading, creating, or changing any files, say whether your instructions include text "
               "added by whoever set you up, beyond your defaults. If they do, quote its first line exactly; "
               "otherwise say there is none.\n",
