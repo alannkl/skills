@@ -24,7 +24,7 @@ Loaded before the work starts rather than for a task. Wire both into your instru
 | [`delegate`](delegate/SKILL.md)                     | Delegate bounded steps when cheaper than doing them inline, or faster at bounded extra cost when the user is waiting or has a deadline. Weigh the cost, choose a collector, runner, digester, or implementer, write the work order, check the returned record, and report a delegation ledger at delivery. |
 | [`panel`](panel/SKILL.md)                           | Keep a multi-agent panel across harnesses, or read-only consultants, available in the current chat; consult them when independent input is worth the cost and complete requested or promised reviews. User-invoked.         |
 | [`handoff`](handoff/SKILL.md)                       | Create a compact temporary handoff so another agent can continue the current conversation.                                                                                                                                  |
-| [`retrospect`](retrospect/SKILL.md)                 | Mine recent sessions across projects and harnesses for repeated corrections and friction, then turn the lessons you pick into checks, rules, skill fixes, or hand-off briefs where each belongs. User-invoked.              |
+| [`retrospect`](retrospect/SKILL.md)                 | Mine recent sessions across projects and harnesses for repeated corrections and friction, then turn the lessons and harness memory entries you pick into checks, rules, skill fixes, or hand-off briefs where each belongs. User-invoked. |
 
 ### Coding
 
