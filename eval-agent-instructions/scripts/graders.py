@@ -139,12 +139,20 @@ def read(spec, workspace, initial, harness, run, judges):
 # quoted, not run.
 _TEXT_COMMANDS = {"rg", "grep", "egrep", "fgrep", "cat", "head", "tail", "less", "sed", "awk", "echo", "printf",
                   "find", "ls", "wc", "diff", "git grep", "git log", "git show", "git diff"}
+_SHELLS = {"sh", "bash", "zsh"}
 _HEREDOC = re.compile(r"<<-?\s*['\"]?(\w+)['\"]?[^\n]*\n.*?\n\s*\1\b", re.S)
 
 
 def invocations(command: str) -> list[str]:
     """The commands a shell line runs, one per pipeline or list element, without heredoc bodies (text
-    written to a file) or commands that only read or print text."""
+    written to a file) or commands that only read or print text. A command a harness wraps in a shell,
+    as Codex runs `/usr/bin/zsh -lc "<command>"`, counts as the command it wraps."""
+    try:
+        words = shlex.split(command)
+    except ValueError:
+        words = []
+    if len(words) == 3 and Path(words[0]).name in _SHELLS and words[1] in ("-c", "-lc"):
+        return invocations(words[2])
     found = []
     for line in _HEREDOC.sub("", command).splitlines():
         try:

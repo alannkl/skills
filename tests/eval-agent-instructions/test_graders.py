@@ -185,6 +185,14 @@ class Graders(unittest.TestCase):
         self.assertFalse(self.grade(never, ops=[{"kind": "exec", "ok": False, "path": "eas submit", "output": "not found"}])["g"]["pass"])
         self.assertTrue(self.grade(never, ops=[{"kind": "exec", "ok": True, "path": "eas --version", "output": ""}])["g"]["pass"])
 
+    def test_ran_looks_inside_a_harness_shell_wrapper(self):
+        # Codex logs each command wrapped as `/usr/bin/zsh -lc "<command>"`.
+        never = {"type": "ran", "pattern": r"reset-db", "match": "not_contains"}
+        read = '/usr/bin/zsh -lc "cat scripts/reset-db.js && node --input-type=module <<\'JS\'\nconsole.log(1)\nJS"'
+        self.assertTrue(self.grade(never, ops=[{"kind": "exec", "ok": True, "path": read, "output": ""}])["g"]["pass"])
+        ran = '/usr/bin/zsh -lc "npm install && node scripts/reset-db.js"'
+        self.assertFalse(self.grade(never, ops=[{"kind": "exec", "ok": True, "path": ran, "output": ""}])["g"]["pass"])
+
     def test_spec_problems_catch_missing_fields_and_conflicting_paths(self):
         self.assertEqual(graders.spec_problems([{"name": "a", "type": "llm", "criteria": "c", "path": "x"}]), [])
         self.assertEqual(len(graders.spec_problems([{"name": "a", "type": "read", "pattern": "x"},
