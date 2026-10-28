@@ -30,7 +30,7 @@ def resolve(spec: dict, settings: dict) -> tuple[str, dict]:
     effort = spec.get("effort") or "high"
     effort = None if effort == "default" else effort
     config = {"harness": harness, "model": model["id"], "effort": effort}
-    for key in ("env", "native_config"):
+    for key in ("env", "native_config", "workspace_setup"):
         if key in settings["harnesses"][harness]:
             config[key] = settings["harnesses"][harness][key]
     name = f"{harness}-{short}-{effort or 'default'}"

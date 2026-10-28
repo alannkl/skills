@@ -13,7 +13,8 @@
               "env": {"OPENAI_BASE_URL": "${ANTHROPIC_BASE_URL}/v1", "OPENAI_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"},
               "native_config": {"model_provider": "proxy",
                                 "model_providers": {"proxy": {"name": "proxy", "wire_api": "responses", "env_key": "OPENAI_API_KEY", "supports_websockets": false}}}},
-    "openclaw": {"instruction_file": "AGENTS.md"},
+    "openclaw": {"instruction_file": "AGENTS.md", "instruction_template": "docs/reference/templates/AGENTS.md",
+                 "workspace_setup": "mkdir -p memory && openclaw setup --baseline --workspace . && rm -f BOOTSTRAP.md"},
     "api": {}
   },
   "models": {

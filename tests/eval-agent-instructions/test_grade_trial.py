@@ -193,6 +193,22 @@ class InstructionFiles(unittest.TestCase):
         self.assertEqual(set(instruction_files({"type": "skill", "name": "x"}, configs).values()), {None})
         self.assertEqual(len({task_folder(n) for n in (None, "CLAUDE.md", "AGENTS.md")}), 3)
 
+    def test_a_harness_that_seeds_its_file_gets_its_template_above_the_artifact(self):
+        configs = ["codex-gpt-6-astra-high", "openclaw-kimi-k3.1-pro-high-moonshotai"]
+        names = dict(zip(configs, ["AGENTS.md", "AGENTS.md"]))
+        with mock.patch.object(eval_instructions, "harness_file", lambda h, rel, kind: "---\nx: 1\n---\n# Workspace\n"):
+            templates = eval_instructions.instruction_templates(names, "bwrap")
+        self.assertEqual(templates, {configs[0]: None, configs[1]: "# Workspace\n"})
+        self.assertNotEqual(task_folder("AGENTS.md"), task_folder("AGENTS.md", "openclaw"))
+        # A file delivered under another name than the one the harness seeds keeps no template.
+        self.assertIsNone(eval_instructions.instruction_templates({configs[1]: "CLAUDE.md"}, "bwrap")[configs[1]])
+
+    def test_openclaw_finishes_its_first_run_setup_before_the_session(self):
+        args = agent_args(SETTINGS["configs"]["openclaw-kimi-k3.1-pro-high-moonshotai"])
+        setup = next(a for a in args if a.startswith("workspace_setup="))
+        self.assertIn("mkdir -p memory", setup)
+        self.assertIn("rm -f BOOTSTRAP.md", setup)
+
 
 class StoredBaseline(unittest.TestCase):
     """A without-skill task reuses earlier trials only when everything the agent saw is identical."""

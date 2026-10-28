@@ -30,6 +30,13 @@ class PreinstalledOpenClaw(OpenClaw):
     setup timeout on a local Docker engine.
     """
 
+    def __init__(self, *args, workspace_setup: str | None = None, **kwargs):
+        super().__init__(*args, **kwargs)
+        # Replaces upstream's `openclaw setup` command, so the eval can finish OpenClaw's first-run
+        # ritual before the session, as a returning user's workspace has.
+        if workspace_setup:
+            self._SETUP_CLI = workspace_setup
+
     async def install(self, environment: BaseEnvironment) -> None:
         result = await environment.exec(command=_nvm24("openclaw --version"))
         if result.return_code == 0 and self._version and self._version in (result.stdout or ""):

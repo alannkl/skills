@@ -16,7 +16,8 @@ configs.json: `run` for a plain run, `full` for --full and --minus.
 Without an artifact entry, the suite tests the skill in the folder of its own name.
 A skill is installed where each harness finds skills; an instruction file is
 placed in the workspace under its `as` name, else the name the setup's harness
-reads, without a leading YAML frontmatter block. A system prompt is written to the
+reads, without a leading YAML frontmatter block, and below the harness's own starter
+text when the harness seeds that file. A system prompt is written to the
 task's `prompt/system.md` for the runner to pass on; a user prompt goes before
 the case's instruction. A prompt's `{{name}}` placeholders are filled from the
 case's `vars.json`.
@@ -46,7 +47,7 @@ PROBE_INSTRUCTION = {
              "Do not read, create, or change any files.\n",
     "instruction-file": "Without reading, creating, or changing any files, say whether your context holds "
                         "project instructions from a file such as AGENTS.md or CLAUDE.md. If it does, quote "
-                        "their first line exactly; otherwise say there are none.\n",
+                        "their first line and every top-level heading exactly; otherwise say there are none.\n",
     "prompt": "Without reading, creating, or changing any files, say whether your instructions include text "
               "added by whoever set you up, beyond your defaults. If they do, quote its first line exactly; "
               "otherwise say there is none.\n",
@@ -176,11 +177,13 @@ def render(text: str, case_dir: Path) -> str:
 
 
 def build_task(repo: Path, suite: dict, case_dir: Path, variant: str, base_image: str, out: Path,
-               source: Path | None = None, pin: bool = False, instruction_file: str | None = None) -> str:
+               source: Path | None = None, pin: bool = False, instruction_file: str | None = None,
+               template: str | None = None) -> str:
     """One task; `source` replaces the repo's copy of the artifact, as a minus variant does.
 
     `pin` names a skill artifact in the instruction of every arm that installs it;
-    `instruction_file` is the workspace name an instruction-file artifact takes.
+    `instruction_file` is the workspace name an instruction-file artifact takes, and `template` the
+    harness's own starter text it goes under.
     """
     artifact = suite["artifact"]
     probe = case_dir.name == PROBE_CASE
@@ -209,6 +212,8 @@ def build_task(repo: Path, suite: dict, case_dir: Path, variant: str, base_image
             raise SystemExit(f"{case_dir}: the fixture already has {instruction_file}, which the artifact replaces")
         (env / "instructions").mkdir()
         text = without_frontmatter((source or repo / artifact["path"]).read_bytes().decode())
+        if template:
+            text = template.rstrip("\n") + "\n\n" + text
         (env / "instructions" / instruction_file).write_bytes(text.encode())
         dockerfile += INSTRUCTIONS_LAYER
     case_src = env / "case"
@@ -242,9 +247,9 @@ def task_digest(task: Path) -> str:
 
 def build_tasks(repo: Path, suite: dict, case_dirs: list[Path], variants: list[str],
                 base_image: str, out: Path, sources: dict[str, Path] | None = None, pin: bool = False,
-                instruction_file: str | None = None) -> list[str]:
+                instruction_file: str | None = None, template: str | None = None) -> list[str]:
     """Every case in every variant; `sources` maps a variant to the artifact copy it delivers."""
     out.mkdir(parents=True, exist_ok=True)
     return [build_task(repo, suite, case_dir, variant, base_image, out, (sources or {}).get(variant), pin,
-                       instruction_file)
+                       instruction_file, template)
             for case_dir in case_dirs for variant in variants]

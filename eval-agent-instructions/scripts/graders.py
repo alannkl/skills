@@ -29,7 +29,7 @@ from pathlib import Path
 # not file content.
 HARNESS_FILES = {
     "openclaw": {"AGENTS.md", "BOOTSTRAP.md", "IDENTITY.md", "SOUL.md", "USER.md", "TOOLS.md",
-                 "HEARTBEAT.md", "MEMORY.md", ".openclaw"},
+                 "HEARTBEAT.md", "MEMORY.md", "memory", ".openclaw"},
 }
 
 # The agent's working directory inside the task container.

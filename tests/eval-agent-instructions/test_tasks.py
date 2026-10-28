@@ -104,6 +104,17 @@ class Tasks(unittest.TestCase):
         self.assertEqual(sorted(p.name for p in delivered.iterdir()), ["CLAUDE.md"])
         self.assertEqual((delivered / "CLAUDE.md").read_text(), "# Rules\n\n- one\n")
 
+    def test_instruction_file_goes_below_the_harness_template(self):
+        (self.cases / "eval.json").write_text(json.dumps(
+            {"artifact": {"type": "instruction-file", "path": "target/SKILL.md"}}))
+        (self.repo / "target" / "SKILL.md").write_text("---\nname: target\n---\n# Rules\n")
+        (self.cases / "edit-case" / "fixture" / "AGENTS.md").unlink()
+        build_tasks(self.repo, load_suite(self.repo, "target"), [self.cases / "edit-case"], ["with", "without"],
+                    "base:test", self.out, instruction_file="AGENTS.md", template="# Your Workspace\n\nNotes.\n")
+        self.assertEqual((self.out / "edit-case--with" / "environment" / "instructions" / "AGENTS.md").read_text(),
+                         "# Your Workspace\n\nNotes.\n\n# Rules\n")
+        self.assertFalse((self.out / "edit-case--without" / "environment" / "instructions").exists())
+
     def test_minus_copy_of_an_instruction_file_is_delivered_without_frontmatter(self):
         (self.cases / "eval.json").write_text(json.dumps(
             {"artifact": {"type": "instruction-file", "path": "target/SKILL.md"}}))

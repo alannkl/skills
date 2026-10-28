@@ -70,7 +70,7 @@ from evidence import EXTRACTORS  # noqa: E402
 from graders import judge_pending, run_graders, temporary_initial_workspace  # noqa: E402
 from rules import MINUS, arm, artifact_digest, check_rules, load_rules, min_set, minus_artifact, rule_cases, tabulate  # noqa: E402
 from tasks import (PROBE_CASE, USE_SKILL, artifact_root, build_tasks, load_spec, load_suite, task_digest,  # noqa: E402
-                   workspace_name)
+                   without_frontmatter, workspace_name)
 from token_counts import loaded_texts, loaded_tokens  # noqa: E402
 from api_runner import run_api_job  # noqa: E402
 import sandbox  # noqa: E402
@@ -210,7 +210,8 @@ def agent_args(config: dict, system_prompt: str | None = None) -> list[str]:
     if harness == "openclaw":
         if system_prompt is not None:
             raise SystemExit("OpenClaw has no system prompt setting; evaluate the text as an AGENTS.md instead")
-        return args + ["--ak", f"openclaw_config={openclaw_model_config(config)}"]
+        setup = ["--ak", f"workspace_setup={config['workspace_setup']}"] if config.get("workspace_setup") else []
+        return args + ["--ak", f"openclaw_config={openclaw_model_config(config)}"] + setup
     native = {} if config.get("builtin_skills") else dict(BLOCK_BUILTIN_SKILLS[harness])
     # Codex otherwise streams over a websocket and sends requests the proxy rejects mid-run
     # (`response.interrupt`), failing the session; Harbor fills the provider's base_url.
@@ -379,9 +380,42 @@ def instruction_files(artifact: dict, configs: list[str]) -> dict[str, str | Non
             for c in configs}
 
 
-def task_folder(instruction_file: str | None) -> str:
-    """A setup's task folder in the run, relative to it: one per workspace name an instruction file takes."""
-    return "tasks" if instruction_file is None else "tasks/" + instruction_file.replace(".", "_")
+def instruction_templates(names: dict[str, str | None], kind: str) -> dict[str, str | None]:
+    """Per setup, the harness's own starter text the instruction file goes under, or None.
+
+    A harness that seeds its instruction file on first run, as OpenClaw seeds `AGENTS.md`,
+    has that template in the without arm; the with arm gets it too, with the artifact pasted
+    below, so the arms differ by the artifact alone. `names` is each setup's delivered file name.
+    """
+    texts = {}
+
+    def template(config: str) -> str | None:
+        harness = SETTINGS["configs"][config]["harness"]
+        settings = SETTINGS["harnesses"][harness]
+        if not settings.get("instruction_template") or names[config] != settings.get("instruction_file"):
+            return None
+        if harness not in texts:
+            texts[harness] = without_frontmatter(harness_file(harness, settings["instruction_template"], kind))
+        return texts[harness]
+    return {c: template(c) for c in names}
+
+
+def harness_file(harness: str, relative: str, kind: str) -> str:
+    """A file from the pinned install of a harness's npm package, from the toolchain or the base image."""
+    if kind == "docker":
+        script = f'cat "$(npm root -g)/{harness}/{relative}"'
+        return subprocess.run(["docker", "run", "--rm", base_image(), "sh", "-c", script],
+                              capture_output=True, text=True, check=True).stdout
+    toolchain = sandbox.toolchain(SETTINGS["cli_versions"])
+    return next(toolchain.glob(f"nvm/versions/node/*/lib/node_modules/{harness}/{relative}")).read_text()
+
+
+def task_folder(instruction_file: str | None, harness: str | None = None) -> str:
+    """A setup's task folder in the run, relative to it: one per workspace name an instruction file takes,
+    and one per harness whose template it goes under."""
+    if instruction_file is None:
+        return "tasks"
+    return "tasks/" + instruction_file.replace(".", "_") + (f"-{harness}" if harness else "")
 
 
 def cmd_run(args) -> None:
@@ -464,9 +498,12 @@ def cmd_run(args) -> None:
     # An API run starts no sandbox, so it needs no image.
     image, environment, described = ("none", [], "none") if wants_api else task_environment(args.env)
     names = instruction_files(artifact, configs)
-    task_dirs = {c: task_folder(names[c]) for c in configs}
-    for name in dict.fromkeys(names.values()):
-        tasks = build_tasks(REPO, suite, cases, variants, image, run_dir / task_folder(name), sources, pinned, name)
+    templates = instruction_templates(names, args.env)
+    deliveries = {c: (names[c], SETTINGS["configs"][c]["harness"] if templates[c] else None) for c in configs}
+    task_dirs = {c: task_folder(*deliveries[c]) for c in configs}
+    for c in {deliveries[c]: c for c in configs}.values():
+        tasks = build_tasks(REPO, suite, cases, variants, image, run_dir / task_dirs[c], sources, pinned, names[c],
+                            templates[c])
     archive_cases(args.suite, cases, run_dir / "cases")
     reused = {} if args.fresh else reuse_baselines(run_dir, configs, tasks, attempts, task_dirs)
     texts = {c: loaded_texts(artifact, full, names[c]) for c in configs}
