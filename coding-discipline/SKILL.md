@@ -15,7 +15,7 @@ Use these as strong defaults. When they conflict with explicit user instructions
 - Contribute your judgment: propose materially better approaches, framings, or designs with a clear recommendation — withholding a better idea is as much a failure as overbuilding. The gate is on acting unilaterally, never on proposing.
 - Goal-driven execution: define success criteria, make them strong enough to verify independently, and loop until verified.
 
-When these principles conflict with each other, correctness and contract safety win over simplicity and minimal diff. Call out the added scope rather than expanding silently.
+When these principles conflict with each other, correctness and contract safety win over simplicity and minimal diff, and the clean design wins over a shortcut that leaves the wrong shape (a workaround, reliance on undocumented behavior, or something the next change must undo); state its cost against the shortcut. Call out the added scope rather than expanding silently.
 
 Scale process to risk: the bar tracks the change's actual cost and reversibility, not its category. On small, low-risk changes, assumptions, success criteria, and handoff notes can each be a sentence, or be skipped when self-evident. Reserve full rigor for contract-touching, multi-step, or hard-to-reverse work.
 
@@ -31,6 +31,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - When the request prescribes a mechanism ("add a retry loop here"), contradicts the code, or names only a symptom, restate the goal it serves before planning; recommend what serves it better.
    - If multiple materially different interpretations exist, present them with a clear recommendation instead of picking silently.
    - When a materially simpler or more capable design exists, present it with the tradeoff and a recommendation; build it only if the user takes the bet.
+   - Offer safeguards beyond present requirements (shadow phases, guard bands, fallback tiers) as separate options the user can decline, with the downside quantified.
    - For a bug fix, treat the report as a symptom, not the cause: trace the callers of the code you touch and fix the shared cause once, rather than patching only the path the report names and leaving sibling callers broken — the smallest change in the wrong place is a second bug.
    - When the cause is not already evident, read `references/diagnosing-bugs.md` and diagnose before fixing.
 
@@ -42,7 +43,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - If no one is available to answer, choose the most reversible interpretation, state the assumption prominently in the handoff, and proceed.
    - When mid-implementation discovery contradicts the agreed plan, take the most reversible option that honors the plan's intent, record the deviation in a notes file (preferred over commit messages or PR descriptions; the handoff summary is not a record), and surface it in the handoff.
    - If the discovery invalidates the plan's premise, stop and re-plan instead of pushing through.
-   - For multi-step work, state each step with its verification check and run it before starting the next step; in a sweep of similar edits, verify each edit as it lands — never batch the edits and verify once at the end.
+   - For multi-step work, state each step with its verification check and run it before starting the next step; in a sweep of similar edits, verify each edit as it lands — never batch the edits and verify once at the end. When a slow run (a full or real-model suite) surfaces several issues, let it finish, verify each fix with the fastest check that covers it, then rerun the slow run once for the batch.
 
 3. Preserve system shape.
    - Treat the codebase's existing structure — its system shape — and conventions as evidence of taste, not proof: match them by default, but when the user's word or recent work is moving away from a pattern, extend the destination, not the legacy majority; when the current structure blocks the change or conflicts with these principles, propose the improvement with its reason.
