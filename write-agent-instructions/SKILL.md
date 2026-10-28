@@ -45,7 +45,7 @@ Load a reference at the step named here when its condition holds, or where anoth
    - Anchor recurring concepts on leading words: established terms the user's prompts and the domain already use, repeated as the same token throughout. Collapse spelled-out enumerations and paraphrases into the word. Define a coined term where it first appears.
    - Write plain, precise sentences with concrete actions. Keep commands, flags, paths, and identifiers exact, and state real uncertainty.
    - State the target behavior. Keep a prohibition only as a guardrail, paired with what to do instead.
-   - Write every line for the executing agent. Omit authoring rationale, request history, and explanations of the artifact's shape; keep a reason only when it informs a call the agent must make unaided.
+   - Write every line for the executing agent. Omit authoring rationale, request history, and explanations of the artifact's shape; keep a reason only when it informs a call the agent must make unaided. Write decided values, never verification status or staged values ("start at X, lower after measurement"); when a value is undecided, ask before writing.
    - Keep environment-derived facts, such as config values, `--help` output, or the directory layout, in the environment that owns them; document the conventions, reasons, and gotchas it cannot supply. Avoid time-sensitive facts unless the instructions say how to refresh them.
    - Keep a concept's definition, rules, and caveats together under one heading. Make defaults clear; mention alternatives only when they change a decision.
    - Make the workflow batch independent operations into one tool round. Batches stop at steps that need judgment or user authorization, and failures stay visible.

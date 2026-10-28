@@ -69,7 +69,7 @@ During a routed panel assignment, the host coordinates and is not a participant:
 
 ## Deliver
 
-Read `report.json` first. Report the outcome and artifact paths, link this answer's `discussion_report`, retain the active panel record and yield for the next user message. Report unresolved continuation failures as blockers instead of silently answering alone.
+Read `report.json` first. Report the outcome and artifact paths, link this answer's `discussion_report`, retain the active panel record and yield for the next user message. Report unresolved continuation failures as blockers instead of silently answering alone. A turn blocked by a native permission denial still keeps its contribution in `report.json` under `failures[].result.raw_text`: relay it as an unapproved contribution and report the outcome as `incomplete`.
 
 - `agreed`: every required reviewer accepted this exact result and the selected verification policy passed.
 - `disagreement`: bounded rounds ended with objections; the result is unapproved.
