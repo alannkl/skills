@@ -36,8 +36,9 @@ class Compare(unittest.TestCase):
     def test_only_acceptance_graders_count_and_drops_are_listed(self):
         base, cand = self.run_dir("base", [True, True, True]), self.run_dir("cand", [True, False, False])
         text = compare.compare([base], [cand], self.root / "suite")
-        self.assertIn("baseline 3/3, candidate 1/3", text)
-        self.assertIn("- c/keeps: 3/3 -> 1/3", text)
+        # The grader counts once per side: three passes are one pass, one failure in three is a failure.
+        self.assertIn("baseline 1/1, candidate 0/1", text)
+        self.assertIn("- c/keeps: 1/1 -> 0/1", text)
         self.assertNotIn("style", text)
         self.assertNotIn("loaded", text)
 

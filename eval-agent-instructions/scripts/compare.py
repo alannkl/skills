@@ -1,7 +1,7 @@
 """Compare a candidate version of the instructions with a baseline, from the with arms of graded runs.
 
-Per setup it reports, on the cases both versions ran: each acceptance grader's pass
-count in both, every case whose total dropped, the work each run took, and, when asked,
+Per setup it reports, on the cases both versions ran: each acceptance grader, as a pass
+on a side only when it passed in every attempt there, every case whose total dropped, the work each run took, and, when asked,
 a blinded pairwise judgment of whole outputs. Acceptance graders are those the case's
 current graders.json does not mark `diagnostic`, excluding process checks (`read`,
 `skills_loaded`), which show how the agent worked rather than what it delivered.
@@ -70,7 +70,7 @@ def acceptance_graders(suite_dir: Path, case: str) -> set[str]:
 
 
 def compare_graders(base: list[dict], cand: list[dict], suite_dir: Path) -> dict:
-    """Per setup: pass counts per (case, acceptance grader) on both sides, over cases both sides ran."""
+    """Per setup: whether each (case, acceptance grader) passed in every attempt on each side, over cases both sides ran."""
     counts = defaultdict(lambda: [0, 0, 0, 0])  # (config, case, grader) -> base passed, graded, cand passed, graded
     cases = {side: defaultdict(set) for side in ("base", "cand")}
     for side, rows in (("base", base), ("cand", cand)):
@@ -86,7 +86,8 @@ def compare_graders(base: list[dict], cand: list[dict], suite_dir: Path) -> dict
     result = {}
     for config in sorted(set(cases["base"]) | set(cases["cand"])):
         shared = cases["base"][config] & cases["cand"][config]
-        cells = {(case, name): c for (cfg, case, name), c in counts.items()
+        # A grader counts once per side, as a pass only when it passed in every attempt.
+        cells = {(case, name): [int(c[0] == c[1]), 1, int(c[2] == c[3]), 1] for (cfg, case, name), c in counts.items()
                  if cfg == config and case in shared and c[1] and c[3]}
         result[config] = {"shared": sorted(shared),
                           "only_base": sorted(cases["base"][config] - shared),

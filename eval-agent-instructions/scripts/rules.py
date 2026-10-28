@@ -151,7 +151,7 @@ EARLIER = " (earlier config "
 
 
 def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
-    """Per rule and configuration, pass counts of the rule's graders in each arm, with a status.
+    """Per rule and configuration, how many of the rule's graders passed in every attempt in each arm, with a status.
 
     `runs` holds (run.json, grade rows) for runs of the current artifact text only.
     Configurations are never pooled. A reused row repeats its original and is
@@ -161,7 +161,7 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
     may be told to use the skill and the plain with runs are not.
     """
     columns = ("with", "without", "full", "minus")
-    counts = defaultdict(lambda: [0, 0])  # (rule, config, column) -> [passed, graded]
+    results = defaultdict(list)  # (rule, config, column, case, grader) -> decided passes over attempts
     trials = defaultdict(set)  # (rule, config, column, case) -> trials that contributed
     unloaded = defaultdict(set)  # (rule, config) -> with or minus trials that never loaded a skill artifact
     configs = set()
@@ -186,9 +186,13 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
                     result = row["graders"].get(grader)
                     if result is None or result.get("pass") is None:
                         continue
-                    counts[(name, row["config"], column)][0] += bool(result["pass"])
-                    counts[(name, row["config"], column)][1] += 1
+                    results[(name, row["config"], column, row["case"], grader)].append(bool(result["pass"]))
                     trials[(name, row["config"], column, row["case"])].add(row["trial"])
+    # A grader counts once per setup and arm, as a pass only when it passed in every attempt.
+    counts = defaultdict(lambda: [0, 0])  # (rule, config, column) -> [graders passed every time, graders]
+    for (name, config, column, _, _), passes in results.items():
+        counts[(name, config, column)][0] += all(passes)
+        counts[(name, config, column)][1] += 1
     lines = ["| rule | config | with | without | full | minus | not loaded | status |",
              "| --- | --- | --- | --- | --- | --- | --- | --- |"]
     weakest = []

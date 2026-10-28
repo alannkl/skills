@@ -878,6 +878,10 @@ def report(run_dir: Path) -> str:
                      + load + probe
                      + (f" | {describe_work(work(ok))}" if work(ok) else "")
                      + f" | {grades}")
+    totals = graders_passed(rows)
+    if totals:
+        lines += ["", "Graders passed in every attempt, per setup and arm; a grader counts once however many "
+                  "attempts ran:"] + totals
     if any(work(ok) for ok in arms.values()):
         lines += ["", "Median work per run: agent time, tool calls, and input (cached or not) and output tokens "
                       "summed over the run's model calls:"]
@@ -917,6 +921,22 @@ def report(run_dir: Path) -> str:
     if disagreements:
         lines += ["", "Judge disagreements:"] + [f"- {d}" for d in disagreements]
     return "\n".join(lines) + "\n"
+
+
+def graders_passed(rows: list[dict]) -> list[str]:
+    """Per setup and arm, the case graders that passed in every attempt, out of those decided at least once."""
+    results = defaultdict(list)  # (config, variant, case, grader) -> decided passes
+    for row in rows:
+        if row["status"] != "ok" or row["case"] == PROBE_CASE:
+            continue
+        for name, g in row["graders"].items():
+            if g["pass"] is not None:
+                results[(row["config"], row["variant"], row["case"], name)].append(g["pass"])
+    cells = defaultdict(lambda: [0, 0])
+    for (config, variant, _, _), passes in results.items():
+        cells[(config, variant)][0] += all(passes)
+        cells[(config, variant)][1] += 1
+    return [f"- {config} | {variant}: {p}/{n}" for (config, variant), (p, n) in sorted(cells.items())]
 
 
 def judge_usage(usage: dict, run: str) -> list[str]:

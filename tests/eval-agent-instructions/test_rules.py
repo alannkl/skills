@@ -93,9 +93,9 @@ class Rules(unittest.TestCase):
                 + [{**row("with", False), "skill_loaded": False}])
         minus_run = [row("with", True) for _ in range(3)] + [row("minus-use-pnpm", True) for _ in range(3)]
         table = tabulate(rules, [({}, rows), ({"minus": "use-pnpm"}, minus_run)])
-        self.assertIn("| use-pnpm | haiku | 2/2 | 0/3 | 3/3 | 3/3 | 1 | removal matched the full artifact |", table)
+        self.assertIn("| use-pnpm | haiku | 1/1 | 0/1 | 1/1 | 1/1 | 1 | removal matched the full artifact |", table)
         self.assertIn("| use-pnpm | deepseek | 1/1 | 1/1 |  |  |  | candidate: no difference |", table)
-        self.assertIn("| other | haiku | 2/2 | 0/3 | 3/3 |  | 1 | the artifact helps, in fewer than 3 runs per arm |", table)
+        self.assertIn("| other | haiku | 1/1 | 0/1 | 1/1 |  | 1 | the artifact helps, in fewer than 3 runs per arm |", table)
         self.assertIn("| ask-first | | | | | | | untested: no grader |", table)
 
     def test_table_tells_help_harm_and_shared_failure_apart(self):
@@ -121,6 +121,11 @@ class Rules(unittest.TestCase):
                          "keep: helps on opus, in fewer than 3 runs per arm")
         self.assertIn("did worse on haiku", across_setups({"opus": "keep: the artifact helps",
                                                            "haiku": "the artifact did worse"}))
+
+    def test_a_grader_counts_once_and_passes_only_in_every_attempt(self):
+        rows = [{"status": "ok", "config": "haiku", "case": "case-a", "variant": "with", "trial": f"w{i}",
+                 "skill_loaded": True, "graders": {"uses-pnpm": {"pass": p}}} for i, p in enumerate([True, False, True])]
+        self.assertIn("| use-pnpm | haiku | 0/1 |", tabulate({"use-pnpm": self.rule()}, [({}, rows)]))
 
     def test_removal_needs_three_runs_per_arm_and_no_worse_result(self):
         def row(variant, passed, trial):

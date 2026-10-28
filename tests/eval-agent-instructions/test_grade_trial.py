@@ -123,6 +123,12 @@ class GradeTrial(unittest.TestCase):
             f"{name} (earlier config "))
         self.assertEqual(eval_instructions.setup_label("unknown-setup", {"configs": {}}), "unknown-setup")
 
+    def test_report_counts_each_grader_once_passing_only_in_every_attempt(self):
+        rows = [{"status": "ok", "config": "opus", "case": "c", "variant": "with", "graders": {"a": {"pass": a}, "b": {"pass": b}}}
+                for a, b in ((True, True), (True, False))]
+        rows.append({"status": "ok", "config": "opus", "case": "c", "variant": "with", "graders": {"c": {"pass": None}}})
+        self.assertEqual(eval_instructions.graders_passed(rows), ["- opus | with: 1/2"])
+
     def test_infrastructure_failure_is_not_graded(self):
         (self.trial / "result.json").write_text(json.dumps({"exception_info": {"exception_type": "AgentSetupTimeoutError"}}))
         row = grade_trial(self.trial, "claude-haiku", CONFIG, SKILL, self.cases, ["unused"])
