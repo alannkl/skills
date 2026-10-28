@@ -111,6 +111,17 @@ class Rules(unittest.TestCase):
         self.assertIn("| graders fail in both arms: check the wording or grader |",
                       tabulate(rules, [({}, run({"with": [False], "without": [False]}))]))
 
+    def test_each_rule_is_judged_by_its_weakest_setup(self):
+        from rules import across_setups
+        tie = "candidate: no difference"
+        self.assertEqual(across_setups({"opus": tie, "haiku": tie}),
+                         "candidate on every setup run (2): no case shows its effect")
+        self.assertEqual(across_setups({"opus": tie, "haiku": "keep: the artifact helps"}), "keep: helps on haiku")
+        self.assertEqual(across_setups({"opus": "the artifact helps, in fewer than 3 runs per arm", "haiku": tie}),
+                         "keep: helps on opus, in fewer than 3 runs per arm")
+        self.assertIn("did worse on haiku", across_setups({"opus": "keep: the artifact helps",
+                                                           "haiku": "the artifact did worse"}))
+
     def test_removal_needs_three_runs_per_arm_and_no_worse_result(self):
         def row(variant, passed, trial):
             return {"status": "ok", "config": "haiku", "case": "case-a", "variant": variant, "trial": trial,

@@ -53,7 +53,7 @@ What it delivers, per `references/suites.md`:
 
 ## Removing a rule
 
-- A rule whose graders pass as often without the artifact as with it is a removal candidate, not a proven no-op.
+- Judge each rule by its weakest setup: it is a removal candidate, not a proven no-op, only when its graders pass as often without the artifact as with it on every setup run; one setup that needs it keeps it. `rules` gives this verdict per rule beside the per-setup table.
 - Remove a candidate only when no one can name the failure it prevents and why the executor's default would miss it, or when the copy without it (`--minus`) does as well as the full artifact on the cases that exercise it, over at least three runs per arm on every setup the artifact must support. Until then, keep it.
 - When the artifact must work on setups no suite can list, no run proves a no-op: report the rule as a candidate and name the setup most likely to need it, such as a weaker model or another harness.
 - A rule with no grader cannot be judged. Before deciding on one, write a realistic case where the rule applies and a grader for what it requires, confirm the full artifact passes, then run `--minus`.

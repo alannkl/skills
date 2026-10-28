@@ -187,6 +187,7 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
                     trials[(name, row["config"], column, row["case"])].add(row["trial"])
     lines = ["| rule | config | with | without | full | minus | not loaded | status |",
              "| --- | --- | --- | --- | --- | --- | --- | --- |"]
+    weakest = []
     for name, rule in rules.items():
         if not rule["graders"]:
             lines.append(f"| {name} | | | | | | | "
@@ -197,14 +198,36 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
         if not tested:
             lines.append(f"| {name} | | | | | | | no runs yet |")
         cases = sorted({ref.split("/", 1)[0] for ref in rule["graders"]})
+        statuses = {}
         for config in tested:
             cells = {col: counts[(name, config, col)] for col in columns}
             fewest = {col: min(len(trials[(name, config, col, case)]) for case in cases) for col in columns}
             shown = {col: f"{p}/{t}" if t else "" for col, (p, t) in cells.items()}
+            statuses[config] = status(cells, fewest)
             lines.append(f"| {name} | {config} | {shown['with']} | {shown['without']} | {shown['full']} | "
                          f"{shown['minus']} | "
-                         f"{len(unloaded[(name, config)]) or ''} | {status(cells, fewest)} |")
+                         f"{len(unloaded[(name, config)]) or ''} | {statuses[config]} |")
+        if statuses:
+            weakest.append(f"| {name} | {across_setups(statuses)} |")
+    lines += ["", "Each rule by its weakest setup: a candidate only when every setup run is one.", "",
+              "| rule | across setups |", "| --- | --- |"] + weakest
     return "\n".join(lines) + "\n"
+
+
+def across_setups(statuses: dict[str, str]) -> str:
+    """One rule's verdict from its per-setup statuses: the setup that needs it, or that shows a problem, decides."""
+    def where(test):
+        return ", ".join(sorted(c for c, s in statuses.items() if test(s)))
+    if worse := where(lambda s: "did worse" in s or s.startswith("removal did worse")):
+        return f"check: the artifact did worse on {worse}"
+    if needed := where(lambda s: "helps" in s):
+        short = any("fewer than 3" in s for s in statuses.values() if "helps" in s)
+        return f"keep: helps on {needed}" + (", in fewer than 3 runs per arm" if short else "")
+    if failing := where(lambda s: s.startswith("graders fail")):
+        return f"check the wording or grader: graders fail in both arms on {failing}"
+    if all(s.startswith("candidate") or s == "removal matched the full artifact" for s in statuses.values()):
+        return f"candidate on every setup run ({len(statuses)}): no case shows its effect"
+    return "undecided: " + "; ".join(f"{c}: {s}" for c, s in sorted(statuses.items()))
 
 
 def min_set(rules: dict, runs: list[tuple[dict, list[dict]]], acceptance: dict[str, set[str]],
