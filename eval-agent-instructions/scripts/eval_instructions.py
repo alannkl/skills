@@ -1,4 +1,8 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.10"
+# dependencies = ["tiktoken"]
+# ///
 """Evaluate agent instructions with and without them across agent harnesses and models, through Harbor.
 
 Run from the root of the repository that holds the artifact and its `evals/<suite>/`.
@@ -15,7 +19,12 @@ Run from the root of the repository that holds the artifact and its `evals/<suit
   eval_instructions.py rules <suite> [--all-versions | --min-set [--gaps]]
 
 `run` builds one Harbor task per case and variant, runs each configuration as a
-Harbor job, then grades and reports. A skill under test is named by path in the
+Harbor job, then grades and reports. An instruction file, less any leading YAML
+frontmatter block, goes in the workspace under its `as` name from eval.json, else
+the name each setup's harness reads (`instruction_file` in configs.json); a run
+builds its tasks once per such name. `run` also records the tokens of each text
+the with arm loads, per setup, which the report lists; models other than
+Anthropic's get an estimate. A skill under test is named by path in the
 instruction of every arm that installs it, so the run measures its text; cases
 marked `trigger_only` are left out, and so are those marked `integration` or `reserve` unless
 --all-cases is set. `--rule` runs only the cases whose graders test the named rules,
@@ -60,7 +69,9 @@ from compare import acceptance_graders, compare, describe_work, work  # noqa: E4
 from evidence import EXTRACTORS  # noqa: E402
 from graders import judge_pending, run_graders, temporary_initial_workspace  # noqa: E402
 from rules import MINUS, arm, artifact_digest, check_rules, load_rules, min_set, minus_artifact, rule_cases, tabulate  # noqa: E402
-from tasks import PROBE_CASE, USE_SKILL, artifact_root, build_tasks, load_spec, load_suite, task_digest  # noqa: E402
+from tasks import (PROBE_CASE, USE_SKILL, artifact_root, build_tasks, load_spec, load_suite, task_digest,  # noqa: E402
+                   workspace_name)
+from token_counts import loaded_texts, loaded_tokens  # noqa: E402
 from api_runner import run_api_job  # noqa: E402
 import sandbox  # noqa: E402
 import setups  # noqa: E402
@@ -265,12 +276,13 @@ def stored_baseline(results: Path, run_id: str, config: dict, task: str, digest:
     metas = [(p.parent, json.loads(p.read_text())) for p in results.glob("*/run.json") if p.parent.name != run_id]
     found = []
     for prior, meta in sorted(metas, key=lambda m: m[1].get("started_at", ""), reverse=True):
-        task_dir, grades = prior / "tasks" / task, prior / "grades.jsonl"
-        if (meta.get("harbor") != SETTINGS["harbor"] or not task_dir.is_dir() or not grades.is_file()
-                or task_digest(task_dir) != digest):
+        grades = prior / "grades.jsonl"
+        if meta.get("harbor") != SETTINGS["harbor"] or not grades.is_file():
             continue
+        task_dirs = {name: prior / meta.get("task_dirs", {}).get(name, "tasks") / task for name in meta["configs"]}
         names = {name for name, c in meta["configs"].items()
-                 if c == config and meta.get("agent_args", {}).get(name) == agent_args(config)}
+                 if c == config and meta.get("agent_args", {}).get(name) == agent_args(config)
+                 and task_dirs[name].is_dir() and task_digest(task_dirs[name]) == digest}
         for line in grades.read_text().splitlines():
             row = json.loads(line)
             # A reused row points at an older run's trial, which this loop reaches on its own.
@@ -280,16 +292,20 @@ def stored_baseline(results: Path, run_id: str, config: dict, task: str, digest:
     return found[:attempts] if len(found) >= attempts else []
 
 
-def reuse_baselines(run_dir: Path, configs: list[str], tasks: list[str], attempts: int) -> dict:
-    """Copy matching earlier trials of every task into run_dir/reused/<config>/.
+def reuse_baselines(run_dir: Path, configs: list[str], tasks: list[str], attempts: int,
+                    task_dirs: dict[str, str]) -> dict:
+    """Copy matching earlier trials of every task into run_dir/reused/<config>/; `task_dirs` names each
+    setup's task folder in the run.
 
     Returns {config: {task: [source]}}.
     """
     results = run_dir.parent
-    digests = {task: task_digest(run_dir / "tasks" / task) for task in tasks}
+    digests = {(folder, task): task_digest(run_dir / folder / task)
+               for folder in set(task_dirs.values()) for task in tasks}
     reused = {}
     for name in configs:
-        for task, digest in digests.items():
+        for task in tasks:
+            digest = digests[(task_dirs[name], task)]
             trials = stored_baseline(results, run_dir.name, SETTINGS["configs"][name], task, digest, attempts)
             for trial in trials:
                 shutil.copytree(trial, run_dir / "reused" / name / trial.name)
@@ -353,6 +369,19 @@ def setup_name(entry: str | dict) -> str:
     name, config = setups.resolve(entry, SETTINGS)
     SETTINGS["configs"][name] = config
     return name
+
+
+def instruction_files(artifact: dict, configs: list[str]) -> dict[str, str | None]:
+    """Per setup, the workspace name an instruction-file artifact takes there; None for other artifacts."""
+    if artifact["type"] != "instruction-file":
+        return dict.fromkeys(configs)
+    return {c: workspace_name(artifact, SETTINGS["harnesses"][SETTINGS["configs"][c]["harness"]]["instruction_file"])
+            for c in configs}
+
+
+def task_folder(instruction_file: str | None) -> str:
+    """A setup's task folder in the run, relative to it: one per workspace name an instruction file takes."""
+    return "tasks" if instruction_file is None else "tasks/" + instruction_file.replace(".", "_")
 
 
 def cmd_run(args) -> None:
@@ -434,12 +463,17 @@ def cmd_run(args) -> None:
     pinned = artifact["type"] == "skill" and not args.trigger
     # An API run starts no sandbox, so it needs no image.
     image, environment, described = ("none", [], "none") if wants_api else task_environment(args.env)
-    tasks = build_tasks(REPO, suite, cases, variants, image, run_dir / "tasks", sources, pinned)
+    names = instruction_files(artifact, configs)
+    task_dirs = {c: task_folder(names[c]) for c in configs}
+    for name in dict.fromkeys(names.values()):
+        tasks = build_tasks(REPO, suite, cases, variants, image, run_dir / task_folder(name), sources, pinned, name)
     archive_cases(args.suite, cases, run_dir / "cases")
-    reused = {} if args.fresh else reuse_baselines(run_dir, configs, tasks, attempts)
+    reused = {} if args.fresh else reuse_baselines(run_dir, configs, tasks, attempts, task_dirs)
+    texts = {c: loaded_texts(artifact, full, names[c]) for c in configs}
     meta = {"suite": args.suite, "artifact": artifact, "artifact_digest": artifact_digest(full),
             "artifact_source": str(full) if args.artifact else None,
-            "probe_text": None if artifact["type"] == "skill" else first_line(full),
+            # An instruction file or prompt is one text, delivered alike on every setup.
+            "probe_text": None if artifact["type"] == "skill" else first_line(texts[configs[0]][0][1]),
             "minus": args.minus, "trigger": args.trigger,
             "preamble": USE_SKILL.format(skill=artifact["name"]) if pinned else "",
             "configs": {c: SETTINGS["configs"][c] for c in configs},
@@ -447,8 +481,11 @@ def cmd_run(args) -> None:
             "harbor": SETTINGS["harbor"], "cli_versions": SETTINGS["cli_versions"], "base_image": image,
             "environment": described,
             "agent_args": {c: agent_args(SETTINGS["configs"][c]) for c in configs},
-            "tasks": tasks, "reused": reused, "started_at": datetime.now(timezone.utc).isoformat()}
-    plans = {name: job_plan(run_dir / "tasks", tasks, sorted(reused.get(name, {})), artifact) for name in configs}
+            "tasks": tasks, "task_dirs": task_dirs, "reused": reused,
+            "loaded_tokens": loaded_tokens(texts, {c: SETTINGS["configs"][c]["model"] for c in configs}),
+            "started_at": datetime.now(timezone.utc).isoformat()}
+    plans = {name: job_plan(run_dir / task_dirs[name], tasks, sorted(reused.get(name, {})), artifact)
+             for name in configs}
     queued = args.env == "bwrap" and not wants_api
     if queued:
         gb = max(SESSION_GB[SETTINGS["configs"][name]["harness"]] for name in configs)
@@ -476,14 +513,14 @@ def cmd_run(args) -> None:
             return
         print(f"== {name}", file=sys.stderr)
         if config["harness"] == API:
-            run_api_job(config, run_dir / "tasks", [t for _, job_tasks, _ in plan for t in job_tasks], attempts,
+            run_api_job(config, run_dir / task_dirs[name], [t for _, job_tasks, _ in plan for t in job_tasks], attempts,
                         run_dir / "jobs" / name / API, slots[name])
             return
         with open(run_dir / f"harbor-{name}.log", "w") as log:
             for job, job_tasks, system_prompt in plan:
                 if args.env == "docker":
                     wait_for_docker()
-                subprocess.run(harbor_command(config, run_dir / "tasks", run_dir / "jobs" / name, job, attempts,
+                subprocess.run(harbor_command(config, run_dir / task_dirs[name], run_dir / "jobs" / name, job, attempts,
                                               slots[name], include=job_tasks,
                                               system_prompt=system_prompt,
                                               environment=environment),
@@ -494,7 +531,7 @@ def cmd_run(args) -> None:
         name, task, attempt, system_prompt = session
         config = SETTINGS["configs"][name]
         with open(run_dir / f"harbor-{name}.log", "a") as log:
-            subprocess.run(harbor_command(config, run_dir / "tasks", run_dir / "jobs" / name, f"{task}.{attempt}", 1, 1,
+            subprocess.run(harbor_command(config, run_dir / task_dirs[name], run_dir / "jobs" / name, f"{task}.{attempt}", 1, 1,
                                           include=[task], system_prompt=system_prompt, environment=environment),
                            env=harbor_env(config), stdout=log, stderr=subprocess.STDOUT, check=False)
 
@@ -603,18 +640,20 @@ def expected_seconds(results: Path, config_name: str) -> dict[str | None, float]
     return means | ({None: sum(every) / len(every)} if every else {})
 
 
-def first_line(path: Path) -> str:
-    """The file's first non-empty line without heading marks: what the probe asks the agent to quote."""
-    return next(line.strip().lstrip("#").strip() for line in path.read_text().splitlines() if line.strip())
+def first_line(text: str) -> str:
+    """The delivered text's first non-empty line without heading marks, or "": what the probe asks the agent to quote."""
+    return next((line.strip().lstrip("#").strip() for line in text.splitlines() if line.strip()), "")
 
 
 def grade_trial(trial: Path, config_name: str, config: dict, artifact: dict, cases_root: Path,
-                judges: list[str], specs_root: Path | None = None, probe_text: str | None = None) -> dict:
+                judges: list[str], specs_root: Path | None = None, probe_text: str | None = None,
+                tasks_root: Path | None = None) -> dict:
     """One row per trial: its status, evidence, and grader results.
 
     Workspaces come from the cases under `cases_root`, plus the instruction file a
-    task delivered, found beside them in the run's tasks; graders.json comes from
-    `specs_root` when given, otherwise from the same cases.
+    task delivered, found in the setup's task folder `tasks_root` (default the run's
+    `tasks` beside the cases); graders.json comes from `specs_root` when given,
+    otherwise from the same cases.
     """
     harbor_config = json.loads((trial / "config.json").read_text())
     case, variant = Path(harbor_config["task"]["path"]).name.split("--")
@@ -646,6 +685,9 @@ def grade_trial(trial: Path, config_name: str, config: dict, artifact: dict, cas
         row.update(status="infra_error", error=evidence["terminal_error"])
         return row
     final_message = evidence.pop("final_message") if evidence["complete"] else None
+    # The messages go to graders only, not into the saved evidence.
+    messages = evidence.pop("messages")
+    messages = messages if evidence["complete"] else None
     ops = evidence.pop("ops", None)
     row.update(status="ok", final_message=final_message, evidence=evidence)
     if artifact["type"] == "skill":
@@ -663,9 +705,9 @@ def grade_trial(trial: Path, config_name: str, config: dict, artifact: dict, cas
         marker = probe_text
     if spec.get("probe"):
         row["probe_sees_artifact"] = None if final_message is None or not marker else marker in final_message
-    run = {"final_message": final_message, "writes": evidence["writes"],
+    run = {"final_message": final_message, "messages": messages, "writes": evidence["writes"],
            "skills_loaded": evidence["skills_loaded"], "ops": ops}
-    delivered = cases_root.parent / "tasks" / f"{case}--{variant}" / "environment" / "instructions"
+    delivered = (tasks_root or cases_root.parent / "tasks") / f"{case}--{variant}" / "environment" / "instructions"
     with temporary_initial_workspace(case_dir) as initial:
         if delivered.is_dir():
             shutil.copytree(delivered, initial, dirs_exist_ok=True)
@@ -690,7 +732,8 @@ def grade(run_dir: Path, judges: list[str], graders_from_repo: bool = False) -> 
         graded = []
         for trial in trials:
             graded.append(grade_trial(trial, config_name, config, artifact, cases_root, judges, specs_root,
-                                      meta.get("probe_text")))
+                                      meta.get("probe_text"),
+                                      run_dir / meta.get("task_dirs", {}).get(config_name, "tasks")))
             graded[-1]["trial_path"] = trial.relative_to(run_dir).as_posix()
             if trial.relative_to(run_dir).parts[0] == "reused":
                 graded[-1]["reused_from"] = sources.get(trial.name)
@@ -716,7 +759,8 @@ def missing_trials(meta: dict, config_name: str, config: dict, graded: list[dict
 
 def report(run_dir: Path) -> str:
     """Pass counts per case, configuration and variant; infra errors and undecided grades apart; the
-    work each run took; and for a trigger check, how often each kind of case loaded the skill."""
+    work each run took; the tokens of each text the with arm loads; and for a trigger check, how often
+    each kind of case loaded the skill."""
     rows = [json.loads(line) for line in (run_dir / "grades.jsonl").read_text().splitlines()]
     cells = defaultdict(list)
     arms = defaultdict(list)  # (config, variant) -> ok rows
@@ -786,7 +830,14 @@ def report(run_dir: Path) -> str:
         lines += ["", "Runs whose harness retried failed model calls; their time includes the provider's delay:"]
         lines += [f"- {r}" for r in retried]
     meta_path = run_dir / "run.json"
-    if meta_path.is_file() and json.loads(meta_path.read_text()).get("trigger"):
+    meta = json.loads(meta_path.read_text()) if meta_path.is_file() else {}
+    if meta.get("loaded_tokens"):
+        lines += ["", "Tokens of each text the with arm loads:", "", "| load path | setup | tokens | method |",
+                  "| --- | --- | --- | --- |"]
+        lines += [f"| {e['path']} | {config} | {'not counted' if e['tokens'] is None else e['tokens']} | "
+                  f"{e.get('method') or e.get('not_counted')} |"
+                  for config, entries in sorted(meta["loaded_tokens"].items()) for e in entries]
+    if meta.get("trigger"):
         lines += ["", "Triggering, runs that loaded the skill:"] + trigger_counts(rows)
     lines += ["", "Cost reported by the harness (USD):"]
     lines += [f"- {config}: " + (f"{cost[config]:.4f}" if cost_known[config] else "not reported")

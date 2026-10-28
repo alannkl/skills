@@ -20,9 +20,10 @@ class Graders(unittest.TestCase):
             (d / "docs" / "guide.md").write_text("Use pnpm.\nRun tests.\n")
             (d / "AGENTS.md").write_text("- Use pnpm.\n")
 
-    def grade(self, spec, harness="codex", message="", variant="with", writes=(), loaded=(), ops=()):
+    def grade(self, spec, harness="codex", message="", variant="with", writes=(), loaded=(), ops=(), messages=()):
         spec = {"name": "g", **spec}
-        run = {"final_message": message, "writes": None if writes is None else list(writes),
+        run = {"final_message": message, "messages": None if messages is None else list(messages),
+               "writes": None if writes is None else list(writes),
                "skills_loaded": None if loaded is None else list(loaded), "ops": None if ops is None else list(ops)}
         return graders.run_graders([spec], variant, self.workspace, self.initial, harness, run, ["judge-a"])
 
@@ -124,6 +125,23 @@ class Graders(unittest.TestCase):
         self.assertIn("Removed the emphasis line.", self.grade(spec, message="Removed the emphasis line.")["g"]["pending"]["subject"])
         self.assertIsNone(self.grade(spec, message=None)["g"]["pass"])
         self.assertNotIn("pending", self.grade(spec, message=None)["g"])
+
+    def test_llm_can_judge_every_message_of_the_run(self):
+        pending = self.grade({"type": "llm", "criteria": "c", "all_messages": True}, message="Done.",
+                             messages=["Which file?", "Done."])["g"]["pending"]
+        self.assertEqual((pending["subject"], pending["label"]),
+                         ("[message 1]\nWhich file?\n\n[message 2]\nDone.", "messages, in order"))
+        beside = self.grade({"type": "llm", "path": "AGENTS.md", "criteria": "c", "all_messages": True},
+                            messages=["Which file?"])["g"]["pending"]["subject"]
+        self.assertIn("The agent's messages, in order:\n<<<\n[message 1]\nWhich file?", beside)
+        self.assertIsNone(self.grade({"type": "llm", "criteria": "c", "all_messages": True}, messages=None)["g"]["pass"])
+
+    def test_cached_verdict_on_the_final_message_does_not_stand_for_every_message(self):
+        keys = []
+        for spec in ({"type": "llm", "criteria": "c"}, {"type": "llm", "criteria": "c", "all_messages": True}):
+            p = self.grade(spec, message="Done.", messages=["Done."])["g"]["pending"]
+            keys.append(graders._cache_key("judge-a", p["criteria"], p["original"], p["label"], p["subject"]))
+        self.assertNotEqual(keys[0], keys[1])
 
     def test_llm_can_judge_several_files_together(self):
         (self.workspace / "docs" / "guide.md").write_text("Use pnpm.\n")

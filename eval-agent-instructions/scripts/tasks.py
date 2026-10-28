@@ -1,4 +1,5 @@
-"""Build Harbor task directories from eval cases: one task per case and variant.
+"""Build Harbor task directories from eval cases: one task per case and variant, and for an
+instruction file, per workspace name the run's setups read.
 
 A suite is `evals/<suite>/`. Its `eval.json` names the artifact under test and
 the skills both arms install:
@@ -14,7 +15,8 @@ configs.json: `run` for a plain run, `full` for --full and --minus.
 
 Without an artifact entry, the suite tests the skill in the folder of its own name.
 A skill is installed where each harness finds skills; an instruction file is
-placed in the workspace under its `as` name. A system prompt is written to the
+placed in the workspace under its `as` name, else the name the setup's harness
+reads, without a leading YAML frontmatter block. A system prompt is written to the
 task's `prompt/system.md` for the runner to pass on; a user prompt goes before
 the case's instruction. A prompt's `{{name}}` placeholders are filled from the
 case's `vars.json`.
@@ -117,25 +119,38 @@ def load_spec(case_dir: Path) -> dict:
 
 
 def load_suite(repo: Path, name: str) -> dict:
-    """The suite's artifact, with `name` (a skill's folder name) or `as` (a file's workspace name) filled in."""
+    """The suite's artifact, with `name` (a skill's folder name) filled in."""
     path = repo / "evals" / name / "eval.json"
     config = json.loads(path.read_text()) if path.is_file() else {}
     artifact = dict(config.get("artifact") or {"type": "skill", "path": name})
     if artifact["type"] == "skill":
         artifact.setdefault("name", Path(artifact["path"]).name)
-    elif artifact["type"] == "instruction-file":
-        artifact.setdefault("as", Path(artifact["path"]).name)
     elif artifact["type"] == "prompt":
         artifact.setdefault("role", "system")
         artifact.setdefault("runner", "harness")
         if artifact["role"] not in ("system", "user") or artifact["runner"] not in ("harness", "api"):
             raise SystemExit(f"{path}: a prompt's role is system or user, and its runner harness or api")
-    else:
+    elif artifact["type"] != "instruction-file":
         raise SystemExit(f"{path}: artifact type must be skill, instruction-file or prompt")
     setups = config.get("setups", {})
     if set(setups) - {"run", "full"}:
         raise SystemExit(f"{path}: setups takes run and full")
     return {"name": name, "artifact": artifact, "dependencies": config.get("dependencies", []), "setups": setups}
+
+
+def workspace_name(artifact: dict, harness_file: str) -> str:
+    """The name an instruction file takes in the workspace: its `as`, else the file the harness reads."""
+    return artifact.get("as") or harness_file
+
+
+# A YAML frontmatter block: a `---` line first, through the next `---` line.
+FRONTMATTER = re.compile(r"---[ \t]*\r?\n.*?^---[ \t]*(\r?\n|\Z)", re.S | re.M)
+
+
+def without_frontmatter(text: str) -> str:
+    """An instruction file's text as delivered: a leading frontmatter block and the blank lines after it dropped."""
+    found = FRONTMATTER.match(text)
+    return text[found.end():].lstrip("\r\n") if found else text
 
 
 def artifact_root(repo: Path, artifact: dict) -> Path:
@@ -161,10 +176,11 @@ def render(text: str, case_dir: Path) -> str:
 
 
 def build_task(repo: Path, suite: dict, case_dir: Path, variant: str, base_image: str, out: Path,
-               source: Path | None = None, pin: bool = False) -> str:
+               source: Path | None = None, pin: bool = False, instruction_file: str | None = None) -> str:
     """One task; `source` replaces the repo's copy of the artifact, as a minus variant does.
 
-    `pin` names a skill artifact in the instruction of every arm that installs it.
+    `pin` names a skill artifact in the instruction of every arm that installs it;
+    `instruction_file` is the workspace name an instruction-file artifact takes.
     """
     artifact = suite["artifact"]
     probe = case_dir.name == PROBE_CASE
@@ -189,10 +205,11 @@ def build_task(repo: Path, suite: dict, case_dir: Path, variant: str, base_image
         else:
             preamble = prompt.rstrip("\n") + "\n\n" + preamble
     elif variant != "without":
-        if (case_dir / "fixture" / artifact["as"]).exists():
-            raise SystemExit(f"{case_dir}: the fixture already has {artifact['as']}, which the artifact replaces")
+        if (case_dir / "fixture" / instruction_file).exists():
+            raise SystemExit(f"{case_dir}: the fixture already has {instruction_file}, which the artifact replaces")
         (env / "instructions").mkdir()
-        shutil.copy(source or repo / artifact["path"], env / "instructions" / artifact["as"])
+        text = without_frontmatter((source or repo / artifact["path"]).read_bytes().decode())
+        (env / "instructions" / instruction_file).write_bytes(text.encode())
         dockerfile += INSTRUCTIONS_LAYER
     case_src = env / "case"
     case_src.mkdir()
@@ -224,8 +241,10 @@ def task_digest(task: Path) -> str:
 
 
 def build_tasks(repo: Path, suite: dict, case_dirs: list[Path], variants: list[str],
-                base_image: str, out: Path, sources: dict[str, Path] | None = None, pin: bool = False) -> list[str]:
+                base_image: str, out: Path, sources: dict[str, Path] | None = None, pin: bool = False,
+                instruction_file: str | None = None) -> list[str]:
     """Every case in every variant; `sources` maps a variant to the artifact copy it delivers."""
     out.mkdir(parents=True, exist_ok=True)
-    return [build_task(repo, suite, case_dir, variant, base_image, out, (sources or {}).get(variant), pin)
+    return [build_task(repo, suite, case_dir, variant, base_image, out, (sources or {}).get(variant), pin,
+                       instruction_file)
             for case_dir in case_dirs for variant in variants]

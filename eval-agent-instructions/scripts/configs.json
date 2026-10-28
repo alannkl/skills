@@ -7,11 +7,13 @@
     "api": {"run": ["api-opus-5.5-high"], "full": ["api-opus-5.5-high", "api-gpt-6-astra-high"]}
   },
   "harnesses": {
-    "claude-code": {"env": {"ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}", "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}"}},
-    "codex": {"env": {"OPENAI_BASE_URL": "${ANTHROPIC_BASE_URL}/v1", "OPENAI_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"},
+    "claude-code": {"instruction_file": "CLAUDE.md",
+                    "env": {"ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}", "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}"}},
+    "codex": {"instruction_file": "AGENTS.md",
+              "env": {"OPENAI_BASE_URL": "${ANTHROPIC_BASE_URL}/v1", "OPENAI_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"},
               "native_config": {"model_provider": "proxy",
                                 "model_providers": {"proxy": {"name": "proxy", "wire_api": "responses", "env_key": "OPENAI_API_KEY", "supports_websockets": false}}}},
-    "openclaw": {},
+    "openclaw": {"instruction_file": "AGENTS.md"},
     "api": {}
   },
   "models": {

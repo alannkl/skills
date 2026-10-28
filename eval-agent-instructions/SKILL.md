@@ -25,11 +25,11 @@ What it delivers, per `references/suites.md`:
 
 ## Workflow
 
-1. Scope the evaluation: the artifact and its path, the harnesses and models it must work on, and the question. When those setups differ from the defaults, name them in the suite's `eval.json`. Run edit rounds on the `run` setups with `--rule` for each rule the change touches, which selects the cases that test it, and a full evaluation with `--full --all-cases`. Removal decisions use every setup the artifact must support; a portability question uses every setup that matters.
+1. Scope the evaluation: the artifact and its path, the harnesses and models it must work on, and the question. When those setups differ from the defaults, name them in both `run` and `full` of the suite's `eval.json`. Run edit rounds on the `run` setups with `--rule` for each rule the change touches, which selects the cases that test it, and a full evaluation with `--full --all-cases`. Removal decisions use every setup the artifact must support; a portability question uses every setup that matters.
 2. Build or extend the suite in `evals/<suite>/` per `references/suites.md`. Choose cases from requests users make before seeing any results.
 3. Before the first paid run, show the plan: cases, arms, setups, attempts, and the number of sessions. Start when the user agrees.
 4. Probe each harness setup new to the suite with `--probe`, and confirm the artifact is visible in the with arm and absent in the without arm. A user prompt or an API call passes the text straight into the request and has no probe.
-5. Screen a change first: one attempt per arm on the cases it touches (`--rule` or `--case`). Run three or more attempts per arm on the `--full` setups only for a draft the screen does not rule out, and treat that result as a first sample, not proof. Reuse earlier runs of the current text as the baseline instead of rerunning it. To compare a draft with the current text, run it with `--artifact DRAFT --variants with` on the same cases and setups, regrade both sides with `--graders-from-repo`, then run `compare --baseline <runs of the current text> --candidate <draft run>`. It lists acceptance grades and work per run on both sides and every case and grader that dropped; `--pairwise JUDGE` adds a blinded judgment of whole outputs, for behavior no grader sees; use it when grades tie, with one judge. Examine every new failure of a required outcome, whatever its count.
+5. Screen first, one attempt per arm: a change on the cases it touches (`--rule` or `--case`); "does it help?" on every regular case and every setup the user names. Run three or more attempts per arm on the `--full` setups only for a draft the screen does not rule out, and treat that result as a first sample, not proof. Reuse earlier runs of the current text as the baseline instead of rerunning it. To compare a draft with the current text, run it with `--artifact DRAFT --variants with` on the same cases and setups, regrade both sides with `--graders-from-repo`, then run `compare --baseline <runs of the current text> --candidate <draft run>`. It lists acceptance grades and work per run on both sides and every case and grader that dropped; `--pairwise JUDGE` adds a blinded judgment of whole outputs, for behavior no grader sees; use it when grades tie, with one judge. Examine every new failure of a required outcome, whatever its count.
 6. Check the runs before reading grades:
    - Infrastructure errors and runs Harbor never produced are not failures.
    - The report lists runs whose harness retried failed model calls; their time includes the provider's delay. Classify a run as infrastructure only from such evidence, never from its length: a skill that makes the agent search or polish more is slow for real.
@@ -55,6 +55,7 @@ What it delivers, per `references/suites.md`:
 
 - A rule whose graders pass as often without the artifact as with it is a removal candidate, not a proven no-op.
 - Remove a candidate only when no one can name the failure it prevents and why the executor's default would miss it, or when the copy without it (`--minus`) does as well as the full artifact on the cases that exercise it, over at least three runs per arm on every setup the artifact must support. Until then, keep it.
+- When the artifact must work on setups no suite can list, no run proves a no-op: report the rule as a candidate and name the setup most likely to need it, such as a weaker model or another harness.
 - A rule with no grader cannot be judged. Before deciding on one, write a realistic case where the rule applies and a grader for what it requires, confirm the full artifact passes, then run `--minus`.
 - The report lists candidates with their evidence; removing text is an edit the user approves.
 
@@ -67,7 +68,7 @@ What it delivers, per `references/suites.md`:
 Open with the answer to the user's question and the decision it supports. Then, for each setup:
 
 - pass counts per case and arm, and the table from `rules` when the suite has a rule map;
-- the counted tokens of the text each run loads, per load path; median work per run (agent time, tool calls, input and output tokens), compared case by case, only to flag a structural change such as an added load call;
+- the tokens of each text the with arm loads, per load path, as the report lists them, estimates marked; median work per run (agent time, tool calls, input and output tokens), compared case by case, only to flag a structural change such as an added load call;
 - removal candidates and untested rules;
 - runs set apart: infrastructure errors, runs that never loaded the skill, undecided grades, judge disagreements;
 - cost as the harnesses report it, naming setups that report none;

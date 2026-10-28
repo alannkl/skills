@@ -3,8 +3,8 @@
 Grader specs come from a case's graders.json. Each returns {"pass": bool | None,
 "detail": str}; None means the grader could not decide, such as a failed or
 malformed judge reply or a transcript that ended early, and is reported apart
-from a failure. `run` is the trial's evidence: its final message and the files
-it wrote, each None when the transcript is incomplete.
+from a failure. `run` is the trial's evidence: its final message, every assistant
+message in order, and the files it wrote, each None when the transcript is incomplete.
 """
 import contextlib
 import fnmatch
@@ -187,8 +187,19 @@ def _glob_files(root: Path, pattern: str):
             yield from (f for f in match.rglob("*") if f.is_file() and ".git" not in f.relative_to(root).parts)
 
 
+def _agent_text(spec, run) -> tuple[str | None, str]:
+    """(text, what it is) the judge sees of the agent's messages: with `all_messages` every assistant message of
+    the run in order, else the final message; the text is None when the transcript is incomplete."""
+    if not spec.get("all_messages"):
+        return run["final_message"], "final message"
+    texts = run.get("messages")
+    joined = None if texts is None else "\n\n".join(f"[message {i}]\n{t}" for i, t in enumerate(texts, 1))
+    return joined, "messages, in order"
+
+
 def llm(spec, workspace, initial, harness, run, judges):
     """Hold the output for a batched judge call; `judge_pending` fills in the verdict."""
+    message, kind = _agent_text(spec, run)
     if spec.get("paths"):
         # Several files go to the judge as one document, each under its own header.
         # A glob such as `skill/**/*.md` stands for every matching file in either workspace.
@@ -207,14 +218,15 @@ def llm(spec, workspace, initial, harness, run, judges):
         subject = "(file missing)" if subject is None else subject
         label = spec["path"]
     if spec.get("path") or spec.get("paths"):
-        if spec.get("with_final_message"):
-            if run["final_message"] is None:
+        if spec.get("with_final_message") or spec.get("all_messages"):
+            if message is None:
                 return _UNDECIDED_NO_TRANSCRIPT
-            subject += f"\n>>>\n\nThe agent's final message:\n<<<\n{run['final_message']}"
-    elif run["final_message"] is None:
+            subject += f"\n>>>\n\nThe agent's {kind}:\n<<<\n{message}"
+    elif message is None:
         return _UNDECIDED_NO_TRANSCRIPT
     else:
-        original, subject, label = "(not applicable)", run["final_message"], "final message"
+        # The label differs between the two kinds, so a cached verdict on one never stands for the other.
+        original, subject, label = "(not applicable)", message, kind
     return {"pass": None, "detail": "not judged",
             "pending": {"criteria": spec["criteria"], "original": original, "subject": subject, "label": label}}
 

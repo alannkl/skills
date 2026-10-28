@@ -1,7 +1,7 @@
 """Setups: a harness, a model, a reasoning effort and, for OpenRouter models, the upstream providers.
 
-configs.json holds what each harness needs (`harnesses`: its environment and any
-settings for its own config file), what each known model
+configs.json holds what each harness needs (`harnesses`: its environment, any
+settings for its own config file, and the instruction file it reads), what each known model
 needs (`models`, keyed by short name), and the presets runs name often
 (`presets`). A setup is written as a spec, `{"harness", "model", "effort",
 "provider"}`, or as the name of a preset. A model missing from `models` is

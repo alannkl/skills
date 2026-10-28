@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scripts"))
-from tasks import PROBE_CASE, build_tasks, load_suite  # noqa: E402
+from tasks import PROBE_CASE, build_tasks, load_suite, workspace_name  # noqa: E402
 
 
 class Tasks(unittest.TestCase):
@@ -28,9 +28,9 @@ class Tasks(unittest.TestCase):
         self.cases = cases
         self.out = Path(self._tmp.name) / "tasks"
 
-    def build(self, case_names):
+    def build(self, case_names, instruction_file=None, out=None):
         return build_tasks(self.repo, load_suite(self.repo, "target"), [self.cases / n for n in case_names],
-                           ["with", "without"], "base:test", self.out)
+                           ["with", "without"], "base:test", out or self.out, instruction_file=instruction_file)
 
     def test_arms_differ_only_by_the_target_skill(self):
         names = self.build(["edit-case"])
@@ -75,7 +75,7 @@ class Tasks(unittest.TestCase):
         (self.repo / "docs" / "agents.md").write_text("# Rules\n")
         (self.cases / "eval.json").write_text(json.dumps(
             {"artifact": {"type": "instruction-file", "path": "docs/agents.md", "as": "CLAUDE.md"}}))
-        self.build(["edit-case", PROBE_CASE])
+        self.build(["edit-case", PROBE_CASE], workspace_name(load_suite(self.repo, "target")["artifact"], "AGENTS.md"))
         with_env = self.out / "edit-case--with" / "environment"
         self.assertEqual((with_env / "instructions" / "CLAUDE.md").read_text(), "# Rules\n")
         self.assertIn("COPY instructions/ /app/", (with_env / "Dockerfile").read_text())
@@ -84,12 +84,44 @@ class Tasks(unittest.TestCase):
         self.assertNotIn("instructions", (without_env / "Dockerfile").read_text())
         self.assertIn("quote their first line", (self.out / f"{PROBE_CASE}--with" / "instruction.md").read_text())
 
-    def test_instruction_file_that_the_fixture_already_has_is_refused(self):
+    def test_instruction_file_that_the_fixture_already_has_under_the_delivered_name_is_refused(self):
         (self.cases / "eval.json").write_text(json.dumps(
-            {"artifact": {"type": "instruction-file", "path": "AGENTS.md"}}))
-        (self.repo / "AGENTS.md").write_text("# Rules\n")
+            {"artifact": {"type": "instruction-file", "path": "rules.md"}}))
+        (self.repo / "rules.md").write_text("# Rules\n")
         with self.assertRaises(SystemExit):
-            self.build(["edit-case"])
+            self.build(["edit-case"], "AGENTS.md")
+        self.build(["edit-case"], "CLAUDE.md", out=self.out / "claude")
+        self.assertTrue((self.out / "claude" / "edit-case--with" / "environment" / "instructions" / "CLAUDE.md").is_file())
+
+    def test_instruction_file_takes_the_harness_name_and_is_delivered_without_frontmatter(self):
+        (self.cases / "eval.json").write_text(json.dumps(
+            {"artifact": {"type": "instruction-file", "path": "target/SKILL.md"}}))
+        (self.repo / "target" / "SKILL.md").write_text("---\nname: target\ndescription: d\n---\n\n# Rules\n\n- one\n")
+        artifact = load_suite(self.repo, "target")["artifact"]
+        self.assertEqual([workspace_name(artifact, f) for f in ("CLAUDE.md", "AGENTS.md")], ["CLAUDE.md", "AGENTS.md"])
+        self.build(["edit-case"], "CLAUDE.md")
+        delivered = self.out / "edit-case--with" / "environment" / "instructions"
+        self.assertEqual(sorted(p.name for p in delivered.iterdir()), ["CLAUDE.md"])
+        self.assertEqual((delivered / "CLAUDE.md").read_text(), "# Rules\n\n- one\n")
+
+    def test_minus_copy_of_an_instruction_file_is_delivered_without_frontmatter(self):
+        (self.cases / "eval.json").write_text(json.dumps(
+            {"artifact": {"type": "instruction-file", "path": "target/SKILL.md"}}))
+        copy = Path(self._tmp.name) / "minus" / "SKILL.md"
+        copy.parent.mkdir()
+        copy.write_text("---\nname: target\n---\n# Rules\n")
+        build_tasks(self.repo, load_suite(self.repo, "target"), [self.cases / "edit-case"], ["minus-x"], "base:test",
+                    self.out, {"minus-x": copy}, instruction_file="CLAUDE.md")
+        self.assertEqual((self.out / "edit-case--minus-x" / "environment" / "instructions" / "CLAUDE.md").read_text(),
+                         "# Rules\n")
+
+    def test_text_without_frontmatter_is_delivered_byte_for_byte(self):
+        (self.cases / "eval.json").write_text(json.dumps(
+            {"artifact": {"type": "instruction-file", "path": "rules.md"}}))
+        (self.repo / "rules.md").write_bytes(b"# Rules\r\n---\r\n- one\r\n")
+        self.build(["edit-case"], "CLAUDE.md")
+        self.assertEqual((self.out / "edit-case--with" / "environment" / "instructions" / "CLAUDE.md").read_bytes(),
+                         b"# Rules\r\n---\r\n- one\r\n")
 
     def test_probe_case_needs_no_case_folder(self):
         self.build([PROBE_CASE])

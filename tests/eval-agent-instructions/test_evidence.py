@@ -9,7 +9,7 @@ from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scripts"))
 import evidence  # noqa: E402
-from evidence import claude_code, codex, openclaw, openrouter_generations  # noqa: E402
+from evidence import api, claude_code, codex, openclaw, openrouter_generations  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 
@@ -66,7 +66,30 @@ class Extractors(unittest.TestCase):
         (agent / "claude-code.txt").write_text("".join(json.dumps(e) + "\n" for e in events))
         e = claude_code(agent)
         self.assertEqual(e["final_message"], "full report\n\nsee my last message")
+        self.assertEqual(e["messages"], ["working", "full report", "see my last message"])
         self.assertEqual(e["usage"]["input_tokens"], 16)
+
+    def test_every_extractor_keeps_each_assistant_message_in_order(self):
+        agent = self.copy("codex")
+        said = lambda text: {"type": "item.completed", "item": {"type": "agent_message", "text": text}}
+        with open(agent / "codex.txt", "a") as f:
+            f.write(json.dumps(said("plan")) + "\n" + json.dumps(said("done")) + "\n")
+        e = codex(agent)
+        self.assertEqual(e["messages"][-2:], ["plan", "done"])
+        self.assertEqual(e["final_message"], "done")
+        agent = self.copy("openclaw")
+        reply = lambda blocks: {"source": "transcript", "type": "assistant.message",
+                                "data": {"message": {"role": "assistant", "content": blocks}}}
+        with open(agent / "openclaw-trajectory" / "events.jsonl", "a") as f:
+            for blocks in ([{"type": "thinking", "thinking": "t"}, {"type": "text", "text": "checking"}],
+                           [{"type": "toolCall", "name": "read"}], [{"type": "text", "text": "all done"}]):
+                f.write(json.dumps(reply(blocks)) + "\n")
+        self.assertEqual(openclaw(agent)["messages"], ["checking", "all done"])
+        # An export without transcript text still yields the reply.
+        self.assertEqual(openclaw(FIXTURES / "openclaw")["messages"], [openclaw(FIXTURES / "openclaw")["final_message"]])
+        (self.tmp / "api").mkdir()
+        (self.tmp / "api" / "api.json").write_text(json.dumps({"text": "Refund approved."}))
+        self.assertEqual(api(self.tmp / "api")["messages"], ["Refund approved."])
 
     def test_codex_counts_a_read_that_returned_the_skill(self):
         e = codex(FIXTURES / "codex")

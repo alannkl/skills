@@ -14,7 +14,7 @@ A suite is `evals/<suite>/` in the repository that holds the artifact, outside t
 
 - `setups` names the setups the artifact must support: `run` for edit rounds, `full` for `--full` and `--minus`. Each entry is a preset name from `scripts/configs.json` or a spec such as `{"harness": "openclaw", "model": "deepseek-v4.1-flash", "effort": "high", "provider": "morph"}`. Either key left out falls back to that file's `defaults`, which `--help` prints.
 - `artifact.type` is `skill`, `instruction-file` or `prompt`.
-- An instruction file also takes `"as"`, the name it gets in the workspace, such as `AGENTS.md` or `CLAUDE.md`; it defaults to the file's own name. A fixture must not already hold that file.
+- An instruction file goes in the workspace under the name each harness reads, its `instruction_file` in `scripts/configs.json` (`CLAUDE.md` for Claude Code, `AGENTS.md` for Codex and OpenClaw), or under `"as"` for every harness. Delivery drops a leading YAML frontmatter block, so `path` can name a skill's `SKILL.md` to test it as an always-loaded file. A fixture must not already hold the delivered file.
 - A prompt also takes `"role"` and `"runner"`:
   - `"role": "system"` (default) adds the text to the system prompt: Claude Code's appended system prompt, Codex's developer instructions, or the API call's system message. OpenClaw has no such setting; evaluate the text as an AGENTS.md there.
   - `"role": "user"` puts the text before the case's request, as a task prompt arrives.
@@ -40,6 +40,8 @@ Each case is a folder in the suite:
 - `vars.json`: values for a prompt's placeholders.
 - `graders.json`: `expect_skill_loaded` with `with` and `without` booleans (skills only), optional `agent_timeout_sec`, `trigger_only` (true for a near-miss that only `--trigger` runs), `integration` (true for a case that needs a larger world) or `reserve` (true for a case the regular set does not need), either of which runs only with `--all-cases` or by name, and `graders`.
 
+The final message is the agent's last text, never a subagent's: for Claude Code, the last text of each turn, joined, since a scheduled wakeup or task notification can start another turn; for Codex, its last agent message; for OpenClaw, its last reply payload; for an API call, the reply. Earlier text is graded only through an `llm` grader's `all_messages`.
+
 Grader types; `path` is relative to the workspace:
 
 | type | passes when | fields |
@@ -51,7 +53,7 @@ Grader types; `path` is relative to the workspace:
 | `skills_loaded` | the transcript shows every skill in `skills` loaded from the installed copies | `skills` |
 | `read` | a file read or shell command delivered text containing `marker`, such as the file's first line | `marker`, `match` |
 | `ran` | a shell command matching `pattern` ran and succeeded; with `not_contains`, none was tried. Text the agent searched for, printed or wrote through a heredoc is not a run | `pattern`, `match` |
-| `llm` | the judge finds `criteria` met, given the file at `path` (or every file in `paths`, which may hold globs such as `skill/**/*.md`; a matched folder stands for every file under it) before and after, or the final message | `criteria`, `path` or `paths`, `with_final_message` (also show the final message beside the files) |
+| `llm` | the judge finds `criteria` met, given the file at `path` (or every file in `paths`, which may hold globs such as `skill/**/*.md`; a matched folder stands for every file under it) before and after, or the final message | `criteria`, `path` or `paths`, `with_final_message` (also show the final message beside the files), `all_messages` (show every assistant message of the run, in order, in place of the final message, beside any files) |
 | `json` | the file at `path`, or the final message, parses as JSON whole and has every `required` top-level key | `required`, `path` |
 
 A grader with `"diagnostic": true` is reported but left out of `compare`'s acceptance grades: give it to a reasonable preference the request does not state. `compare` also leaves out `read` and `skills_loaded`, since a draft may reach the same outcome another way. A grader with `"variants": ["with"]` runs only in that arm and in `--minus` copies. Give process checks, such as `read` and `skills_loaded`, that limit: they show what the agent did, not the quality of its output, and the other arm lacks the skill they look for. A read-only case needs both `unchanged_except` and `no_writes`: an agent can write through the shell, which only the end state shows.
@@ -88,6 +90,7 @@ Keep each case small, so edit rounds stay fast:
 - `text` is whole sentences copied exactly, occurring once in the file, or a list of such passages for a rule stated in several places. Removing it builds the minus copy, so a fragment would leave broken text.
 - A grader belongs to a rule only when removing that rule alone would plausibly make it fail. Graders that check general task completion stay unmapped.
 - A rule no realistic case can show in its output, such as one governing an order of steps the transcript does not record, takes `"untestable": "<why>"` and no graders. Decide it by naming the failure it prevents, not by a run. A rule whose graders show only part of it, or show it only through what it protects, takes `"partial": "<what is not shown>"`, so a removal that matches is read as weaker evidence.
+- Map prose that instructs as a rule, marked `partial` when numbered rules carry its testable parts; leave prose that only describes unmapped.
 - `rules <suite>` checks the map and tabulates every run of the current text.
 
 ## Results

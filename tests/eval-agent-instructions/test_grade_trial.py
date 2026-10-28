@@ -7,8 +7,9 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scripts"))
-from eval_instructions import SETTINGS, agent_args, grade_trial, harbor_command, missing_trials, report, stored_baseline  # noqa: E402
-from tasks import task_digest  # noqa: E402
+from eval_instructions import (SETTINGS, agent_args, first_line, grade_trial, harbor_command,  # noqa: E402
+                               instruction_files, missing_trials, report, stored_baseline, task_folder)
+from tasks import task_digest, without_frontmatter  # noqa: E402
 
 FIXTURES = Path(__file__).resolve().parent / "fixtures"
 SKILL = {"type": "skill", "name": "shorten-it"}
@@ -58,6 +59,37 @@ class GradeTrial(unittest.TestCase):
         row = grade_trial(self.trial, "claude-haiku", CONFIG, artifact, self.cases, ["unused"])
         self.assertEqual((row["skill_loaded"], row["delivered"]), (None, True))
         self.assertTrue(row["graders"]["only-doc"]["pass"])
+
+    def test_grading_starts_from_the_file_delivered_to_the_trials_harness(self):
+        tasks_root = self.cases.parent / task_folder("CLAUDE.md")
+        delivered = tasks_root / "shorten-doc--with" / "environment" / "instructions"
+        delivered.mkdir(parents=True)
+        (delivered / "CLAUDE.md").write_text("Keep it short\n")
+        (self.trial / "verifier" / "workspace" / "CLAUDE.md").write_text("Keep it short\n")
+        artifact = {"type": "instruction-file", "path": "constitution/SKILL.md"}
+        row = grade_trial(self.trial, "claude-haiku", CONFIG, artifact, self.cases, ["unused"], tasks_root=tasks_root)
+        self.assertTrue(row["graders"]["only-doc"]["pass"])
+        # Without the setup's own task folder, the file looks added by the agent.
+        row = grade_trial(self.trial, "claude-haiku", CONFIG, artifact, self.cases, ["unused"])
+        self.assertFalse(row["graders"]["only-doc"]["pass"])
+
+    def test_probe_marker_is_the_first_line_of_the_delivered_text(self):
+        text = without_frontmatter("---\nname: constitution\ndescription: d\n---\n\n# Collaboration Constitution\n\nRules.\n")
+        self.assertEqual(first_line(text), "Collaboration Constitution")
+        self.assertEqual(first_line("\n\nYou answer support questions.\n"), "You answer support questions.")
+        self.assertEqual(first_line(""), "")
+
+    def test_report_lists_the_tokens_of_each_loaded_text(self):
+        run_dir = Path(self._tmp.name) / "run-tokens"
+        run_dir.mkdir()
+        (run_dir / "grades.jsonl").write_text("")
+        (run_dir / "run.json").write_text(json.dumps({"loaded_tokens": {
+            "claude-code-opus-5.5-high": [{"path": "CLAUDE.md", "tokens": 1200, "method": "count_tokens endpoint"}],
+            "codex-gpt-6-astra-high": [{"path": "AGENTS.md", "tokens": None, "not_counted": "tiktoken is not installed"}]}}))
+        text = report(run_dir)
+        self.assertIn("| load path | setup | tokens | method |", text)
+        self.assertIn("| CLAUDE.md | claude-code-opus-5.5-high | 1200 | count_tokens endpoint |", text)
+        self.assertIn("| AGENTS.md | codex-gpt-6-astra-high | not counted | tiktoken is not installed |", text)
 
     def test_infrastructure_failure_is_not_graded(self):
         (self.trial / "result.json").write_text(json.dumps({"exception_info": {"exception_type": "AgentSetupTimeoutError"}}))
@@ -127,6 +159,18 @@ class GradeTrial(unittest.TestCase):
         self.assertIn("- opus: should-trigger 1/2, near-miss 1/1", text)
 
 
+class InstructionFiles(unittest.TestCase):
+    """Each setup gets the instruction file under the name its harness reads, unless the suite names one."""
+
+    def test_each_harness_reads_its_own_name_unless_the_suite_gives_one(self):
+        configs = ["claude-code-opus-5.5-high", "codex-gpt-6-astra-high", "openclaw-kimi-k3.1-pro-high-moonshotai"]
+        artifact = {"type": "instruction-file", "path": "constitution/SKILL.md"}
+        self.assertEqual(instruction_files(artifact, configs), dict(zip(configs, ["CLAUDE.md", "AGENTS.md", "AGENTS.md"])))
+        self.assertEqual(set(instruction_files(artifact | {"as": "AGENTS.md"}, configs).values()), {"AGENTS.md"})
+        self.assertEqual(set(instruction_files({"type": "skill", "name": "x"}, configs).values()), {None})
+        self.assertEqual(len({task_folder(n) for n in (None, "CLAUDE.md", "AGENTS.md")}), 3)
+
+
 class StoredBaseline(unittest.TestCase):
     """A without-skill task reuses earlier trials only when everything the agent saw is identical."""
 
@@ -135,14 +179,16 @@ class StoredBaseline(unittest.TestCase):
         self.addCleanup(self._tmp.cleanup)
         self.results = Path(self._tmp.name)
 
-    def prior_run(self, run_id, started, statuses, config=CONFIG, instruction="Shorten docs/a.md.", **row_extra):
+    def prior_run(self, run_id, started, statuses, config=CONFIG, instruction="Shorten docs/a.md.", folder=None,
+                  **row_extra):
         run = self.results / run_id
-        task = run / "tasks" / "shorten-doc--without"
+        task = run / (folder or "tasks") / "shorten-doc--without"
         task.mkdir(parents=True)
         (task / "instruction.md").write_text(instruction)
         (run / "run.json").write_text(json.dumps({"harbor": SETTINGS["harbor"], "started_at": started,
                                                   "configs": {"haiku": config},
-                                                  "agent_args": {"haiku": agent_args(config)}}))
+                                                  "agent_args": {"haiku": agent_args(config)},
+                                                  **({"task_dirs": {"haiku": folder}} if folder else {})}))
         rows = [{"config": "haiku", "case": "shorten-doc", "variant": "without", "status": s,
                  "trial": f"{run_id}-t{i}", **row_extra} for i, s in enumerate(statuses)]
         (run / "grades.jsonl").write_text("".join(json.dumps(r) + "\n" for r in rows))
@@ -156,6 +202,10 @@ class StoredBaseline(unittest.TestCase):
         self.prior_run("old", "2026-10-20", ["ok", "ok"])
         self.prior_run("new", "2026-10-22", ["ok", "infra_error"])
         self.assertEqual(self.find(2), ["new-t0", "old-t0"])
+
+    def test_trials_are_found_in_the_task_folder_their_setup_used(self):
+        self.prior_run("named", "2026-10-22", ["ok"], folder=task_folder("CLAUDE.md"))
+        self.assertEqual(self.find(1), ["named-t0"])
 
     def test_too_few_matches_runs_fresh(self):
         self.prior_run("old", "2026-10-20", ["ok", "missing"])

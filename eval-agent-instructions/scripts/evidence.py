@@ -3,7 +3,8 @@
 Each harness's log is reduced to operations: file reads, file writes, shell
 commands with their output, and (Claude Code only) skill injections. From those,
 every extractor reports the same record: whether the transcript is complete,
-the models that answered, the final message, the skills the agent loaded from
+the models that answered, the final message, every assistant text message in
+order, the skills the agent loaded from
 the installed copies, any same-named skills it loaded from elsewhere, the files
 it wrote, its operations, the skills the harness listed (None when it does not say), usage and cost,
 its tool calls, and the provider retries the harness logged (None where it logs none).
@@ -95,7 +96,7 @@ def summarize(harness: str, ops: list[dict], complete: bool, **fields) -> dict:
         for name, origin in hits:
             installed = any(origin.startswith(root) for root in INSTALLED_ROOTS[harness])
             (loaded if installed else foreign).add(name)
-    record = {"complete": complete, "models": [], "final_message": "", "skills_listed": None,
+    record = {"complete": complete, "models": [], "final_message": "", "messages": [], "skills_listed": None,
               "usage": None, "cost_usd": None, "cost_basis": None, "tool_calls": None, "retries": None,
               "skills_loaded": sorted(loaded) if complete else None,
               "foreign_skills_loaded": sorted(foreign) if complete else None,
@@ -139,7 +140,7 @@ def claude_code(agent_dir: Path) -> dict:
     events = list(_json_lines(agent_dir / "claude-code.txt"))
     # A scheduled wakeup or task notification can start another turn after the first result, whose
     # reply may only point back at the report; the final message is the last reply of every turn.
-    ops, models, texts, finals, listed, calls = [], set(), [], [], None, {}
+    ops, models, texts, finals, messages, listed, calls = [], set(), [], [], [], None, {}
     usage = cost = None
     tool_calls = retries = 0
     complete = False
@@ -156,6 +157,7 @@ def claude_code(agent_dir: Path) -> dict:
                 # Text a subagent wrote is not a reply to the user.
                 if block.get("type") == "text" and not e.get("parent_tool_use_id"):
                     texts.append(block["text"])
+                    messages.append(block["text"])
                 elif block.get("type") == "tool_use":
                     calls[block["id"]] = (block["name"], block.get("input", {}))
                     tool_calls += 1
@@ -187,7 +189,7 @@ def claude_code(agent_dir: Path) -> dict:
                 finals.append(texts[-1])
             texts = []
     return summarize("claude-code", ops, complete, models=sorted(m for m in models if m),
-                     final_message="\n\n".join(finals), skills_listed=listed, usage=usage,
+                     final_message="\n\n".join(finals), messages=messages, skills_listed=listed, usage=usage,
                      cost_usd=cost, cost_basis="Claude Code estimate from model name",
                      tool_calls=tool_calls, retries=retries)
 
@@ -220,7 +222,7 @@ def codex(agent_dir: Path) -> dict:
                 models.add(e.get("payload", {}).get("model"))
     return summarize("codex", ops, complete, models=sorted(m for m in models if m),
                      model_basis="requested; Codex logs no response model",
-                     final_message=texts[-1] if texts else "", usage=usage, cost_basis="tokens only",
+                     final_message=texts[-1] if texts else "", messages=texts, usage=usage, cost_basis="tokens only",
                      tool_calls=tool_calls, retries=retries)
 
 
@@ -348,6 +350,8 @@ def openclaw(agent_dir: Path) -> dict:
         "openclaw", _openclaw_ops(events_path), _openclaw_export_complete(events_path),
         models=sorted({m for m in (effective.get("responseModel"), effective.get("model")) if m}),
         final_message=payloads[-1].get("text", "") if payloads else "",
+        # An export without transcript text still has the reply's payloads.
+        messages=_openclaw_messages(events_path) or [p.get("text", "") for p in payloads],
         skills_listed=[s.get("name") for s in meta.get("systemPromptReport", {}).get("skills", {}).get("entries", [])],
         usage=agent_meta.get("usage"),
         cost_usd=agent_meta.get("costUsd"),
@@ -359,6 +363,14 @@ def openclaw(agent_dir: Path) -> dict:
         generations=generations,
         terminal_error=_openclaw_terminal_error(events_path),
     )
+
+
+def _openclaw_messages(events_path: Path) -> list[str]:
+    """The text of every assistant message in the exported transcript, in order."""
+    return [block.get("text", "") for e in _json_lines(events_path)
+            if e.get("source") == "transcript" and e.get("type") == "assistant.message"
+            for block in ((e.get("data") or {}).get("message") or {}).get("content") or []
+            if isinstance(block, dict) and block.get("type") == "text"]
 
 
 def _openclaw_terminal_error(events_path: Path) -> str | None:
@@ -376,7 +388,8 @@ def api(agent_dir: Path) -> dict:
         return summarize("api", [], False)
     reply = json.loads(path.read_text())
     return summarize("api", [], True, models=[reply["model"]] if reply.get("model") else [],
-                     final_message=reply.get("text", ""), usage=reply.get("usage"), cost_usd=reply.get("cost_usd"),
+                     final_message=reply.get("text", ""), messages=[reply["text"]] if reply.get("text") else [],
+                     usage=reply.get("usage"), cost_usd=reply.get("cost_usd"),
                      cost_basis="reported by the API" if reply.get("cost_usd") is not None else None,
                      upstream_providers=[reply["provider"]] if reply.get("provider") else None)
 
