@@ -1,0 +1,7 @@
+{
+  "artifact": {"type": "instruction-file", "path": "constitution/SKILL.md"},
+  "setups": {
+    "run": ["claude-code-opus-5.5-high", "codex-gpt-6-astra-high"],
+    "full": ["claude-code-opus-5.5-high", "codex-gpt-6-astra-high"]
+  }
+}

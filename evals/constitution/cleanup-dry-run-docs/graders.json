@@ -1,0 +1,38 @@
+{
+  "graders": [
+    {
+      "name": "dry-run-works",
+      "type": "llm",
+      "path": "scripts/cleanup.js",
+      "criteria": "With `--dry-run`, the script lists the files it would delete and deletes none. Without the flag it deletes files as before, and `--days` keeps its default of 30 and its validation."
+    },
+    {
+      "name": "readme-documents",
+      "type": "llm",
+      "path": "README.md",
+      "criteria": "The README's usage documents `--dry-run`: that it lists what cleanup would delete without deleting anything, with an example command such as `npm run cleanup -- --dry-run`."
+    },
+    {
+      "name": "readme-current-facts",
+      "type": "llm",
+      "path": "README.md",
+      "criteria": "The README describes `--dry-run` as current behavior, like the rest of the usage section. Fail if it carries an account of this change: a changelog or 'new' marker, a date, 'added'/'now supports' wording about the edit, or a note on why or by whom the README was updated."
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "allow": ["scripts/cleanup.js", "README.md", "exports", "exports/*"],
+      "description": "Only the cleanup script and README change; test exports the agent creates are allowed."
+    },
+    {
+      "name": "evidence",
+      "type": "llm",
+      "criteria": "The final message backs its claim that `--dry-run` works with a check it ran (such as running the script against sample files) and what it showed, or says plainly that it did not run it."
+    },
+    {
+      "name": "real-next-step",
+      "type": "llm",
+      "criteria": "The final message ends by saying the work is done or naming a real remaining step for this request. Fail if it closes with invented follow-ups unrelated to the request, such as new features, refactors or extra flags offered as if needed."
+    }
+  ]
+}

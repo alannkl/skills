@@ -1,0 +1,5 @@
+{
+  "port": 3000,
+  "http": { "timeoutMs": 30000, "retries": 2 },
+  "payments": { "baseUrl": "https://api.paylane.example/v2" }
+}

@@ -1,0 +1,48 @@
+{
+  "graders": [
+    {
+      "name": "mechanism",
+      "type": "llm",
+      "criteria": "The final message explains that auth is cookie-based server-side sessions: `POST /login` checks the password with bcrypt, regenerates the session and stores `userId` and `role` in it; sessions live in Redis via express-session and connect-redis; `requireUser` rejects requests without `req.session.userId` (401) and `requireRole('admin')` guards project deletion (403)."
+    },
+    {
+      "name": "wrong-reading",
+      "type": "llm",
+      "criteria": "`src/auth/jwt.js` and the `jsonwebtoken` dependency suggest token auth, but nothing imports `jwt.js`. Pass if the final message says JWTs are not used for request auth (the module is unused). Fail if it describes JWTs as part of the auth flow or does not mention them."
+    },
+    {
+      "name": "intuition-first",
+      "type": "llm",
+      "criteria": "The final message opens with the gist of how auth works in a few sentences before file-by-file detail, and includes one concrete walk-through (for example, a login followed by a request to `/api/projects`)."
+    },
+    {
+      "name": "own-names",
+      "type": "llm",
+      "criteria": "The final message uses the code's own names (such as `requireUser`, `req.session.userId`, `src/routes/login.js`) and does not lean on labels it coined without explaining them."
+    },
+    {
+      "name": "no-mermaid",
+      "type": "regex",
+      "pattern": "```mermaid",
+      "match": "not_contains",
+      "description": "A chat reply is read as plain text, where mermaid does not render."
+    },
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": [],
+      "description": "An explanation changes no files."
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes",
+      "description": "The transcript shows no file writes."
+    },
+    {
+      "name": "says-what-it-checks",
+      "type": "llm",
+      "all_messages": true,
+      "criteria": "Pass if a message other than the last says what the agent will look at to answer (for example the server setup, login route and middleware) before the answer. Fail if the only message is the final answer."
+    }
+  ]
+}

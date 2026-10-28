@@ -1,0 +1,45 @@
+{
+  "graders": [
+    {
+      "name": "classification",
+      "type": "llm",
+      "criteria": "The final message classifies the CSV export encoding (41), Safari login loop (47) and due-date (55) issues as bugs and dark mode (44) and Google sign-in (53) as feature requests; the slow dashboard (52) may be called either a bug or a performance issue."
+    },
+    {
+      "name": "fix-first",
+      "type": "llm",
+      "criteria": "The final message recommends fixing the Safari login loop (47) first, with a reason such as customers being locked out since the last deploy."
+    },
+    {
+      "name": "answer-first",
+      "type": "llm",
+      "criteria": "The final message gives its answer (what to fix first, or the bug/feature split) in its first sentence or two, before per-issue detail."
+    },
+    {
+      "name": "title-then-id",
+      "type": "llm",
+      "criteria": "In prose, the final message refers to issues by a short title followed by the ID in parentheses, such as 'Safari login loop (#47)'. A table with separate title and ID columns passes. Fail if prose refers to issues by bare numbers alone or puts the ID before the title."
+    },
+    {
+      "name": "table",
+      "type": "llm",
+      "criteria": "The per-issue breakdown, where each issue has the same fields (type and reason), is a table or a list giving the same fields for every issue in the same order. Fail if it is prose paragraphs or entries with differing fields."
+    },
+    {
+      "name": "no-rule-citing",
+      "type": "llm",
+      "criteria": "The final message does not name or quote rules from the agent's own instructions (for example 'per the constitution' or a rule title such as 'Recommend, don't enumerate') except to explain a specific decision."
+    },
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": [],
+      "description": "A triage question changes no files."
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes",
+      "description": "The transcript shows no file writes."
+    }
+  ]
+}

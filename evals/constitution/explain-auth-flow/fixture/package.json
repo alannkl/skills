@@ -1,0 +1,14 @@
+{
+  "name": "studio-portal",
+  "private": true,
+  "type": "module",
+  "scripts": { "start": "node src/server.js" },
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "connect-redis": "^9.0.0",
+    "express": "^5.1.0",
+    "express-session": "^1.18.2",
+    "jsonwebtoken": "^9.0.2",
+    "redis": "^5.8.2"
+  }
+}

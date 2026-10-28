@@ -1,0 +1,13 @@
+{
+  "name": "bookings",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "db:reset": "node scripts/reset-db.js",
+    "db:migrate": "node scripts/migrate.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "pg": "^8.16.3"
+  }
+}

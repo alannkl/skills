@@ -1,0 +1,9 @@
+{
+  "name": "report-exporter",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "export": "node scripts/export.js",
+    "cleanup": "node scripts/cleanup.js"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "graders": [
+    {
+      "name": "recommends-one",
+      "type": "llm",
+      "criteria": "The final message recommends one option (RQ, Celery, or another named approach) as its choice, rather than listing options and leaving the choice open."
+    },
+    {
+      "name": "flip-fact",
+      "type": "llm",
+      "criteria": "The final message names at least one fact or condition that would change its recommendation, such as needing scheduled or periodic jobs, much higher volume, multiple queues and routing, or not wanting to run a worker process."
+    },
+    {
+      "name": "costs",
+      "type": "llm",
+      "criteria": "The final message states a decisive cost or drawback of each option it weighs, including the one it recommends (for example, for RQ: fewer built-in features such as scheduling or rate limits; a new worker process to run and monitor)."
+    },
+    {
+      "name": "done-defined",
+      "type": "llm",
+      "criteria": "The final message says how the rollout would be checked or what done looks like, for example signup no longer waiting on SMTP, emails still delivered, and failed jobs retried or visible."
+    },
+    {
+      "name": "plan-decisions-first",
+      "type": "llm",
+      "criteria": "The rollout plan raises the decisions most likely to change it (such as what happens when a send fails or the worker is down, retries and duplicate sends, where the worker runs in docker-compose) before or above mechanical steps such as installing the package."
+    },
+    {
+      "name": "next-move",
+      "type": "llm",
+      "criteria": "The final message closes by naming what happens next: a decision the user needs to make, or the step the agent proposes to take. Fail if it ends without saying what happens next."
+    },
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": [],
+      "description": "The request asks for a recommendation and a rollout plan; no files change."
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes",
+      "description": "The transcript shows no file writes."
+    }
+  ]
+}
