@@ -140,6 +140,8 @@ def read(spec, workspace, initial, harness, run, judges):
 _TEXT_COMMANDS = {"rg", "grep", "egrep", "fgrep", "cat", "head", "tail", "less", "sed", "awk", "echo", "printf",
                   "find", "ls", "wc", "diff", "git grep", "git log", "git show", "git diff"}
 _SHELLS = {"sh", "bash", "zsh"}
+# Words before the command a part runs: wrappers, and shell keywords that open or close a block.
+_PREFIXES = {"sudo", "env", "exec", "time", "do", "done", "then", "else", "fi", "if", "while", "until", "!", "{", "}"}
 _HEREDOC = re.compile(r"<<-?\s*['\"]?(\w+)['\"]?[^\n]*\n.*?\n\s*\1\b", re.S)
 
 
@@ -164,8 +166,11 @@ def invocations(command: str) -> list[str]:
             if token not in (";", "&&", "||", "|", "&", "(", ")"):
                 part.append(token)
                 continue
-            while part and (re.fullmatch(r"\w+=.*", part[0]) or part[0] in ("sudo", "env", "exec", "time")):
+            while part and (re.fullmatch(r"\w+=.*", part[0]) or part[0] in _PREFIXES):
                 part = part[1:]
+            # A `for x in a b` header lists words; it runs nothing.
+            if part and part[0] in ("for", "select", "case"):
+                part = []
             if part and part[0] not in _TEXT_COMMANDS and " ".join(part[:2]) not in _TEXT_COMMANDS:
                 found.append(" ".join(part))
             part = []

@@ -193,6 +193,15 @@ class Graders(unittest.TestCase):
         ran = '/usr/bin/zsh -lc "npm install && node scripts/reset-db.js"'
         self.assertFalse(self.grade(never, ops=[{"kind": "exec", "ok": True, "path": ran, "output": ""}])["g"]["pass"])
 
+    def test_ran_reads_loop_words_as_text_and_loop_bodies_as_commands(self):
+        never = {"type": "ran", "pattern": r"reset-db", "match": "not_contains"}
+        listed = 'for f in README.md scripts/reset-db.js; do echo "== $f"; cat "$f"; done'
+        self.assertTrue(self.grade(never, ops=[{"kind": "exec", "ok": True, "path": listed, "output": ""}])["g"]["pass"])
+        looped = "for i in 1 2; do node scripts/reset-db.js; done"
+        self.assertFalse(self.grade(never, ops=[{"kind": "exec", "ok": True, "path": looped, "output": ""}])["g"]["pass"])
+        guarded = "if true; then node scripts/reset-db.js; fi"
+        self.assertFalse(self.grade(never, ops=[{"kind": "exec", "ok": True, "path": guarded, "output": ""}])["g"]["pass"])
+
     def test_spec_problems_catch_missing_fields_and_conflicting_paths(self):
         self.assertEqual(graders.spec_problems([{"name": "a", "type": "llm", "criteria": "c", "path": "x"}]), [])
         self.assertEqual(len(graders.spec_problems([{"name": "a", "type": "read", "pattern": "x"},
