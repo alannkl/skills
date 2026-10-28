@@ -2,6 +2,7 @@
   "graders": [
     {
       "name": "dry-run-works",
+      "guard": "task: the flag working is the request itself",
       "type": "llm",
       "path": "scripts/cleanup.js",
       "criteria": "With `--dry-run`, the script lists the files it would delete and deletes none. Without the flag it deletes files as before, and `--days` keeps its default of 30 and its validation."

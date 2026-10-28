@@ -205,6 +205,12 @@ class Graders(unittest.TestCase):
         guarded = "if true; then node scripts/reset-db.js; fi"
         self.assertFalse(self.grade(never, ops=[{"kind": "exec", "ok": True, "path": guarded, "output": ""}])["g"]["pass"])
 
+    def test_a_guard_names_its_kind_and_reason(self):
+        spec = {"name": "a", "type": "llm", "criteria": "c"}
+        self.assertEqual(graders.spec_problems([spec | {"guard": "dictated: the request names the file"}]), [])
+        for bad in ("the request names the file", "dictated:", "vibes: x", True):
+            self.assertEqual(len(graders.spec_problems([spec | {"guard": bad}])), 1, bad)
+
     def test_spec_problems_catch_missing_fields_and_conflicting_paths(self):
         self.assertEqual(graders.spec_problems([{"name": "a", "type": "llm", "criteria": "c", "path": "x"}]), [])
         self.assertEqual(len(graders.spec_problems([{"name": "a", "type": "read", "pattern": "x"},

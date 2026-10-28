@@ -2,6 +2,7 @@
   "artifact": {"type": "instruction-file", "path": "constitution/SKILL.md"},
   "setups": {
     "run": ["claude-code-opus-5.5-high", "codex-gpt-6-astra-high"],
-    "full": ["claude-code-opus-5.5-high", "codex-gpt-6-astra-high"]
+    "full": ["claude-code-opus-5.5-high", "codex-gpt-6-astra-high", "claude-code-haiku-5.5-high", "codex-gpt-6-luna-high",
+             {"harness": "openclaw", "model": "deepseek-v4.1-flash", "effort": "high", "provider": "morph"}]
   }
 }

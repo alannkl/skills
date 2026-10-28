@@ -68,7 +68,8 @@ sys.path.insert(0, str(HERE))
 from compare import acceptance_graders, compare, describe_work, work  # noqa: E402
 from evidence import EXTRACTORS  # noqa: E402
 from graders import judge_pending, run_graders, temporary_initial_workspace  # noqa: E402
-from rules import EARLIER, MINUS, arm, artifact_digest, check_rules, load_rules, min_set, minus_artifact, rule_cases, tabulate  # noqa: E402
+from rules import (EARLIER, MINUS, arm, artifact_digest, check_rules, guard_refs, load_rules, min_set,  # noqa: E402
+                   minus_artifact, rule_cases, tabulate)
 from tasks import (PROBE_CASE, USE_SKILL, artifact_root, build_tasks, load_spec, load_suite, task_digest,  # noqa: E402
                    without_frontmatter, workspace_name)
 from token_counts import loaded_texts, loaded_tokens  # noqa: E402
@@ -1039,18 +1040,19 @@ def cmd_rules(args) -> None:
     print(f"{len(rules)} rules, {untested} without graders, {untestable} untestable from outputs; {len(runs)} runs of "
           + ("any artifact text" if args.all_versions else "the current artifact text") + ".\n")
     if not args.min_set:
-        print(tabulate(rules, runs))
+        print(tabulate(rules, runs, guard_refs(REPO / "evals" / args.suite)))
         return
     suite_dir = REPO / "evals" / args.suite
     # Reserve cases stay candidates, so a later map or run can bring one back.
     acceptance = {p.name: acceptance_graders(suite_dir, p.name) for p in case_dirs(args.suite, None, False)
                   if not load_spec(p).get("integration")}
     targets = {**SETTINGS["defaults"]["harness"], **suite["setups"]}
-    chosen = min_set(rules, runs, acceptance, {setup_name(s) for s in targets["full"]}, args.gaps)
+    chosen = min_set(rules, runs, acceptance, {setup_name(s) for s in targets["full"]}, args.gaps,
+                     guard_refs(suite_dir)["without"])
     print(f"Regular set: {len(chosen['kept'])} of {len(acceptance)} cases cover every mapped rule they test" + (" and every gap on the --full setups" if args.gaps else "") + ".\n")
     for case in chosen["kept"]:
-        own = sorted(u[1] if u[0] == "rule" else f"gap {u[2]}" for u in chosen["units"][case]
-                     if all(u not in chosen["units"][c] for c in chosen["kept"] if c != case))
+        own = sorted({u[1] if u[0] in ("rule", "effect") else f"gap {u[2]}" for u in chosen["units"][case]
+                     if all(u not in chosen["units"][c] for c in chosen["kept"] if c != case)})
         print(f"- {case} ({chosen['cost'][case] / 1000:.0f}k tokens): only it covers {', '.join(own)}")
     print(f"\nMark `reserve`: {', '.join(chosen['dropped']) or 'none'}")
     if chosen["rules_outside"]:

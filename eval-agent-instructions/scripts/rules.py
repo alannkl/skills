@@ -18,6 +18,7 @@ from pathlib import Path
 from statistics import median
 
 from evidence import input_tokens
+from graders import is_guard, without_arm_skips
 
 MINUS = "minus-"
 RULE_NAME = re.compile(r"^[a-z0-9]+(-[a-z0-9]+)*$")
@@ -150,7 +151,22 @@ def rule_cases(rules: dict, rule: str) -> list[str]:
 EARLIER = " (earlier config "
 
 
-def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
+def guard_refs(cases_root: Path) -> dict[str, set[str]]:
+    """Per comparison, every `<case>/<grader>` it cannot use as evidence: guards and process checks in both,
+    and graders the without arm never runs in with against without."""
+    out = {"without": set(), "minus": set()}
+    for spec in sorted(cases_root.glob("*/graders.json")):
+        for g in json.loads(spec.read_text())["graders"]:
+            ref = f"{spec.parent.name}/{g['name']}"
+            if is_guard(g):
+                out["without"].add(ref)
+                out["minus"].add(ref)
+            elif without_arm_skips(g):
+                out["without"].add(ref)
+    return out
+
+
+def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]], guards: dict[str, set[str]] | None = None) -> str:
     """Per rule and configuration, how many of the rule's graders passed in every attempt in each arm, with a status.
 
     `runs` holds (run.json, grade rows) for runs of the current artifact text only.
@@ -159,7 +175,11 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
     triggering, not the text, so it is counted apart; undecided grades are left out.
     A --minus run's full-artifact arm goes in its own `full` column, since those runs
     may be told to use the skill and the plain with runs are not.
+    `guards` maps each comparison, "without" for the with and without columns and "minus" for the full and
+    minus columns, to the graders it cannot use as evidence; they are left out of that comparison.
     """
+    guards = guards or {"without": set(), "minus": set()}
+    comparison = {"with": "without", "without": "without", "full": "minus", "minus": "minus"}
     columns = ("with", "without", "full", "minus")
     results = defaultdict(list)  # (rule, config, column, case, grader) -> decided passes over attempts
     trials = defaultdict(set)  # (rule, config, column, case) -> trials that contributed
@@ -183,6 +203,8 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
                     unloaded[(name, row["config"])].add(row["trial"])
                     continue
                 for grader in refs:
+                    if f"{row['case']}/{grader}" in guards[comparison[column]]:
+                        continue
                     result = row["graders"].get(grader)
                     if result is None or result.get("pass") is None:
                         continue
@@ -203,15 +225,24 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
             continue
         tested = [c for c in sorted(configs)
                   if any(counts[(name, c, col)][1] for col in columns) or unloaded[(name, c)]]
+        effect_cases = {c: sorted({ref.split("/", 1)[0] for ref in rule["graders"] if ref not in guards[c]})
+                        for c in ("without", "minus")}
+        under = ("under-tested: only a --minus run can show its effect" if effect_cases["minus"]
+                 else "under-tested: only guard graders")
+        if not tested and not effect_cases["without"]:
+            lines.append(f"| {name} | | | | | | | {under} |")
+            weakest.append(f"| {name} | {across_setups({'': under})} |")
+            continue
         if not tested:
             lines.append(f"| {name} | | | | | | | no runs yet |")
-        cases = sorted({ref.split("/", 1)[0] for ref in rule["graders"]})
         statuses = {}
         for config in tested:
             cells = {col: counts[(name, config, col)] for col in columns}
-            fewest = {col: min(len(trials[(name, config, col, case)]) for case in cases) for col in columns}
+            fewest = {col: min((len(trials[(name, config, col, case)]) for case in effect_cases[comparison[col]]),
+                               default=0) for col in columns}
             shown = {col: f"{p}/{t}" if t else "" for col, (p, t) in cells.items()}
-            statuses[config] = status(cells, fewest)
+            usable = effect_cases["minus"] if cells["minus"][1] else effect_cases["without"]
+            statuses[config] = status(cells, fewest) if usable else under
             lines.append(f"| {name} | {config} | {shown['with']} | {shown['without']} | {shown['full']} | "
                          f"{shown['minus']} | "
                          f"{len(unloaded[(name, config)]) or ''} | {statuses[config]} |")
@@ -235,21 +266,27 @@ def across_setups(statuses: dict[str, str]) -> str:
         return f"keep: helps on {needed}" + (", in fewer than 3 runs per arm" if short else "")
     if failing := where(lambda s: s.startswith("graders fail")):
         return f"check the wording or grader: graders fail in both arms on {failing}"
+    if all(s.startswith("under-tested") for s in statuses.values()):
+        return ("under-tested: no case shows its effect" if all("guard" in s for s in statuses.values())
+                else "under-tested: only a --minus run can show its effect")
     if all(s.startswith("candidate") or s == "removal matched the full artifact" for s in statuses.values()):
         return f"candidate on every setup run ({len(statuses)}): no case shows its effect"
     return "undecided: " + "; ".join(f"{c}: {s}" for c, s in sorted(statuses.items()))
 
 
 def min_set(rules: dict, runs: list[tuple[dict, list[dict]]], acceptance: dict[str, set[str]],
-            setups: set[str] | None = None, gaps: bool = False) -> dict:
+            setups: set[str] | None = None, gaps: bool = False, guards: set[str] = frozenset()) -> dict:
     """The cheapest cases in `acceptance` (case -> its acceptance graders) that still cover every mapped
     rule a case there tests, and with `gaps` every gap: an acceptance grader the current text fails in most
     with runs on some setup in `setups` (default every setup), which only its own case can show. Cost is a case's median input tokens per with run, summed
     over setups. Greedy cover by units per token, then any case whose units others cover is dropped,
-    costliest first. `runs` holds runs of the current text, as `tabulate` takes them.
+    costliest first. `runs` holds runs of the current text, as `tabulate` takes them. A rule a case tests through
+    a grader outside `guards` is also an effect unit, so a cheap guard case cannot stand in for the case that
+    shows the rule's effect.
     """
-    units = {case: {("rule", name) for name, rule in rules.items()
-                    for ref in rule["graders"] if ref.partition("/")[0] == case} for case in acceptance}
+    units = {case: {(kind, name) for name, rule in rules.items()
+                    for ref in rule["graders"] if ref.partition("/")[0] == case
+                    for kind in (("rule",) if ref in guards else ("rule", "effect"))} for case in acceptance}
     passes = defaultdict(lambda: [0, 0])  # (case, grader, config) -> [passed, graded]
     tokens = defaultdict(list)  # (case, config) -> input tokens per with run
     for meta, rows in runs:

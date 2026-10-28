@@ -2,6 +2,7 @@
   "graders": [
     {
       "name": "answer",
+      "guard": "task: the correct location is the request itself",
       "type": "llm",
       "criteria": "The final message says the payment timeout is set in `src/clients/payments.js`, read from the `PAYMENTS_TIMEOUT_MS` environment variable with a default of 8000 ms, and does not present `http.timeoutMs` (30000 ms in config/default.json) as the payment timeout."
     },

@@ -10,6 +10,7 @@
     },
     {
       "name": "uses-repo",
+      "guard": "dictated: ADR 007 and the deprecation comment in src/db/raw.js tell new code to use repositories",
       "type": "llm",
       "paths": [
         "src/**/*.js"

@@ -7,7 +7,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scripts"))
-from rules import check_rules, min_set, minus_artifact, remove_text, tabulate  # noqa: E402
+from rules import check_rules, guard_refs, min_set, minus_artifact, remove_text, tabulate  # noqa: E402
 
 SKILL = """---
 name: target
@@ -142,6 +142,37 @@ class Rules(unittest.TestCase):
         self.assertIn("removal: fewer than 3 runs per arm", tabulate(rules, [({"minus": "use-pnpm"}, short)]))
 
 
+    def test_guards_are_left_out_of_the_comparison_they_cannot_inform(self):
+        (self.cases / "case-a" / "graders.json").write_text(json.dumps({"graders": [
+            {"name": "uses-pnpm", "type": "llm", "criteria": "c", "guard": "dictated: the request names pnpm"},
+            {"name": "no-citing", "type": "llm", "criteria": "c", "variants": ["with"]},
+            {"name": "read-docs", "type": "read", "marker": "m"},
+            {"name": "open", "type": "llm", "criteria": "c"}]}))
+        guards = guard_refs(self.cases)
+        self.assertEqual(guards["without"], {"case-a/uses-pnpm", "case-a/no-citing", "case-a/read-docs"})
+        self.assertEqual(guards["minus"], {"case-a/uses-pnpm", "case-a/read-docs"})
+
+        def row(variant, trial, **passes):
+            return {"status": "ok", "config": "opus", "case": "case-a", "variant": variant, "trial": trial,
+                    "skill_loaded": True, "graders": {g: {"pass": p} for g, p in passes.items()}}
+        rules = {"use-pnpm": self.rule(), "silent": self.rule("Run tests first.", ["case-a/no-citing"]),
+                 "mixed": self.rule("Ask before deleting files.", ["case-a/uses-pnpm", "case-a/open"])}
+        runs = [({}, [row("with", "w1", **{"uses-pnpm": True, "no-citing": False, "open": True}),
+                      row("without", "o1", **{"uses-pnpm": True, "open": True})])]
+        table = tabulate(rules, runs, guards)
+        # A dictated grader passes in both arms whatever the text says, so the rule is under-tested, not a candidate.
+        self.assertIn("| use-pnpm | under-tested: no case shows its effect |", table)
+        # A with-only grader would read "did worse" against an arm that never ran it.
+        self.assertIn("| silent | under-tested: only a --minus run can show its effect |", table)
+        self.assertIn("| mixed | opus | 1/1 | 1/1 |  |  |  | candidate: no difference |", table)
+        # A full-against-minus run can use the with-only grader, but never the dictated one.
+        minus = [row("with", f"f{i}", **{"no-citing": True, "uses-pnpm": True}) for i in range(3)]
+        minus += [row("minus-silent", f"m{i}", **{"no-citing": False}) for i in range(3)]
+        minus += [row("minus-use-pnpm", f"u{i}", **{"uses-pnpm": True}) for i in range(3)]
+        table = tabulate(rules, [({"minus": "silent"}, minus)], guards)
+        self.assertIn("| silent | opus |  |  | 1/1 | 0/1 |  | removal did worse |", table)
+        self.assertIn("| use-pnpm | under-tested: no case shows its effect |", table)
+
 
 class MinSet(unittest.TestCase):
     @staticmethod
@@ -160,6 +191,13 @@ class MinSet(unittest.TestCase):
         self.assertEqual(chosen["kept"], ["big", "gappy"])
         self.assertEqual(chosen["dropped"], ["redundant", "small"])
         self.assertEqual(min_set(rules, [({}, rows)], acceptance)["kept"], ["big"])
+
+    def test_a_guard_case_cannot_stand_in_for_the_case_that_shows_the_effect(self):
+        rules = {"a": {"graders": ["cheap/x", "costly/y"]}}
+        acceptance = {"cheap": {"x"}, "costly": {"y"}}
+        rows = [self.row("cheap", 100, x=True), self.row("costly", 900, y=True)]
+        self.assertEqual(min_set(rules, [({}, rows)], acceptance)["kept"], ["cheap"])
+        self.assertEqual(min_set(rules, [({}, rows)], acceptance, guards={"cheap/x"})["kept"], ["costly"])
 
     def test_a_rule_tested_only_outside_the_candidates_is_reported(self):
         rules = {"a": {"graders": ["integration-case/x"]}}

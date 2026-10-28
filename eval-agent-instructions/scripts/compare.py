@@ -16,9 +16,8 @@ from pathlib import Path
 from statistics import median
 
 from evidence import input_tokens, output_tokens
-from graders import HARNESS_FILES, JUDGE_WORKERS, _file_hashes, complete, temporary_initial_workspace
+from graders import HARNESS_FILES, JUDGE_WORKERS, PROCESS_GRADERS, _file_hashes, complete, temporary_initial_workspace
 
-PROCESS_GRADERS = {"read", "skills_loaded"}
 # Characters of changed files shown to the pairwise judge per output.
 DIFF_CHARS = 40_000
 PAIRWISE_PROMPT = (

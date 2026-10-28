@@ -277,7 +277,29 @@ def spec_problems(specs: list[dict]) -> list[str]:
         problems += [f"{s['name']}: {kind} needs {f}" for f in REQUIRED[kind] if f not in s]
         if "path" in s and "paths" in s:
             problems.append(f"{s['name']}: give path or paths, not both")
+        if "guard" in s and not (isinstance(s["guard"], str) and s["guard"].partition(":")[0] in GUARD_KINDS
+                                 and s["guard"].partition(":")[2].strip()):
+            problems.append(f"{s['name']}: guard takes '<kind>: <reason>', the kind one of {', '.join(GUARD_KINDS)}")
     return problems
+
+
+# Why a grader cannot show the artifact's effect: the request or workspace dictates what it checks, no path an
+# agent plausibly takes fails it, or it checks the task rather than the rule.
+GUARD_KINDS = ("dictated", "no-failure-path", "task")
+
+# Graders that show what the agent did, such as reading a file or loading a skill, not the quality of its output.
+PROCESS_GRADERS = {"read", "skills_loaded"}
+
+
+def is_guard(spec: dict) -> bool:
+    """A grader no comparison can use as evidence of the artifact's effect: marked `guard`, or a process check.
+    It still catches the artifact breaking the task."""
+    return bool(spec.get("guard")) or spec["type"] in PROCESS_GRADERS
+
+
+def without_arm_skips(spec: dict) -> bool:
+    """A grader the without arm never runs, so only a full-against-minus comparison can use it."""
+    return "without" not in spec.get("variants", ("without",))
 
 
 def run_graders(specs: list[dict], variant: str, workspace: Path, initial: Path, harness: str,

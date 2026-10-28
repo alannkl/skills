@@ -7,6 +7,7 @@
     },
     {
       "name": "fix-first",
+      "guard": "dictated: the request asks \"what we should fix first\"",
       "type": "llm",
       "criteria": "The final message recommends fixing the Safari login loop (47) first, with a reason such as customers being locked out since the last deploy."
     },
@@ -27,6 +28,7 @@
     },
     {
       "name": "no-rule-citing",
+      "variants": ["with"],
       "type": "llm",
       "criteria": "The final message does not name or quote rules from the agent's own instructions (for example 'per the constitution' or a rule title such as 'Recommend, don't enumerate') except to explain a specific decision."
     },

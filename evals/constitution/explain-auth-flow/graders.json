@@ -17,6 +17,7 @@
     },
     {
       "name": "own-names",
+      "guard": "no-failure-path: an agent explaining code cites the code's own names; nothing invites coined labels",
       "type": "llm",
       "criteria": "The final message uses the code's own names (such as `requireUser`, `req.session.userId`, `src/routes/login.js`) and does not lean on labels it coined without explaining them."
     },
