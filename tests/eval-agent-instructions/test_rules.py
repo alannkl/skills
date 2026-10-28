@@ -95,8 +95,21 @@ class Rules(unittest.TestCase):
         table = tabulate(rules, [({}, rows), ({"minus": "use-pnpm"}, minus_run)])
         self.assertIn("| use-pnpm | haiku | 2/2 | 0/3 | 3/3 | 3/3 | 1 | removal matched the full artifact |", table)
         self.assertIn("| use-pnpm | deepseek | 1/1 | 1/1 |  |  |  | candidate: no difference |", table)
-        self.assertIn("| other | haiku | 2/2 | 0/3 | 3/3 |  | 1 | keep: the artifact helps |", table)
+        self.assertIn("| other | haiku | 2/2 | 0/3 | 3/3 |  | 1 | the artifact helps, in fewer than 3 runs per arm |", table)
         self.assertIn("| ask-first | | | | | | | untested: no grader |", table)
+
+    def test_table_tells_help_harm_and_shared_failure_apart(self):
+        def run(results):
+            return [{"status": "ok", "config": "haiku", "case": "case-a", "variant": variant, "trial": f"{variant}{i}",
+                     "skill_loaded": True, "graders": {"uses-pnpm": {"pass": passed}}}
+                    for variant, passes in results.items() for i, passed in enumerate(passes)]
+        rules = {"use-pnpm": self.rule()}
+        self.assertIn("| keep: the artifact helps |",
+                      tabulate(rules, [({}, run({"with": [True] * 3, "without": [False] * 3}))]))
+        self.assertIn("| the artifact did worse |",
+                      tabulate(rules, [({}, run({"with": [False] * 3, "without": [True] * 3}))]))
+        self.assertIn("| graders fail in both arms: check the wording or grader |",
+                      tabulate(rules, [({}, run({"with": [False], "without": [False]}))]))
 
     def test_removal_needs_three_runs_per_arm_and_no_worse_result(self):
         def row(variant, passed, trial):

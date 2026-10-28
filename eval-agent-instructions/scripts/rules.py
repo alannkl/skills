@@ -264,4 +264,10 @@ def status(cells: dict, fewest: dict) -> str:
         return "removal matched the full artifact" if rate["minus"] >= rate["full"] else "removal did worse"
     if rate["with"] is None or rate["without"] is None:
         return "needs with and without runs"
-    return "keep: the artifact helps" if rate["with"] > rate["without"] else "candidate: no difference"
+    if rate["with"] == rate["without"]:
+        # Failing in both arms says the text is not followed or the grader is wrong, not that the rule is a no-op.
+        return "candidate: no difference" if rate["with"] == 1 else "graders fail in both arms: check the wording or grader"
+    verdict = "keep: the artifact helps" if rate["with"] > rate["without"] else "the artifact did worse"
+    if min(fewest["with"], fewest["without"]) < 3:
+        return verdict.removeprefix("keep: ") + ", in fewer than 3 runs per arm"
+    return verdict

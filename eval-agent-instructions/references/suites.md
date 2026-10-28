@@ -36,7 +36,7 @@ Build a suite in this order:
 Each case is a folder in the suite:
 
 - `instruction.md`: the user's request, exactly as the agent receives it.
-- The workspace: `fixture/`, copied into it, or `scaffold.sh`, run in the empty workspace with `fixture/` beside it. An API case needs none.
+- The workspace: `fixture/`, copied into it, or `scaffold.sh`, run in the empty workspace with `fixture/` beside it. An API case needs none. The repository's ignore rules apply to fixtures: commit a fixture file they match, such as `.env`, with `git add -f`.
 - `vars.json`: values for a prompt's placeholders.
 - `graders.json`: `expect_skill_loaded` with `with` and `without` booleans (skills only), optional `agent_timeout_sec`, `trigger_only` (true for a near-miss that only `--trigger` runs), `integration` (true for a case that needs a larger world) or `reserve` (true for a case the regular set does not need), either of which runs only with `--all-cases` or by name, and `graders`.
 

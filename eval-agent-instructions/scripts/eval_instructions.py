@@ -886,7 +886,9 @@ def cmd_rules(args) -> None:
     for meta_path in sorted((REPO / "evals" / args.suite / "results").glob("*/run.json")):
         meta, grades = json.loads(meta_path.read_text()), meta_path.parent / "grades.jsonl"
         digest = meta.get("artifact_digest") or meta.get("skill_digest")
-        if grades.is_file() and (args.all_versions or digest == current):
+        # A probe-only run checks delivery, not the text's effect.
+        probe_only = set(meta.get("cases") or [None]) <= {PROBE_CASE}
+        if grades.is_file() and not probe_only and (args.all_versions or digest == current):
             runs.append((meta, [json.loads(line) for line in grades.read_text().splitlines()]))
     untestable = sum(1 for r in rules.values() if r.get("untestable"))
     untested = sum(1 for r in rules.values() if not r["graders"]) - untestable
