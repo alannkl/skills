@@ -10,7 +10,7 @@ from unittest import mock
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scripts"))
 import eval_instructions  # noqa: E402
 from eval_instructions import (SETTINGS, agent_args, check_instruction_limit, first_line, grade_trial,  # noqa: E402
-                               harbor_command, instruction_files, missing_trials, probe_says_truncated, report,
+                               harbor_command, instruction_files, missing_trials, new_run_dir, probe_says_truncated, report,
                                stored_baseline, task_folder)
 from tasks import task_digest, without_frontmatter  # noqa: E402
 
@@ -320,6 +320,18 @@ class StoredBaseline(unittest.TestCase):
         text = report(run_dir)
         self.assertIn("c | haiku | without: 2 ok (1 reused)", text)
         self.assertIn("haiku: 0.5000", text)
+
+
+
+class RunDir(unittest.TestCase):
+    def test_runs_started_in_the_same_second_get_their_own_folders(self):
+        with tempfile.TemporaryDirectory() as tmp, \
+                mock.patch.object(eval_instructions, "datetime") as clock:
+            clock.now.return_value.strftime.return_value = "20261028T212049Z"
+            first, second = new_run_dir(Path(tmp), None), new_run_dir(Path(tmp), None)
+            self.assertEqual((first.name, second.name), ("20261028T212049Z", "20261028T212049Z-1"))
+            with self.assertRaises(SystemExit):
+                new_run_dir(Path(tmp), "20261028T212049Z")
 
 
 if __name__ == "__main__":

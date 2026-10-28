@@ -269,6 +269,19 @@ def trial_dirs(job_root: Path) -> list[Path]:
     return found
 
 
+def new_run_dir(results: Path, run_id: str | None) -> Path:
+    """Create the run's folder; a default id that a run started in the same second already took gets a suffix."""
+    base = run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
+    for n in range(1 if run_id else 100):
+        run_dir = results / (base if n == 0 else f"{base}-{n}")
+        try:
+            run_dir.mkdir(parents=True)
+            return run_dir
+        except FileExistsError:
+            continue
+    raise SystemExit(f"{results / base} exists")
+
+
 def stored_baseline(results: Path, run_id: str, config: dict, task: str, digest: str, attempts: int) -> list[Path]:
     """Up to `attempts` graded trials of the same task from earlier runs, newest first.
 
@@ -472,10 +485,7 @@ def cmd_run(args) -> None:
     if set(named) - set(configs):
         raise SystemExit(f"--concurrency names setups this run does not use: {sorted(set(named) - set(configs))}")
     check_credentials(configs)
-    run_id = args.run_id or datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%SZ")
-    run_dir = REPO / "evals" / args.suite / "results" / run_id
-    if run_dir.exists():
-        raise SystemExit(f"{run_dir} exists")
+    run_dir = new_run_dir(REPO / "evals" / args.suite / "results", args.run_id)
     mismatched = [c for c in configs if (SETTINGS["configs"][c]["harness"] == API) != wants_api]
     if mismatched:
         kind = "api setups" if wants_api else "harness setups"
