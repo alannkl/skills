@@ -28,7 +28,7 @@ Run bundled scripts by absolute path, using `<skill-dir>` for this skill's insta
    - Collectors search for signals before reading and return per finding: harness, project, session, transcript path, time, signal kind, a one-line paraphrase without quoted chat text, and the candidate lesson; never raw transcript text.
 
 4. Qualify lessons. Cluster findings across slices. A lesson qualifies when its pattern appears in two or more slices, or when it is one explicit correction that generalizes beyond its task. Every lesson in a memory entry qualifies, since the user confirmed it when it was saved; merge matching findings into it.
-   - Drop task status (progress, plans, open threads) from memory entries: carry its open items to the report, saved nowhere, and propose deleting an entry that held nothing else.
+   - Keep from each lesson only what guides future work: rules, checks, mechanisms and standing facts. Drop records of past work: task status (progress, plans, open threads), incident dates and windows, worked examples, sample counts, errata about past commits, and rules that restate a decision the code already carries. Carry the open items of dropped status to the report, saved nowhere, and propose deleting a memory entry that held nothing else.
    - Check each lesson against what is already persisted: the global and project instruction files (`AGENTS.md`, `CLAUDE.md`) and the text of the skills involved. A persisted lesson goes to the "already captured" list with where it is saved, and its memory entry is proposed for deletion; if the window shows it still being violated, the lesson becomes why the saved rule did not hold.
    - For a repeated workflow, check the installed skills (`~/.agents/skills/`, `~/.claude/skills/`, the project's `.agents/skills/` and `.claude/skills/`) and both lock files first. A covering skill that did not trigger makes the lesson about its description or invocation, not a new skill.
 
@@ -37,7 +37,7 @@ Run bundled scripts by absolute path, using `<skill-dir>` for this skill's insta
 6. Propose, then stop for the user's pick; change nothing before it. For each lesson give the statement, evidence locations (harness, project, session, time), destination per Destinations, and the proposed fix. Order by severity: wrong or destructive results first, then repeated user corrections and rework, then wasted agent effort.
    - A mechanical violation (a fixed syntactic pattern, banned API, import shape, or file-location rule) gets a deterministic check such as a lint rule, hook or CI job; prose rules are for judgment calls only.
    - Before proposing a check, inspect the target's existing check commands and CI. An existing check that is unwired or silently broken is the finding, and a repo with no guardrail at all (no pre-commit hook and no CI running its checks) is a finding in itself.
-   - Give a memory entry's file as its evidence location. Add the entries proposed for deletion, already captured or holding only task status, to the same pick.
+   - Give a memory entry's file as its evidence location. Add the entries proposed for deletion, already captured or holding only records of past work, to the same pick.
    - An empty proposal list is a complete result.
 
 7. Apply only the picked lessons; unpicked ones are not recorded and come back if they keep repeating, and unpicked memory entries stay. Load `write-agent-instructions` to edit or create a skill or an instruction file. Make no commits, sends or other external actions.
