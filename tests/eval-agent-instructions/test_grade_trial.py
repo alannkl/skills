@@ -114,6 +114,15 @@ class GradeTrial(unittest.TestCase):
         self.assertIn("Judge calls in the last grading, shared with run-a:", lines)
         self.assertIn("- opus: 1 calls, 2 outputs, in 1.5k out 0.2k tokens", lines)
 
+    def test_runs_of_an_earlier_setup_config_are_labelled_apart(self):
+        name = "openclaw-kimi-k3.1-pro-high-moonshotai"
+        current = SETTINGS["configs"][name]
+        self.assertEqual(eval_instructions.setup_label(name, {"configs": {name: current}}), name)
+        earlier = {k: v for k, v in current.items() if k != "workspace_setup"}
+        self.assertTrue(eval_instructions.setup_label(name, {"configs": {name: earlier}}).startswith(
+            f"{name} (earlier config "))
+        self.assertEqual(eval_instructions.setup_label("unknown-setup", {"configs": {}}), "unknown-setup")
+
     def test_infrastructure_failure_is_not_graded(self):
         (self.trial / "result.json").write_text(json.dumps({"exception_info": {"exception_type": "AgentSetupTimeoutError"}}))
         row = grade_trial(self.trial, "claude-haiku", CONFIG, SKILL, self.cases, ["unused"])

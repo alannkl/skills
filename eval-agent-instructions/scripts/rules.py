@@ -146,6 +146,10 @@ def rule_cases(rules: dict, rule: str) -> list[str]:
     return sorted({ref.split("/", 1)[0] for ref in rules[rule]["graders"]})
 
 
+# Marks a setup label whose runs used an earlier config under the setup's name.
+EARLIER = " (earlier config "
+
+
 def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
     """Per rule and configuration, pass counts of the rule's graders in each arm, with a status.
 
@@ -207,8 +211,10 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]]) -> str:
             lines.append(f"| {name} | {config} | {shown['with']} | {shown['without']} | {shown['full']} | "
                          f"{shown['minus']} | "
                          f"{len(unloaded[(name, config)]) or ''} | {statuses[config]} |")
-        if statuses:
-            weakest.append(f"| {name} | {across_setups(statuses)} |")
+        # A run under an earlier config of a setup shows in the table but no longer speaks for the setup.
+        current = {c: v for c, v in statuses.items() if EARLIER not in c}
+        if current:
+            weakest.append(f"| {name} | {across_setups(current)} |")
     lines += ["", "Each rule by its weakest setup: a candidate only when every setup run is one.", "",
               "| rule | across setups |", "| --- | --- |"] + weakest
     return "\n".join(lines) + "\n"

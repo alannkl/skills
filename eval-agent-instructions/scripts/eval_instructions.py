@@ -68,7 +68,7 @@ sys.path.insert(0, str(HERE))
 from compare import acceptance_graders, compare, describe_work, work  # noqa: E402
 from evidence import EXTRACTORS  # noqa: E402
 from graders import judge_pending, run_graders, temporary_initial_workspace  # noqa: E402
-from rules import MINUS, arm, artifact_digest, check_rules, load_rules, min_set, minus_artifact, rule_cases, tabulate  # noqa: E402
+from rules import EARLIER, MINUS, arm, artifact_digest, check_rules, load_rules, min_set, minus_artifact, rule_cases, tabulate  # noqa: E402
 from tasks import (PROBE_CASE, USE_SKILL, artifact_root, build_tasks, load_spec, load_suite, task_digest,  # noqa: E402
                    without_frontmatter, workspace_name)
 from token_counts import loaded_texts, loaded_tokens  # noqa: E402
@@ -961,6 +961,15 @@ def checked_rules(suite: dict) -> dict:
     return rules
 
 
+def setup_label(name: str, meta: dict) -> str:
+    """A setup's name, marked with its config's digest when the run used an earlier config under that name,
+    so runs of a changed setup are never pooled with its current runs."""
+    recorded, current = meta.get("configs", {}).get(name), SETTINGS["configs"].get(name)
+    if recorded is None or current is None or recorded == current:
+        return name
+    return f"{name}{EARLIER}{hashlib.sha256(json.dumps(recorded, sort_keys=True).encode()).hexdigest()[:6]})"
+
+
 def cmd_rules(args) -> None:
     """Per-rule pass counts from every graded run of the artifact's current text."""
     suite = load_suite(REPO, args.suite)
@@ -973,7 +982,8 @@ def cmd_rules(args) -> None:
         # A probe-only run checks delivery, not the text's effect.
         probe_only = set(meta.get("cases") or [None]) <= {PROBE_CASE}
         if grades.is_file() and not probe_only and (args.all_versions or digest == current):
-            runs.append((meta, [json.loads(line) for line in grades.read_text().splitlines()]))
+            rows = [json.loads(line) for line in grades.read_text().splitlines()]
+            runs.append((meta, [row | {"config": setup_label(row["config"], meta)} for row in rows]))
     untestable = sum(1 for r in rules.values() if r.get("untestable"))
     untested = sum(1 for r in rules.values() if not r["graders"]) - untestable
     print(f"{len(rules)} rules, {untested} without graders, {untestable} untestable from outputs; {len(runs)} runs of "

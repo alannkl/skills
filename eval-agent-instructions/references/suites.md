@@ -91,7 +91,7 @@ Keep each case small, so edit rounds stay fast:
 - A grader belongs to a rule only when removing that rule alone would plausibly make it fail. Graders that check general task completion stay unmapped.
 - A rule no realistic case can show in its output, such as one governing an order of steps the transcript does not record, takes `"untestable": "<why>"` and no graders. Decide it by naming the failure it prevents, not by a run. A rule whose graders show only part of it, or show it only through what it protects, takes `"partial": "<what is not shown>"`, so a removal that matches is read as weaker evidence.
 - Map prose that instructs as a rule, marked `partial` when numbered rules carry its testable parts; leave prose that only describes unmapped.
-- `rules <suite>` checks the map and tabulates every run of the current text.
+- `rules <suite>` checks the map and tabulates every run of the current text; a run under an earlier config of a setup's name shows apart and does not count toward that setup's verdict.
 
 ## Results
 
