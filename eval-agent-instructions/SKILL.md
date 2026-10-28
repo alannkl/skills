@@ -1,17 +1,19 @@
 ---
 name: eval-agent-instructions
-description: Measure what a skill, AGENTS.md, CLAUDE.md or prompt does by running real sessions with and without it across harnesses, models and APIs, and report by rule and by change.
+description: Measure what a skill, AGENTS.md, CLAUDE.md or prompt does by running real sessions with and without it across harnesses, models and APIs, and report by rule and by change; then shorten it to the fewest words that keep those results.
 disable-model-invocation: true
 ---
 
 # Eval agent instructions
 
-A measured evaluation runs real, billed sessions with and without the instructions, grades them against expectations declared beforehand, and reports what the instructions change. Settle which question the user is asking before designing anything:
+The skill has two phases; run either one on its own when the user asks for it.
 
-- **Does it help?** The artifact against no artifact.
-- **Does a change regress?** The old and new text on the same cases.
-- **Which rules matter?** The full artifact against a copy with one rule removed.
-- **Does it trigger?** A skill description against should-trigger and near-miss requests.
+1. **Evaluate** measures what the instructions change: it runs real, billed sessions with and without them and grades them against expectations declared beforehand. The sections from Evaluate through Report cover it. Settle which question the user is asking before designing anything:
+   - **Does it help?** The artifact against no artifact.
+   - **Does a change regress?** The old and new text on the same cases.
+   - **Which rules matter?** The full artifact against a copy with one rule removed.
+   - **Does it trigger?** A skill description against should-trigger and near-miss requests.
+2. **Minimize** rewrites the text to the fewest words that keep its results, as the Minimize section describes.
 
 ## Runner
 
@@ -23,7 +25,7 @@ What it delivers, per `references/suites.md`:
 - an instruction file such as AGENTS.md or CLAUDE.md, placed in the workspace;
 - a prompt: a system prompt passed to Claude Code or Codex, or sent with an API call, or a user prompt placed before the request. An app's prompt runs through the API, since no agent harness runs it in practice.
 
-## Workflow
+## Evaluate
 
 1. Scope the evaluation: the artifact and its path, the harnesses and models it must work on, and the question. When those setups differ from the defaults, name them in both `run` and `full` of the suite's `eval.json`. Run edit rounds on the `run` setups with `--rule` for each rule the change touches, which selects the cases that test it, and a full evaluation with `--full --all-cases`. Removal decisions use every setup the artifact must support; a portability question uses every setup that matters.
 2. Build or extend the suite in `evals/<suite>/` per `references/suites.md`. Choose cases from requests users make before seeing any results.
@@ -44,7 +46,7 @@ What it delivers, per `references/suites.md`:
 - A case the baseline passes reliably cannot show improvement; report it as a regression guard, and as evidence that its rules may be no-ops.
 - Before changing the text over a case that fails with the artifact, read the judge's reasons, then that case's result in both arms on each setup the artifact must support:
   - Passes with the artifact, fails without: the text works there. A failure on a setup the artifact need not support is that model's limit; keep the text.
-  - Fails with the artifact, or its transcript misreads the rule: the wording is at fault, more surely when another setup misreads it too. Reword the existing text rather than adding to it.
+  - Fails with the artifact, or its transcript misreads the rule: the wording is at fault, more surely when another setup misreads it too. Reword it as Minimize describes.
   - Passes in both arms: the text changes nothing on this case for this setup.
   - Fails in both arms: look for evidence the fixture lacks, an ambiguous grader, or a tooling failure.
 
@@ -74,4 +76,11 @@ Open with the answer to the user's question and the decision it supports. Then, 
 - cost as the harnesses report it, naming setups that report none;
 - what the sample size can and cannot show.
 
-When the user authorizes changes, revise the instructions, then rerun the cases the change touches.
+## Minimize
+
+Minimize rewrites the text rule by rule, from the fewest words up: every rule, or only those a change the user authorized touches. Its target is the current text's results, every grader it passes on each `full` setup, plus any gap the user asks to close. When the suite has no run of the current text on every `full` setup, run its with arm on every regular case first. Every rule stays; dropping one is a removal, decided as Removing a rule describes. A grader whose case dictates the answer passes at any length, so a rule only such graders test keeps its wording.
+
+1. Draft each rule in scope in the fewest words that keep its requirement. A rule no case can show, or the part a `partial` mark names, keeps every requirement; check that by reading.
+2. Compare the draft with the current text as Evaluate step 5 describes, on the cases of every rule it changes on every `full` setup; a draft of the whole text runs every regular case.
+3. Keep a rule's short wording when its graders hold and the blinded judgment does not favor the current text. Where a grader drops, read the transcript, add the least detail that answers that failure, such as a qualifier and then an example, and rerun that rule's cases; stop when it holds on every setup. When the detail reaches the current wording's length, keep the current wording.
+4. After the last addition, rerun every regular case once, since an addition can change what another rule does.

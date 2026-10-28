@@ -61,6 +61,7 @@ A grader with `"diagnostic": true` is reported but left out of `compare`'s accep
 Make each case realistic:
 
 - Take the request and its files from work users bring: what a typical user would ask, about files like theirs. Never shape a case so the baseline fails; text that changes nothing on realistic cases is a no-op.
+- Leave the rule's behavior to the agent: the request must be completable without it, by a path a capable agent takes by default. A request or fixture that dictates the answer tests only that the agent can do the task. For each mapped grader, name that path, from a real failure where one exists.
 - Write the request as users do: short and casual, naming the target and the goal. Report a symptom only as users would, never its cause or the fix.
 - Keep the cues and noise real work has, such as unrelated real defects.
 - Pair a case where the right result is a change with one where it is restraint.

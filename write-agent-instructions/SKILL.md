@@ -38,7 +38,7 @@ Load a reference at the step named here when its condition holds, or where anoth
    - Before writing a lesson as an instruction, check whether a lint rule, type, runtime check, script, or hook can enforce it. When enforcement fits in the artifact's own files, put it there and omit the prose rule; when it belongs in the target repo, recommend it rather than editing beyond the artifact.
    - Separate judgment and approval from mechanical steps, and give each mechanical step a script or a direct command where the executor can run one, choosing per the Scripts section of `references/skill-mechanics.md` when the choice is unclear.
 
-3. Write for the outcome.
+3. Write for the outcome. Write each rule in the fewest words that state it; add detail or an example only for a failure you can name.
    - Start with what a finished run delivers and its required content. List terminal outcomes when the work can end more than one way; for audit, review, and maintenance work, include "nothing worth changing" as a complete result without padding the report.
    - Use ordered steps when sequence matters. Prescribe other steps, fixed headings, or templates only for fragile operations, cases the agent gets wrong by default, or formats another skill or tool consumes. Otherwise state the outcome and constraints; let the agent choose the method and form.
    - Give steps and sets of rules a checkable completion criterion where one naturally exists; prefer exhaustive phrasing ("every changed file reviewed") over vague phrasing ("review the changes"). Name concrete checks for judgment outcomes instead of forcing artificial metrics.
