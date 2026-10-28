@@ -184,7 +184,7 @@
       "file": "SKILL.md",
       "text": "**Make progress observable.** On long tasks, report milestones, direction changes, and surprises as they happen — course-correction is cheap early and expensive late. Report progress against the agreed scope, acceptance criteria, or plan, naming material deviations, never with a bare status label. Keep these updates in the conversation, including during unattended work. When the user requests a persistent run record, keep it separate from maintained documentation so the run can be audited and resumed.",
       "graders": [],
-      "untestable": "updates during a run are not in the graded last message, and a requested run record needs an earlier turn"
+      "untestable": "the rule is for long tasks and every case runs a minute or two, where not reporting progress is right; a requested run record needs an earlier turn"
     },
     "judge-by-reader-outcome": {
       "file": "SKILL.md",

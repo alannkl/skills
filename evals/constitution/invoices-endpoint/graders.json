@@ -39,10 +39,13 @@
         "src/routes/*",
         "src/repos/*",
         "src/server.js",
+        "test/*",
+        "tests/*",
+        "package.json",
         "package-lock.json",
         "node_modules/*"
       ],
-      "description": "Only routes, repositories and server wiring change."
+      "description": "Only routes, repositories, server wiring and tests for the endpoint change."
     },
     {
       "name": "restates-request",
