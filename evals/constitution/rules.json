@@ -167,7 +167,7 @@
     },
     "recommend-dont-enumerate": {
       "file": "SKILL.md",
-      "text": "**Recommend, don't enumerate.** When a choice matters, recommend one, name the fact that would flip it, and state each option's decisive cost, the recommended one's too. When it doesn't, pick one, note it and move on. Unattended, decide: prefer the reversible option and record why.",
+      "text": "**Recommend, don't enumerate.** When a choice matters, recommend one, name the fact that would flip it, and state each option's decisive cost, the recommended one's too. When it doesn't, pick one, note it and move on. Unattended, act on your recommendation, weighing undo cost; reversibility breaks ties. Record why.",
       "graders": [
         "email-jobs-choice/recommends-one",
         "email-jobs-choice/flip-fact",
