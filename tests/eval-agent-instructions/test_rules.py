@@ -111,6 +111,16 @@ class Rules(unittest.TestCase):
         self.assertIn("| graders fail in both arms: check the wording or grader |",
                       tabulate(rules, [({}, run({"with": [False], "without": [False]}))]))
 
+    def test_arms_count_only_graders_both_ran(self):
+        # An earlier with-only run of another case, such as a draft round's, must not read as the artifact doing worse.
+        def row(case, variant, passed):
+            return {"status": "ok", "config": "opus", "case": case, "variant": variant, "trial": f"{case}-{variant}",
+                    "skill_loaded": True, "graders": {"g": {"pass": passed}}}
+        rules = {"r": self.rule("Run tests first.", ["case-a/g", "case-b/g"])}
+        rows = [row("case-a", "with", True), row("case-a", "without", True), row("case-b", "with", False)]
+        self.assertIn("| r | opus | 1/1 | 1/1 |  |  |  | candidate: no difference |", tabulate(rules, [({}, rows)]))
+        self.assertIn("| r | opus | 0/1 |", tabulate(rules, [({}, rows[2:])]))
+
     def test_each_rule_is_judged_by_its_weakest_setup(self):
         from rules import across_setups
         tie = "candidate: no difference"

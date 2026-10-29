@@ -217,9 +217,16 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]], guards: dict[str,
                         continue
                     results[(name, row["config"], column, row["case"], grader)].append(bool(result["pass"]))
                     trials[(name, row["config"], column, row["case"])].add(row["trial"])
-    # A grader counts once per setup and arm, as a pass only when it passed in every attempt.
+    # A grader counts once per setup and arm, as a pass only when it passed in every attempt. Once a setup has a
+    # grader run in both arms of a comparison, graders run in only one of them drop out of it, so the two
+    # columns count the same cases.
+    pair = {"with": "without", "without": "with", "full": "minus", "minus": "full"}
+    paired = {(name, config, column) for (name, config, column, case, grader) in results
+              if (name, config, pair[column], case, grader) in results}
     counts = defaultdict(lambda: [0, 0])  # (rule, config, column) -> [graders passed every time, graders]
-    for (name, config, column, _, _), passes in results.items():
+    for (name, config, column, case, grader), passes in results.items():
+        if (name, config, column) in paired and (name, config, pair[column], case, grader) not in results:
+            continue
         counts[(name, config, column)][0] += all(passes)
         counts[(name, config, column)][1] += 1
     lines = ["| rule | config | with | without | full | minus | not loaded | status |",
