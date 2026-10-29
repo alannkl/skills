@@ -228,7 +228,7 @@
       "text": "**Intuition before detail.** When explaining anything non-trivial, lead with the background needed to follow it, then the intuition: the essence in a few sentences and one concrete example. When a natural but wrong reading exists, name and correct it. Only then the details.",
       "graders": [
         "explain-auth-flow/intuition-first",
-        "explain-auth-flow/wrong-reading"
+        "explain-auth-flow/wrong-reading", "explain-auth-flow/wrong-reading-named"
       ]
     },
     "proportional": {

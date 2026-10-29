@@ -8,7 +8,13 @@
     {
       "name": "wrong-reading",
       "type": "llm",
-      "criteria": "`src/auth/jwt.js` and the `jsonwebtoken` dependency suggest token auth, but nothing imports `jwt.js`. Pass if the final message says JWTs are not used for request auth (the module is unused). Fail if it describes JWTs as part of the auth flow or does not mention them."
+      "criteria": "`src/auth/jwt.js` and the `jsonwebtoken` dependency suggest token auth, but nothing imports `jwt.js`. Fail if the final message describes JWTs as part of the auth flow. Not mentioning them passes."
+    },
+    {
+      "name": "wrong-reading-named",
+      "preference": "A correct account of session auth that leaves the unused JWT module out also explains the flow",
+      "type": "llm",
+      "criteria": "The final message says JWTs are not used for request auth: `src/auth/jwt.js` and the `jsonwebtoken` dependency suggest token auth, but nothing imports `jwt.js`."
     },
     {
       "name": "intuition-first",
@@ -24,10 +30,8 @@
     },
     {
       "name": "no-mermaid",
-      "type": "regex",
-      "pattern": "```mermaid",
-      "match": "not_contains",
-      "description": "A chat reply is read as plain text, where mermaid does not render."
+      "type": "llm",
+      "criteria": "Any diagram in the final message is plain text that reads in a terminal or chat window, such as ASCII art, indented arrows or a numbered sequence. A mermaid block added beside such a diagram, or no diagram at all, passes. Fail if a diagram is given only as source for a renderer, such as a mermaid, PlantUML or Graphviz (DOT) block."
     },
     {
       "name": "no-edit",

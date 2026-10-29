@@ -2,6 +2,7 @@
   "graders": [
     {
       "name": "recommends-one",
+      "guard": "dictated: the request asks \"celery or rq or smth else?\", which asks for a pick",
       "type": "llm",
       "criteria": "The final message recommends one option (RQ, Celery, or another named approach) as its choice, rather than listing options and leaving the choice open."
     },
