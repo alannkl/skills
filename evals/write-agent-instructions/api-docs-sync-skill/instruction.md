@@ -1,0 +1,1 @@
+can you make a skill for keeping docs/api in sync with the api? i want to run it every couple weeks: find what drifted from the actual endpoints, fix the docs, open a pr. last time the refunds docs still said amount was in dollars for a month after we moved to cents and a partner integrated it wrong

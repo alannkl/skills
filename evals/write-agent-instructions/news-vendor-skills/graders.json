@@ -1,0 +1,56 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "one-skill-per-request",
+      "type": "llm",
+      "criteria": "The final message recommends against a model-invoked skill per news vendor: fetching news for a topic becomes one skill (or one skill the brief loads) with the vendors as sources inside it. Keeping vendor skills passes only if they stop being model-invoked and only the brief or one news skill reaches them. Fail if it recommends keeping news-google, news-newsapi and news-gdelt as separate model-invoked skills and adding news-bing the same way, with or without a shared reference.",
+      "preference": "per-vendor skills kept model-invoked, with vendor-specific triggers and one generic news entry point for unspecified sources, stay modular and still route"
+    },
+    {
+      "name": "shared-format-one-place",
+      "type": "llm",
+      "criteria": "The recommended setup keeps every news producer to one item format (fields and dedupe rule) by something that holds them together: one news skill, one shared code module, one file the skills point to, or a contract test every producer must pass. Fail if it leaves an independent copy of the format in each vendor skill with nothing keeping them in sync, as now."
+    },
+    {
+      "name": "no-catch-all",
+      "type": "llm",
+      "criteria": "The recommendation keeps news and quotes as separate skills; it does not fold quotes or every data source into one 'market data' skill.",
+      "preference": "One data skill with a reference per kind of data also works"
+    },
+    {
+      "name": "one-fetch-cli",
+      "type": "llm",
+      "criteria": "Fetching goes through one script or CLI that takes the source (or runs every source), with normalizing and dedupe in shared code, rather than one near-identical script per vendor.",
+      "preference": "Per-vendor scripts that import one shared normalize module also work"
+    },
+    {
+      "name": "drift-noted",
+      "type": "llm",
+      "diagnostic": true,
+      "criteria": "The final message notes that the copies already differ: news-newsapi dedupes by title, and news-gdelt emits publishedAt instead of published_at."
+    },
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": [],
+      "preference": "Restructuring the news skills right away, before news-bing is added, is also acceptable to some users who asked whether to change the setup"
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes",
+      "preference": "Restructuring the news skills right away, before news-bing is added, is also acceptable to some users who asked whether to change the setup"
+    },
+    {
+      "name": "loads-skill-mechanics",
+      "type": "read",
+      "marker": "# Skill mechanics",
+      "variants": [
+        "with"
+      ]
+    }
+  ]
+}

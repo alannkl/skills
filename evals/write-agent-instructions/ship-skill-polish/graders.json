@@ -1,0 +1,110 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "facts-kept",
+      "type": "llm",
+      "path": "skills/ship/SKILL.md",
+      "criteria": "Judge the edited SKILL.md against the original. Every fact survives with its meaning: the steps run in order (a numbered list counts) and none becomes optional; check CI is green with gh run list --commit <sha> --limit 1; tag and push the tag; build with make release, which needs Docker running and takes about 10 minutes; deploy.sh is for production only and staging uses deploy-staging.sh; --blue-green is the default choice but is left off when the release includes a database migration; make smoke runs against the environment just deployed; post_notes posts to #releases, never #general; on any failure stop and report the failing command and its output; no shipping on a Friday after 15:00 UTC. Rewording and dropping pure emphasis are fine. Fail if any fact is lost, weakened, strengthened or changed. The tag source is judged by another grader."
+    },
+    {
+      "name": "conflict-not-resolved",
+      "type": "llm",
+      "path": "skills/ship/SKILL.md",
+      "with_final_message": true,
+      "criteria": "The original says to tag with the version from package.json and, in Notes, that release tags use the date. Pass if both statements survive, or if the edited file states one tag source or format and the final message says it chose it or that the two conflicted. Fail if the file now states a single tag source or format and the final message does not mention the conflict."
+    },
+    {
+      "name": "conflict-reported",
+      "type": "llm",
+      "preference": "Polishing both lines without comment leaves the skill as consistent as it was",
+      "criteria": "The final message points out that step 2 (version from package.json) and the Notes line (date-based tags) disagree about the tag."
+    },
+    {
+      "name": "identifier-once",
+      "type": "regex",
+      "path": "skills/ship/SKILL.md",
+      "pattern": "\\(`(gh run list|make smoke)",
+      "match": "not_contains",
+      "preference": "A label followed by the identifier in parentheses runs the same"
+    },
+    {
+      "name": "tight-line-left",
+      "type": "llm",
+      "path": "skills/ship/SKILL.md",
+      "preference": "Rewording an already tight line costs only review time",
+      "criteria": "Step 7 ('If any step fails, stop and report the failing command and its output.') was already plain and tight. Pass unless it was reworded without becoming shorter or clearer."
+    },
+    {
+      "name": "report",
+      "type": "llm",
+      "path": "skills/ship/SKILL.md",
+      "with_final_message": true,
+      "criteria": "Judge the final message against the edit. It does not present the edit as wording-only, or claim behavior is unchanged, while an operational fact was dropped or changed (a condition, a script, a channel, a flag, an order, the tag source); and it does not claim a fact was removed or changed when the file keeps it. A terse 'tightened wording, behavior unchanged' passes when the files bear it out."
+    },
+    {
+      "name": "emphasis-cut-reported",
+      "type": "llm",
+      "path": "skills/ship/SKILL.md",
+      "with_final_message": true,
+      "preference": "Cutting capitals and 'IMPORTANT' without listing them leaves the same rules",
+      "criteria": "If the edit removed emphasis or a sentence that was pure emphasis (the capitals, 'IMPORTANT', 'EVER' or '!!!' on the Friday rule, or the 'Please make sure to carefully follow...' opener), the final message mentions removing it, in any words. Pass if nothing of the kind was removed."
+    },
+    {
+      "name": "no-behavior-runs",
+      "type": "llm",
+      "variants": [
+        "with"
+      ],
+      "all_messages": true,
+      "criteria": "Fail if the agent's messages report running agent sessions, subagents or evaluations to test the edited skill, or if the final message says the wording edit needs such runs before it can be trusted. Comparing the old and new text, or suggesting a check, passes."
+    },
+    {
+      "name": "steps-intact",
+      "type": "llm",
+      "path": "skills/ship/SKILL.md",
+      "criteria": "Every action of the seven steps survives in its order, and none becomes optional or is dropped. Merging two adjacent steps that keeps each action and its order passes."
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "guard": "task: it checks the edit stays on the skill",
+      "allow": [
+        "skills/ship/SKILL.md"
+      ]
+    },
+    {
+      "name": "polish-loaded",
+      "type": "skills_loaded",
+      "skills": [
+        "refine-it",
+        "shorten-it"
+      ],
+      "variants": [
+        "with"
+      ],
+      "description": "Process check: an artifact-wide wording edit is polished with refine-it, then shorten-it."
+    },
+    {
+      "name": "no-eval-commands",
+      "type": "ran",
+      "match": "not_contains",
+      "variants": [
+        "with"
+      ],
+      "pattern": "(eval_instructions\\.py|\\bclaude\\s+-p\\b|\\bcodex\\s+exec\\b|\\bopenclaw\\b)",
+      "guard": "task: it backs no-behavior-runs with the commands the transcript records"
+    },
+    {
+      "name": "conflict-preserved",
+      "type": "llm",
+      "path": "skills/ship/SKILL.md",
+      "with_final_message": true,
+      "preference": "choosing one tag source and saying so in the final message, which the user can revert",
+      "criteria": "The edited SKILL.md still states both conflicting tag requirements (the version from package.json in step 2, and date-based tags in Notes), or replaces them with one line that keeps the question open; proposing a resolution only in the final message passes. Fail if the file now states a single tag source or format."
+    }
+  ]
+}

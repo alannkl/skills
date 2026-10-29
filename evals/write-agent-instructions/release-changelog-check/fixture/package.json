@@ -1,0 +1,10 @@
+{
+  "name": "@acme/cli",
+  "version": "2.4.0",
+  "bin": {
+    "acme": "bin/acme.js"
+  },
+  "scripts": {
+    "test": "node --test"
+  }
+}

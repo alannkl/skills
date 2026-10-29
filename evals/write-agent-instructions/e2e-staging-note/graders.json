@@ -1,0 +1,56 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "says-what-instead",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "criteria": "Compare the original and edited `AGENTS.md`. The change stops agents running e2e against staging for now and states what they do instead, so the pre-PR e2e requirement for `app/checkout/` and `app/account/` stays something an agent can satisfy: for example run `pnpm e2e:local` (with the dev server running), or an explicit temporary waiver of the staging run that says what to do instead, such as noting it in the PR. Fail if it only tells the agent not to run e2e against staging or to skip e2e with no stated alternative, if it still has the agent run `pnpm e2e` against staging first and fall back only after a failure, or if it names an e2e command that `package.json` does not define."
+    },
+    {
+      "name": "has-end-condition",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "with_final_message": true,
+      "criteria": "Compare the original and edited `AGENTS.md`, with the final message. The change does not read as a permanent rule: it is marked temporary and says to remove or revert it once the staging cert is renewed, or is worded to apply only while staging's certificate is expired, or gives an absolute date, or the final message tells the user to remove it once the cert is renewed. Fail if none of these holds, or if the only end it gives is relative (\"next week\", \"for now\") with no reminder in the final message."
+    },
+    {
+      "name": "placed-with-testing",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "criteria": "The change sits in or next to the Testing rule that requires `pnpm e2e` before checkout and account PRs, or next to the `pnpm e2e` entry under Commands, or edits one of them. It is not a separate section elsewhere in the file.",
+      "preference": "A short note in its own section is still read on every run"
+    },
+    {
+      "name": "no-history",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "criteria": "The change states at most the fact the agent acts on (staging's TLS cert is expired, or e2e against staging fails on TLS). It has no account of ops' renewal schedule, of the failing runs, or of the user's request.",
+      "preference": "A clause about ops' schedule costs a line but misleads no run"
+    },
+    {
+      "name": "leading-words",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "criteria": "The change uses the file's own names, staging, e2e, `pnpm e2e` and `pnpm e2e:local`, and no new synonyms such as \"integration suite\", \"pre-prod\" or \"remote environment\".",
+      "preference": "A synonym the reader can map is still followed"
+    },
+    {
+      "name": "keeps-rest",
+      "guard": "task: the request asks only for an addition",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "criteria": "Every other rule keeps its meaning: the commands, the unit-test rule, the requirement to run the e2e suite before checkout and account PRs (now possibly locally, or temporarily waived with what to do instead while staging's cert is expired), and the git rules."
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "allow": [
+        "AGENTS.md"
+      ]
+    }
+  ]
+}

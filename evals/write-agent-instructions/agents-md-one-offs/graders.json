@@ -1,0 +1,80 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "proration-guard-kept",
+      "type": "llm",
+      "paths": [
+        "AGENTS.md",
+        "app/billing/proration.py"
+      ],
+      "with_final_message": true,
+      "criteria": "The warning against changing the per-line-item half-up rounding in `app/billing/proration.py` survives in the files, in any wording: in AGENTS.md, or in a comment in `proration.py` saying the per-line rounding is intentional. Asking the user about it passes only when the warning is still in the files. Fail if it is gone from both files."
+    },
+    {
+      "name": "keeps-live-rules",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "criteria": "AGENTS.md still says, in any wording: use `uv run` and never `pip install` into the system interpreter; run `make check` before committing (once is enough); new endpoints go in `app/api/v2/` and `app/api/v1/` is frozen; use the fixtures in `tests/conftest.py` and add no new database fixtures; when the user says 'ship it', run `make release-dry` and show the output before `make release`; never paste Stripe keys into code or chat."
+    },
+    {
+      "name": "preference-line-kept",
+      "guard": "dictated: the request asks to keep it",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "criteria": "AGENTS.md still says to use type hints, in any wording."
+    },
+    {
+      "name": "report",
+      "type": "llm",
+      "criteria": "The final message names each rule it removed, not only categories such as 'stale notes'. For a rule removed because something else covers it, such as ruff for import sorting and f-strings or the other `make check` line, it names what covers it. It does not claim to have removed a rule that is still in AGENTS.md.",
+      "paths": [
+        "AGENTS.md",
+        "app/billing/proration.py"
+      ],
+      "with_final_message": true
+    },
+    {
+      "name": "preference-flagged",
+      "preference": "Keeping the line the user asked for without comment loses nothing",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "with_final_message": true,
+      "criteria": "AGENTS.md keeps the type-hints line as the user asked, and the final message notes that line as a removal the user could choose, for example because it matches what the agent does by default."
+    },
+    {
+      "name": "stale-removed",
+      "guard": "task: removing notes that no longer apply is what the request asks for",
+      "type": "llm",
+      "path": "AGENTS.md",
+      "with_final_message": true,
+      "criteria": "The staging-DB outage note (dated until Oct 3) and the note about the `legacy/` importer (the folder no longer exists) are gone from AGENTS.md, or the final message asks about them."
+    },
+    {
+      "name": "origin-checked",
+      "diagnostic": true,
+      "type": "ran",
+      "pattern": "\\bgit\\b[^|;&]*\\b(log|blame)\\b",
+      "description": "Process: the agent looked at history before deciding on a rule. Reported only; the rule's effect is graded by proration-guard-kept."
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "allow": [
+        "AGENTS.md",
+        "app/billing/proration.py"
+      ]
+    },
+    {
+      "name": "reads-pruning",
+      "type": "read",
+      "marker": "# Pruning instructions",
+      "variants": [
+        "with"
+      ]
+    }
+  ]
+}

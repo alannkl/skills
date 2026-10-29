@@ -1,0 +1,54 @@
+{
+  "expect_skill_loaded": {"with": true, "without": false},
+  "graders": [
+    {
+      "name": "rollback-arg-flagged",
+      "type": "llm",
+      "paths": [".agents/skills/deploy/**", "scripts/rollback.sh"],
+      "with_final_message": true,
+      "criteria": "The original references/rollback.md runs scripts/rollback.sh --to <previous-sha>, but the script accepts --revision and exits 2 on --to. Pass if the procedure the agent now follows (in rollback.md or SKILL.md) uses --revision, or the script now accepts --to, or the final message reports the mismatch. Fail if the procedure still passes --to to a script that rejects it and the final message does not mention it."
+    },
+    {
+      "name": "fires-on-failure",
+      "type": "llm",
+      "guard": "task: it checks the reported symptom is fixed, which any fix must do",
+      "path": ".agents/skills/deploy/SKILL.md",
+      "criteria": "The skill now sends the agent to the rollback procedure when a deploy fails: a pointer tied to a rollout timeout, crash-looping pods or a failed smoke test (at the step where they show up, or otherwise with that condition), telling the agent to roll back rather than retry; or the complete procedure inlined with that condition."
+    },
+    {
+      "name": "sharpened-not-inlined",
+      "type": "llm",
+      "path": ".agents/skills/deploy/SKILL.md",
+      "preference": "Inlining the complete procedure also makes the agent roll back",
+      "criteria": "SKILL.md does not restate the rollback procedure from references/rollback.md: not its migration check, log command or rollback command. A one-line instruction to roll back instead of retrying is fine."
+    },
+    {
+      "name": "names-the-action",
+      "type": "llm",
+      "path": ".agents/skills/deploy/SKILL.md",
+      "preference": "Spelling out 'read it, then follow it' leads to the same behavior",
+      "criteria": "The pointer names the action, such as 'follow references/rollback.md', rather than spelling out steps the agent takes on its own, such as 'open references/rollback.md, read it and then follow its steps'. Pass if the procedure was inlined instead."
+    },
+    {
+      "name": "plain-path",
+      "type": "regex",
+      "path": ".agents/skills/deploy/SKILL.md",
+      "pattern": "\\]\\((\\./)?references/",
+      "match": "not_contains",
+      "preference": "A Markdown link to the same path also resolves"
+    },
+    {
+      "name": "keeps-steps",
+      "type": "llm",
+      "guard": "task: it checks the rest of the skill survives",
+      "paths": [".agents/skills/deploy/**"],
+      "criteria": "The six deploy steps keep their meaning, including the user's go-ahead for production, the 5-minute rollout timeout and the smoke test that must exit 0; the rollback procedure, wherever it now lives, still asks the user before rolling back a release that ran a migration and still saves the pods' logs."
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "guard": "task: it checks the edit stays on the skill and its script",
+      "allow": [".agents/skills/deploy/**", "scripts/rollback.sh"]
+    }
+  ]
+}

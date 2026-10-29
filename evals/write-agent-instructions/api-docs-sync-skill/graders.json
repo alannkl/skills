@@ -1,0 +1,215 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "regenerates-first",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "Judge the new skill (any skill folder other than prepare-pr). Before comparing the docs with the API, it has the agent get the current API from the code: run `pnpm openapi:gen` first, or read the route schemas in `src/routes/` directly. Fail if it compares `docs/api/` with the committed `openapi.yaml` without regenerating it, since that file is only refreshed at release."
+    },
+    {
+      "name": "docs-only-ops-kept",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "Judge the new skill. Fail if it tells the agent to delete or rewrite doc entries for operations missing from the spec with no exception for live routes the spec omits (routes without a response schema, such as `POST /webhooks/stripe`). Pass if it has the agent report such entries for a person to decide, keep them, check `src/routes/` before removing anything, or says nothing about removing doc entries."
+    },
+    {
+      "name": "scope-from-spec",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "Judge the new skill. The operations and doc files a run checks are found at run time, from the regenerated spec, the route definitions in `src/routes/`, and `docs/api/`. Fail if it fixes the scope to today's files or operations (orders.md, refunds.md, webhooks.md; the current endpoints) as the complete list. Naming them as examples passes."
+    },
+    {
+      "name": "commands-exist",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*",
+        "package.json",
+        "README.md",
+        "openapi.yaml",
+        "scripts/**",
+        "src/routes/**"
+      ],
+      "criteria": "Judge the new skill against the repo's files. Every command, script and path it presents as the repo's exists as written: for example `pnpm openapi:gen`, `pnpm docs:build`, `openapi.yaml`, `docs/api/`, `src/routes/`, `prepare-pr`. Fail if it names a repo command or script that does not exist (such as `pnpm generate:openapi` or `pnpm docs:lint`), or presents a tool that is neither in the repo nor run through a package runner (`npx <package>`, `pnpm dlx <package>`) as available without saying it must be installed."
+    },
+    {
+      "name": "inventory-row",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "Compare the original and edited `.agents/skills/README.md`. Its table now lists the new skill in a row like the existing prepare-pr row: the skill's name as its folder spells it, written or linked the way prepare-pr is, and a short account of what it does. Fail if the README is unchanged or the new skill has no row."
+    },
+    {
+      "name": "outcome-first",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "Judge the new skill's body. Before the steps, it says what a finished run delivers: docs matching the current API (or no change when nothing drifted), a PR with the fixes, and what is left for a person.",
+      "preference": "A skill whose last step lists the same deliverable also gets it delivered"
+    },
+    {
+      "name": "clean-run",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "Judge the new skill. It treats a run that finds no drift as a complete result: no doc edits, no PR, and a short report saying so.",
+      "preference": "A skill silent on the clean case whose executor reports \"no drift\" on its own"
+    },
+    {
+      "name": "exhaustive-done",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "Judge the new skill. Its comparison has a checkable end: every operation in the spec has been checked against its doc entry and every doc entry against the spec (or equivalent exhaustive wording), not only \"compare the docs with the spec\".",
+      "preference": "An executor given \"compare the docs with the spec\" checks every operation of a spec this size anyway"
+    },
+    {
+      "name": "drift-checks-named",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "Judge the new skill. It names what counts as drift in concrete terms, such as paths and methods, parameters and whether they are required, request and response field names, types and units (cents), and status codes, rather than \"make sure the docs are accurate\". It sets no artificial metric such as a coverage percentage.",
+      "preference": "An executor comparing the docs with the spec checks these fields without being told"
+    },
+    {
+      "name": "no-history",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "Judge the new skill. It holds instructions for the executing agent only: no account of the refunds-in-dollars incident or the partner who integrated wrong, no note of why the skill was made, no notes addressed to its maintainers. A check that comes from the incident, such as comparing units, passes.",
+      "preference": "A one-line reason citing the incident costs context but misleads no run"
+    },
+    {
+      "name": "leading-words",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "Judge the new skill. It uses one term throughout for the generated spec (\"spec\" or `openapi.yaml`) and one for the partner docs (`docs/api/`, docs), taken from the repo, and does not alternate synonyms such as \"schema\", \"contract\" or \"API definition\" for the spec.",
+      "preference": "A careful executor resolves the synonyms from the repo"
+    },
+    {
+      "name": "plain-sentences",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "Judge the new skill. Its instructions are plain sentences with concrete actions, without vague lines such as \"ensure consistency\", \"as appropriate\" or \"review carefully\".",
+      "preference": "Vague lines beside concrete steps still leave the steps usable"
+    },
+    {
+      "name": "not-overprescribed",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "Judge the new skill. It fixes order only where a step needs an earlier result (regenerate, compare, edit, build, open the PR) and adds no fixed report template or headings that nothing consumes. Fail if it forces a sequence on independent checks or requires a multi-section report template.",
+      "preference": "A fixed report template gives consistent reports at the cost of padding"
+    },
+    {
+      "name": "pr-via-prepare-pr",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "Judge the new skill. For opening the PR it names `prepare-pr` and has the agent load it at that step, instead of restating its commands.",
+      "preference": "A skill that opens the PR itself while keeping prepare-pr's checks and its approval stop also opens a sound PR"
+    },
+    {
+      "name": "coined-terms",
+      "diagnostic": true,
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "Any term the new skill coins (one the repo and request do not use) is defined where it first appears. Pass if it coins none.",
+      "preference": "Most coined labels are clear from context"
+    },
+    {
+      "name": "example-realistic",
+      "diagnostic": true,
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "Any example in the new skill uses the repo's real shapes (a `### POST /refunds` heading, `amount_cents`), not placeholders like foo or bar. Pass if it has no examples.",
+      "preference": "Placeholder examples still show the shape"
+    },
+    {
+      "name": "clear-default",
+      "diagnostic": true,
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "The new skill states the default fix for drift (edit the docs to match the current API) and mentions alternative tools or approaches only where they change what the agent does.",
+      "preference": "A list of optional tools is ignorable"
+    },
+    {
+      "name": "skill-created",
+      "guard": "task: it checks the request's outcome",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**/*",
+        ".claude/skills/**/*"
+      ],
+      "criteria": "A new skill exists beside prepare-pr, with `name` and `description` frontmatter, that finds where `docs/api/` drifted from the API, fixes the docs and opens a PR."
+    },
+    {
+      "name": "prepare-pr-unchanged",
+      "guard": "task: the request does not ask to change prepare-pr",
+      "type": "llm",
+      "path": ".agents/skills/prepare-pr/SKILL.md",
+      "criteria": "The file is unchanged in meaning from the original."
+    },
+    {
+      "name": "not-run-now",
+      "guard": "task: making the skill is not running it",
+      "type": "ran",
+      "pattern": "gh\\s+pr\\s+create|git\\s+push",
+      "match": "not_contains"
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "allow": [
+        ".agents/skills/*",
+        ".agents/skills/**",
+        ".claude/skills/*",
+        ".claude/skills/**"
+      ]
+    }
+  ]
+}

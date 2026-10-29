@@ -1,0 +1,124 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "references-gated",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/deploy/**"
+      ],
+      "criteria": "Judge the deploy skill after the change. A run no longer reads every reference up front: rollback material is reached only when the health gate fails, hotfix material only when the user calls the deploy a hotfix, and canary material only for production deploys (reading it on every production deploy is fine). Inlining a reference's content into the step of the branch that needs it also passes. Fail if any step still has every run read `references/rollback.md` or `references/hotfix.md`, or all three references, whatever the branch.",
+      "preference": "reading three short references on every run costs a few hundred tokens and misleads no run"
+    },
+    {
+      "name": "log-output-limited",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/deploy/**"
+      ],
+      "criteria": "Judge the deploy skill after the change. Every run no longer keeps the full `kubectl logs deploy/api -n <env> --since=15m --all-containers` output in context: the logs are read only when the gate fails or to diagnose a failure, or are filtered or limited (errors only, a tail, a count), or saved to a file with only a short summary or the path kept, or the step is gone. Fail if every run still runs that command and keeps its full output."
+    },
+    {
+      "name": "output-line-kept",
+      "type": "llm",
+      "criteria": "The skill, in SKILL.md or a file every run reaches, still requires the run to end with one line that starts exactly `DEPLOY: ok <env> <sha>` or `DEPLOY: rolled-back <env> <sha>` (the placeholder names may differ). `.github/workflows/deploy-staging.yml` greps `^DEPLOY: ok staging `. Fail if the line is gone, made optional, or its fixed text or word order changed.",
+      "paths": [
+        ".agents/skills/deploy/**"
+      ]
+    },
+    {
+      "name": "internal-step-refs",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/deploy/**"
+      ],
+      "criteria": "Every step reference inside the skill's files still points at what it meant. The rollback step's reference to the health gate, and `references/hotfix.md`'s 'step 5 of SKILL.md', must name the health gate or give its current number; a reference that was removed together with the text holding it passes. Fail if any reference now points at a different step or at a step that does not exist."
+    },
+    {
+      "name": "oncall-ref",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/deploy/SKILL.md",
+        "docs/oncall.md"
+      ],
+      "with_final_message": true,
+      "criteria": "`docs/oncall.md` said the deploy skill rolls back in step 6. Pass if, in the resulting files, that sentence still identifies the rollback step: the rollback step is still step 6, or `docs/oncall.md` was updated to its new number or names it. Also pass if the final message tells the user that `docs/oncall.md` now cites the wrong step. Fail if it points at another step or at nothing and the final message does not say so."
+    },
+    {
+      "name": "keeps-requirements",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/deploy/**"
+      ],
+      "criteria": "Judge the deploy skill's files after the change. Each requirement below holds, in any wording, in a file a run reaches when the requirement applies. (1) A production deploy needs the user's explicit confirmation in this conversation and is never inferred from earlier messages. (2) `make migrate-check ENV=<env>` runs before deploying, and a migration that is not backward compatible stops the run to ask the user. (3) The deploy uses `kubectl set image` and `kubectl rollout status` with a 5-minute timeout. (4) Production deploys the canary first, gates it with `make health ENV=production TARGET=canary`, and on failure undoes the canary and stops. (5) The health gate runs `make health ENV=<env>` and passes only with the error rate under 1% and p95 latency under 400 ms for 10 minutes. (6) A failed gate rolls back and never retries the deploy. (7) A rollback is checked with `make health`, the environment, bad SHA and numbers are posted in #deploys, and a rollback that fails health stops and tells the user without trying another version. (8) Hotfix deploys skip the canary but still run the health gate, and are tagged `hotfix-<YYYY-MM-DD>` and pushed after a passing gate. Fail if any is missing or weakened, for example 'confirm with the user' in place of explicit confirmation that is never inferred."
+    },
+    {
+      "name": "report",
+      "type": "llm",
+      "criteria": "The final message names each requirement it removed or changed, including load conditions it changed (for example 'rollback steps now load only when the gate fails'), separately from wording cuts. For each such change it says what replaces the old behavior, if anything. Fail if a removed or changed requirement is covered only by a category ('trimmed filler', 'tightened steps'), or if the message claims to have removed something the files still require. Saying that only history, emphasis and duplicates went passes when that is true.",
+      "paths": [
+        ".agents/skills/deploy/**",
+        "docs/oncall.md"
+      ],
+      "with_final_message": true
+    },
+    {
+      "name": "uncommitted-rule-kept",
+      "guard": "no-failure-path: no default path discards an uncommitted line it reads in the working tree; the old case's failures came from a scaffold that never wrote the line",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/deploy/**"
+      ],
+      "criteria": "The skill still forbids production deploys between Friday 15:00 and Monday 09:00 unless the user says it is an emergency, in any wording."
+    },
+    {
+      "name": "thresholds-once",
+      "preference": "Stating the thresholds in both the gate and the canary reference costs a line and misleads no one",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/deploy/**"
+      ],
+      "criteria": "A production run reaches the health thresholds (1% errors, p95 400 ms, 10 minutes) once: the canary material refers to the gate's thresholds, or the two are stated in one place."
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "allow": [
+        ".agents/skills/deploy/**",
+        "docs/oncall.md"
+      ]
+    },
+    {
+      "name": "reads-pruning",
+      "type": "read",
+      "marker": "# Pruning instructions",
+      "variants": [
+        "with"
+      ],
+      "description": "Process check: the agent read references/pruning-instructions.md."
+    },
+    {
+      "name": "reads-context-design",
+      "type": "read",
+      "marker": "# Context design",
+      "variants": [
+        "with"
+      ],
+      "description": "Process check: the agent read references/context-design.md, as moving material behind load conditions requires."
+    },
+    {
+      "name": "polish-loaded",
+      "type": "skills_loaded",
+      "skills": [
+        "refine-it",
+        "shorten-it"
+      ],
+      "variants": [
+        "with"
+      ]
+    }
+  ]
+}

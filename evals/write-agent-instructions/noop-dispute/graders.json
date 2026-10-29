@@ -1,0 +1,49 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "keep-until-shown",
+      "type": "llm",
+      "criteria": "The reply does not recommend deleting the sentence on argument alone, for example 'it is generic framing the model already follows, remove it'. Recommending to keep it, or to keep it until a check on the model and harness that run code-review settles the question, passes.",
+      "preference": "recommending removal as a stated judgment call, not a measured finding, also answers the question"
+    },
+    {
+      "name": "no-difference-not-proof",
+      "preference": "Removing the sentence after a bounded with/without check on the target executor shows no difference",
+      "type": "llm",
+      "criteria": "The reply does not treat a check that shows no difference as proof that the sentence is a no-op, or as enough reason to delete it."
+    },
+    {
+      "name": "run-check",
+      "preference": "Keeping the sentence on argument, since it costs only a few tokens",
+      "type": "llm",
+      "criteria": "The reply recommends or runs a bounded check of code-review with and without the sentence, on the model and harness that run it, on review tasks where the sentence could change the result, instead of settling the dispute by argument."
+    },
+    {
+      "name": "names-eval-skill",
+      "preference": "Describing the with/without runs without naming the skill that performs them",
+      "type": "llm",
+      "criteria": "For a measured with/without comparison, the reply names the `eval-agent-instructions` skill."
+    },
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": []
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes"
+    },
+    {
+      "name": "reads-evaluating",
+      "type": "read",
+      "marker": "# Evaluating instructions",
+      "variants": [
+        "with"
+      ]
+    }
+  ]
+}

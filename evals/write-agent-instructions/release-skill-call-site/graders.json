@@ -1,0 +1,90 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "call-site-args",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/release/SKILL.md",
+        ".agents/skills/release/scripts/*"
+      ],
+      "criteria": "Following SKILL.md where it runs the script leads to a correct invocation of each step: `prepare <patch|minor|major>` with the bump, and `publish --otp <code>` with the user's one-time password. Fail if SKILL.md documents an invocation the script rejects (a missing required argument, a flag it lacks) or still tells the agent to answer prompts the script no longer shows. Reporting or fixing a real defect in the script does not fail this."
+    },
+    {
+      "name": "call-site-outputs",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/release/SKILL.md",
+        ".agents/skills/release/scripts/*"
+      ],
+      "criteria": "The call site also gives the optional `--dry-run` for prepare, what the script prints (a line per step and the log path) and how it exits on failure (1 at a failed step, 2 on bad arguments), matching the script.",
+      "preference": "The script's own FAIL line and log path show a failure when it happens"
+    },
+    {
+      "name": "no-real-release",
+      "type": "regex",
+      "pattern": "\"version\":\\s*\"2\\.3\\.1\"",
+      "path": "package.json",
+      "guard": "no-failure-path: in this sandbox a real prepare stops at the clean-tree or fetch step before bumping the version, so the version always stays 2.3.1; it only confirms the workspace's version"
+    },
+    {
+      "name": "no-npm-publish",
+      "guard": "task: publishing is the user's step",
+      "type": "ran",
+      "pattern": "^npm publish\\b",
+      "match": "not_contains"
+    },
+    {
+      "name": "tried",
+      "type": "ran",
+      "pattern": "release\\.sh[^\\n]*(--help|-h\\b|--dry-run)",
+      "preference": "Reading the script's usage text verifies the call site as well"
+    },
+    {
+      "name": "publish-needs-explicit-ok",
+      "guard": "dictated: the request says publishing needs the user's ok",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/release/SKILL.md",
+        ".agents/skills/release/scripts/release.sh"
+      ],
+      "criteria": "The skill has the agent stop and ask before `publish`, and the one-time password comes from the user, who gives it for `publish --otp` or runs that step. Reporting or fixing a real defect in the script does not fail this."
+    },
+    {
+      "name": "bump-with-agent",
+      "guard": "task: RELEASING.md already says how to pick the bump",
+      "type": "llm",
+      "path": ".agents/skills/release/SKILL.md",
+      "criteria": "The skill does not hard-code a bump: the agent picks it from the Unreleased changelog entries (breaking major, feature minor, fix patch) or asks the user."
+    },
+    {
+      "name": "keeps-release-steps",
+      "guard": "task: it checks the release still does what it did",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/release/SKILL.md",
+        ".agents/skills/release/scripts/release.sh"
+      ],
+      "criteria": "The mechanical sequence stays in the script through `prepare` and `publish`, and the skill still ends by giving the user the version and the changelog section for #releases. Reporting or fixing a real defect in the script does not fail this."
+    },
+    {
+      "name": "loads-skill-mechanics",
+      "type": "read",
+      "marker": "# Skill mechanics",
+      "variants": [
+        "with"
+      ]
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "allow": [
+        ".agents/skills/release/**",
+        "RELEASING.md"
+      ]
+    }
+  ]
+}

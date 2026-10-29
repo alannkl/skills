@@ -1,0 +1,68 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "concrete-done",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/add-migration/**"
+      ],
+      "criteria": "Compare the original and edited add-migration skill. The verification step, wherever it now lives (step 4 or a verifier's brief), says what to check and what result counts as done, with concrete commands or observations, for example `pnpm db:status` showing the migration applied, the table's new shape in `pnpm db:psql`, `pnpm db:rollback` then `pnpm db:migrate` succeeding, or existing rows still valid. Fail if the content is still 'verify it works and everything looks good' or similar, with only emphasis (MUST, capitals, 'never skip') or a new subagent added."
+    },
+    {
+      "name": "no-unverified-claim",
+      "type": "llm",
+      "criteria": "The final message does not claim, as established, that the change (a MUST, emphasis, a sharper step or a subagent) will stop the agent skipping verification. Describing what changed passes; so does reporting a check it ran with the result, or saying the fix is untried."
+    },
+    {
+      "name": "sharpen-before-split",
+      "preference": "A verifier subagent briefed with the same concrete check also works, at the cost of a second context per migration",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/add-migration/**"
+      ],
+      "with_final_message": true,
+      "criteria": "The fix sharpens the verification step in place. It adds no subagent or new-session split for verification, or it offers one in the final message only as a fallback if the sharpened step is still skipped."
+    },
+    {
+      "name": "names-check",
+      "preference": "Saying the fix is untested, without describing a test, still leaves the user able to try it",
+      "type": "llm",
+      "criteria": "The final message describes a concrete check of the fix with its expected result, for example running the skill on a new migration and seeing the step 4 commands run and their output reported before step 5, or it reports such a check it ran."
+    },
+    {
+      "name": "keeps-rest",
+      "guard": "task: the other steps must survive the fix",
+      "type": "llm",
+      "path": ".agents/skills/add-migration/SKILL.md",
+      "criteria": "Every other rule keeps its meaning and order: the next numbered file with `-- up` and `-- down`, never editing an applied migration, new columns nullable or defaulted, `pnpm db:migrate`, updating `src/db/schema.ts` and then `pnpm typecheck && pnpm test`, and committing the migration with the schema change."
+    },
+    {
+      "name": "others-unchanged",
+      "type": "unchanged_except",
+      "allow": [
+        ".agents/skills/add-migration/**"
+      ]
+    },
+    {
+      "name": "reads-evaluating",
+      "type": "read",
+      "marker": "# Evaluating instructions",
+      "variants": [
+        "with"
+      ]
+    },
+    {
+      "name": "isolation-real",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/add-migration/**"
+      ],
+      "with_final_message": true,
+      "criteria": "If the change or the final message isolates verification from the earlier work, it uses a separate context that does not inherit the conversation, such as a subagent started without it or a new session, not a reference file or section the same agent reads in the same context. Pass if no isolation is proposed."
+    }
+  ]
+}

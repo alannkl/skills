@@ -1,0 +1,54 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "finds-gap",
+      "type": "llm",
+      "criteria": "The final message considers requests that do not say 'release notes', in particular asking for the changelog entry for a version (the phrasing `docs/releasing.md` tells the team to use), and either flags them as a risk the description may miss or send to changelog-lint, or proposes checking them. Fail if it judges the skill's triggering sound having considered only requests that say 'release notes'."
+    },
+    {
+      "name": "proposes-fix",
+      "preference": "Naming the gap and leaving the wording of the fix to the user",
+      "type": "llm",
+      "criteria": "The final message proposes a revised description or trigger condition that covers writing a version's changelog entry, and its proposal still leaves checking or fixing CHANGELOG.md's format to changelog-lint."
+    },
+    {
+      "name": "prompt-sets",
+      "preference": "Judging the description against a few well-chosen should-trigger and near-miss prompts",
+      "type": "llm",
+      "criteria": "The final message judges the description against about 8-10 prompts that should load the skill and about 8-10 near-miss prompts that should not, and gives a verdict for each or for each group."
+    },
+    {
+      "name": "static-label",
+      "preference": "Prompt verdicts with no claim of measurement, which a reader would not take for a run",
+      "type": "llm",
+      "criteria": "The final message makes clear its trigger verdicts come from reading the description against example prompts, not from runs: it calls this a static or routing review, or says activation was not measured. It gives no activation rate and no 'it loaded' observation unless it actually ran sessions."
+    },
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": []
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes"
+    },
+    {
+      "name": "reads-evaluating",
+      "type": "read",
+      "marker": "# Evaluating instructions",
+      "variants": [
+        "with"
+      ]
+    },
+    {
+      "name": "no-fabricated-measurement",
+      "type": "llm",
+      "all_messages": true,
+      "criteria": "The sandbox cannot run sessions against a model, so no activation was measured in this run. Fail if the reply reports an activation rate, or says the skill loaded or failed to load on a prompt as an observed result. Verdicts presented as judgments from reading the description pass."
+    }
+  ]
+}

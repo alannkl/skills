@@ -1,0 +1,126 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "blocks-missing-entry",
+      "type": "llm",
+      "paths": [
+        ".claude/skills/release/**",
+        ".github/workflows/**"
+      ],
+      "with_final_message": true,
+      "criteria": "A release whose version has no `## [<version>]` section in CHANGELOG.md is now stopped by a check that runs without relying on the agent remembering prose: a check in release.sh or a script it runs, a separate check script or command the skill runs as a step that exits non-zero before release.sh, or a check in the tag publish workflow that fails before publishing. Fail if the only changes are to the skill's prose (step 2 reworded, emphasized, moved or repeated, a new gotcha, or a 'verify the entry exists' line with no check that exits non-zero)."
+    },
+    {
+      "name": "writing-step-kept",
+      "type": "llm",
+      "path": ".claude/skills/release/SKILL.md",
+      "criteria": "SKILL.md still tells the agent, before it runs release.sh, to write the CHANGELOG section for the new version: user-facing changes since the last tag, under a `## [<version>] - <YYYY-MM-DD>` heading with Added and Fixed subsections, committed. Rewording or shortening passes. Fail if the instruction to write the entry is gone, for example because the script now checks for it."
+    },
+    {
+      "name": "rest-kept",
+      "type": "llm",
+      "paths": [
+        ".claude/skills/release/**"
+      ],
+      "criteria": "Everything else keeps its meaning. SKILL.md: ask the user for the bump unless given; run release.sh with the bump; `--dry-run` changes nothing; exit 1 means not on main or a dirty tree, fix and rerun; post the new CHANGELOG section in #releases. release.sh: still refuses off main or with a dirty tree, computes the version from package.json and the bump, bumps package.json, commits, tags `v<version>`, pushes main and the tag, and its dry run changes nothing."
+    },
+    {
+      "name": "no-needless-question",
+      "type": "llm",
+      "criteria": "The fix is made in this run. Fail if the final message stops to ask whether or how to fix the skill and no skill file was changed.",
+      "paths": [
+        ".claude/skills/release/**"
+      ],
+      "with_final_message": true
+    },
+    {
+      "name": "call-site-updated",
+      "type": "llm",
+      "path": ".claude/skills/release/SKILL.md",
+      "preference": "release.sh's own error message can tell the agent to add the section and rerun, without SKILL.md repeating it",
+      "criteria": "Step 3 (or wherever SKILL.md describes release.sh) states the new failure: release.sh stops when CHANGELOG.md lacks the version's section, and the agent then adds the section per step 2, commits, and reruns. Naming the exit code is not required."
+    },
+    {
+      "name": "check-verified",
+      "type": "llm",
+      "with_final_message": true,
+      "paths": [
+        ".claude/skills/release/scripts/**"
+      ],
+      "preference": "the check is a few lines the user can verify by reading the diff",
+      "criteria": "The final message says how the new check was exercised, such as a dry run or a direct run that stopped on the missing 2.4.1 section, or says it was not run and how the user can try it safely. Fail if it presents the check as working with no word on whether it ran."
+    },
+    {
+      "name": "repo-config-untouched",
+      "type": "llm",
+      "paths": [
+        ".github/**",
+        "package.json",
+        ".husky/**"
+      ],
+      "with_final_message": true,
+      "preference": "adding a CI job that fails tag builds without a changelog entry, and saying so, also prevents the failure",
+      "criteria": "The repository's CI workflows, package.json scripts and git hooks are unchanged: no new hook, script or CI step. Recommending one in the final message passes."
+    },
+    {
+      "name": "check-accepts-format",
+      "guard": "task: a correct check is what the user needs whichever rule produced it",
+      "type": "llm",
+      "criteria": "If a check of CHANGELOG.md now gates the release (in release.sh, a script it runs, a check script the skill runs, or the publish workflow), it accepts the file's existing heading format, `## [2.3.1] - 2026-10-02`, for the exact version being released, so a release whose section exists goes ahead; a section for another version (such as 2.4.10 when releasing 2.4.1) does not satisfy it. Pass if there is no such check.",
+      "paths": [
+        ".claude/skills/release/**",
+        ".github/workflows/**"
+      ]
+    },
+    {
+      "name": "no-real-release",
+      "guard": "task: the request is to fix the skill, not to release",
+      "type": "ran",
+      "match": "not_contains",
+      "pattern": "release\\.sh\\s+(patch|minor|major)(?![^;&|\\n]*--dry-run)",
+      "diagnostic": true
+    },
+    {
+      "name": "scope-files",
+      "guard": "task: it catches edits outside anything a fix could touch",
+      "type": "unchanged_except",
+      "allow": [
+        ".claude/skills/release/**",
+        "CHANGELOG.md",
+        ".github/**",
+        ".husky/**",
+        "package.json",
+        "package-lock.json"
+      ]
+    },
+    {
+      "name": "reads-skill-mechanics",
+      "type": "read",
+      "marker": "# Skill mechanics",
+      "variants": [
+        "with"
+      ]
+    },
+    {
+      "name": "reads-evaluating",
+      "type": "read",
+      "marker": "# Evaluating instructions",
+      "variants": [
+        "with"
+      ]
+    },
+    {
+      "name": "gate-in-release-path",
+      "type": "llm",
+      "paths": [
+        ".claude/skills/release/**"
+      ],
+      "preference": "a separate check script the skill runs before release.sh also stops the release when the agent follows the skill",
+      "criteria": "The check that stops a release without a CHANGELOG section runs inside release.sh or a script release.sh itself calls, so no release can skip it. Pass if no such check exists (blocks-missing-entry judges that)."
+    }
+  ]
+}

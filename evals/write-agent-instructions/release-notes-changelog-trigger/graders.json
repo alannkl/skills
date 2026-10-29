@@ -1,0 +1,59 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "covers-changelog-entry",
+      "guard": "dictated: the request names changelog-entry requests as the ones to catch",
+      "type": "llm",
+      "path": ".agents/skills/release-notes/SKILL.md",
+      "criteria": "The description's trigger now covers a request to write the changelog entry for a version."
+    },
+    {
+      "name": "near-miss-respected",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/release-notes/SKILL.md",
+        ".agents/skills/changelog-lint/SKILL.md"
+      ],
+      "criteria": "Read the new release-notes description as a whole, beside changelog-lint's. It claims writing a version's changelog entry or release notes, and does not claim requests to check, lint or fix CHANGELOG.md's formatting, which belong to changelog-lint. A word such as 'changelog' passes when the description ties it to writing a version's entry. Fail if the description as a whole would take a request such as 'fix the date headings in CHANGELOG.md'."
+    },
+    {
+      "name": "check-prompts",
+      "preference": "Reporting the description edit without check prompts",
+      "type": "llm",
+      "criteria": "The final message lists a few prompts that should now load release-notes and a few near-miss prompts that should not, chosen to exercise the change (for example 'write the changelog entry for 2.4' against 'fix the heading levels in CHANGELOG.md'), or reports such a check it ran. If it ran none, it presents them as a static check, not a measured result."
+    },
+    {
+      "name": "broad-intent",
+      "preference": "Adding only the phrasing the user reported",
+      "type": "llm",
+      "path": ".agents/skills/release-notes/SKILL.md",
+      "criteria": "The description covers the intent, writing up what changed in a version, under more than the one reported phrase: for example it would also match 'write up the 2.4 changes' or 'draft the notes for v2.4'."
+    },
+    {
+      "name": "body-unchanged",
+      "guard": "task: a description fix leaves the workflow alone",
+      "type": "llm",
+      "path": ".agents/skills/release-notes/SKILL.md",
+      "criteria": "The four workflow steps keep their meaning: the tag check that stops when the tag is missing, the merged-PR listing, the CHANGELOG.md section format with PR numbers, and no ticket IDs."
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "allow": [
+        ".agents/skills/release-notes/SKILL.md"
+      ]
+    },
+    {
+      "name": "reads-evaluating",
+      "type": "read",
+      "marker": "# Evaluating instructions",
+      "variants": [
+        "with"
+      ]
+    }
+  ]
+}

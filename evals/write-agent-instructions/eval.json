@@ -1,3 +1,8 @@
 {
-  "dependencies": ["refine-it", "shorten-it"]
+  "dependencies": ["refine-it", "shorten-it"],
+  "setups": {
+    "run": ["claude-code-opus-5.5-high", "codex-gpt-6-astra-high"],
+    "full": ["claude-code-opus-5.5-high", "codex-gpt-6-astra-high",
+             {"harness": "openclaw", "model": "deepseek-v4.1-flash", "effort": "high", "provider": "morph"}]
+  }
 }

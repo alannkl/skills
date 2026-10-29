@@ -1,0 +1,116 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "universal-rules-reach",
+      "type": "llm",
+      "paths": [
+        "CLAUDE.md",
+        "**/CLAUDE.md",
+        "docs/**",
+        ".claude/**"
+      ],
+      "with_final_message": true,
+      "criteria": "Judge the files before and after. Every rule that applies to any task is still in CLAUDE.md itself, in a file CLAUDE.md imports with @, or behind a pointer whose condition covers every task the rule applies to: the make dev/test/lint commands, lint and test before every commit, never push to main, Conventional Commits, the Linear issue ID in the PR title, one change per PR, strict TypeScript without any, money as integer cents, ISO 8601 UTC dates. The four handler-wide rules (requireAuth first except PUBLIC_ROUTES, ApiError and its error envelope, never log request or response bodies, validate with the zod schema) are in CLAUDE.md, or in src/api/CLAUDE.md, or behind a pointer whose condition covers changing any handler. Fail if any of these was dropped or now sits behind a condition narrower than the tasks it applies to, such as handler-wide rules behind 'when adding an endpoint'."
+    },
+    {
+      "name": "branch-material-reachable",
+      "type": "llm",
+      "paths": [
+        "CLAUDE.md",
+        "**/CLAUDE.md",
+        "docs/**",
+        ".claude/**"
+      ],
+      "with_final_message": true,
+      "criteria": "For each section moved out of CLAUDE.md (adding an endpoint, database migrations, releasing, incident hotfixes), the agent reaches it on the tasks it serves: CLAUDE.md names a path that exists and holds that material, with a condition the agent can recognize without opening it; or it is a skill under .claude/skills/ whose description names that task and that does not set disable-model-invocation: true. Migration rules must reach an agent that changes the schema during another task, including one that edits src/db/schema.ts or runs make migration before opening db/: a nested db/CLAUDE.md passes only if CLAUDE.md also points to it for schema changes, and a slash command, a user-invoked skill, or a bare 'see docs/' fails. Handler rules in src/api/CLAUDE.md pass. Releasing and hotfix material may become a user-invoked command, since the user starts those. Pass if nothing was moved."
+    },
+    {
+      "name": "keeps-every-rule",
+      "type": "llm",
+      "paths": [
+        "CLAUDE.md",
+        "**/CLAUDE.md",
+        "docs/**",
+        ".claude/**"
+      ],
+      "with_final_message": true,
+      "criteria": "Every rule of the original CLAUDE.md survives with its meaning in some file the agent still reaches: each command, each step of adding an endpoint (routes.ts, openapi.yaml, contract test, make client and commit the client), each migration step with its thresholds (100k rows, 5,000-row batches, 200 ms), new columns nullable or defaulted, CONCURRENTLY in its own migration with -- no-transaction, dropping a column only in a later release, the migrate/migrate-down/migrate check, schema.ts and make test; the release days (Tuesdays and Thursdays), each release step, make rollback and #ledger-oncall on a failed health check, never pushing a fix forward; the hotfix trigger, branching from the latest tag, smallest fix, hotfix label, and asking before merging. Rewording is fine. Removing the Notes section, 'write clean, readable, well-structured code', 'make sure your code works' and 'be careful' is fine, and so is removing an explanatory fact such as the 40M-row count when the final message names it. A dropped or weakened rule fails, even when the final message reports it."
+    },
+    {
+      "name": "no-every-session-reference",
+      "type": "llm",
+      "paths": [
+        "CLAUDE.md",
+        "**/CLAUDE.md",
+        "docs/**",
+        ".claude/**"
+      ],
+      "with_final_message": true,
+      "criteria": "Fail if material moved out of CLAUDE.md lands in a file every session still loads (an @ import from CLAUDE.md, or a pointer telling the agent to read it at the start of every task or before any work) while the final message presents the move as saving context. Pass otherwise, including when the final message says such a move saves no context."
+    },
+    {
+      "name": "placement",
+      "type": "llm",
+      "path": "CLAUDE.md",
+      "with_final_message": true,
+      "preference": "Tightening the wording and keeping every section inline also leaves a working CLAUDE.md",
+      "criteria": "The migration steps and the release steps no longer sit in full in CLAUDE.md: they moved to files or skills CLAUDE.md's conditions reach, or the final message recommends that move and what it saves. Fail if both stay inline and the final message does not recommend moving them."
+    },
+    {
+      "name": "plain-path-pointers",
+      "type": "regex",
+      "path": "CLAUDE.md",
+      "pattern": "\\]\\((\\./)?(docs|\\.claude|src|db)/",
+      "match": "not_contains",
+      "preference": "A Markdown link to the same path also resolves"
+    },
+    {
+      "name": "report",
+      "type": "llm",
+      "paths": [
+        "CLAUDE.md",
+        "**/CLAUDE.md",
+        "docs/**",
+        ".claude/**"
+      ],
+      "with_final_message": true,
+      "criteria": "Judge the final message against the files. It says where each moved section went, and names each rule it removed or changed, apart from wording changes. A statement that no rule was removed passes when the files bear it out and fails when a rule was in fact removed or changed. Naming removals only by category, such as 'removed redundant guidance', fails when it hides which rules went."
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "guard": "task: it checks the edit stays on instruction files",
+      "allow": [
+        "CLAUDE.md",
+        "**/CLAUDE.md",
+        "docs/**",
+        ".claude/**"
+      ]
+    },
+    {
+      "name": "reads-context-design",
+      "type": "read",
+      "marker": "# Context design",
+      "variants": [
+        "with"
+      ],
+      "description": "Process check: moving material into conditional references loads references/context-design.md."
+    },
+    {
+      "name": "polish-loaded",
+      "type": "skills_loaded",
+      "skills": [
+        "refine-it",
+        "shorten-it"
+      ],
+      "variants": [
+        "with"
+      ],
+      "description": "Process check: a structural revision is polished with refine-it, then shorten-it."
+    }
+  ]
+}

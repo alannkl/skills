@@ -1,0 +1,44 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "condition-kept",
+      "type": "llm",
+      "paths": [
+        "AGENTS.md",
+        "src/billing/AGENTS.md"
+      ],
+      "criteria": "The added rule says that after changing anything under src/billing/, the agent runs make stripe-fixtures before running the tests. A rule placed in src/billing/AGENTS.md carries the condition by its location and need not restate the path. Fail if it drops the src/billing condition (applying to every test run), narrows it, or loses that the fixtures run first.",
+      "guard": "dictated: the request states the condition, command and order it checks; only the skill's polish plausibly drops one"
+    },
+    {
+      "name": "in-file-terms",
+      "type": "llm",
+      "paths": [
+        "AGENTS.md",
+        "src/billing/AGENTS.md"
+      ],
+      "preference": "The user's own words, pasted as written, also convey the rule",
+      "criteria": "The added text reads as an instruction in the file's register: at most two lines, without conversational asides ('make sure', 'pls actually do it', 'literally') or the story of last month's bug. Keeping the reason that stale fixtures let tests pass is fine."
+    },
+    {
+      "name": "rest-unchanged",
+      "type": "llm",
+      "guard": "task: it checks the existing rules are untouched",
+      "path": "AGENTS.md",
+      "criteria": "The five existing rules are still present with their meaning."
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "guard": "task: it checks the edit stays on instruction files",
+      "allow": [
+        "AGENTS.md",
+        "src/billing/AGENTS.md"
+      ]
+    }
+  ]
+}

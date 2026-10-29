@@ -1,0 +1,137 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "readiness-stops",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**"
+      ],
+      "with_final_message": true,
+      "criteria": "Judge the new promotion skill under .agents/skills/ (not deploy-status). If its description or body says it handles asking whether staging is ok or ready to promote, the skill gives that question a path that runs the before-promoting checks it can run, reports the result and stops without running `fly deploy`, rolling back or posting in #deploys. Pass also if the skill leaves the readiness question out and the final message tells the user so. Fail if a readiness question would reach the promote steps, for example a single workflow that runs the checks and promotes whenever they pass."
+    },
+    {
+      "name": "near-miss-deploy-status",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**"
+      ],
+      "criteria": "Judge the new skill's frontmatter description and body beside deploy-status's. A request deploy-status handles (what's live, which commit staging or prod runs, what the next promotion would ship) must not reach a step that deploys, rolls back or posts: either the new description does not claim those requests, or an exclusion sends them to deploy-status, or the new skill answers them through a read-only branch that stops before promoting. Fail if such a request could select the new skill and run its promote steps."
+    },
+    {
+      "name": "exclusions-real",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**"
+      ],
+      "criteria": "Every exclusion in the new description ('not for ...') names a request its triggers would otherwise catch, such as deploy-status's questions, a rollback on its own, or the token rotation. Fail on an exclusion for requests nobody would confuse with promotion. Pass if there is none.",
+      "preference": "An unneeded exclusion costs only words in every request"
+    },
+    {
+      "name": "description-shape",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**"
+      ],
+      "criteria": "The new description is in third person and under 1024 characters. Its first sentence says what the skill does in words users type (promote staging to prod). Its second gives one condition per kind of request (asking to promote; asking whether staging is ok to promote, if kept) without stacking synonyms for one kind (promote, deploy, ship, release, roll out), without repeating the first sentence, and without telling a human how to type the command.",
+      "preference": "A longer description with synonyms or usage text still routes"
+    },
+    {
+      "name": "triggers-out-of-body",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**"
+      ],
+      "criteria": "The new SKILL.md body does not restate the description's triggers, for example in a 'When to use' section. Any activation or scope rule the description cannot carry sits in a `## Boundaries` section.",
+      "preference": "A short 'When to use' section costs words on each run but works"
+    },
+    {
+      "name": "trigger-check-reported",
+      "type": "llm",
+      "criteria": "The final message reports a check of the new description against requests that should load it and near-misses that should not, naming at least one near-miss, such as a deploy-status question.",
+      "preference": "A sound description shipped without a reported check works as well"
+    },
+    {
+      "name": "coherent-unit",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**"
+      ],
+      "criteria": "The new skill is the promotion workflow, with the readiness check if kept. The quarterly token rotation is not among its steps or sections, and the Heroku history appears at most as a one-line note not to use heroku commands. Pointing to docs/promote.md for the rotation passes.",
+      "preference": "Carrying the rotation as a separate section costs context but breaks nothing"
+    },
+    {
+      "name": "layout",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**"
+      ],
+      "criteria": "Any supporting file inside the new skill folder sits one level deep in references/, assets/ or scripts/, and SKILL.md refers to it by a path relative to the skill directory. Pass if there is none.",
+      "preference": "A nested or differently named folder works when the pointer resolves"
+    },
+    {
+      "name": "keeps-runbook",
+      "guard": "task: it checks the conversion keeps the runbook",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**",
+        "docs/promote.md"
+      ],
+      "criteria": "Following the new skill, with any file it says to read, the agent would: check CI for staging's commit, staging health and manual migrations, and check for a hold in #deploys (asking the user or the channel when it cannot see it); promote at most once a day, before 16:00 SGT and never on Fridays; deploy staging's image to acme-prod with the runbook's command; watch prod health for five minutes and, after two failures in a row, roll back with `fly releases rollback -a acme-prod` and post in #incidents; post in #deploys with the commit range."
+    },
+    {
+      "name": "model-invoked",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**"
+      ],
+      "criteria": "The new skill is model-invoked: no `disable-model-invocation: true`, and no agents/openai.yaml setting allow_implicit_invocation to false.",
+      "diagnostic": true
+    },
+    {
+      "name": "no-promotion",
+      "guard": "task: the request is to write a skill, not to promote",
+      "type": "ran",
+      "pattern": "\\bfly\\s+(deploy|releases\\s+rollback|tokens\\s+(create|revoke))\\b(?![^\\n]*(--help|-h\\b))",
+      "match": "not_contains"
+    },
+    {
+      "name": "loads-skill-mechanics",
+      "type": "read",
+      "marker": "# Skill mechanics",
+      "variants": [
+        "with"
+      ]
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "allow": [
+        ".agents/skills/**",
+        "docs/promote.md",
+        "AGENTS.md"
+      ]
+    },
+    {
+      "name": "status-left-to-deploy-status",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**"
+      ],
+      "preference": "covering status questions in a read-only branch of the new skill also answers them safely, at the cost of two skills competing for them",
+      "criteria": "The new description does not claim deploy-status's requests (what's live, which commit each environment runs, what the next promotion would ship); they stay with deploy-status."
+    },
+    {
+      "name": "readiness-delivered",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/**"
+      ],
+      "guard": "task: the user asked to be able to ask whether staging is ok to promote",
+      "criteria": "Asking whether staging is ok to promote reaches a path that runs the before-promoting checks and reports the result: a read-only branch of the new skill, or a separate skill under .agents/skills/."
+    }
+  ]
+}

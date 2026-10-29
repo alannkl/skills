@@ -1,0 +1,63 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "ready-verdict",
+      "type": "llm",
+      "criteria": "The final message says the skill is ready, or fine to share as it is. Suggestions pass when presented as optional. Fail if it says the skill is not ready, or presents changes as required before sharing, unless the required change fixes a defect the files show.",
+      "paths": [
+        ".agents/skills/changelog-entry/SKILL.md",
+        "scripts/whats-new.ts",
+        "package.json",
+        "CHANGELOG.md"
+      ],
+      "with_final_message": true
+    },
+    {
+      "name": "claims-accurate",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/changelog-entry/SKILL.md",
+        "scripts/whats-new.ts",
+        "package.json",
+        "CHANGELOG.md"
+      ],
+      "with_final_message": true,
+      "criteria": "Fail if the final message states as fact something these files contradict, for example that `pnpm changelog:check` does not exist, that nothing reads the section headings, that the skill has no path for a change that needs no entry, or that it never says where entries go. Otherwise pass."
+    },
+    {
+      "name": "keeps-format",
+      "type": "llm",
+      "with_final_message": true,
+      "paths": [
+        "scripts/whats-new.ts"
+      ],
+      "criteria": "Fail if the final message recommends loosening, renaming, reordering or dropping the `## [Unreleased]` placement, the `### Added` / `### Changed` / `### Fixed` sections or the one-line `- ` entry format, for example as over-prescription or a template the agent should be free to vary, without also saying that `scripts/whats-new.ts` parses them and would have to change too. Suggesting that the skill name the script passes."
+    },
+    {
+      "name": "keeps-reason",
+      "type": "llm",
+      "criteria": "Fail if the final message recommends removing the sentence that entries are copied verbatim into the What's New panel, or its reason, as rationale, explanation or padding. Suggesting shorter wording that keeps the reason passes.",
+      "preference": "\"Describe the effect users see, not the implementation\" without its reason still steers most entries right"
+    },
+    {
+      "name": "keeps-guardrail",
+      "diagnostic": true,
+      "type": "llm",
+      "criteria": "Fail if the final message recommends deleting the rule against editing released sections, or recasting it so it no longer says where a correction goes instead.",
+      "preference": "A rule saying only where new entries go implies most of it"
+    },
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": []
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes"
+    }
+  ]
+}

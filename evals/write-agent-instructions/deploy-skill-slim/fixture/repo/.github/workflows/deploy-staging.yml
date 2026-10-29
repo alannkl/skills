@@ -1,0 +1,12 @@
+name: deploy-staging
+on:
+  push:
+    branches: [main]
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          claude -p "/deploy staging ${GITHUB_SHA}" --output-format text | tee deploy.log
+          grep -E '^DEPLOY: ok staging ' deploy.log

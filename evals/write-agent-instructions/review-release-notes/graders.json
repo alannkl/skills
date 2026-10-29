@@ -1,0 +1,60 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": []
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes"
+    },
+    {
+      "name": "publish-on-check",
+      "type": "llm",
+      "criteria": "The review points out that a request to check the notes before a release matches the description, yet the workflow always ends by publishing to the CDN, so a check request would publish or overwrite that version's notes. It recommends a path that stops before publishing for check requests, or removing the check trigger."
+    },
+    {
+      "name": "consumer-warning",
+      "type": "llm",
+      "criteria": "If the review recommends moving, merging, renumbering or removing the tag-check step, it notes that `docs/releasing.md` cites it as step 3 and needs updating, or recommends referring to the step by name. If it recommends no such change, pass."
+    },
+    {
+      "name": "keeps-safeguards",
+      "type": "llm",
+      "criteria": "The review does not recommend dropping, without an equivalent replacement, the `git tag --list` check and its stop-and-ask, the exact headings `scripts/publish.py` parses, or the no-internal-ticket-IDs rule. Recommending that a duplicate statement of one of them go passes."
+    },
+    {
+      "name": "dup-rules-noted",
+      "type": "llm",
+      "criteria": "The review points out that step 4 states two rules twice, keeping the exact headings the publish script parses and leaving out ticket IDs, and recommends stating each once with its meaning kept.",
+      "preference": "A review that leaves the repeated lines in place costs a few lines of context but misleads no run"
+    },
+    {
+      "name": "findings",
+      "guard": "task: it checks that a review was delivered",
+      "type": "llm",
+      "criteria": "The final message is a review in conversation with at least one correct, material finding supported by the files, such as the publish-on-check problem, the history lines, the emphasis that changes no behavior, the duplicated heading and ticket-ID rules, or the package.json scripts the task never uses."
+    },
+    {
+      "name": "reads-skill-mechanics",
+      "type": "read",
+      "marker": "# Skill mechanics",
+      "variants": [
+        "with"
+      ]
+    },
+    {
+      "name": "reads-pruning",
+      "type": "read",
+      "marker": "# Pruning instructions",
+      "variants": [
+        "with"
+      ]
+    }
+  ]
+}

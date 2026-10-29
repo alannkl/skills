@@ -1,0 +1,129 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "skill-created",
+      "guard": "task: the request asks for the command",
+      "type": "llm",
+      "paths": [
+        "skills/**"
+      ],
+      "criteria": "A skill folder that did not exist before now holds a SKILL.md for the weekly eng-sync command."
+    },
+    {
+      "name": "keeps-every-instruction",
+      "type": "llm",
+      "paths": [
+        "skills/**"
+      ],
+      "criteria": "Judge the new skill (the folder under skills/ that did not exist before). Following it, an agent would do every one of these: look at the user's own merges into main from last week with git log; list open PRs waiting on the user's review with `gh pr list --search \"review-requested:@me\" --state open` (other quoting, flag order or added output flags such as --json pass; another search term fails); skip anything from dependabot; write 3 to 5 bullets for the eng sync; in past tense; with no fluff (any wording asking for terse, filler-free bullets passes); with PR numbers linked. Rewording passes. Fail if any of these is missing or changed, such as a fixed count of 3, no past tense, no no-fluff instruction, or everyone's merges instead of the user's.",
+      "guard": "dictated: the request supplies every instruction it checks; only the skill's polish plausibly drops one"
+    },
+    {
+      "name": "no-invented-steps",
+      "type": "llm",
+      "paths": [
+        "skills/**"
+      ],
+      "criteria": "Judge the new skill. It adds no step that changes what a run gathers, sends or writes beyond the user's instructions, such as asking the user for blockers or plans, adding the user's own open PRs or a 'this week' section, posting to Slack, saving a file, or another time window. Clarifying how to carry out the user's steps passes: how to compute last week's dates, how to find PR numbers in merge commits, what to say when a list is empty."
+    },
+    {
+      "name": "plain-shortcut",
+      "type": "llm",
+      "paths": [
+        "skills/**"
+      ],
+      "criteria": "The new skill's body is the user's instructions with no workflow scaffolding they did not ask for: no completion criterion ('Done when'), Gotchas, Boundaries or trigger section, and no outcome preamble. Headings or a numbered list of the user's own steps pass.",
+      "preference": "A short structured version with a Done line or a gotcha behaves the same"
+    },
+    {
+      "name": "user-invoked-claude",
+      "type": "llm",
+      "paths": [
+        "skills/**"
+      ],
+      "criteria": "The new skill's SKILL.md frontmatter sets `disable-model-invocation: true`.",
+      "preference": "A model-invoked command still runs when typed; it adds its description to every request and may load on its own"
+    },
+    {
+      "name": "codex-user-invoked",
+      "type": "llm",
+      "paths": [
+        "skills/**"
+      ],
+      "criteria": "If the new skill sets `disable-model-invocation: true`, its folder holds `agents/openai.yaml` setting `policy.allow_implicit_invocation` to an unquoted `false`. Pass if the new skill is model-invoked.",
+      "preference": "Without the file Codex treats the command as model-invoked, which costs context but breaks nothing"
+    },
+    {
+      "name": "one-line-description",
+      "type": "llm",
+      "paths": [
+        "skills/**"
+      ],
+      "criteria": "If the new skill is user-invoked, its description is one line telling a human what the command does, with no 'Use when' trigger list. Pass if the skill is model-invoked.",
+      "preference": "A trigger list on a user-invoked skill goes unused but breaks nothing"
+    },
+    {
+      "name": "frontmatter-valid",
+      "type": "llm",
+      "paths": [
+        "skills/**"
+      ],
+      "criteria": "The new SKILL.md starts with YAML frontmatter that parses. A plain unquoted value must not contain ': ' or ' #' and must not start with a YAML indicator such as '[', '{', '*', '&', '!', '%', '@' or a quote it does not close; a quoted value or a block scalar (`|` or `>` followed by indented lines) passes. `name` equals the folder name and uses only lowercase letters, digits and single hyphens, starting and ending with a letter or digit. Fail if the frontmatter would not parse or the name differs from the folder."
+    },
+    {
+      "name": "only-skill-md",
+      "type": "llm",
+      "paths": [
+        "skills/**"
+      ],
+      "criteria": "The new skill folder holds only SKILL.md, plus agents/openai.yaml if present: no scripts/, references/, assets/ or README.",
+      "preference": "A small script for the git query also works"
+    },
+    {
+      "name": "no-filler-fields",
+      "type": "llm",
+      "paths": [
+        "skills/**"
+      ],
+      "criteria": "The new frontmatter holds name, description and invocation settings, plus only optional fields that carry information for this command (allowed-tools for git and gh passes). Fail on boilerplate or placeholder fields such as version, author, license, tags or empty metadata.",
+      "preference": "Boilerplate fields cost a few tokens and break nothing"
+    },
+    {
+      "name": "readme-row",
+      "type": "llm",
+      "paths": [
+        "README.md",
+        "skills/**"
+      ],
+      "criteria": "README.md's table lists the new skill like the other rows: linked to its SKILL.md, with an 'Invoked by' value matching its frontmatter (its /command if user-invoked, 'model' if model-invoked) and a one-line use."
+    },
+    {
+      "name": "router-row",
+      "type": "llm",
+      "paths": [
+        "skills/**"
+      ],
+      "criteria": "If the new skill is user-invoked, skills/commands/SKILL.md lists its command with when to use it. Pass if the new skill is model-invoked."
+    },
+    {
+      "name": "loads-skill-mechanics",
+      "type": "read",
+      "marker": "# Skill mechanics",
+      "variants": [
+        "with"
+      ]
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "allow": [
+        "skills/**",
+        "README.md"
+      ]
+    }
+  ]
+}

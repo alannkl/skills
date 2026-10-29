@@ -1,0 +1,44 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "judgment-stays",
+      "type": "llm",
+      "criteria": "The final message keeps the decision on major updates with the agent or the user: reading the release notes and judging whether a changed API is used in src/ stays in the skill, not in a script rule such as merging on green CI or when the notes lack 'BREAKING'. A script that merges a list of PRs the agent has already reviewed and approved passes. Fail if the proposed script decides on major updates by itself."
+    },
+    {
+      "name": "gather-in-one-call",
+      "type": "llm",
+      "criteria": "It proposes gathering every PR's number, title, update type and CI state in one call (a script, or one batched command) that prints only what the next decisions need, instead of a call per PR.",
+      "preference": "Issuing the per-PR calls in parallel tool rounds also cuts the wait"
+    },
+    {
+      "name": "no-flag-wrappers",
+      "type": "llm",
+      "criteria": "Steps that are one gh call (merging one PR, commenting on one PR) stay direct calls from the skill or plain steps inside the script; the proposal adds no script flags that only re-expose gh's own options.",
+      "preference": "A wrapper with such flags works; it is extra code to keep"
+    },
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": [],
+      "preference": "A draft script or revised skill written to the repo for review is also acceptable to some users who asked whether to script it"
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes",
+      "preference": "A draft script or revised skill written to the repo for review is also acceptable to some users who asked whether to script it"
+    },
+    {
+      "name": "loads-skill-mechanics",
+      "type": "read",
+      "marker": "# Skill mechanics",
+      "variants": [
+        "with"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,86 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "failures-visible",
+      "type": "llm",
+      "criteria": "Judge the edited `.agents/skills/prepare-pr/SKILL.md`. Where lint, typecheck, tests and build run together, a run still learns which of them failed and sees each failing output: for example each command's exit status is collected or each runs as its own call in one batch. Fail if they are joined so that a failure hides the result of the checks after it (an `&&` chain) or goes unnoticed (a `;` chain with no status check). Running them one per step, as the original does, passes.",
+      "paths": [
+        ".agents/skills/prepare-pr/**"
+      ]
+    },
+    {
+      "name": "failures-still-stop",
+      "type": "llm",
+      "with_final_message": true,
+      "criteria": "Judge the edited `.agents/skills/prepare-pr/SKILL.md`. A failing lint, typecheck, test or build still stops the run before pushing and shows the failures, and rebase conflicts still stop the run and are shown. Fail if the skill now tells the agent to fix failures or resolve conflicts itself before continuing; proposing that change in the final message without making it passes.",
+      "paths": [
+        ".agents/skills/prepare-pr/**"
+      ]
+    },
+    {
+      "name": "stops-kept-or-named",
+      "type": "llm",
+      "with_final_message": true,
+      "criteria": "Each user stop of the original skill, the question about uncommitted changes and the approval of the PR draft before `gh pr create`, is either still in the edited skill or named as removed in the final message. Fail if either disappears without the final message saying so.",
+      "paths": [
+        ".agents/skills/prepare-pr/**"
+      ]
+    },
+    {
+      "name": "keeps-order",
+      "type": "llm",
+      "criteria": "Judge the edited `.agents/skills/prepare-pr/SKILL.md`. Steps that need an earlier result still follow it: `git fetch origin main` completes before anything reads `origin/main` (the commit log, the diff stat, the behind check and the rebase), the push comes only after the checks pass and any rebase, and `gh pr create` runs only after the draft is approved (or after drafting, if the final message names the approval as removed). Fail if the fetch is put in the same parallel batch as commands that read `origin/main` rather than chained before them, or if pushing or creating the PR can happen before the steps it depends on.",
+      "with_final_message": true,
+      "paths": [
+        ".agents/skills/prepare-pr/**"
+      ]
+    },
+    {
+      "name": "title-rule-one-line",
+      "type": "llm",
+      "criteria": "Compare the original and edited `.agents/skills/prepare-pr/SKILL.md`. The 72-character limit on PR titles appears as one short clause or line beside the existing title rule, in the skill's own terms, with no examples and no further directives the user did not give (such as what to shorten, how to count the type prefix, or limits on commit subjects or bodies).",
+      "preference": "A longer title rule with an example or a note on the Conventional Commits prefix still gives correct titles",
+      "paths": [
+        ".agents/skills/prepare-pr/**"
+      ]
+    },
+    {
+      "name": "batches-checks",
+      "guard": "dictated: \"does what it can in one go\" asks for batching the independent steps",
+      "type": "llm",
+      "criteria": "Steps that do not depend on each other (status, log and diff stat after the fetch; lint, typecheck, tests and build) now run together, in one batch of tool calls, one combined command or one script, instead of one step each.",
+      "paths": [
+        ".agents/skills/prepare-pr/**"
+      ]
+    },
+    {
+      "name": "title-limit-added",
+      "guard": "dictated: the request states the rule",
+      "type": "regex",
+      "path": ".agents/skills/prepare-pr/SKILL.md",
+      "pattern": "72"
+    },
+    {
+      "name": "keeps-commands",
+      "guard": "task: it checks the skill still does its job",
+      "type": "llm",
+      "criteria": "Every command and rule of the original survives with its meaning: git status, fetch, log and diff stat; `pnpm lint`, `pnpm typecheck`, `pnpm test`, `pnpm build`; rebasing on `origin/main` when behind; `git push -u origin HEAD`; a Conventional Commits title with a summary and test plan; `gh pr create --base main`; reporting the PR URL. A user stop the final message names as removed does not count against this grader.",
+      "with_final_message": true,
+      "paths": [
+        ".agents/skills/prepare-pr/**"
+      ]
+    },
+    {
+      "name": "others-unchanged",
+      "type": "unchanged_except",
+      "allow": [
+        ".agents/skills/prepare-pr/*",
+        ".agents/skills/prepare-pr/**"
+      ]
+    }
+  ]
+}

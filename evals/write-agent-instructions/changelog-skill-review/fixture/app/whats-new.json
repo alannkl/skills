@@ -1,0 +1,17 @@
+{
+  "version": "3.2.0",
+  "entries": [
+    {
+      "section": "Added",
+      "text": "Export orders as CSV from the Orders page (#418)"
+    },
+    {
+      "section": "Added",
+      "text": "Pick up a saved cart on another device (#409)"
+    },
+    {
+      "section": "Fixed",
+      "text": "Refund totals no longer show an extra cent on multi-item orders (#412)"
+    }
+  ]
+}

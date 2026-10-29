@@ -1,0 +1,29 @@
+{
+  "name": "shopfront-api",
+  "version": "2.4.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "test": "vitest run",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "build": "tsc -p tsconfig.json",
+    "openapi:gen": "tsx scripts/gen-openapi.ts",
+    "docs:build": "tsx scripts/build-docs.ts"
+  },
+  "dependencies": {
+    "@fastify/autoload": "^6.0.0",
+    "fastify": "^5.2.0"
+  },
+  "devDependencies": {
+    "@fastify/swagger": "^9.4.0",
+    "marked": "^15.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.7.0",
+    "vitest": "^3.0.0",
+    "eslint": "^9.18.0",
+    "typescript-eslint": "^8.20.0",
+    "@types/node": "^22.10.0"
+  }
+}

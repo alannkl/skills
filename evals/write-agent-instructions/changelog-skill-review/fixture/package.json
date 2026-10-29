@@ -1,0 +1,12 @@
+{
+  "name": "storefront",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "changelog:check": "tsx scripts/whats-new.ts --check",
+    "whats-new": "tsx scripts/whats-new.ts"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0"
+  }
+}

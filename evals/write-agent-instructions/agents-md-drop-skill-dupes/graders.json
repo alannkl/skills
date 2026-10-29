@@ -1,0 +1,75 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "uncovered-rules-kept",
+      "type": "llm",
+      "paths": [
+        "AGENTS.md",
+        ".agents/skills/coding/SKILL.md"
+      ],
+      "with_final_message": true,
+      "criteria": "AGENTS.md applies to every task; the coding skill loads only for code changes and excludes docs and CI changes. Pass if, after the edit, docs and CI tasks are still bound by a ban on pushing directly to main and a ban on committing secrets: both stay in AGENTS.md in any wording, or the final message asks before removing them and they are still there. Fail if either was removed from AGENTS.md while the skill's scope still excludes docs or CI changes, even if the final message warns about it afterwards."
+    },
+    {
+      "name": "release-branches-kept",
+      "type": "llm",
+      "paths": [
+        "AGENTS.md",
+        ".agents/skills/coding/SKILL.md"
+      ],
+      "criteria": "Some rule that still applies forbids pushing directly to release/* branches. Fail if the only remaining push ban names main alone."
+    },
+    {
+      "name": "skill-scope-not-widened",
+      "type": "llm",
+      "path": ".agents/skills/coding/SKILL.md",
+      "preference": "Widening the skill to docs and CI changes also keeps those rules in force there",
+      "criteria": "The skill's description still limits it to code changes and still excludes docs and CI changes. An unchanged file passes."
+    },
+    {
+      "name": "code-only-dupes-removed",
+      "type": "llm",
+      "guard": "task: it checks the requested dedupe happened",
+      "paths": [
+        "AGENTS.md",
+        ".agents/skills/coding/SKILL.md"
+      ],
+      "with_final_message": true,
+      "criteria": "'Run make test before committing' now appears in only one of the two files, or the final message gives a reason for keeping both copies."
+    },
+    {
+      "name": "report",
+      "type": "llm",
+      "paths": [
+        "AGENTS.md",
+        ".agents/skills/coding/SKILL.md"
+      ],
+      "with_final_message": true,
+      "criteria": "Judge the final message against the files. It names each rule removed and from which file, and for each rule both files still share, says why it stayed (for example, that the skill does not load for docs or CI changes). A shared rule kept without any reason fails, as does a removal not named."
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "guard": "task: it checks the edit stays on the two instruction files",
+      "allow": [
+        "AGENTS.md",
+        ".agents/skills/coding/SKILL.md"
+      ]
+    },
+    {
+      "name": "all-shared-rules-kept",
+      "type": "llm",
+      "paths": [
+        "AGENTS.md",
+        ".agents/skills/coding/SKILL.md"
+      ],
+      "with_final_message": true,
+      "preference": "dropping code-only rules such as make test from AGENTS.md, and saying they now bind code changes only, suits a team whose docs and CI changes never need them",
+      "criteria": "Every rule the two files share still binds every task it bound before: the push ban, the dependency rule, make test before committing, one logical change per commit and the secrets rule stay in AGENTS.md, or the duplicate was removed from the coding skill instead. Fail if any of them now binds only code changes and the final message does not say so."
+    }
+  ]
+}

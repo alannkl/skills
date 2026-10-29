@@ -1,0 +1,12 @@
+{
+  "name": "storefront",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "test": "vitest run",
+    "e2e": "BASE_URL=https://staging.shopfront.dev playwright test",
+    "e2e:local": "BASE_URL=http://localhost:3000 playwright test",
+    "lint": "next lint",
+    "typecheck": "tsc --noEmit"
+  }
+}

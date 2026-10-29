@@ -1,0 +1,110 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "model-invoked",
+      "guard": "dictated: the request asks for it",
+      "type": "regex",
+      "path": "explain-code/SKILL.md",
+      "pattern": "disable-model-invocation:\\s*true",
+      "match": "not_contains"
+    },
+    {
+      "name": "codex-flipped",
+      "type": "regex",
+      "path": "explain-code/agents/openai.yaml",
+      "pattern": "allow_implicit_invocation:\\s*false",
+      "match": "not_contains",
+      "optional": true
+    },
+    {
+      "name": "frontmatter-valid",
+      "type": "llm",
+      "path": "explain-code/SKILL.md",
+      "criteria": "The edited frontmatter parses as YAML. A plain unquoted description must not contain ': ' or ' #' and must not start with a YAML indicator such as '[', '{', '*', '&', '!', '%', '@' or an unclosed quote; a quoted value or a block scalar (`|` or `>` followed by indented lines) passes. `name` is still explain-code."
+    },
+    {
+      "name": "quoted-description",
+      "type": "regex",
+      "path": "explain-code/SKILL.md",
+      "pattern": "(?m)^description:\\s*[\"']",
+      "preference": "An unquoted description that parses works, and matches most of the repo's skills"
+    },
+    {
+      "name": "description-shape",
+      "type": "llm",
+      "path": "explain-code/SKILL.md",
+      "criteria": "The new description is in third person and under 1024 characters. Its first sentence says the skill explains code, in words users type. Its second states when to use it, one condition per kind of request (such as a change, a module or flow, the whole codebase), without stacking synonyms for one kind (explain, describe, walk through, clarify, break down) and without repeating the first sentence.",
+      "preference": "A longer description with synonyms still routes"
+    },
+    {
+      "name": "near-miss-boundaries",
+      "type": "llm",
+      "path": "explain-code/SKILL.md",
+      "criteria": "The new description's triggers do not claim requests that code-review, document-code, simplify-code or debugging own: reviewing code for problems, adding comments or docs, simplifying, or finding why something fails. Pass if its triggers name only explanation requests, with or without an exclusion naming those neighbours. Fail if a trigger such as 'review a change' or 'document how code works' would pull those requests to explain-code."
+    },
+    {
+      "name": "body-unchanged",
+      "type": "llm",
+      "path": "explain-code/SKILL.md",
+      "criteria": "Below the frontmatter, the file gains no restatement of the description and no list of trigger requests.",
+      "preference": "A short 'when to use' note in the body costs words but works"
+    },
+    {
+      "name": "trigger-check-reported",
+      "type": "llm",
+      "criteria": "The final message reports or proposes a check of the new description against requests that should load it and near-misses that should not, naming example requests or the boundary checked (explanation versus review, documentation or debugging).",
+      "preference": "The description may be sound without a reported check"
+    },
+    {
+      "name": "readme-inventory",
+      "type": "llm",
+      "paths": [
+        "README.md",
+        "*/SKILL.md"
+      ],
+      "with_final_message": true,
+      "criteria": "Pass if the README's invocation paragraph now lists explain-code among the model-invoked skills and its count and list match the skills' frontmatter, or the final message says the paragraph needs that update. Fail if the paragraph still implies explain-code is user-invoked and the final message is silent, or if it gives a count that does not match the frontmatter without saying so."
+    },
+    {
+      "name": "suggestions",
+      "type": "llm",
+      "criteria": "The final message suggests other skills to make model-invoked, with a reason for each. Fail if it recommends making review-panel model-invoked without naming that it spawns several agent sessions per run, or recommends every user-invoked skill without a reason for each. Any reasoned subset passes, such as refine-it, shorten-it and handoff."
+    },
+    {
+      "name": "suggested-not-applied",
+      "type": "unchanged_except",
+      "allow": [
+        "explain-code/SKILL.md",
+        "explain-code/agents/openai.yaml",
+        "README.md"
+      ]
+    },
+    {
+      "name": "loads-skill-mechanics",
+      "type": "read",
+      "marker": "# Skill mechanics",
+      "variants": [
+        "with"
+      ]
+    },
+    {
+      "name": "loads-evaluating",
+      "type": "read",
+      "marker": "# Evaluating instructions",
+      "variants": [
+        "with"
+      ]
+    },
+    {
+      "name": "body-meaning-kept",
+      "type": "llm",
+      "path": "explain-code/SKILL.md",
+      "guard": "task: the request changes invocation, not what the skill does",
+      "criteria": "Below the frontmatter, the file keeps its meaning: its Boundaries (explain only, never judge code quality) and its workflow steps."
+    }
+  ]
+}

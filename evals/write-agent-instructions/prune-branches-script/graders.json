@@ -1,0 +1,122 @@
+{
+  "expect_skill_loaded": {
+    "with": true,
+    "without": false
+  },
+  "graders": [
+    {
+      "name": "skill-calls-script",
+      "guard": "dictated: the request asks for a script",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/prune-branches/**"
+      ],
+      "criteria": "A script now exists under .agents/skills/prune-branches/ and SKILL.md has the agent run it for the mechanical steps."
+    },
+    {
+      "name": "keeps-behavior",
+      "guard": "task: it checks the change keeps the skill's behavior",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/prune-branches/**"
+      ],
+      "criteria": "Judge the skill and its script together. Only branches merged into main are deleted; main and every release/* branch are never deleted, locally or on origin; local branches are deleted with `git branch -d`, not -D; remote deletions happen only for branches the user approved; the user is told how many local and remote branches were deleted."
+    },
+    {
+      "name": "remote-needs-explicit-run",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/prune-branches/**"
+      ],
+      "criteria": "Judge the script with SKILL.md. Remote branches are deleted only by a run that asks for it explicitly (its own subcommand, flag or list of branch names), and SKILL.md makes that run only with the branches the user approved in chat. Fail if one invocation can list and delete remote branches with no approval in between."
+    },
+    {
+      "name": "non-interactive",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/prune-branches/**"
+      ],
+      "criteria": "The way SKILL.md runs the script works without a terminal: every input it needs comes from arguments, and no step the skill runs waits on read, select or a confirmation prompt. An optional interactive mode the skill never uses passes."
+    },
+    {
+      "name": "local-dry-run",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/prune-branches/**"
+      ],
+      "criteria": "Local deletion has a dry run or listing mode that changes nothing, or deletes only under an explicit flag or subcommand.",
+      "preference": "`git branch -d` refuses unmerged branches, so deleting merged local branches without a dry run loses no work"
+    },
+    {
+      "name": "failures-exposed",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/prune-branches/**"
+      ],
+      "criteria": "When a git step fails (a fast-forward pull is rejected, a branch delete fails), the script stops or reports that failure and exits non-zero. It never prints a deleted count that includes a failed deletion. `set -e` with git's own error message passes."
+    },
+    {
+      "name": "quiet-output",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/prune-branches/**"
+      ],
+      "criteria": "Raw git output goes to a log file whose path is printed, or is discarded; stdout carries what the next decision needs, such as counts and the list of remote branches to approve.",
+      "preference": "A prune run's git output is a few lines; printing it costs little"
+    },
+    {
+      "name": "help-usage",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/prune-branches/**"
+      ],
+      "criteria": "The script has a concise --help (or -h), and an unknown argument prints usage and exits non-zero.",
+      "preference": "An agent can read a short script instead of its help"
+    },
+    {
+      "name": "call-site-args",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/prune-branches/**"
+      ],
+      "criteria": "Following SKILL.md where it runs the script leads to a correct invocation of each step the workflow uses: the subcommands or flags and arguments match what the script accepts (including the remote-deletion argument). Fail if SKILL.md documents an invocation the script rejects or misreads, or leaves out a required argument."
+    },
+    {
+      "name": "branches-kept",
+      "type": "file_exists",
+      "path": ".ref-changes",
+      "exists": false
+    },
+    {
+      "name": "tried",
+      "type": "ran",
+      "pattern": "prune[^\\n]*\\.(sh|py|ts|mjs)[^\\n]*(--dry-run|--help|-h\\b|-n\\b|\\blist\\b)",
+      "preference": "Reading a short script closely can also catch its bugs"
+    },
+    {
+      "name": "loads-skill-mechanics",
+      "type": "read",
+      "marker": "# Skill mechanics",
+      "variants": [
+        "with"
+      ]
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "allow": [
+        ".agents/skills/prune-branches/**",
+        ".ref-changes"
+      ]
+    },
+    {
+      "name": "call-site-complete",
+      "type": "llm",
+      "paths": [
+        ".agents/skills/prune-branches/**"
+      ],
+      "preference": "an agent can read the script's --help once per run",
+      "criteria": "Where SKILL.md runs the script, it also gives the listing or dry-run mode, what the script prints and how it signals failure, matching the script, so the agent can run it without --help."
+    }
+  ]
+}

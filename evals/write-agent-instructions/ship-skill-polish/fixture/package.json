@@ -1,0 +1,9 @@
+{
+  "name": "api-service",
+  "version": "3.14.0",
+  "private": true,
+  "scripts": {
+    "start": "node dist/server.js",
+    "build": "tsc -p ."
+  }
+}

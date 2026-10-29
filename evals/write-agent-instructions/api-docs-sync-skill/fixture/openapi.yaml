@@ -1,0 +1,53 @@
+openapi: 3.1.0
+info:
+  title: shopfront-api
+  version: 2.4.0
+paths:
+  /orders:
+    get:
+      tags: [orders]
+      summary: List orders
+      parameters:
+        - name: status
+          in: query
+          schema: {type: string, enum: [pending, paid, shipped]}
+        - name: limit
+          in: query
+          schema: {type: integer, maximum: 100}
+      responses:
+        "200":
+          description: A page of orders, newest first
+  /orders/{id}:
+    get:
+      tags: [orders]
+      summary: Get an order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema: {type: string}
+      responses:
+        "200":
+          description: The order
+        "404":
+          description: No order with this ID
+  /refunds:
+    post:
+      tags: [refunds]
+      summary: Refund an order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [order_id, amount_cents]
+              properties:
+                order_id: {type: string}
+                amount_cents: {type: integer}
+                reason: {type: string}
+      responses:
+        "201":
+          description: Refund created
+        "409":
+          description: Order already refunded
