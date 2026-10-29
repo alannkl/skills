@@ -89,7 +89,7 @@ DEFAULT_SLOTS = {"bwrap": 32, "docker": 6}
 # about 0.3 GB to 1-1.9 GB; Claude Code and Codex sessions stayed near 0.3 GB.
 SESSION_GB = {"openclaw": 1.0, "claude-code": 0.3, "codex": 0.3, "api": 0.0}
 # Kept free for the host, so sessions never push it into swap.
-RESERVE_GB = 2.0
+RESERVE_GB = 4.0
 # Each harness ships skills of its own, such as Claude Code's code-review and the
 # skill-creator in Codex and OpenClaw. They compete with the skill under test and
 # can share its name, so they are off unless a configuration sets builtin_skills;
