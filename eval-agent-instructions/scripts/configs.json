@@ -20,7 +20,7 @@
     "api": {}
   },
   "models": {
-    "opus-5.5": {"id": "anthropic/claude-opus-5-5"},
+    "opus-5.5": {"id": "anthropic/claude-opus-5-5", "max_sessions": 16},
     "haiku-5.5": {"id": "anthropic/claude-haiku-5-5"},
     "gpt-6-astra": {"id": "openai/gpt-6-astra", "max_sessions": 6},
     "gpt-6-luna": {"id": "openai/gpt-6-luna"},
