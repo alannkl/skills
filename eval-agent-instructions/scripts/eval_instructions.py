@@ -70,7 +70,7 @@ from evidence import EXTRACTORS  # noqa: E402
 from graders import judge_pending, run_graders, temporary_initial_workspace  # noqa: E402
 from rules import (EARLIER, MINUS, arm, artifact_digest, check_rules, guard_refs, load_rules, min_set,  # noqa: E402
                    minus_artifact, rule_cases, tabulate)
-from tasks import (PROBE_CASE, USE_SKILL, artifact_root, build_tasks, load_spec, load_suite, task_digest,  # noqa: E402
+from tasks import (PROBE_CASE, USE_SKILL, artifact_root, build_tasks, environment_image, load_spec, load_suite, task_digest,  # noqa: E402
                    without_frontmatter, workspace_name)
 from token_counts import loaded_texts, loaded_tokens  # noqa: E402
 from api_runner import run_api_job  # noqa: E402
@@ -81,10 +81,11 @@ SETTINGS = json.loads((HERE / "configs.json").read_text())
 SETTINGS["configs"] = setups.catalog(SETTINGS)
 # bubblewrap sandboxes start faster and cost less memory than containers; Docker covers hosts without it.
 DEFAULT_ENV = "bwrap" if sys.platform == "linux" and shutil.which("bwrap") else "docker"
-# Sessions at once: under bwrap at most 32 across all setups, fewer when the host's memory cannot hold
-# them, each session counted at its harness's SESSION_GB; under Docker per setup, the setups running one
-# at a time, each container capped at 2 GB. A harness's `max_sessions` in configs.json caps all its setups together.
-DEFAULT_SLOTS = {"bwrap": 32, "docker": 6}
+# Sessions at once across all setups: at most 32 under bwrap, 16 under Docker, whose containers cost
+# more to start, fewer when memory cannot hold them, each session counted at its harness's SESSION_GB;
+# under Docker the memory is the engine's, such as Docker Desktop's VM. A harness's `max_sessions` in
+# configs.json caps all its setups together.
+DEFAULT_SLOTS = {"bwrap": 32, "docker": 16}
 # Memory a session holds midway through a run, in GB. OpenClaw's Node heap grows over a session, from
 # about 0.3 GB to 1-1.9 GB; Claude Code and Codex sessions stayed near 0.3 GB.
 SESSION_GB = {"openclaw": 1.0, "claude-code": 0.3, "codex": 0.3, "api": 0.0}
@@ -143,6 +144,28 @@ def base_image() -> str:
                         "--build-arg", f"CODEX_VERSION={versions['codex']}",
                         "--build-arg", f"OPENCLAW_VERSION={versions['openclaw']}", str(HERE)], check=True)
     return tag
+
+
+def docker_memory_gb() -> float:
+    """Memory of the Docker engine's host: the VM Docker Desktop runs on macOS, set under Resources."""
+    wait_for_docker()
+    out = subprocess.run(["docker", "info", "--format", "{{.MemTotal}}"], capture_output=True, text=True).stdout
+    return int(out.strip()) / 1024 ** 3 if out.strip().isdigit() else float("inf")
+
+
+def build_task_images(tasks: set[Path]) -> None:
+    """Build each task's prebuilt image that Docker lacks, named by environment_image, before any session
+    starts: sessions then share images instead of racing to build them."""
+    missing = sorted({(environment_image(t / "environment"), t / "environment") for t in tasks
+                      if subprocess.run(["docker", "image", "inspect", environment_image(t / "environment")],
+                                        capture_output=True).returncode != 0})
+    print(f"== building {len(missing)} task images", file=sys.stderr)
+    with ThreadPoolExecutor(max_workers=4) as pool:
+        for tag, done in zip([tag for tag, _ in missing], pool.map(
+                lambda m: subprocess.run(["docker", "build", "-q", "-t", m[0], str(m[1])], capture_output=True, text=True),
+                missing)):
+            if done.returncode:
+                raise SystemExit(f"building {tag} failed:\n{done.stderr[-2000:]}")
 
 
 def wait_for_docker(timeout_sec: int = 300) -> None:
@@ -536,7 +559,7 @@ def cmd_run(args) -> None:
     task_dirs = {c: task_folder(*deliveries[c]) for c in configs}
     for c in {deliveries[c]: c for c in configs}.values():
         tasks = build_tasks(REPO, suite, cases, variants, image, run_dir / task_dirs[c], sources, pinned, names[c],
-                            templates[c])
+                            templates[c], prebuilt=args.env == "docker" and not wants_api)
     for c in configs:
         limit = SETTINGS["harnesses"][SETTINGS["configs"][c]["harness"]].get("instruction_limit")
         if names[c] and limit:
@@ -562,11 +585,11 @@ def cmd_run(args) -> None:
     remaining = {name: {t: attempts - len(reused.get(name, {}).get(t, [])) for t in tasks} for name in configs}
     plans = {name: job_plan(run_dir / task_dirs[name], tasks, [t for t in tasks if not remaining[name][t]], artifact)
              for name in configs}
-    queued = args.env == "bwrap" and not wants_api
+    queued = not wants_api
     if queued:
         gb = {name: SESSION_GB[SETTINGS["configs"][name]["harness"]] for name in configs}
-        room = free_memory_gb() - RESERVE_GB
-        slots = {"all": budget or DEFAULT_SLOTS["bwrap"]} | caps
+        room = (min(free_memory_gb(), docker_memory_gb()) if args.env == "docker" else free_memory_gb()) - RESERVE_GB
+        slots = {"all": budget or DEFAULT_SLOTS[args.env]} | caps
         if budget and budget * max(gb.values()) > room:
             print(f"== warning: {budget} sessions may need about {budget * max(gb.values()):.0f} GB; "
                   f"{room:.0f} GB is free beyond the {RESERVE_GB:.0f} GB kept for the host", file=sys.stderr)
@@ -585,33 +608,21 @@ def cmd_run(args) -> None:
         env.update({k: os.path.expandvars(v) for k, v in config.get("env", {}).items()})
         return env
 
-    def run_setup(name: str) -> None:
-        config = SETTINGS["configs"][name]
-        plan = plans[name]
+    def run_api_setup(name: str) -> None:
+        config, plan = SETTINGS["configs"][name], plans[name]
         if not plan:
             print(f"== {name}: every task reused", file=sys.stderr)
             return
         print(f"== {name}", file=sys.stderr)
-        if config["harness"] == API:
-            for n, group in by_remaining(remaining[name], [t for _, job_tasks, _ in plan for t in job_tasks]):
-                run_api_job(config, run_dir / task_dirs[name], group, n, run_dir / "jobs" / name / API, slots[name])
-            return
-        with open(run_dir / f"harbor-{name}.log", "w") as log:
-            for job, job_tasks, system_prompt in plan:
-                groups = by_remaining(remaining[name], job_tasks)
-                for n, group in groups:
-                    if args.env == "docker":
-                        wait_for_docker()
-                    subprocess.run(harbor_command(config, run_dir / task_dirs[name], run_dir / "jobs" / name,
-                                                  job if len(groups) == 1 else f"{job}-{n}", n, slots[name],
-                                                  include=group, system_prompt=system_prompt,
-                                                  environment=environment),
-                                   env=harbor_env(config), stdout=log, stderr=subprocess.STDOUT, check=False)
+        for n, group in by_remaining(remaining[name], [t for _, job_tasks, _ in plan for t in job_tasks]):
+            run_api_job(config, run_dir / task_dirs[name], group, n, run_dir / "jobs" / name / API, slots[name])
         print(f"== {name}: done", file=sys.stderr)
 
     def run_session(session: tuple[str, str, int, str | None]) -> None:
         name, task, attempt, system_prompt = session
         config = SETTINGS["configs"][name]
+        if args.env == "docker":
+            wait_for_docker()
         with open(run_dir / f"harbor-{name}.log", "a") as log:
             subprocess.run(harbor_command(config, run_dir / task_dirs[name], run_dir / "jobs" / name, f"{task}.{attempt}", 1, 1,
                                           include=[task], system_prompt=system_prompt, environment=environment),
@@ -627,13 +638,13 @@ def cmd_run(args) -> None:
         expected = {name: expected_seconds(run_dir.parent, name) for name in configs}
         sessions.sort(key=lambda s: expected[s[0]].get(s[1], expected[s[0]].get(None, 0.0)), reverse=True)
         print(f"== {len(sessions)} sessions", file=sys.stderr)
+        if args.env == "docker":
+            build_task_images({run_dir / task_dirs[name] / s[1] for name in configs for s in sessions if s[0] == name})
         run_queue(sessions, slots["all"], caps, run_session, gb, room, harness_of)
         print("== sessions done", file=sys.stderr)
     else:
-        # Under Docker setups run one at a time: concurrent Harbor jobs would race to build the same
-        # task images.
-        with ThreadPoolExecutor(max_workers=1 if args.env == "docker" else len(configs)) as pool:
-            list(pool.map(run_setup, configs))
+        with ThreadPoolExecutor(max_workers=len(configs)) as pool:
+            list(pool.map(run_api_setup, configs))
     grade([run_dir], args.judge or SETTINGS["judges"])
     print(report(run_dir))
 
@@ -1121,8 +1132,8 @@ def main() -> None:
     run.add_argument("--attempts", type=int, help="runs per task; default 1, or 3 with --minus")
     run.add_argument("--concurrency", action="append", default=[], metavar="[CONFIG=]N",
                      help="N: sessions at once across all setups, longest expected first "
-                          f"(default: up to {DEFAULT_SLOTS['bwrap']} under bwrap, as many as free memory holds; "
-                          f"under Docker, per setup, {DEFAULT_SLOTS['docker']}); CONFIG=N caps one setup, within its harness's "
+                          f"(default: up to {DEFAULT_SLOTS['bwrap']} under bwrap, {DEFAULT_SLOTS['docker']} under Docker, "
+                          "as many as memory holds); CONFIG=N caps one setup, within its harness's "
                           "max_sessions in configs.json, which caps all of that harness's setups together. "
                           "A given number runs as given, with a warning when it will not fit in memory")
     run.add_argument("--env", choices=["bwrap", "docker"], default=DEFAULT_ENV,

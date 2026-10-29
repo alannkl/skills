@@ -76,7 +76,7 @@ timeout_sec = 120.0
 [agent]
 timeout_sec = {agent_timeout}
 
-[environment]
+[environment]{docker_image}
 build_timeout_sec = 600.0
 cpus = 1
 memory_mb = 2048
@@ -180,12 +180,13 @@ def render(text: str, case_dir: Path) -> str:
 
 def build_task(repo: Path, suite: dict, case_dir: Path, variant: str, base_image: str, out: Path,
                source: Path | None = None, pin: bool = False, instruction_file: str | None = None,
-               template: str | None = None) -> str:
+               template: str | None = None, prebuilt: bool = False) -> str:
     """One task; `source` replaces the repo's copy of the artifact, as a minus variant does.
 
     `pin` names a skill artifact in the instruction of every arm that installs it;
     `instruction_file` is the workspace name an instruction-file artifact takes, and `template` the
-    harness's own starter text it goes under.
+    harness's own starter text it goes under. With `prebuilt`, task.toml names the image
+    `environment_image` gives the environment, for the caller to build before Harbor runs.
     """
     artifact = suite["artifact"]
     probe = case_dir.name == PROBE_CASE
@@ -235,8 +236,19 @@ def build_task(repo: Path, suite: dict, case_dir: Path, variant: str, base_image
     instruction = PROBE_INSTRUCTION[artifact["type"]] if probe else (case_dir / "instruction.md").read_text()
     (task / "instruction.md").write_text(preamble + instruction)
     timeout = load_spec(case_dir).get("agent_timeout_sec", DEFAULT_AGENT_TIMEOUT_SEC)
-    (task / "task.toml").write_text(TASK_TOML.format(name=name, agent_timeout=float(timeout)))
+    image = f'\ndocker_image = "{environment_image(env)}"' if prebuilt else ""
+    (task / "task.toml").write_text(TASK_TOML.format(name=name, agent_timeout=float(timeout), docker_image=image))
     return name
+
+
+def environment_image(env: Path) -> str:
+    """Docker tag for a task's environment folder, named by its content. Harbor names the image it
+    builds after the task, which is the same in every setup, so setups that run at once and deliver
+    different files, such as CLAUDE.md and AGENTS.md, would overwrite each other's image."""
+    h = hashlib.sha256()
+    for path in sorted(p for p in env.rglob("*") if p.is_file()):
+        h.update(path.relative_to(env).as_posix().encode() + b"\0" + path.read_bytes() + b"\0")
+    return f"eval-agent-instructions-task:{h.hexdigest()[:16]}"
 
 
 def task_digest(task: Path) -> str:
@@ -249,9 +261,10 @@ def task_digest(task: Path) -> str:
 
 def build_tasks(repo: Path, suite: dict, case_dirs: list[Path], variants: list[str],
                 base_image: str, out: Path, sources: dict[str, Path] | None = None, pin: bool = False,
-                instruction_file: str | None = None, template: str | None = None) -> list[str]:
+                instruction_file: str | None = None, template: str | None = None,
+                prebuilt: bool = False) -> list[str]:
     """Every case in every variant; `sources` maps a variant to the artifact copy it delivers."""
     out.mkdir(parents=True, exist_ok=True)
     return [build_task(repo, suite, case_dir, variant, base_image, out, (sources or {}).get(variant), pin,
-                       instruction_file, template)
+                       instruction_file, template, prebuilt)
             for case_dir in case_dirs for variant in variants]
