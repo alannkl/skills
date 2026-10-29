@@ -3,8 +3,8 @@
   "cli_versions": {"claude-code": "2.1.309", "codex": "0.164.0", "openclaw": "2026.10.6"},
   "judges": ["claude-opus-5-5", "gpt-6-astra"],
   "defaults": {
-    "harness": {"run": ["claude-code-opus-5.5-high"], "full": ["claude-code-opus-5.5-high", "codex-gpt-6-astra-high"]},
-    "api": {"run": ["api-opus-5.5-high"], "full": ["api-opus-5.5-high", "api-gpt-6-astra-high"]}
+    "harness": {"run": ["claude-code-opus-5.5-high"], "full": ["claude-code-opus-5.5-high", "codex-gpt-6.1-sol-high"]},
+    "api": {"run": ["api-opus-5.5-high"], "full": ["api-opus-5.5-high", "api-gpt-6.1-sol-high"]}
   },
   "harnesses": {
     "claude-code": {"instruction_file": "CLAUDE.md", "max_sessions": 12,
