@@ -12,6 +12,11 @@ SETTINGS = json.loads((SCRIPTS / "configs.json").read_text())
 
 
 class Setups(unittest.TestCase):
+    def test_a_setup_holds_only_what_its_sessions_run_with(self):
+        # Reuse compares setups whole, so a scheduling field such as a harness's max_sessions would
+        # make every earlier trial look like another setup's.
+        self.assertFalse([name for name, config in catalog(SETTINGS).items() if "max_sessions" in config])
+
     def test_a_composed_setup_matches_its_preset(self):
         name, config = resolve({"harness": "openclaw", "model": "deepseek-v4.1-flash", "provider": "morph"}, SETTINGS)
         self.assertEqual(name, "openclaw-deepseek-v4.1-flash-high-morph")
