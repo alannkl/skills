@@ -1,0 +1,27 @@
+{
+  "hash": "0xb8f9\u20262a61",
+  "wallet": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+  "to": "0xcf5540fffcdc3d510b18bfca6d2b9987b0772559",
+  "method": "swapCompact",
+  "value": "0",
+  "transfers": [
+    {
+      "token": "BRETT",
+      "from": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+      "to": "0xcf5540fffcdc3d510b18bfca6d2b9987b0772559",
+      "amount": "1800"
+    }
+  ],
+  "internal_eth": [
+    {
+      "from": "0xcf5540fffcdc3d510b18bfca6d2b9987b0772559",
+      "to": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+      "amount": "0.072"
+    }
+  ],
+  "expected": {
+    "side": "sell",
+    "token": "BRETT",
+    "quote": "ETH"
+  }
+}

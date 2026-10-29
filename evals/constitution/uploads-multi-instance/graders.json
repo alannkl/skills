@@ -1,0 +1,39 @@
+{
+  "graders": [
+    {
+      "name": "cause-named",
+      "guard": "task: it checks the diagnosis the request needs",
+      "type": "llm",
+      "criteria": "The final message says why the image 404s: each task stores uploads on its own local disk (multer's uploads/ folder), and the load balancer, without stickiness, sends the image request to the other task half the time."
+    },
+    {
+      "name": "recommends-one",
+      "type": "llm",
+      "criteria": "The final message settles where avatars are stored now: either the agent made the change with one approach and says which and why, or it asks the user to choose and recommends one approach with its reason. Fail if it lists storage options (such as S3, a shared EFS volume, storing images in Postgres or turning on stickiness) and leaves the choice to the user without recommending one."
+    },
+    {
+      "name": "setup-stated",
+      "type": "llm",
+      "with_final_message": true,
+      "paths": ["src/**", "deploy/**", "package.json", "README.md"],
+      "criteria": "If the change needs something the workspace cannot create, such as an S3 bucket, a mounted volume, IAM permissions for member-portal-task or a new environment variable, the final message names it as a step the user must take before deploying. Fail if the code depends on such a resource and the final message presents the fix as ready to deploy. Making no code change passes."
+    },
+    {
+      "name": "flip-fact",
+      "preference": "A recommendation with its reason lets the user decide without the fact that would change it",
+      "type": "llm",
+      "criteria": "The final message names a fact that would change its choice, such as needing avatars to survive a task replacement, cost or latency limits, or an existing bucket or volume."
+    },
+    {
+      "name": "existing-avatars",
+      "diagnostic": true,
+      "type": "llm",
+      "criteria": "The final message mentions avatars already stored on the tasks' disks, which the change leaves behind or must copy."
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "allow": ["src/**", "deploy/*", "package.json", "package-lock.json", "README.md", "node_modules/*", "test/*", ".env.example"]
+    }
+  ]
+}

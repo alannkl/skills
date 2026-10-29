@@ -1,0 +1,44 @@
+{
+  "graders": [
+    {
+      "name": "renamed",
+      "type": "llm",
+      "paths": [
+        "config/default.json",
+        "src/*.js",
+        ".env.example",
+        "README.md"
+      ],
+      "criteria": "MAX_UPLOAD_MB is renamed to UPLOAD_LIMIT_MB in the config key, the environment variable that src/config.js reads, .env.example, the README table and the error message, and the service still reads the limit from the renamed key and variable. The JavaScript property name `maxUploadMb` may stay or change. Keeping MAX_UPLOAD_MB as a fallback for deployed environments passes."
+    },
+    {
+      "name": "just-did-it",
+      "type": "llm",
+      "all_messages": true,
+      "criteria": "The agent made the rename in this run. Fail if it stopped before renaming to ask for confirmation or for approval of a plan. Stating what it will rename, or a short plan it then carries out, passes."
+    },
+    {
+      "name": "deploy-env-flagged",
+      "type": "llm",
+      "criteria": "The final message points out that any deployed environment setting MAX_UPLOAD_MB must now set UPLOAD_LIMIT_MB instead (or the limit falls back to the default), or says it kept the old variable as a fallback."
+    },
+    {
+      "name": "small-report",
+      "type": "llm",
+      "criteria": "The final message is a short report of the rename: the files changed and any caveat that matters, such as the deployed environment variable. Fail if it adds unrequested sections or offers of unrelated follow-ups, such as refactoring the config loader or adding validation.",
+      "preference": "A longer report or an offer of follow-ups costs a little reading but loses nothing"
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "allow": [
+        "config/default.json",
+        "src/config.js",
+        "src/upload.js",
+        ".env.example",
+        "README.md"
+      ],
+      "description": "Only the files that name the setting change."
+    }
+  ]
+}

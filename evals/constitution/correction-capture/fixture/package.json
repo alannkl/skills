@@ -1,0 +1,13 @@
+{
+  "name": "@acme/memory",
+  "version": "0.4.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "tsx --test"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0"
+  }
+}

@@ -1,0 +1,31 @@
+{
+  "graders": [
+    {
+      "name": "flow-right",
+      "guard": "task: it checks the answer the request asks for",
+      "type": "llm",
+      "criteria": "The final message shows this flow: checkout asks the warehouse for stock levels (GET /stock), creates the order, charges it through payments (POST /charges), marks it paid and publishes order.paid on the event bus; the fulfillment worker consumes order.paid and calls the warehouse to create a reservation (POST /reservations) and then a shipment (POST /shipments). Mentioning that notifications also consume the events passes; leaving them out passes."
+    },
+    {
+      "name": "direct-vs-event",
+      "type": "llm",
+      "criteria": "A reader can tell from the final message that checkout's only direct call to the warehouse is the stock check, and that the order reaches the warehouse later, through the order.paid event and the fulfillment worker. An arrow labelled with the stock request (such as GET /stock) shows this. Fail if the diagram or text shows checkout sending the order, a reservation or a shipment to the warehouse, or draws an unlabelled checkout-to-warehouse call a reader would take for the order."
+    },
+    {
+      "name": "terminal-readable",
+      "type": "llm",
+      "criteria": "The diagram is plain text that reads as a picture in a terminal or chat window: ASCII or box-drawing art, indented arrows, or a numbered sequence. A mermaid block added beside such a diagram passes. Fail if the diagram is given only as source for a renderer, such as a mermaid, PlantUML or Graphviz (DOT) block."
+    },
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": [],
+      "description": "A question about the code changes no files."
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes",
+      "description": "The transcript shows no file writes."
+    }
+  ]
+}

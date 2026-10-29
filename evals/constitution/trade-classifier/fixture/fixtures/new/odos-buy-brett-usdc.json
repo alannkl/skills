@@ -1,0 +1,27 @@
+{
+  "hash": "0x6d12\u2026f3e0",
+  "wallet": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+  "to": "0xcf5540fffcdc3d510b18bfca6d2b9987b0772559",
+  "method": "swapCompact",
+  "value": "0",
+  "transfers": [
+    {
+      "token": "USDC",
+      "from": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+      "to": "0xcf5540fffcdc3d510b18bfca6d2b9987b0772559",
+      "amount": "500"
+    },
+    {
+      "token": "BRETT",
+      "from": "0xcf5540fffcdc3d510b18bfca6d2b9987b0772559",
+      "to": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+      "amount": "3720"
+    }
+  ],
+  "internal_eth": [],
+  "expected": {
+    "side": "buy",
+    "token": "BRETT",
+    "quote": "USDC"
+  }
+}

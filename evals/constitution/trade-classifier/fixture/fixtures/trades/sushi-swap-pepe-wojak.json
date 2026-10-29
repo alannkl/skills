@@ -1,0 +1,27 @@
+{
+  "hash": "0xc5d1\u20260b3a",
+  "wallet": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+  "to": "0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f",
+  "method": "swapExactTokensForTokens",
+  "value": "0",
+  "transfers": [
+    {
+      "token": "PEPE",
+      "from": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+      "to": "0x0d4a11d5eeaac28ec3f61d100daf4d40471f1852",
+      "amount": "15000000"
+    },
+    {
+      "token": "WOJAK",
+      "from": "0x0d4a11d5eeaac28ec3f61d100daf4d40471f1852",
+      "to": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+      "amount": "880"
+    }
+  ],
+  "internal_eth": [],
+  "expected": {
+    "side": "swap",
+    "from": "PEPE",
+    "to": "WOJAK"
+  }
+}

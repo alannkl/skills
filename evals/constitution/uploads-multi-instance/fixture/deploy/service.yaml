@@ -1,0 +1,13 @@
+# ECS service for the portal (eu-west-1), behind the shared ALB.
+service: member-portal
+cluster: web-prod
+desiredCount: 2
+container:
+  image: 441022837150.dkr.ecr.eu-west-1.amazonaws.com/member-portal:latest
+  port: 3000
+  environment:
+    - DATABASE_URL: from-secret:portal/database-url
+  taskRole: member-portal-task
+loadBalancer:
+  targetGroup: member-portal-tg
+  stickiness: false

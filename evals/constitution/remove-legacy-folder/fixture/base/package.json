@@ -1,0 +1,1 @@
+{"name":"templater","version":"2.3.0","main":"src/index.js","scripts":{"test":"node --test"}}

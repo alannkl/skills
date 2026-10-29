@@ -1,0 +1,39 @@
+{
+  "hash": "0x1b0e\u202644f7",
+  "wallet": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+  "to": "0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f",
+  "method": "swapExactTokensForETHSupportingFeeOnTransferTokens",
+  "value": "0",
+  "transfers": [
+    {
+      "token": "TAXI",
+      "from": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+      "to": "0x0d4a11d5eeaac28ec3f61d100daf4d40471f1852",
+      "amount": "9500"
+    },
+    {
+      "token": "TAXI",
+      "from": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+      "to": "0x8b2e6d3f0a9c4b1e7d5f2a8c6e0b4d9f3a1c7e5b",
+      "amount": "500"
+    },
+    {
+      "token": "WETH",
+      "from": "0x0d4a11d5eeaac28ec3f61d100daf4d40471f1852",
+      "to": "0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f",
+      "amount": "0.31"
+    }
+  ],
+  "internal_eth": [
+    {
+      "from": "0xd9e1ce17f2641f24ae83637ab66a2cca9c378b9f",
+      "to": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+      "amount": "0.31"
+    }
+  ],
+  "expected": {
+    "side": "sell",
+    "token": "TAXI",
+    "quote": "ETH"
+  }
+}

@@ -1,0 +1,48 @@
+{
+  "graders": [
+    {
+      "name": "open-blockers",
+      "type": "llm",
+      "criteria": "The final message says the e2e suite (milestone 3) waits on two open decisions, how test data is loaded (D167) and how e2e tests log in (D170). Naming the CI runner size (D169) as well passes only if it is not presented as blocking the e2e suite."
+    },
+    {
+      "name": "stack-answer",
+      "type": "llm",
+      "criteria": "The final message says the test stack must be running while the e2e suite runs, and that the Playwright global setup (e2e/global-setup.ts) starts it with docker compose and waits until it is healthy, so the user need not start it first. It may add that teardown stops it afterwards."
+    },
+    {
+      "name": "title-then-id",
+      "type": "llm",
+      "criteria": "In prose, the final message refers to decisions by a short title followed by the ID in parentheses, such as 'test data loading (D167)'. A table with separate title and ID columns passes. Fail if prose refers to a decision by a bare ID or ID range (such as 'D167' or 'D165–D166') or puts the ID before the title.",
+      "preference": "A bare ID serves a reader who knows the plan's IDs"
+    },
+    {
+      "name": "no-coined-labels",
+      "type": "llm",
+      "paths": [
+        "PLAN.md",
+        "e2e/global-setup.ts",
+        "docker-compose.test.yml"
+      ],
+      "with_final_message": true,
+      "criteria": "A reader can tell what every component, step, option or decision the final message names refers to, from the name itself, the files, or an explanation where it is first used. Fail if it leans on a label the agent coined whose referent the reader cannot identify, such as 'the seeding gate' or 'option 2'."
+    },
+    {
+      "name": "one-name-per-concept",
+      "type": "llm",
+      "criteria": "The final message keeps one name for each thing it refers to more than once: the test stack (as PLAN.md calls it) is not also called the test environment, the compose stack or the docker setup, and each decision keeps the same short title throughout. Fail if it switches between names for the same thing.",
+      "preference": "Readers follow a synonym such as 'test environment' for the test stack"
+    },
+    {
+      "name": "no-edit",
+      "type": "unchanged_except",
+      "allow": [],
+      "description": "A status question changes no files."
+    },
+    {
+      "name": "no-writes",
+      "type": "no_writes",
+      "description": "The transcript shows no file writes."
+    }
+  ]
+}

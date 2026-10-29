@@ -1,0 +1,27 @@
+{
+  "hash": "0x3f9a\u2026e101",
+  "wallet": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+  "to": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+  "method": "swapExactETHForTokens",
+  "value": "0.5",
+  "transfers": [
+    {
+      "token": "WETH",
+      "from": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+      "to": "0xa43fe16908251ee70ef74718545e4fe6c5ccec9f",
+      "amount": "0.5"
+    },
+    {
+      "token": "PEPE",
+      "from": "0xa43fe16908251ee70ef74718545e4fe6c5ccec9f",
+      "to": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+      "amount": "41250000"
+    }
+  ],
+  "internal_eth": [],
+  "expected": {
+    "side": "buy",
+    "token": "PEPE",
+    "quote": "ETH"
+  }
+}

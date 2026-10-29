@@ -1,0 +1,16 @@
+name: deploy
+on:
+  push:
+    tags: ["v*"]
+jobs:
+  prod:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::491820365514:role/github-deploy
+          aws-region: eu-west-1
+      - run: aws eks update-kubeconfig --name acme-prod
+      - run: helm upgrade --install api ./chart -f deploy/prod.yaml --set image.tag=$GITHUB_SHA

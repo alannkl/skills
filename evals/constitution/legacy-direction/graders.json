@@ -1,0 +1,28 @@
+{
+  "graders": [
+    {
+      "name": "endpoint-added",
+      "type": "llm",
+      "paths": ["src/routes/*.js", "src/repos/*.js", "src/server.js"],
+      "criteria": "A GET route under a customer, such as `/customers/:id/addresses`, returns that customer's saved addresses from the database with a parameterized query, and is mounted so a request reaches it."
+    },
+    {
+      "name": "follows-migration",
+      "type": "llm",
+      "paths": ["src/routes/*.js", "src/repos/*.js"],
+      "criteria": "The new endpoint's SQL lives in a repository module under `src/repos/` (such as `src/repos/customers.js` or `src/repos/addresses.js`) that the route calls, as the recent commits do for users and orders. Fail if the route handler calls `db.query` directly for it, as the older handlers in customers.js still do."
+    },
+    {
+      "name": "old-handlers-kept",
+      "type": "llm",
+      "path": "src/routes/customers.js",
+      "criteria": "The two existing handlers in customers.js (`GET /:id` and `GET /:id/orders`) keep their behavior. Moving their queries into a repository as part of this change fails unless the final message says it did so and why."
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "allow": ["src/routes/customers.js", "src/routes/addresses.js", "src/repos/*", "src/server.js", "test/*", "tests/*", "package-lock.json", "node_modules/*"],
+      "description": "The change stays in the customer routes, a repository, or a new addresses router mounted in server.js."
+    }
+  ]
+}

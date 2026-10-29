@@ -1,0 +1,1 @@
+{"name":"templater-v1","version":"1.9.4","main":"lib/render.js","dependencies":{"lodash":"^4.17.21"}}

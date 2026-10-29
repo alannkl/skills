@@ -1,0 +1,25 @@
+{
+  "graders": [
+    {
+      "name": "facts-right",
+      "type": "llm",
+      "path": "README.md",
+      "criteria": "The README's auth section matches the code: sign in with `POST /login` (email and password), which sets the `sid` session cookie; sessions are stored in Redis; sign out with `POST /logout`; requests without a session get 401. Running needs `REDIS_URL` and `SESSION_SECRET` rather than `JWT_SECRET`. No instructions for `POST /auth/token` or Bearer tokens remain."
+    },
+    {
+      "name": "current-facts",
+      "type": "llm",
+      "path": "README.md",
+      "criteria": "The README describes how auth works now. Fail if it carries an account of the work: when or why the README or the auth was changed, a changelog line, an 'updated' or 'new' marker, or migration history beyond what a current reader needs. A short note that Bearer tokens are no longer accepted passes, since it tells a current client what to do.",
+      "preference": "A short note on what changed also helps readers who knew the old flow"
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "allow": [
+        "README.md"
+      ],
+      "description": "Only the README changes."
+    }
+  ]
+}

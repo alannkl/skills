@@ -1,0 +1,27 @@
+{
+  "hash": "0x77c2\u2026a9d4",
+  "wallet": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+  "to": "0x7a250d5630b4cf539739df2c5dacb4c659f2488d",
+  "method": "swapExactTokensForTokens",
+  "value": "0",
+  "transfers": [
+    {
+      "token": "PEPE",
+      "from": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+      "to": "0xa43fe16908251ee70ef74718545e4fe6c5ccec9f",
+      "amount": "20000000"
+    },
+    {
+      "token": "USDC",
+      "from": "0xa43fe16908251ee70ef74718545e4fe6c5ccec9f",
+      "to": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+      "amount": "212.40"
+    }
+  ],
+  "internal_eth": [],
+  "expected": {
+    "side": "sell",
+    "token": "PEPE",
+    "quote": "USDC"
+  }
+}

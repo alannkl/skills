@@ -1,0 +1,45 @@
+{
+  "agent_timeout_sec": 900,
+  "graders": [
+    {
+      "name": "generic",
+      "type": "llm",
+      "path": "src/classify.js",
+      "criteria": "A swap through a router the code does not list is classified from the wallet's own token and ETH flows (ERC-20 transfers to and from the wallet, the transaction's ETH value, ETH sent back to the wallet), so a new router needs no code change. A table of known routers may remain for labelling or special cases."
+    },
+    {
+      "name": "new-trades-right",
+      "type": "llm",
+      "paths": [
+        "src/classify.js",
+        "fixtures/new/*.json"
+      ],
+      "criteria": "Traced by hand, `classify` returns each trade's `expected` value for both trades in fixtures/new/."
+    },
+    {
+      "name": "past-trades-same",
+      "type": "llm",
+      "paths": [
+        "src/classify.js",
+        "fixtures/trades/*.json"
+      ],
+      "criteria": "Traced by hand, `classify` still returns each trade's `expected` value for all six trades in fixtures/trades/, including the 1inch ETH buy that got a partial ETH refund (still a buy), the fee-on-transfer TAXI sell with two outgoing TAXI transfers, and the PEPE-to-WOJAK token-to-token swap (side `swap`).",
+      "guard": "task: it checks the rewrite is correct; the rule's effect is the check, which regression-checked grades"
+    },
+    {
+      "name": "regression-checked",
+      "type": "llm",
+      "criteria": "The final message reports checking the change against the previously classified trades in fixtures/trades/, by any means (running the classifier over every fixture, a test that covers them, or tracing each by hand), and gives the result. Fail if the only checks it reports are the two new trades and the two existing tests."
+    },
+    {
+      "name": "scope-files",
+      "type": "unchanged_except",
+      "allow": [
+        "src/*",
+        "test/*",
+        "package.json"
+      ],
+      "description": "The change stays in the classifier and its tests; the fixtures are data and stay as they are."
+    }
+  ]
+}

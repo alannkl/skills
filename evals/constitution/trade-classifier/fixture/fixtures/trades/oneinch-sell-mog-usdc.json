@@ -1,0 +1,27 @@
+{
+  "hash": "0x05aa\u20267e19",
+  "wallet": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+  "to": "0x1111111254eeb25477b68fb85ed929f73a960582",
+  "method": "swap",
+  "value": "0",
+  "transfers": [
+    {
+      "token": "MOG",
+      "from": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+      "to": "0xa43fe16908251ee70ef74718545e4fe6c5ccec9f",
+      "amount": "300000000"
+    },
+    {
+      "token": "USDC",
+      "from": "0xa43fe16908251ee70ef74718545e4fe6c5ccec9f",
+      "to": "0x5e1f0c6a2b7d4e8f9a0b1c2d3e4f5a6b7c8d9e0f",
+      "amount": "1104.90"
+    }
+  ],
+  "internal_eth": [],
+  "expected": {
+    "side": "sell",
+    "token": "MOG",
+    "quote": "USDC"
+  }
+}

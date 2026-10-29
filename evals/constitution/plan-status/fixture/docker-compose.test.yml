@@ -1,0 +1,22 @@
+services:
+  db:
+    image: postgres:16
+    environment:
+      POSTGRES_PASSWORD: test
+      POSTGRES_DB: billing_test
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 2s
+  stripe-mock:
+    image: stripe/stripe-mock:v0.186.0
+  api:
+    build: .
+    environment:
+      DATABASE_URL: postgres://postgres:test@db:5432/billing_test
+      STRIPE_API_BASE: http://stripe-mock:12111
+    ports: ["8080:8080"]
+    depends_on:
+      db: {condition: service_healthy}
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:8080/health"]
+      interval: 2s
