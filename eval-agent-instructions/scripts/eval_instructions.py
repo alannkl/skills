@@ -83,7 +83,7 @@ SETTINGS["configs"] = setups.catalog(SETTINGS)
 DEFAULT_ENV = "bwrap" if sys.platform == "linux" and shutil.which("bwrap") else "docker"
 # Sessions at once: under bwrap at most 32 across all setups, fewer when the host's memory cannot hold
 # them, each session counted at its harness's SESSION_GB; under Docker per setup, the setups running one
-# at a time, each container capped at 2 GB. A harness's `max_sessions` in configs.json caps each of its setups.
+# at a time, each container capped at 2 GB. A harness's `max_sessions` in configs.json caps all its setups together.
 DEFAULT_SLOTS = {"bwrap": 32, "docker": 6}
 # Memory a session holds midway through a run, in GB. OpenClaw's Node heap grows over a session, from
 # about 0.3 GB to 1-1.9 GB; Claude Code and Codex sessions stayed near 0.3 GB.
@@ -485,8 +485,10 @@ def cmd_run(args) -> None:
         raise SystemExit(f"--concurrency takes N or CONFIG=N, not {args.concurrency}")
     if set(named) - set(configs):
         raise SystemExit(f"--concurrency names setups this run does not use: {sorted(set(named) - set(configs))}")
-    caps = {name: SETTINGS["configs"][name]["max_sessions"] for name in configs
-            if "max_sessions" in SETTINGS["configs"][name]} | named
+    # Caps by harness, summed over its setups, from configs.json; by setup from --concurrency CONFIG=N.
+    harness_of = {name: SETTINGS["configs"][name]["harness"] for name in configs}
+    caps = {h: SETTINGS["harnesses"][h]["max_sessions"] for h in set(harness_of.values())
+            if "max_sessions" in SETTINGS["harnesses"][h]} | named
     check_credentials(configs)
     run_dir = new_run_dir(REPO / "evals" / args.suite / "results", args.run_id)
     mismatched = [c for c in configs if (SETTINGS["configs"][c]["harness"] == API) != wants_api]
@@ -572,7 +574,8 @@ def cmd_run(args) -> None:
         room = float("inf") if budget else room
         print(f"== memory for sessions: {room:.0f} GB, per session {gb}", file=sys.stderr)
     else:
-        slots = {name: caps.get(name, budget or DEFAULT_SLOTS[args.env]) for name in configs}
+        slots = {name: named.get(name, min(budget or DEFAULT_SLOTS[args.env], caps.get(harness_of[name], 10 ** 6)))
+                 for name in configs}
     meta["slots"] = slots
     print(f"== sessions at once: {slots}", file=sys.stderr)
     (run_dir / "run.json").write_text(json.dumps(meta, indent=2) + "\n")
@@ -624,7 +627,7 @@ def cmd_run(args) -> None:
         expected = {name: expected_seconds(run_dir.parent, name) for name in configs}
         sessions.sort(key=lambda s: expected[s[0]].get(s[1], expected[s[0]].get(None, 0.0)), reverse=True)
         print(f"== {len(sessions)} sessions", file=sys.stderr)
-        run_queue(sessions, slots["all"], caps, run_session, gb, room)
+        run_queue(sessions, slots["all"], caps, run_session, gb, room, harness_of)
         print("== sessions done", file=sys.stderr)
     else:
         # Under Docker setups run one at a time: concurrent Harbor jobs would race to build the same
@@ -651,22 +654,27 @@ def parse_concurrency(values: list[str]) -> tuple[int | None, dict[str, int]]:
 
 
 # Seconds between two session starts of one setup: starting a burst at once drew rate-limit errors
-# (HTTP 429) from Codex, on top of the per-setup caps.
+# (HTTP 429) from Codex, on top of the caps.
 LAUNCH_GAP_SECONDS = 1.0
 
 
 def run_queue(items: list[tuple], budget: int, caps: dict[str, int], launch,
-              gb: dict[str, float] | None = None, room: float = float("inf")) -> None:
+              gb: dict[str, float] | None = None, room: float = float("inf"),
+              harness_of: dict[str, str] | None = None) -> None:
     """Run `launch(item)` for every item, `budget` at once and in the given order, with at most
-    `caps[setup]` of one setup's items at once, the running items' `gb` within `room` (one item
-    always runs), and starts of one setup LAUNCH_GAP_SECONDS apart; an item's first field names its setup."""
+    `caps[setup]` of one setup's items and `caps[harness]` of one harness's items at once, the running
+    items' `gb` within `room` (one item always runs), and starts of one setup LAUNCH_GAP_SECONDS apart;
+    an item's first field names its setup."""
     pending, running, next_start = list(items), defaultdict(int), defaultdict(float)
-    gb = gb or {}
+    gb, harness_of = gb or {}, harness_of or {}
     ready = threading.Condition()
 
     def fits(setup: str) -> bool:
         used = sum(n * gb.get(s, 0.0) for s, n in running.items())
+        harness = harness_of.get(setup)
+        same_harness = sum(n for s, n in running.items() if harness_of.get(s) == harness)
         return (running[setup] < caps.get(setup, budget)
+                and (harness is None or same_harness < caps.get(harness, budget))
                 and (not any(running.values()) or used + gb.get(setup, 0.0) <= room))
 
     def worker() -> None:
@@ -1114,8 +1122,8 @@ def main() -> None:
     run.add_argument("--concurrency", action="append", default=[], metavar="[CONFIG=]N",
                      help="N: sessions at once across all setups, longest expected first "
                           f"(default: up to {DEFAULT_SLOTS['bwrap']} under bwrap, as many as free memory holds; "
-                          f"under Docker, per setup, {DEFAULT_SLOTS['docker']}); CONFIG=N caps one setup, over its harness's "
-                          "max_sessions in configs.json. "
+                          f"under Docker, per setup, {DEFAULT_SLOTS['docker']}); CONFIG=N caps one setup, within its harness's "
+                          "max_sessions in configs.json, which caps all of that harness's setups together. "
                           "A given number runs as given, with a warning when it will not fit in memory")
     run.add_argument("--env", choices=["bwrap", "docker"], default=DEFAULT_ENV,
                      help=f"where sessions run; default {DEFAULT_ENV}")
