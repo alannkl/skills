@@ -1,5 +1,0 @@
-base_model: distilroberta-base
-max_len: 128
-batch_size: 64
-lr: 5.0e-5
-epochs: 1

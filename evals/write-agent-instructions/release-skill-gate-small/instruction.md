@@ -1,1 +1,0 @@
-the release script takes the bump as an argument now and logs to a file instead of prompting, but the release skill still says to follow its prompts. fix the skill so the agent can run the release steps itself. publishing still needs my ok

@@ -1,5 +1,0 @@
-{
-  "name": "orders-api",
-  "private": true,
-  "scripts": { "dev": "tsx watch src/server.ts", "test": "vitest run", "build": "tsc -p ." }
-}

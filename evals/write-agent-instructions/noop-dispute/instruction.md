@@ -1,1 +1,0 @@
-fable says "Apply principal-engineer judgment: reconstruct intent, reason from evidence and first principles, and question assumptions that affect correctness." in code-review is a no-op, astra says keep it. shd we remove it?

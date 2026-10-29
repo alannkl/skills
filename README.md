@@ -186,10 +186,10 @@ Background notes and research behind these skills:
 [`eval-agent-instructions`](eval-agent-instructions/SKILL.md) runs measured evaluations; its runner is `eval-agent-instructions/scripts/eval_instructions.py`, and `eval-agent-instructions/references/suites.md` documents the suite format. Suites live in `evals/<suite>/`, outside the skill folders, so installs don't ship them. Run the runner from the repository root:
 
 ```bash
-python3 eval-agent-instructions/scripts/eval_instructions.py run write-agent-instructions --case add-one-rule --probe
-python3 eval-agent-instructions/scripts/eval_instructions.py grade evals/write-agent-instructions/results/<run-id>
-python3 eval-agent-instructions/scripts/eval_instructions.py rules write-agent-instructions
-python3 eval-agent-instructions/scripts/eval_instructions.py run write-agent-instructions --minus <rule>
+python3 eval-agent-instructions/scripts/eval_instructions.py run constitution --case rename-config-key --probe
+python3 eval-agent-instructions/scripts/eval_instructions.py grade evals/constitution/results/<run-id>
+python3 eval-agent-instructions/scripts/eval_instructions.py rules constitution
+python3 eval-agent-instructions/scripts/eval_instructions.py run constitution --minus <rule>
 ```
 
 Every run is a real, billed agent session. Credentials go in the environment or the repository's `.env`: `ANTHROPIC_BASE_URL` and `ANTHROPIC_AUTH_TOKEN` for an Anthropic-compatible endpoint that also serves OpenAI's Responses API at `/v1` (Claude Code, Codex and the judges use it), and `OPENROUTER_API_KEY` for OpenClaw setups on OpenRouter. The first run installs the pinned agent CLIs for the sandbox, or builds a Docker base image with `--env docker`, which takes a few minutes. Results go to `evals/<suite>/results/`, which git ignores.

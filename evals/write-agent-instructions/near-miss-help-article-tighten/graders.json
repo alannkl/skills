@@ -1,9 +1,0 @@
-{
-  "expect_skill_loaded": {"with": false, "without": false},
-  "trigger_only": true,
-  "graders": [
-    {"name": "only-article-changed", "type": "unchanged_except", "allow": ["docs/help/exporting-your-data.md"]},
-    {"name": "facts-kept", "type": "llm", "path": "docs/help/exporting-your-data.md", "criteria": "Every customer-relevant fact survives: only workspace Owners and Admins can export (Members and Guests must ask one); the path workspace name → Settings → Data → Export workspace → choose format → Start export; CSV and JSON formats and when to use each (JSON keeps full structure incl. comments and attachment metadata); CSV limit of 100,000 rows per file with JSON or a smaller date range as the workaround; the export is usually ready within 15 minutes and the download link is emailed to whoever started it; the link expires after 7 days and a new export can be started; deleted and trashed projects are excluded while active and archived ones are included; support@plotline.app for help. The front matter is unchanged."},
-    {"name": "materially-shorter-and-skimmable", "type": "llm", "path": "docs/help/exporting-your-data.md", "criteria": "The article is materially shorter than before (the filler and repetition are gone) and a customer skimming it can find the steps and the limits quickly."}
-  ]
-}

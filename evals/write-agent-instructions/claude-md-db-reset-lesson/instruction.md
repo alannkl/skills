@@ -1,1 +1,0 @@
-you just ran prisma migrate reset --force and nuked my local db, i had a weeks worth of test orders in there. the drift was from me hand-editing a column in psql, you should have just asked. put this in CLAUDE.md so it doesnt happen again

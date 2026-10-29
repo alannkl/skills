@@ -1,5 +1,0 @@
-Cache prices for ten minutes
-
-Every product page calls the pricing service once per SKU (~40 ms each).
-Cache prices per SKU, but for at most 10 minutes because prices change
-during sales, and cap the cache at 10,000 SKUs to bound memory.

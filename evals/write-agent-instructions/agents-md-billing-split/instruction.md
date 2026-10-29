@@ -1,1 +1,0 @@
-Our agents read only the root AGENTS.md; they never load AGENTS.md files from subdirectories on their own. Restructure it so billing-only guidance moves to `src/billing/AGENTS.md` and agents read it only when they work on billing code; keep any requirement that other code also needs available to that code. Keep everything it requires.

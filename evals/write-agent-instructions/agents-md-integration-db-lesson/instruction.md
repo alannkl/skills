@@ -1,1 +1,0 @@
-fyi those 9 failures in tests/integration were just postgres not running, nothing to do with your change. make db-up fixes it. can you add that to AGENTS.md so codex doesnt burn 20 min debugging it next time

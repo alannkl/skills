@@ -1,9 +1,0 @@
-services:
-  warehouse:
-    image: postgres:15
-    environment:
-      POSTGRES_USER: ledger
-      POSTGRES_PASSWORD: ledger
-      POSTGRES_DB: ledger
-    ports:
-      - "5433:5432"

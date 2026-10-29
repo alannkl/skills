@@ -1,8 +1,0 @@
-{
-  "summary": {
-    "totalLabel": "Gesamt",
-    "itemCount_one": "{{count}} Artikel",
-    "itemCount_other": "{{count}} Artikel"
-  },
-  "payNow": "Jetzt bezahlen"
-}
