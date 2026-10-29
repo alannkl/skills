@@ -6,7 +6,7 @@ import unittest
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / "eval-agent-instructions" / "scripts"))
-from tasks import PROBE_CASE, build_tasks, load_suite, workspace_name  # noqa: E402
+from tasks import PROBE_CASE, build_tasks, environment_image, load_suite, workspace_name  # noqa: E402
 
 
 class Tasks(unittest.TestCase):
@@ -92,6 +92,24 @@ class Tasks(unittest.TestCase):
             self.build(["edit-case"], "AGENTS.md")
         self.build(["edit-case"], "CLAUDE.md", out=self.out / "claude")
         self.assertTrue((self.out / "claude" / "edit-case--with" / "environment" / "instructions" / "CLAUDE.md").is_file())
+
+    def test_docker_tasks_name_an_image_per_environment_content(self):
+        self.build(["edit-case"])
+        self.assertNotIn("docker_image", (self.out / "edit-case--with" / "task.toml").read_text())
+        (self.cases / "eval.json").write_text(json.dumps(
+            {"artifact": {"type": "instruction-file", "path": "target/SKILL.md"}}))
+        images = {}
+        for name in ("CLAUDE.md", "GEMINI.md"):
+            out = self.out.parent / name
+            build_tasks(self.repo, load_suite(self.repo, "target"), [self.cases / "edit-case"], ["with"], "base:test",
+                        out, instruction_file=name, prebuilt=True)
+            images[name] = environment_image(out / "edit-case--with" / "environment")
+            self.assertIn(f'docker_image = "{images[name]}"', (out / "edit-case--with" / "task.toml").read_text())
+        self.assertNotEqual(images["CLAUDE.md"], images["GEMINI.md"])
+        again = self.out.parent / "again"
+        build_tasks(self.repo, load_suite(self.repo, "target"), [self.cases / "edit-case"], ["with"], "base:test",
+                    again, instruction_file="GEMINI.md", prebuilt=True)
+        self.assertEqual(environment_image(again / "edit-case--with" / "environment"), images["GEMINI.md"])
 
     def test_instruction_file_takes_the_harness_name_and_is_delivered_without_frontmatter(self):
         (self.cases / "eval.json").write_text(json.dumps(

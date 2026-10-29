@@ -18,7 +18,7 @@ sys.path.insert(0, str(SCRIPTS))
 import sandbox  # noqa: E402
 import tasks  # noqa: E402
 import eval_instructions  # noqa: E402
-from eval_instructions import case_dirs, expected_seconds, parse_concurrency, run_queue, session_budget  # noqa: E402
+from eval_instructions import case_dirs, expected_seconds, parse_concurrency, run_queue  # noqa: E402
 
 # The Dockerfile every stored Docker baseline was built from; a change to its text invalidates them all.
 FROZEN_DOCKERFILE = """FROM b
@@ -123,16 +123,53 @@ class Sandbox(unittest.TestCase):
                 running["all"] -= 1
 
         items = [("a", f"a{i}") for i in range(6)] + [("b", f"b{i}") for i in range(6)]
-        run_queue(items, 4, {"a": 1}, launch)
+        with mock.patch.object(eval_instructions, "LAUNCH_GAP_SECONDS", 0.0):
+            run_queue(items, 4, {"a": 1}, launch)
         self.assertEqual(sorted(order), sorted(i[1] for i in items))
         self.assertEqual((peak["a"], peak["all"]), (1, 4))
         self.assertEqual(order[0], "a0")
 
-    def test_budget_fits_in_free_memory(self):
-        self.assertEqual(session_budget(0.3, 100.0), 32)
-        self.assertEqual(session_budget(0.3, 6.0), 20)
-        self.assertEqual(session_budget(1.0, 0.0), 1)
-        self.assertEqual(session_budget(0.0, 0.0), 32)
+    def peaks(self, items, budget, caps, gb=None, room=float("inf"), harness_of=None, gap=0.0):
+        """Peak running items per setup, per harness and in all, and each setup's start times."""
+        lock, running, peak, starts = threading.Lock(), defaultdict(float), defaultdict(float), defaultdict(list)
+        begin = time.monotonic()
+
+        def launch(item):
+            keys = (item[0], (harness_of or {}).get(item[0]), "all", "gb")
+            with lock:
+                starts[item[0]].append(time.monotonic() - begin)
+                for key in keys:
+                    running[key] += (gb or {}).get(item[0], 0.0) if key == "gb" else 1
+                    peak[key] = max(peak[key], running[key])
+            time.sleep(0.02)
+            with lock:
+                for key in keys:
+                    running[key] -= (gb or {}).get(item[0], 0.0) if key == "gb" else 1
+
+        with mock.patch.object(eval_instructions, "LAUNCH_GAP_SECONDS", gap):
+            run_queue(items, budget, caps, launch, gb, room, harness_of)
+        return peak, starts
+
+    def test_queue_keeps_running_sessions_within_memory_at_each_setups_size(self):
+        items = [("big", i) for i in range(6)] + [("small", i) for i in range(6)]
+        peak, _ = self.peaks(items, 32, {}, {"big": 1.0, "small": 0.3}, 2.0)
+        self.assertLessEqual(peak["gb"], 2.0 + 1e-9)
+        # One item runs even when it alone exceeds the room.
+        peak, _ = self.peaks([("big", 0)], 32, {}, {"big": 1.0}, 0.5)
+        self.assertEqual(peak["all"], 1)
+
+    def test_a_harness_cap_bounds_its_setups_together(self):
+        items = [("astra", i) for i in range(8)] + [("sol", i) for i in range(8)] + [("opus", i) for i in range(8)]
+        harness_of = {"astra": "codex", "sol": "codex", "opus": "claude-code"}
+        peak, _ = self.peaks(items, 32, {"codex": 4, "sol": 1}, harness_of=harness_of)
+        self.assertEqual((peak["codex"], peak["sol"]), (4, 1))
+        self.assertEqual(peak["opus"], 8)
+
+    def test_one_setups_starts_are_spaced_by_the_launch_gap(self):
+        _, starts = self.peaks([("a", i) for i in range(3)] + [("b", 0)], 8, {}, gap=0.05)
+        gaps = [later - earlier for earlier, later in zip(starts["a"], starts["a"][1:])]
+        self.assertTrue(all(g >= 0.045 for g in gaps), gaps)
+        self.assertLess(starts["b"][0], 0.045)
 
     def test_expected_time_per_task_comes_from_earlier_runs_without_probes(self):
         for run, task, trial, end in (("r1", "case--with", "case--wi__a", "10:01:00"),
