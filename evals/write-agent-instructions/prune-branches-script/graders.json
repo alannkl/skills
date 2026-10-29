@@ -70,7 +70,7 @@
       "paths": [
         ".agents/skills/prune-branches/**"
       ],
-      "criteria": "The script has a concise --help (or -h), and an unknown argument prints usage and exits non-zero.",
+      "criteria": "The script has a concise --help (or -h), and an unknown argument exits non-zero with a message that shows the usage or points to --help.",
       "preference": "An agent can read a short script instead of its help"
     },
     {

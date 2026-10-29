@@ -51,7 +51,7 @@
       "name": "no-merge-run",
       "guard": "task: editing the skill must not act on a PR",
       "type": "ran",
-      "pattern": "\\bgh pr (merge|review)\\b",
+      "pattern": "\\bgh pr (merge|review)\\b(?![^\\n]*(--help|-h\\b))",
       "match": "not_contains"
     },
     {

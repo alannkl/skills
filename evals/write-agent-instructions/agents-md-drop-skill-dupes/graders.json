@@ -39,7 +39,7 @@
         ".agents/skills/coding/SKILL.md"
       ],
       "with_final_message": true,
-      "criteria": "'Run make test before committing' now appears in only one of the two files, or the final message gives a reason for keeping both copies."
+      "criteria": "'Run make test before committing' now appears in only one of the two files, or the final message explains why it did not remove the requested copy, such as AGENTS.md covering tasks the skill does not."
     },
     {
       "name": "report",

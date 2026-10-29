@@ -39,11 +39,13 @@
         ".claude/skills/**/*",
         "package.json",
         "README.md",
+        "AGENTS.md",
         "openapi.yaml",
         "scripts/**",
-        "src/routes/**"
+        "src/routes/**",
+        "docs/**"
       ],
-      "criteria": "Judge the new skill against the repo's files. Every command, script and path it presents as the repo's exists as written: for example `pnpm openapi:gen`, `pnpm docs:build`, `openapi.yaml`, `docs/api/`, `src/routes/`, `prepare-pr`. Fail if it names a repo command or script that does not exist (such as `pnpm generate:openapi` or `pnpm docs:lint`), or presents a tool that is neither in the repo nor run through a package runner (`npx <package>`, `pnpm dlx <package>`) as available without saying it must be installed."
+      "criteria": "Judge the new skill against the repo's files. Every command, script and path it presents as the repo's exists as written: for example `pnpm openapi:gen`, `pnpm docs:build`, `openapi.yaml`, `docs/api/`, `src/routes/`, `prepare-pr`. Fail if it names a repo command, script or file that does not exist (such as `pnpm generate:openapi` or `pnpm docs:lint`), or presents a specialized tool that is neither in the repo nor run through a package runner (`npx <package>`, `pnpm dlx <package>`) as available without saying it must be installed. Common developer tools (git, gh, rg, grep, jq, curl, node) need no such note."
     },
     {
       "name": "inventory-row",
@@ -198,7 +200,7 @@
       "name": "not-run-now",
       "guard": "task: making the skill is not running it",
       "type": "ran",
-      "pattern": "gh\\s+pr\\s+create|git\\s+push",
+      "pattern": "\\b(gh\\s+pr\\s+create|git\\s+push)\\b(?![^\\n]*(--help|-h\\b))",
       "match": "not_contains"
     },
     {

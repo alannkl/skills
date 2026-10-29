@@ -28,7 +28,7 @@
       "name": "no-history",
       "type": "llm",
       "path": "AGENTS.md",
-      "criteria": "The change states at most the fact the agent acts on (staging's TLS cert is expired, or e2e against staging fails on TLS). It has no account of ops' renewal schedule, of the failing runs, or of the user's request.",
+      "criteria": "The change states the fact the agent acts on (staging's TLS cert is expired or awaiting renewal, or e2e against staging fails on TLS) and, if it gives one, when the note stops applying, such as a renewal date. It has no account of how the failure was found, of the failing runs, of ops' process beyond that date, or of the user's request.",
       "preference": "A clause about ops' schedule costs a line but misleads no run"
     },
     {

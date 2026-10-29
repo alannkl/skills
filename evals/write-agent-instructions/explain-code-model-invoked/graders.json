@@ -72,7 +72,7 @@
     {
       "name": "suggestions",
       "type": "llm",
-      "criteria": "The final message suggests other skills to make model-invoked, with a reason for each. Fail if it recommends making review-panel model-invoked without naming that it spawns several agent sessions per run, or recommends every user-invoked skill without a reason for each. Any reasoned subset passes, such as refine-it, shorten-it and handoff."
+      "criteria": "The final message suggests other skills to make model-invoked. Fail if it recommends making review-panel model-invoked without naming that it spawns several agent sessions per run, or recommends making every user-invoked skill model-invoked without weighing each. Naming the requests a suggested skill would serve counts as its reason; any subset passes, such as refine-it, shorten-it and handoff."
     },
     {
       "name": "suggested-not-applied",
