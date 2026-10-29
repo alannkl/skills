@@ -83,7 +83,7 @@ SETTINGS["configs"] = setups.catalog(SETTINGS)
 DEFAULT_ENV = "bwrap" if sys.platform == "linux" and shutil.which("bwrap") else "docker"
 # Sessions at once: under bwrap at most 32 across all setups, fewer when the host's memory cannot hold
 # them, each session counted at its harness's SESSION_GB; under Docker per setup, the setups running one
-# at a time, each container capped at 2 GB. A model's `max_sessions` in configs.json caps its setups.
+# at a time, each container capped at 2 GB. A harness's `max_sessions` in configs.json caps each of its setups.
 DEFAULT_SLOTS = {"bwrap": 32, "docker": 6}
 # Memory a session holds midway through a run, in GB. OpenClaw's Node heap grows over a session, from
 # about 0.3 GB to 1-1.9 GB; Claude Code and Codex sessions stayed near 0.3 GB.
@@ -1114,7 +1114,7 @@ def main() -> None:
     run.add_argument("--concurrency", action="append", default=[], metavar="[CONFIG=]N",
                      help="N: sessions at once across all setups, longest expected first "
                           f"(default: up to {DEFAULT_SLOTS['bwrap']} under bwrap, as many as free memory holds; "
-                          f"under Docker, per setup, {DEFAULT_SLOTS['docker']}); CONFIG=N caps one setup, over its model's "
+                          f"under Docker, per setup, {DEFAULT_SLOTS['docker']}); CONFIG=N caps one setup, over its harness's "
                           "max_sessions in configs.json. "
                           "A given number runs as given, with a warning when it will not fit in memory")
     run.add_argument("--env", choices=["bwrap", "docker"], default=DEFAULT_ENV,

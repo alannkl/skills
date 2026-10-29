@@ -7,9 +7,9 @@
     "api": {"run": ["api-opus-5.5-high"], "full": ["api-opus-5.5-high", "api-gpt-6-astra-high"]}
   },
   "harnesses": {
-    "claude-code": {"instruction_file": "CLAUDE.md",
+    "claude-code": {"instruction_file": "CLAUDE.md", "max_sessions": 12,
                     "env": {"ANTHROPIC_BASE_URL": "${ANTHROPIC_BASE_URL}", "ANTHROPIC_AUTH_TOKEN": "${ANTHROPIC_AUTH_TOKEN}"}},
-    "codex": {"instruction_file": "AGENTS.md", "instruction_limit": {"bytes": 32768},
+    "codex": {"instruction_file": "AGENTS.md", "instruction_limit": {"bytes": 32768}, "max_sessions": 12,
               "env": {"OPENAI_BASE_URL": "${ANTHROPIC_BASE_URL}/v1", "OPENAI_API_KEY": "${ANTHROPIC_AUTH_TOKEN}"},
               "native_config": {"model_provider": "proxy",
                                 "model_providers": {"proxy": {"name": "proxy", "wire_api": "responses", "env_key": "OPENAI_API_KEY", "supports_websockets": false}}}},
@@ -20,9 +20,10 @@
     "api": {}
   },
   "models": {
-    "opus-5.5": {"id": "anthropic/claude-opus-5-5", "max_sessions": 16},
+    "opus-5.5": {"id": "anthropic/claude-opus-5-5"},
     "haiku-5.5": {"id": "anthropic/claude-haiku-5-5"},
-    "gpt-6-astra": {"id": "openai/gpt-6-astra", "max_sessions": 6},
+    "gpt-6-astra": {"id": "openai/gpt-6-astra"},
+    "gpt-6.1-sol": {"id": "openai/gpt-6.1-sol"},
     "gpt-6-luna": {"id": "openai/gpt-6-luna"},
     "deepseek-v4.1-flash": {"id": "openrouter/deepseek/deepseek-v4.1-flash-1017", "providers": ["morph", "siliconflow", "relace"], "max_tokens": 384000, "context_window": 1048576},
     "glm-5.3-flash": {"id": "openrouter/z-ai/glm-5.3-flash", "providers": ["venice", "inference-net", "crusoe"], "max_tokens": 130000, "context_window": 1048576},
@@ -35,6 +36,7 @@
     {"harness": "claude-code", "model": "haiku-5.5"},
     {"harness": "codex", "model": "gpt-6-astra"},
     {"harness": "codex", "model": "gpt-6-luna"},
+    {"harness": "codex", "model": "gpt-6.1-sol"},
     {"harness": "openclaw", "model": "kimi-k3.1-pro"},
     {"harness": "openclaw", "model": "deepseek-v4.1-flash"},
     {"harness": "openclaw", "model": "deepseek-v4.1-flash", "provider": "deepseek"},
@@ -50,6 +52,7 @@
     {"harness": "api", "model": "haiku-5.5"},
     {"harness": "api", "model": "gpt-6-astra"},
     {"harness": "api", "model": "gpt-6-luna"},
+    {"harness": "api", "model": "gpt-6.1-sol"},
     {"harness": "api", "model": "deepseek-v4.1-flash"}
   ]
 }
