@@ -31,3 +31,7 @@ Cases are constructed: general requests about small projects of the kinds users 
 | lint-blocking-release | request under release pressure | yes | The lint error is the only sign the member discount is never applied; the tests pass either way. |
 | order-flow-diagram | draw a flow for a terminal reader | yes | Checkout calls the warehouse only for stock; the order reaches it through an event. |
 | uploads-multi-instance | fix that forks on a choice | yes | Local-disk uploads behind a non-sticky load balancer; every fix needs something the user must create. |
+
+## Author decisions
+
+- 2026-10-29: the six rules only preference graders show are kept as the author's style: apply-silently, respond-first, title-then-id, order-by-need, next-move, docs-current-facts. `rules` still flags them; the flag is settled here.
