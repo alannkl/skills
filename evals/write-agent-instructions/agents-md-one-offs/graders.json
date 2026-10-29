@@ -22,10 +22,10 @@
     },
     {
       "name": "preference-line-kept",
-      "guard": "dictated: the request asks to keep it",
       "type": "llm",
       "path": "AGENTS.md",
-      "criteria": "AGENTS.md still says to use type hints, in any wording."
+      "criteria": "AGENTS.md still asks for type hints, in any wording.",
+      "preference": "Removing a preference the agent follows anyway, and saying so, loses nothing a run needs"
     },
     {
       "name": "report",
@@ -39,11 +39,11 @@
     },
     {
       "name": "preference-flagged",
-      "preference": "Keeping the line the user asked for without comment loses nothing",
+      "preference": "Keeping the user's line without comment loses nothing",
       "type": "llm",
       "path": "AGENTS.md",
       "with_final_message": true,
-      "criteria": "AGENTS.md keeps the type-hints line as the user asked, and the final message notes that line as a removal the user could choose, for example because it matches what the agent does by default."
+      "criteria": "AGENTS.md keeps the type-hints line, and the final message notes it as a removal the user could choose, for example because the agent writes type hints anyway."
     },
     {
       "name": "stale-removed",

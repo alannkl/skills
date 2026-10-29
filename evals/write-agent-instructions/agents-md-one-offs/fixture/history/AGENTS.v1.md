@@ -9,5 +9,5 @@
 - Prefer f-strings over `.format()`.
 - Sort imports.
 - Remember: `make check` before committing!
-- Use type hints.
+- I want type hints on every function.
 - Never paste the Stripe keys into code or chat; the test key is in 1Password under "Stripe test".

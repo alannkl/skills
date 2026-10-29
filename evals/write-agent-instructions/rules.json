@@ -397,11 +397,11 @@
     },
     "user-preference-stays": {
       "file": "SKILL.md",
-      "text": "An explicit user preference, one the user states in the request or conversation, stays even when it matches the default; list it as a suggested removal.",
+      "text": "A stated user preference stays even if the agent would follow it unprompted; if it predates the request, list it as a suggested removal.",
       "graders": [
+        "agents-md-one-offs/preference-line-kept",
         "agents-md-one-offs/preference-flagged"
-      ],
-      "partial": "keeping the stated preference is dictated by the request; only listing it as a suggested removal is evidence"
+      ]
     },
     "safeguard-keep-test": {
       "file": "SKILL.md",
@@ -809,7 +809,7 @@
       "file": "references/skill-mechanics.md",
       "text": [
         "Before writing a description, list the prompts, contexts, and files that should trigger the skill and the near-misses that should not.",
-        "Check a new description against realistic positive prompts and near-miss negative prompts, and revise wording that is too broad or too narrow."
+        "Check a new description against realistic matching and near-miss prompts, revise it if too broad or too narrow, and report both sets."
       ],
       "graders": [
         "promote-skill-from-runbook/near-miss-deploy-status",

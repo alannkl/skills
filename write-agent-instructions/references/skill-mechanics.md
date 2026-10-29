@@ -53,7 +53,7 @@ description: "Helps with accessibility."
 description: "... Use when the user asks to review, check, audit, inspect, examine, or assess accessibility."
 ```
 
-Check a new description against realistic positive prompts and near-miss negative prompts, and revise wording that is too broad or too narrow. A change to an existing description that alters which cases reach it uses the Trigger checks section of `references/evaluating-instructions.md` instead.
+Check a new description against realistic matching and near-miss prompts, revise it if too broad or too narrow, and report both sets. A change to an existing description that alters which cases reach it uses the Trigger checks section of `references/evaluating-instructions.md` instead.
 
 ## Scripts
 
