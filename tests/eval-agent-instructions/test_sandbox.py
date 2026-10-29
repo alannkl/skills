@@ -158,6 +158,27 @@ class Sandbox(unittest.TestCase):
         peak, _ = self.peaks([("big", 0)], 32, {}, {"big": 1.0}, 0.5)
         self.assertEqual(peak["all"], 1)
 
+    def test_queue_starts_nothing_more_while_free_memory_is_short(self):
+        readings, lock, running, peak = [], threading.Lock(), [0], [0]
+
+        def live():
+            readings.append(running[0])
+            return 0.0  # never room for a second session
+
+        def launch(item):
+            with lock:
+                running[0] += 1
+                peak[0] = max(peak[0], running[0])
+            time.sleep(0.02)
+            with lock:
+                running[0] -= 1
+
+        with mock.patch.object(eval_instructions, "LAUNCH_GAP_SECONDS", 0.0):
+            run_queue([("a", i) for i in range(3)], 8, {}, launch, {"a": 1.0}, 100.0, None, live)
+        # Every item runs, one at a time: each starts only once nothing else runs.
+        self.assertEqual(peak[0], 1)
+        self.assertTrue(readings)
+
     def test_a_harness_cap_bounds_its_setups_together(self):
         items = [("astra", i) for i in range(8)] + [("sol", i) for i in range(8)] + [("opus", i) for i in range(8)]
         harness_of = {"astra": "codex", "sol": "codex", "opus": "claude-code"}

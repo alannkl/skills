@@ -85,9 +85,10 @@ DEFAULT_ENV = "bwrap" if sys.platform == "linux" and shutil.which("bwrap") else 
 # counted at its harness's SESSION_GB; under Docker the memory is the engine's, such as Docker Desktop's
 # VM. A harness's `max_sessions` in configs.json caps all its setups together.
 DEFAULT_SLOTS = {"bwrap": 32, "docker": 32}
-# Memory a session holds midway through a run, in GB. OpenClaw's Node heap grows over a session, from
-# about 0.3 GB to 1-1.9 GB; Claude Code and Codex sessions stayed near 0.3 GB.
-SESSION_GB = {"openclaw": 1.0, "claude-code": 0.3, "codex": 0.3, "api": 0.0}
+# Memory a session holds, in GB, with its own Harbor process: 32 sessions starting together took about
+# 0.45 GB each for Claude Code and Codex, and OpenClaw's Node heap grows over a session to 1-1.9 GB.
+# Counting only the agent (0.3 and 1.0) let a four-setup run fill a 19 GB WSL VM and crash it.
+SESSION_GB = {"openclaw": 1.5, "claude-code": 0.5, "codex": 0.5, "api": 0.0}
 # Kept free for the host, so sessions never push it into swap.
 RESERVE_GB = 4.0
 # Each harness ships skills of its own, such as Claude Code's code-review and the
@@ -592,8 +593,10 @@ def cmd_run(args) -> None:
         if budget and budget * max(gb.values()) > room:
             print(f"== warning: {budget} sessions may need about {budget * max(gb.values()):.0f} GB; "
                   f"{room:.0f} GB is free beyond the {RESERVE_GB:.0f} GB kept for the host", file=sys.stderr)
-        # A given number runs as given; otherwise the queue also keeps the sessions within free memory.
+        # A given number runs as given; otherwise the queue also keeps the sessions within free memory,
+        # budgeted up front and checked again before each start.
         room = float("inf") if budget else room
+        live = None if budget or args.env == "docker" else (lambda: free_memory_gb() - RESERVE_GB)
         print(f"== memory for sessions: {room:.0f} GB, per session {gb}", file=sys.stderr)
     else:
         slots = {name: named.get(name, min(budget or DEFAULT_SLOTS[args.env], caps.get(harness_of[name], 10 ** 6)))
@@ -639,7 +642,7 @@ def cmd_run(args) -> None:
         print(f"== {len(sessions)} sessions", file=sys.stderr)
         if args.env == "docker":
             build_task_images({run_dir / task_dirs[name] / s[1] for name in configs for s in sessions if s[0] == name})
-        run_queue(sessions, slots["all"], caps, run_session, gb, room, harness_of)
+        run_queue(sessions, slots["all"], caps, run_session, gb, room, harness_of, live)
         print("== sessions done", file=sys.stderr)
     else:
         with ThreadPoolExecutor(max_workers=len(configs)) as pool:
@@ -670,11 +673,12 @@ LAUNCH_GAP_SECONDS = 1.0
 
 def run_queue(items: list[tuple], budget: int, caps: dict[str, int], launch,
               gb: dict[str, float] | None = None, room: float = float("inf"),
-              harness_of: dict[str, str] | None = None) -> None:
+              harness_of: dict[str, str] | None = None, live_room=None) -> None:
     """Run `launch(item)` for every item, `budget` at once and in the given order, with at most
     `caps[setup]` of one setup's items and `caps[harness]` of one harness's items at once, the running
-    items' `gb` within `room` (one item always runs), and starts of one setup LAUNCH_GAP_SECONDS apart;
-    an item's first field names its setup."""
+    items' `gb` within `room` and, when `live_room` is given, the next item's `gb` within what it reports
+    free now (one item always runs), and starts of one setup LAUNCH_GAP_SECONDS apart; an item's first
+    field names its setup."""
     pending, running, next_start = list(items), defaultdict(int), defaultdict(float)
     gb, harness_of = gb or {}, harness_of or {}
     ready = threading.Condition()
@@ -685,7 +689,8 @@ def run_queue(items: list[tuple], budget: int, caps: dict[str, int], launch,
         same_harness = sum(n for s, n in running.items() if harness_of.get(s) == harness)
         return (running[setup] < caps.get(setup, budget)
                 and (harness is None or same_harness < caps.get(harness, budget))
-                and (not any(running.values()) or used + gb.get(setup, 0.0) <= room))
+                and (not any(running.values()) or (used + gb.get(setup, 0.0) <= room
+                                                    and (live_room is None or gb.get(setup, 0.0) <= live_room()))))
 
     def worker() -> None:
         while True:
@@ -694,7 +699,8 @@ def run_queue(items: list[tuple], budget: int, caps: dict[str, int], launch,
                     item = next((i for i in pending if fits(i[0])), None)
                     if item or not pending:
                         break
-                    ready.wait()
+                    # Memory frees as sessions shrink or end, so recheck it without waiting for a finish.
+                    ready.wait(timeout=5)
                 if item is None:
                     return
                 pending.remove(item)
