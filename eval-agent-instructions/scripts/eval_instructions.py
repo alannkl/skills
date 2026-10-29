@@ -849,7 +849,7 @@ def grade(run_dirs: list[Path], judges: list[str], graders_from_repo: bool = Fal
     rows = {run_dir: grade_rows(run_dir, judges, graders_from_repo) for run_dir in run_dirs}
     # Judge calls batch across every setup in the runs; verdicts are shared across the suite's runs.
     usage = judge_pending([row for run in rows.values() for row in run], judges,
-                          run_dirs[0].parent / "judge-cache.jsonl")
+                          run_dirs[0].parent / "judge-cache.jsonl", SETTINGS.get("tiebreak_judge"))
     for run_dir, run in rows.items():
         (run_dir / "grades.jsonl").write_text("".join(json.dumps(row) + "\n" for row in run))
         (run_dir / "judge-usage.json").write_text(json.dumps(
@@ -928,6 +928,7 @@ def report(run_dir: Path) -> str:
             for name, g in t["graders"].items():
                 grader_counts[name][0 if g["pass"] else (2 if g["pass"] is None else 1)] += 1
                 by_judge = {m: v["pass"] for m, v in g.get("judges", {}).items()}
+                # Includes the ties a tie-breaking judge settled, for reading which judge erred.
                 if len(set(by_judge.values())) > 1:
                     disagreements.append(f"{case} / {config} / {variant} / {name}: {by_judge}")
                 verdicts += len(by_judge)

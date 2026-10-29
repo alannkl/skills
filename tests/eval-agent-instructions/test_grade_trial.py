@@ -105,7 +105,7 @@ class GradeTrial(unittest.TestCase):
             run_dir.mkdir(parents=True)
         judged = []
 
-        def judge_pending(rows, judges, cache_path):
+        def judge_pending(rows, judges, cache_path, tiebreak=None):
             judged.append([r["run"] for r in rows])
             return [{"judge": "opus", "outputs": 2, "input_tokens": 1500, "output_tokens": 200}]
         with mock.patch.object(eval_instructions, "grade_rows", lambda run_dir, judges, gfr: [{"run": run_dir.name}]), \

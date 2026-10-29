@@ -317,12 +317,17 @@ def run_graders(specs: list[dict], variant: str, workspace: Path, initial: Path,
 JUDGE_WORKERS = 12
 
 
-def judge_pending(rows: list[dict], judges: list[str], cache_path: Path | None = None) -> list[dict]:
+def judge_pending(rows: list[dict], judges: list[str], cache_path: Path | None = None,
+                  tiebreak: str | None = None) -> list[dict]:
     """Judge every pending `llm` grade in `rows`, in place; return one usage record per judge call.
 
     Outputs that share a criterion and original go to each judge in one call, shuffled
     and unlabelled so the judge cannot tell which arm or setup produced them. A group
     over BATCH_CHARS splits across calls, and calls run JUDGE_WORKERS at a time.
+
+    Each judge decides on its own. A grade takes the verdict every judge gives; where they
+    disagree or one is undecided, `tiebreak` judges that output the same way and the
+    majority of decided verdicts stands, or the grade stays undecided.
 
     A decided verdict is saved in `cache_path`; an output that already has one from the
     same judge, prompt, criterion and original keeps it, marked "cached", instead of
@@ -335,10 +340,40 @@ def judge_pending(rows: list[dict], judges: list[str], cache_path: Path | None =
             if "pending" in result:
                 p = result["pending"]
                 groups[(p["criteria"], p["original"], p["label"])].append(result)
-    verdicts, calls = defaultdict(dict), []
+    verdicts, new, usage = defaultdict(dict), [], []
+    _judge_round(groups, judges, cache, verdicts, new, usage)
+    if tiebreak and len(judges) > 1:
+        split = {key: [r for r in results if not _settled(verdicts[id(r)], judges)] for key, results in groups.items()}
+        _judge_round({k: v for k, v in split.items() if v}, [tiebreak], cache, verdicts, new, usage)
+    order = judges + ([tiebreak] if tiebreak and tiebreak not in judges else [])
+    for results in groups.values():
+        for result in results:
+            result.pop("pending")
+            per_judge = verdicts[id(result)]
+            decided = [per_judge[m]["pass"] for m in order if m in per_judge and per_judge[m]["pass"] is not None]
+            verdict = next((v for v in (True, False) if decided.count(v) * 2 > len(decided)), None)
+            reason = next((per_judge[m]["reason"] for m in order if m in per_judge and per_judge[m]["pass"] == verdict),
+                          per_judge[order[0]]["reason"])
+            result.update({"pass": verdict, "detail": reason, "judges": per_judge})
+    if cache_path and new:
+        with open(cache_path, "a") as f:
+            f.writelines(json.dumps(entry) + "\n" for entry in new)
+    return usage
+
+
+def _settled(per_judge: dict, judges: list[str]) -> bool:
+    """Every judge decided, and alike."""
+    passes = [per_judge[m]["pass"] for m in judges]
+    return None not in passes and len(set(passes)) == 1
+
+
+def _judge_round(groups: dict, models: list[str], cache: dict, verdicts: dict, new: list, usage: list) -> None:
+    """Give each group's outputs to each of `models`, shuffled, from the cache where it holds a verdict."""
+    calls = []
     for (criteria, original, label), results in groups.items():
+        results = list(results)
         random.shuffle(results)
-        for model in judges:
+        for model in models:
             todo = []
             for result in results:
                 saved = cache.get(_cache_key(model, criteria, original, label, result["pending"]["subject"]))
@@ -352,7 +387,6 @@ def judge_pending(rows: list[dict], judges: list[str], cache_path: Path | None =
         model, criteria, original, label, batch = c
         return judge(model, criteria, original, [r["pending"]["subject"] for r in batch], label)
 
-    new, usage = [], []
     with ThreadPoolExecutor(JUDGE_WORKERS) as pool:
         for (model, criteria, original, label, batch), (replies, used) in zip(calls, pool.map(call, calls)):
             usage.append({"judge": model, "outputs": len(batch)} | used)
@@ -361,16 +395,6 @@ def judge_pending(rows: list[dict], judges: list[str], cache_path: Path | None =
                 if verdict["pass"] is not None:
                     key = _cache_key(model, criteria, original, label, result["pending"]["subject"])
                     new.append({"key": key, "verdict": verdict})
-    for results in groups.values():
-        for result in results:
-            result.pop("pending")
-            per_judge = verdicts[id(result)]
-            primary = per_judge[judges[0]]
-            result.update({"pass": primary["pass"], "detail": primary["reason"], "judges": per_judge})
-    if cache_path and new:
-        with open(cache_path, "a") as f:
-            f.writelines(json.dumps(entry) + "\n" for entry in new)
-    return usage
 
 
 def _load_cache(path: Path | None) -> dict[str, dict]:

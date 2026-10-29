@@ -2,6 +2,7 @@
   "harbor": "git+https://github.com/harbor-framework/harbor@bfc6c005e9a572ba22fd7e2d3b414bf014ae1ab0",
   "cli_versions": {"claude-code": "2.1.309", "codex": "0.164.0", "openclaw": "2026.10.6"},
   "judges": ["claude-opus-5-5", "gpt-6-astra"],
+  "tiebreak_judge": "claude-fable-5-1",
   "defaults": {
     "harness": {"run": ["claude-code-opus-5.5-high"], "full": ["claude-code-opus-5.5-high", "codex-gpt-6.1-sol-high"]},
     "api": {"run": ["api-opus-5.5-high"], "full": ["api-opus-5.5-high", "api-gpt-6.1-sol-high"]}

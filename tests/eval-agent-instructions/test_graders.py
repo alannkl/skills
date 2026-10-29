@@ -88,9 +88,32 @@ class Graders(unittest.TestCase):
         calls.sort()
         self.assertEqual([c[0] for c in calls], ["judge-a", "judge-b"])
         self.assertEqual(calls[0][1:], ("- Use pnpm.\n", ["- Use pnpm.\n", "- Use pnpm.\n- New rule.\n"], "AGENTS.md"))
-        self.assertEqual([r["graders"]["g"]["pass"] for r in rows], [False, True])
+        # The judges split on the second output, and with no tie-breaker it stays undecided.
+        self.assertEqual([r["graders"]["g"]["pass"] for r in rows], [False, None])
         self.assertEqual(set(rows[1]["graders"]["g"]["judges"]), {"judge-a", "judge-b"})
         self.assertNotIn("pending", rows[1]["graders"]["g"])
+
+    def test_a_tiebreaker_judges_only_the_outputs_the_judges_split_on(self):
+        calls = []
+
+        def fake_judge(model, criteria, original, subjects, label):
+            calls.append((model, sorted(subjects)))
+            # judge-a passes all but "both-fail", judge-b fails everything, judge-c passes everything.
+            verdict = {"judge-a": lambda s: s != "both-fail", "judge-b": lambda s: False, "judge-c": lambda s: True}[model]
+            return [{"pass": verdict(s), "reason": f"{model} on {s}"} for s in subjects], {}
+
+        rows = [{"graders": graders.run_graders([{"name": "g", "type": "llm", "criteria": "c"}], "with",
+                                                self.workspace, self.initial, "codex",
+                                                {"final_message": message, "writes": []}, ["judge-a", "judge-b"])}
+                for message in ("both-fail", "split")]
+        with mock.patch.object(graders, "judge", fake_judge):
+            usage = graders.judge_pending(rows, ["judge-a", "judge-b"], tiebreak="judge-c")
+        self.assertEqual([u["judge"] for u in usage].count("judge-c"), 1)
+        self.assertEqual(dict(calls)["judge-c"], ["split"])
+        agreed, split = (r["graders"]["g"] for r in rows)
+        self.assertEqual((agreed["pass"], set(agreed["judges"])), (False, {"judge-a", "judge-b"}))
+        self.assertEqual((split["pass"], split["detail"]), (True, "judge-a on split"))
+        self.assertEqual(set(split["judges"]), {"judge-a", "judge-b", "judge-c"})
 
     def test_decided_verdicts_are_reused_from_the_cache(self):
         replies = iter([[{"pass": True, "reason": "ok"}, {"pass": None, "reason": "malformed"}]])
