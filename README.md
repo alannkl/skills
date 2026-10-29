@@ -180,17 +180,6 @@ Background notes and research behind these skills:
   agents/      # openai.yaml invocation policy for Codex (user-invoked skills)
 ```
 
-Eval cases for `claude plugin eval` live in `evals/<skill-name>/`, outside the skill folders, so installs don't ship them. Each case runs a real, billed Claude Code session. `scripts/eval-skill` runs a skill's cases against a temporary copy of the skill, with Haiku as the agent under test and Opus as the judge, and passes any other options to `claude plugin eval`. To compare a skill against no skill:
-
-```bash
-scripts/eval-skill write-agent-instructions --ablation with-without --scaffold \
-  --trust-plugin --allow-tools Edit Write --no-publish --max-cost-usd 15
-```
-
-Results go to `evals/<skill-name>/results/`, which git ignores. When the cost ceiling is reached, the remaining LLM graders are skipped and recorded as failed, so check a run's skipped graders before reading its scores. A full run of `write-agent-instructions` at the default 3 runs per version costs roughly $15; use `--case` to run one case or `--runs 1` for a quick check.
-
-In a with-without run the agent decides for itself whether to load the skill, so a low score can mean the skill never loaded. Add `--force-skill` to tell the agent to load the skill when it is available; this measures what the skill does once loaded, and leaves out cases that check the skill does not load. The copy under test loads as `<skill>:<skill>`. An installed or built-in skill with the same bare name can shadow it, so `--force-skill` names the copy, and each case's `skill-fired` and `skill-not-shadowed` graders check that only that copy loaded. The without-skill arm can still load a same-named built-in skill, so it measures the default experience rather than no skill at all. Pass `--model` to test another agent model.
-
 ## License
 
 MIT. See [LICENSE](LICENSE).

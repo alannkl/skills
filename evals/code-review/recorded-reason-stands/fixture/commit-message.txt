@@ -1,4 +1,0 @@
-Add payments client for card charges
-
-Charges a customer's card through the payments API. Only a refused
-connection is retried; see the comment in charge().
