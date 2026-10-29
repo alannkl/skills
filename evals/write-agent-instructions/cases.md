@@ -97,3 +97,7 @@ Not covered by any case: a skill-directory rename with its inventory and router 
 - `rules` also reports wording-edit-meaning-review and use-fitting-evaluation-section as shown only by `--minus` runs (their graders run in the with arm only).
 
 This is short of suites.md step 2, which asks for a non-guard grader for every rule not marked untestable; these 17 stay listed as gaps, not as covered.
+
+## Author decisions
+
+- 2026-10-30: Minimize stops at the current text. A rule-by-rule draft that kept every requirement cut about 70 of 4,500 words (1.6%), too little to pay for a confirm run; wordings earlier compressions shortened had lost graders, and most other rules already sit at their fewest words.
