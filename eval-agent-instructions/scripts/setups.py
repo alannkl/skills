@@ -33,6 +33,8 @@ def resolve(spec: dict, settings: dict) -> tuple[str, dict]:
     for key in ("env", "native_config", "workspace_setup"):
         if key in settings["harnesses"][harness]:
             config[key] = settings["harnesses"][harness][key]
+    if "max_sessions" in model:
+        config["max_sessions"] = model["max_sessions"]
     name = f"{harness}-{short}-{effort or 'default'}"
     if model["id"].startswith("openrouter/"):
         providers = provider_order(spec.get("provider"), model.get("providers", []))
