@@ -334,7 +334,8 @@
       "graders": [
         "discount-total-bug/failing-test-reported",
         "invoices-endpoint/verification-stated",
-        "slow-export-investigation/unread-log-reported"
+        "slow-export-investigation/unread-log-reported",
+        "slow-export-investigation/unread-log-named"
       ]
     },
     "feedback-compounds": {
