@@ -651,10 +651,16 @@ def session_budget(gb: float, room: float) -> int:
     return max(1, min(DEFAULT_SLOTS["bwrap"], int(room / gb)))
 
 
+# Seconds between two session starts of one setup: starting a burst at once drew rate-limit errors
+# (HTTP 429) from Codex, on top of the per-setup caps.
+LAUNCH_GAP_SECONDS = 1.0
+
+
 def run_queue(items: list[tuple], budget: int, caps: dict[str, int], launch) -> None:
     """Run `launch(item)` for every item, `budget` at once and in the given order, with at most
-    `caps[setup]` of one setup's items at once; an item's first field names its setup."""
-    pending, running = list(items), defaultdict(int)
+    `caps[setup]` of one setup's items at once and starts of one setup LAUNCH_GAP_SECONDS apart;
+    an item's first field names its setup."""
+    pending, running, next_start = list(items), defaultdict(int), defaultdict(float)
     ready = threading.Condition()
 
     def worker() -> None:
@@ -669,7 +675,10 @@ def run_queue(items: list[tuple], budget: int, caps: dict[str, int], launch) -> 
                     return
                 pending.remove(item)
                 running[item[0]] += 1
+                start = max(time.monotonic(), next_start[item[0]])
+                next_start[item[0]] = start + LAUNCH_GAP_SECONDS
             try:
+                time.sleep(max(0.0, start - time.monotonic()))
                 launch(item)
             finally:
                 with ready:
