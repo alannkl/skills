@@ -81,11 +81,10 @@ SETTINGS = json.loads((HERE / "configs.json").read_text())
 SETTINGS["configs"] = setups.catalog(SETTINGS)
 # bubblewrap sandboxes start faster and cost less memory than containers; Docker covers hosts without it.
 DEFAULT_ENV = "bwrap" if sys.platform == "linux" and shutil.which("bwrap") else "docker"
-# Sessions at once across all setups: at most 32 under bwrap, 16 under Docker, whose containers cost
-# more to start, fewer when memory cannot hold them, each session counted at its harness's SESSION_GB;
-# under Docker the memory is the engine's, such as Docker Desktop's VM. A harness's `max_sessions` in
-# configs.json caps all its setups together.
-DEFAULT_SLOTS = {"bwrap": 32, "docker": 16}
+# Sessions at once across all setups: at most 32, fewer when memory cannot hold them, each session
+# counted at its harness's SESSION_GB; under Docker the memory is the engine's, such as Docker Desktop's
+# VM. A harness's `max_sessions` in configs.json caps all its setups together.
+DEFAULT_SLOTS = {"bwrap": 32, "docker": 32}
 # Memory a session holds midway through a run, in GB. OpenClaw's Node heap grows over a session, from
 # about 0.3 GB to 1-1.9 GB; Claude Code and Codex sessions stayed near 0.3 GB.
 SESSION_GB = {"openclaw": 1.0, "claude-code": 0.3, "codex": 0.3, "api": 0.0}
@@ -1132,8 +1131,7 @@ def main() -> None:
     run.add_argument("--attempts", type=int, help="runs per task; default 1, or 3 with --minus")
     run.add_argument("--concurrency", action="append", default=[], metavar="[CONFIG=]N",
                      help="N: sessions at once across all setups, longest expected first "
-                          f"(default: up to {DEFAULT_SLOTS['bwrap']} under bwrap, {DEFAULT_SLOTS['docker']} under Docker, "
-                          "as many as memory holds); CONFIG=N caps one setup, within its harness's "
+                          f"(default: up to {DEFAULT_SLOTS['bwrap']}, as many as memory holds); CONFIG=N caps one setup, within its harness's "
                           "max_sessions in configs.json, which caps all of that harness's setups together. "
                           "A given number runs as given, with a warning when it will not fit in memory")
     run.add_argument("--env", choices=["bwrap", "docker"], default=DEFAULT_ENV,
