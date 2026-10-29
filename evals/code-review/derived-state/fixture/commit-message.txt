@@ -1,3 +1,0 @@
-Show the item count in the cart badge
-
-Track how many items the cart holds so the header badge can show it.

@@ -1,7 +1,6 @@
 tmp/
 plans/
 __pycache__/
-# Eval cases live in evals/<skill>/, outside the shipped skill folders.
+# Eval suites live in a separate private repository; keep none inside skill folders.
 /*/evals
-/evals/*/results/
 .env

@@ -1,4 +1,0 @@
-schema_version: "1.1"
-name: templated-prompt-rule
-context:
-  scaffold_script: scaffold.sh

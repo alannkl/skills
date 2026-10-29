@@ -21,7 +21,7 @@ For a shortcut that packages instructions the user retypes, name it per the Name
 
 ## Invocation
 
-- Start `SKILL.md` with YAML frontmatter containing at least `name` and `description`; use a quoted or block scalar for a description containing `: ` or ` #`. Add optional fields such as `license`, `compatibility`, `metadata`, or `allowed-tools` only when they carry information.
+- Start `SKILL.md` with YAML frontmatter containing at least `name` and `description`; quote the description. Add optional fields such as `license`, `compatibility`, `metadata`, or `allowed-tools` only when they carry information.
 - Make the skill model-invoked only when the agent must invoke it on its own or another skill must load it. Its description returns on every request where the harness supplies the skill list to the model; write it per the Description pattern section.
 - Otherwise set `disable-model-invocation: true`, use a one-line human-facing description without trigger lists, and add `agents/openai.yaml` setting `policy.allow_implicit_invocation` to an unquoted `false`, because Codex ignores the frontmatter field. Typing the skill's name still invokes it. A harness that honors neither setting still lists the skill to the model, so check the target harness before relying on a user-invoked skill costing no context.
 - When user-invoked skills become hard to remember, suggest one user-invoked router skill that names the others and when to use each. Update the router whenever a routed skill is added, renamed, or removed.
@@ -32,28 +32,28 @@ For a shortcut that packages instructions the user retypes, name it per the Name
 Before writing a description, list the prompts, contexts, and files that should trigger the skill and the near-misses that should not. For model-invoked skills, keep the description under 1024 characters, in third person, with this structure:
 
 ```md
-description: [What the skill enables]. [Conditions that invoke it: specific user intents, keywords, contexts, or file types].
+description: "[What the skill enables]. [Conditions that invoke it: specific user intents, keywords, contexts, or file types]."
 ```
 
-State what the skill does in the first sentence, front-loading the vocabulary the user actually types. In the second, state its invocation conditions, one trigger per distinct branch. Collapse synonyms for the same branch and omit details already covered by the first sentence. Write for model invocation; users can invoke any skill by name. Add an exclusion only for a real near-miss the triggers would otherwise catch. For workflows that publish, send, or change external state, include check, review, or readiness requests as triggers only when the body provides a read-only outcome for them.
+State what the skill does in the first sentence, front-loading the vocabulary the user actually types. In the second, state its invocation conditions, one trigger per distinct branch. Collapse synonyms for the same branch and omit details already covered by the first sentence. Write for model invocation; users can invoke any skill by name. Add an exclusion only for a real near-miss the triggers would otherwise catch. For workflows that publish, send, or change external state, a check, review, or readiness trigger needs a body branch that stops before that action; add the branch or leave the trigger out.
 
 Prefer:
 
 ```md
-description: Reviews accessibility issues in React interfaces and suggests concrete fixes. Use when the user asks for accessibility review, WCAG checks, keyboard navigation fixes, or ARIA guidance for React components.
+description: "Reviews accessibility issues in React interfaces and suggests concrete fixes. Use when the user asks for accessibility review, WCAG checks, keyboard navigation fixes, or ARIA guidance for React components."
 ```
 
 Avoid vagueness, and avoid synonym-stuffing one branch:
 
 ```md
-description: Helps with accessibility.
+description: "Helps with accessibility."
 ```
 
 ```md
-description: ... Use when the user asks to review, check, audit, inspect, examine, or assess accessibility.
+description: "... Use when the user asks to review, check, audit, inspect, examine, or assess accessibility."
 ```
 
-Check a new description against realistic positive prompts and near-miss negative prompts, and revise wording that is too broad or too narrow. A change to an existing description that alters which cases reach it uses the Trigger checks section of `references/evaluating-instructions.md` instead.
+Check a new description against realistic matching and near-miss prompts, revise it if too broad or too narrow, and report both sets. A change to an existing description that alters which cases reach it uses the Trigger checks section of `references/evaluating-instructions.md` instead.
 
 ## Scripts
 
@@ -71,7 +71,7 @@ Check a new description against realistic positive prompts and near-miss negativ
 ```md
 ---
 name: skill-name
-description: Does a specific reusable task. Use when the user asks for concrete intents, contexts, or file types that should trigger this skill.
+description: "Does a specific reusable task. Use when the user asks for concrete intents, contexts, or file types that should trigger this skill."
 ---
 
 # Skill name
