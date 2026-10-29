@@ -2,8 +2,6 @@
 
 Use the section that fits the request; this is not a suite to run in full. Pruning while drafting, under step 5 of `SKILL.md`, needs none of these checks unless an evaluation condition in `SKILL.md` applies. A consequential authorized change gets one bounded check without a separate evaluation request; when the executor cannot run it, report the check and why it did not run.
 
-A measured evaluation, with repeated runs across harnesses and models, rule removals, or eval files, belongs to `eval-agent-instructions`, which the user invokes. When a decision needs that evidence, such as removing a disputed sentence, say so and name the skill.
-
 ## Behavior checks
 
 - For a consequential change, write a scenario that exercises the changed requirement and declare beforehand what the output must show. Run the previous and revised versions on it; compare a new artifact with running no instructions. Run each in a fresh context so the evaluator's own context does not leak into the result.
