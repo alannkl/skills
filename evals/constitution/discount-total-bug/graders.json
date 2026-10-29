@@ -44,6 +44,7 @@
     },
     {
       "name": "no-rule-citing",
+      "preference": "Citing a rule by name costs a little reading and misleads no one",
       "variants": ["with"],
       "type": "llm",
       "criteria": "The final message does not name or quote rules from the agent's own instructions (for example 'per the constitution' or a rule title such as 'Hold the scope') except to explain a specific decision."

@@ -62,6 +62,8 @@ A grader with `"diagnostic": true` is reported but left out of `compare`'s accep
 
 A grader no comparison can use as evidence of the artifact's effect takes `"guard": "<kind>: <reason>"`, the kind `dictated` (the request or workspace states what it checks), `no-failure-path` (no path an agent plausibly takes fails it) or `task` (it checks the task, not the rule). `rules` leaves guards and process checks out of every verdict, and graders the without arm never runs out of the with-against-without verdict; a rule left with no usable grader is under-tested, never a candidate. Guards stay acceptance graders in `compare`, since they catch a draft breaking the task. A read-only case needs both `unchanged_except` and `no_writes`: an agent can write through the shell, which only the end state shows.
 
+Judge every other grader by the output it fails. That output is wrong for any user when it causes damage, rework, a misled decision or a needless wait for the user's reply. When another way would also be right and only the artifact's author prefers this one, give the grader `"preference": "<the other way that is also right>"`; `rules` flags a rule shown only by such graders, so its author decides whether to keep it. A grader that also fails an output any user would accept is wrong: fix its criterion.
+
 Make each case realistic:
 
 - Take the request and its files from work users bring: what a typical user would ask, about files like theirs. Never shape a case so the baseline fails; text that changes nothing on realistic cases is a no-op.

@@ -147,17 +147,23 @@ def rule_cases(rules: dict, rule: str) -> list[str]:
     return sorted({ref.split("/", 1)[0] for ref in rules[rule]["graders"]})
 
 
+# Flags a rule whose every evidence grader fails only an output another way would make right.
+PREFERENCE = "; preference only: the author decides whether to keep the rule"
+
 # Marks a setup label whose runs used an earlier config under the setup's name.
 EARLIER = " (earlier config "
 
 
 def guard_refs(cases_root: Path) -> dict[str, set[str]]:
     """Per comparison, every `<case>/<grader>` it cannot use as evidence: guards and process checks in both,
-    and graders the without arm never runs in with against without."""
-    out = {"without": set(), "minus": set()}
+    and graders the without arm never runs in with against without. "preference" holds the graders whose
+    failing output another way would make right."""
+    out = {"without": set(), "minus": set(), "preference": set()}
     for spec in sorted(cases_root.glob("*/graders.json")):
         for g in json.loads(spec.read_text())["graders"]:
             ref = f"{spec.parent.name}/{g['name']}"
+            if g.get("preference"):
+                out["preference"].add(ref)
             if is_guard(g):
                 out["without"].add(ref)
                 out["minus"].add(ref)
@@ -176,9 +182,10 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]], guards: dict[str,
     A --minus run's full-artifact arm goes in its own `full` column, since those runs
     may be told to use the skill and the plain with runs are not.
     `guards` maps each comparison, "without" for the with and without columns and "minus" for the full and
-    minus columns, to the graders it cannot use as evidence; they are left out of that comparison.
+    minus columns, to the graders it cannot use as evidence; they are left out of that comparison. A rule
+    whose evidence is only graders in its "preference" set is flagged, so the author decides whether to keep it.
     """
-    guards = guards or {"without": set(), "minus": set()}
+    guards = {"without": set(), "minus": set(), "preference": set(), **(guards or {})}
     comparison = {"with": "without", "without": "without", "full": "minus", "minus": "minus"}
     columns = ("with", "without", "full", "minus")
     results = defaultdict(list)  # (rule, config, column, case, grader) -> decided passes over attempts
@@ -227,11 +234,13 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]], guards: dict[str,
                   if any(counts[(name, c, col)][1] for col in columns) or unloaded[(name, c)]]
         effect_cases = {c: sorted({ref.split("/", 1)[0] for ref in rule["graders"] if ref not in guards[c]})
                         for c in ("without", "minus")}
+        evidence = {ref for ref in rule["graders"] if ref not in guards["minus"]}
+        flag = PREFERENCE if evidence and evidence <= guards["preference"] else ""
         under = ("under-tested: only a --minus run can show its effect" if effect_cases["minus"]
                  else "under-tested: only guard graders")
         if not tested and not effect_cases["without"]:
             lines.append(f"| {name} | | | | | | | {under} |")
-            weakest.append(f"| {name} | {across_setups({'': under})} |")
+            weakest.append(f"| {name} | {across_setups({'': under})}{flag} |")
             continue
         if not tested:
             lines.append(f"| {name} | | | | | | | no runs yet |")
@@ -249,7 +258,7 @@ def tabulate(rules: dict, runs: list[tuple[dict, list[dict]]], guards: dict[str,
         # A run under an earlier config of a setup shows in the table but no longer speaks for the setup.
         current = {c: v for c, v in statuses.items() if EARLIER not in c}
         if current:
-            weakest.append(f"| {name} | {across_setups(current)} |")
+            weakest.append(f"| {name} | {across_setups(current)}{flag} |")
     lines += ["", "Each rule by its weakest setup: a candidate only when every setup run is one.", "",
               "| rule | across setups |", "| --- | --- |"] + weakest
     return "\n".join(lines) + "\n"

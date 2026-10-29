@@ -12,6 +12,7 @@
     },
     {
       "name": "intuition-first",
+      "preference": "A file-by-file walk-through that is correct also explains the flow",
       "type": "llm",
       "criteria": "The final message opens with the gist of how auth works in a few sentences before file-by-file detail, and includes one concrete walk-through (for example, a login followed by a request to `/api/projects`)."
     },
@@ -41,6 +42,7 @@
     },
     {
       "name": "says-what-it-checks",
+      "preference": "Investigating silently and then answering also answers the question",
       "type": "llm",
       "all_messages": true,
       "criteria": "Pass if a message other than the last says what the agent will look at to answer (for example the server setup, login route and middleware) before the answer. Fail if the only message is the final answer."

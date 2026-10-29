@@ -7,26 +7,31 @@
     },
     {
       "name": "flip-fact",
+      "preference": "A recommendation with its reasons lets the user decide without the fact that would flip it",
       "type": "llm",
       "criteria": "The final message names at least one fact or condition that would change its recommendation, such as needing scheduled or periodic jobs, much higher volume, multiple queues and routing, or not wanting to run a worker process."
     },
     {
       "name": "costs",
+      "preference": "A recommendation with its reasons lets the user decide without every option's cost",
       "type": "llm",
       "criteria": "The final message states a decisive cost or drawback of each option it weighs, including the one it recommends (for example, for RQ: fewer built-in features such as scheduling or rate limits; a new worker process to run and monitor)."
     },
     {
       "name": "done-defined",
+      "preference": "A rollout plan without a stated check still lets the user act",
       "type": "llm",
       "criteria": "The final message says how the rollout would be checked or what done looks like, for example signup no longer waiting on SMTP, emails still delivered, and failed jobs retried or visible."
     },
     {
       "name": "plan-decisions-first",
+      "preference": "A plan in execution order that names the same decisions also serves",
       "type": "llm",
       "criteria": "The rollout plan raises the decisions most likely to change it (such as what happens when a send fails or the worker is down, retries and duplicate sends, where the worker runs in docker-compose) before or above mechanical steps such as installing the package."
     },
     {
       "name": "next-move",
+      "preference": "A message that ends with the plan also leaves the next move to the user",
       "type": "llm",
       "criteria": "The final message closes by naming what happens next: a decision the user needs to make, or the step the agent proposes to take. Fail if it ends without saying what happens next."
     },

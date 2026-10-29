@@ -8,16 +8,19 @@
     },
     {
       "name": "answer-first",
+      "preference": "A line of background before the location still answers quickly",
       "type": "llm",
       "criteria": "The first sentence or two of the final message give the location or the value of the payment timeout, before any background."
     },
     {
       "name": "proportional",
+      "preference": "A longer answer or an offer of follow-ups costs a little reading but loses nothing",
       "type": "llm",
       "criteria": "The final message is a short answer: a few sentences or a short list, with any caveat that matters (such as the 30 s shared timeout not applying). Fail if it adds unrequested sections such as a tour of the other clients, a refactoring plan, or a list of optional follow-ups."
     },
     {
       "name": "no-filler",
+      "preference": "A pleasantry or an offer of further help costs a little reading but loses nothing",
       "type": "llm",
       "criteria": "The final message contains no sycophancy or chatbot filler: no praise of the question, no generic offer of further help, no closing pleasantry without content."
     },

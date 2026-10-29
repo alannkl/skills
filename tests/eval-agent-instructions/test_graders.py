@@ -211,6 +211,13 @@ class Graders(unittest.TestCase):
         for bad in ("the request names the file", "dictated:", "vibes: x", True):
             self.assertEqual(len(graders.spec_problems([spec | {"guard": bad}])), 1, bad)
 
+    def test_a_preference_names_the_other_right_way(self):
+        spec = {"name": "a", "type": "llm", "criteria": "c"}
+        self.assertEqual(graders.spec_problems([spec | {"preference": "a bare ID serves a reader who knows it"}]), [])
+        for bad in ("", True):
+            self.assertEqual(len(graders.spec_problems([spec | {"preference": bad}])), 1, bad)
+        self.assertEqual(len(graders.spec_problems([spec | {"preference": "x", "guard": "task: checks the task"}])), 1)
+
     def test_spec_problems_catch_missing_fields_and_conflicting_paths(self):
         self.assertEqual(graders.spec_problems([{"name": "a", "type": "llm", "criteria": "c", "path": "x"}]), [])
         self.assertEqual(len(graders.spec_problems([{"name": "a", "type": "read", "pattern": "x"},

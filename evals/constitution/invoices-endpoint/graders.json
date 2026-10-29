@@ -50,6 +50,7 @@
     },
     {
       "name": "restates-request",
+      "preference": "Starting the work and reporting what was built also surfaces a misunderstanding, later",
       "type": "llm",
       "all_messages": true,
       "criteria": "Pass if a message other than the last restates the request more concretely than the user did, before reporting the work as done: the route it will add, the layers or files involved, and at least one thing it leaves out of scope. Fail if the only restatement is in the last message, or there is none."

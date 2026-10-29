@@ -280,6 +280,10 @@ def spec_problems(specs: list[dict]) -> list[str]:
         if "guard" in s and not (isinstance(s["guard"], str) and s["guard"].partition(":")[0] in GUARD_KINDS
                                  and s["guard"].partition(":")[2].strip()):
             problems.append(f"{s['name']}: guard takes '<kind>: <reason>', the kind one of {', '.join(GUARD_KINDS)}")
+        if "preference" in s and not (isinstance(s["preference"], str) and s["preference"].strip()):
+            problems.append(f"{s['name']}: preference takes the other way that is also right")
+        if s.get("preference") and s.get("guard"):
+            problems.append(f"{s['name']}: a guard shows no effect, so it takes no preference")
     return problems
 
 

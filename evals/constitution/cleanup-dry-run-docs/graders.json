@@ -15,6 +15,7 @@
     },
     {
       "name": "readme-current-facts",
+      "preference": "A short note on what was added also helps a reader who knew the old script",
       "type": "llm",
       "path": "README.md",
       "criteria": "The README describes `--dry-run` as current behavior, like the rest of the usage section. Fail if it carries an account of this change: a changelog or 'new' marker, a date, 'added'/'now supports' wording about the edit, or a note on why or by whom the README was updated."
@@ -32,6 +33,7 @@
     },
     {
       "name": "real-next-step",
+      "preference": "An offer of follow-ups costs a little reading but loses nothing",
       "type": "llm",
       "criteria": "The final message ends by saying the work is done or naming a real remaining step for this request. Fail if it closes with invented follow-ups unrelated to the request, such as new features, refactors or extra flags offered as if needed."
     }

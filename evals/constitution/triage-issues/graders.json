@@ -13,21 +13,25 @@
     },
     {
       "name": "answer-first",
+      "preference": "Per-issue detail followed by the answer still gives the answer",
       "type": "llm",
       "criteria": "The final message gives its answer (what to fix first, or the bug/feature split) in its first sentence or two, before per-issue detail."
     },
     {
       "name": "title-then-id",
+      "preference": "A bare issue number serves a reader who knows the tracker",
       "type": "llm",
       "criteria": "In prose, the final message refers to issues by a short title followed by the ID in parentheses, such as 'Safari login loop (#47)'. A table with separate title and ID columns passes. Fail if prose refers to issues by bare numbers alone or puts the ID before the title."
     },
     {
       "name": "table",
+      "preference": "Prose paragraphs per issue carry the same facts",
       "type": "llm",
       "criteria": "The per-issue breakdown, where each issue has the same fields (type and reason), is a table or a list giving the same fields for every issue in the same order. Fail if it is prose paragraphs or entries with differing fields."
     },
     {
       "name": "no-rule-citing",
+      "preference": "Citing a rule by name costs a little reading and misleads no one",
       "variants": ["with"],
       "type": "llm",
       "criteria": "The final message does not name or quote rules from the agent's own instructions (for example 'per the constitution' or a rule title such as 'Recommend, don't enumerate') except to explain a specific decision."

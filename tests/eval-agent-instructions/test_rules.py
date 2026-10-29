@@ -173,6 +173,21 @@ class Rules(unittest.TestCase):
         self.assertIn("| silent | opus |  |  | 1/1 | 0/1 |  | removal did worse |", table)
         self.assertIn("| use-pnpm | under-tested: no case shows its effect |", table)
 
+    def test_a_rule_shown_only_by_preference_graders_is_flagged_for_its_author(self):
+        (self.cases / "case-a" / "graders.json").write_text(json.dumps({"graders": [
+            {"name": "titled", "type": "llm", "criteria": "c", "preference": "a bare ID serves a reader who knows it"},
+            {"name": "open", "type": "llm", "criteria": "c"}]}))
+        guards = guard_refs(self.cases)
+        self.assertEqual(guards["preference"], {"case-a/titled"})
+        rows = [{"status": "ok", "config": "opus", "case": "case-a", "variant": variant, "trial": variant,
+                 "skill_loaded": True, "graders": {"titled": {"pass": variant == "with"}, "open": {"pass": True}}}
+                for variant in ("with", "without")]
+        rules = {"titles": self.rule("Run tests first.", ["case-a/titled"]),
+                 "mixed": self.rule("Ask before deleting files.", ["case-a/titled", "case-a/open"])}
+        table = tabulate(rules, [({}, rows)], guards)
+        self.assertRegex(table, r"\| titles \| keep: helps on opus.*; preference only: the author decides")
+        self.assertNotIn("| mixed | keep: helps on opus, in fewer than 3 runs per arm; preference", table)
+
 
 class MinSet(unittest.TestCase):
     @staticmethod
