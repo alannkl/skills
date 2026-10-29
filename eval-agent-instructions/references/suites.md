@@ -28,10 +28,12 @@ A suite is `evals/<suite>/` in the repository that holds the artifact, outside t
 Build a suite in this order:
 
 1. List every rule of the artifact in `rules.json` (see Rule map) with no graders yet; `rules <suite>` reports each as untested.
-2. Write the fewest realistic cases that together test every rule not marked untestable, mapping each case's graders as you add it.
+2. Write the fewest realistic cases that together give every rule not marked untestable a grader that is not a guard, mapping each case's graders as you add it.
 3. Add real requests users made as further cases. They find gaps and show which rules matter in real work; a rule only written cases show is weaker evidence for keeping its words.
 4. Have the user approve the cases, the rule map and every grader before any run.
 5. Run, then mark `reserve` every case outside `rules <suite> --min-set`.
+
+Rebuild a suite whose cases prove weak the same way, from step 2: written cases for every rule first, real requests after.
 
 Each case is a folder in the suite:
 
