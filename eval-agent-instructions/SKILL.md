@@ -6,7 +6,7 @@ disable-model-invocation: true
 
 # Eval agent instructions
 
-The skill has two phases; run either one on its own when the user asks for it.
+The skill has two phases. Run the phase the user asks for. When the request names neither, run Evaluate and offer Minimize with its report. Minimize needs a suite whose graders a reading of the results has checked, and a with-arm run of the current text on every `full` setup; when both phases run, Evaluate comes first and its run is the baseline.
 
 1. **Evaluate** measures what the instructions change: it runs real, billed sessions with and without them and grades them against expectations declared beforehand. The sections from Evaluate through Report cover it. Settle which question the user is asking before designing anything:
    - **Does it help?** The artifact against no artifact.
