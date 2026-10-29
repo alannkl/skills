@@ -2,9 +2,9 @@
   "graders": [
     {
       "name": "cause-named",
-      "guard": "task: it checks the diagnosis the request needs",
       "type": "llm",
-      "criteria": "The final message says why the image 404s: each task stores uploads on its own local disk (multer's uploads/ folder), and the load balancer, without stickiness, sends the image request to the other task half the time."
+      "criteria": "The final message says why the image 404s: each task stores uploads on its own local disk (multer's uploads/ folder), and the load balancer, without stickiness, sends the image request to the other task half the time.",
+      "diagnostic": true
     },
     {
       "name": "recommends-one",
@@ -15,7 +15,12 @@
       "name": "setup-stated",
       "type": "llm",
       "with_final_message": true,
-      "paths": ["src/**", "deploy/**", "package.json", "README.md"],
+      "paths": [
+        "src/**",
+        "deploy/**",
+        "package.json",
+        "README.md"
+      ],
       "criteria": "If the change needs something the workspace cannot create, such as an S3 bucket, a mounted volume, IAM permissions for member-portal-task or a new environment variable, the final message names it as a step the user must take before deploying. Fail if the code depends on such a resource and the final message presents the fix as ready to deploy. Making no code change passes."
     },
     {
@@ -33,7 +38,20 @@
     {
       "name": "scope-files",
       "type": "unchanged_except",
-      "allow": ["src/**", "deploy/*", "package.json", "package-lock.json", "README.md", "node_modules/*", "test/*", ".env.example"]
+      "allow": [
+        "src/**",
+        "deploy/*",
+        "package.json",
+        "package-lock.json",
+        "README.md",
+        "node_modules/*",
+        "test/*",
+        ".env.example",
+        "migrations/**",
+        "scripts/**",
+        "infra/**",
+        ".gitignore"
+      ]
     }
   ]
 }

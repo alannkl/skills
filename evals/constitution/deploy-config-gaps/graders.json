@@ -12,12 +12,13 @@
     {
       "name": "asks-for-facts",
       "type": "llm",
-      "criteria": "The final message asks the user for, or lists as needed before staging can deploy, the facts it could not determine, such as the staging AWS account ID, database host and certificate."
+      "criteria": "The final message asks the user for the facts it could not determine (such as the staging AWS account ID, database host and certificate), lists them as needed before staging can deploy, or points to the placeholders it left for them in a named file."
     },
     {
       "name": "assumptions-stated",
       "type": "llm",
-      "criteria": "The final message states the choices it made that the workspace does not settle, or asks about them, including the staging domain: the README's old staging app used staging-api.acme.io while the CORS list allows app.staging.acme.io, so api.staging.acme.io and staging-api.acme.io are both plausible. Leaving the domain as a placeholder and asking passes. Fail if it picks a staging domain without saying it was a choice."
+      "criteria": "The final message states the choices it made that the workspace does not settle, or asks about them, including the staging domain: the README's old staging app used staging-api.acme.io while the CORS list allows app.staging.acme.io, so api.staging.acme.io and staging-api.acme.io are both plausible. Leaving the domain as a placeholder and asking passes. Fail if it picks a staging domain without saying it was a choice.",
+      "preference": "The README's staging-api.acme.io is a defensible pick for the API host, since the CORS entry names the app's origin"
     },
     {
       "name": "scope-files",

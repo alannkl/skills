@@ -3,7 +3,7 @@
     {
       "name": "switch-cost",
       "type": "llm",
-      "criteria": "The final message says what switching from A to B later would take, including that `collectTranscript` in src/transcripts.ts reads the session's stored history by name, so under B the transcript must be collected before the session is deleted."
+      "criteria": "The final message says what switching from A to B later would take, and says or shows that under B the transcript must be collected before the session is deleted, because `collectTranscript` in src/transcripts.ts reads the session's stored history by name."
     },
     {
       "name": "recommends",
