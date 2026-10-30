@@ -18,6 +18,7 @@ import sys
 from pathlib import Path
 
 DEFAULT_DAYS = 14
+SLUG = re.compile(r"[a-z0-9]+(?:-[a-z0-9]+)*")
 INVOCATION = re.compile(r"^\s*(?:<command-message>retrospect</command-message>|\[?[/$]retrospect\b)")
 LIMITS = {
     "cursor": "headless runs (agent -p) are indistinguishable from typed sessions; tool results are not logged",
@@ -30,7 +31,7 @@ def main():
     home = Path.home()
     until = dt.datetime.now(dt.timezone.utc)
     try:
-        window = resolve_window(args.since, home / ".agents" / "retrospect-last-run", until)
+        window = resolve_window(args.since, stamp_paths(home, args.focus), until)
     except ValueError as error:
         print(json.dumps({"error": str(error)}))
         return 2
@@ -74,33 +75,48 @@ def parse_args():
     parser = argparse.ArgumentParser(
         description="Index user-typed messages from recent agent sessions into time slices.",
         epilog="Exits 0 with a JSON summary on stdout (window, per-harness status and counts, excluded sessions, "
-               "message counts per project, slice files); 2 for an unusable --since. The window starts at the later "
-               f"of {DEFAULT_DAYS} days ago and the time in ~/.agents/retrospect-last-run unless --since is given. "
+               "message counts per project, slice files); 2 for an unusable --since or --focus. The window starts at "
+               f"the later of {DEFAULT_DAYS} days ago, the time in ~/.agents/retrospect-last-run and, with --focus, "
+               "the time in ~/.agents/retrospect-last-run-<slug>, unless --since is given. "
                "Sessions that invoke retrospect are excluded. Each slice-<n>.json holds its messages and the sessions "
                "active in its time range; message text never reaches stdout.",
     )
     parser.add_argument("--since", help="Window start, ISO 8601 date or time; naive values are local time")
     parser.add_argument("--project", help="Keep only sessions in this directory or below it")
+    parser.add_argument("--focus", metavar="SLUG", help="Kebab-case topic slug whose last-run stamp also bounds the window")
     parser.add_argument("--slices", type=int, default=3, help="Number of time slices (default 3)")
     parser.add_argument("--out", help="Output directory; default ~/.tmp/retrospect/<UTC time>/")
     return parser.parse_args()
 
 
-def resolve_window(since_arg, stamp_path, until):
+def stamp_paths(home, focus):
+    """The full-run stamp, plus the focus topic's own stamp when a slug is given."""
+    if focus is not None and not SLUG.fullmatch(focus):
+        raise ValueError(f"--focus is not a kebab-case slug: {focus!r}")
+    stamps = home / ".agents"
+    return [stamps / "retrospect-last-run"] + ([stamps / f"retrospect-last-run-{focus}"] if focus else [])
+
+
+def resolve_window(since_arg, stamp_paths, until):
     if since_arg:
         try:
             return {"since": parse_time(since_arg), "source": "argument"}
         except ValueError:
             raise ValueError(f"--since is not an ISO 8601 date or time: {since_arg!r}")
     window = {"since": until - dt.timedelta(days=DEFAULT_DAYS), "source": f"default {DEFAULT_DAYS} days"}
-    if stamp_path.exists():
+    notes = []
+    for path in stamp_paths:
+        if not path.exists():
+            continue
         try:
-            stamp = parse_time(stamp_path.read_text().strip())
+            stamp = parse_time(path.read_text().strip())
         except ValueError:
-            window["note"] = f"{stamp_path} is not an ISO 8601 time; ignored"
-            return window
+            notes.append(f"{path} is not an ISO 8601 time; ignored")
+            continue
         if stamp > window["since"]:
-            window = {"since": stamp, "source": f"last run stamp {stamp_path}"}
+            window.update(since=stamp, source=f"last run stamp {path}")
+    if notes:
+        window["note"] = "; ".join(notes)
     return window
 
 
