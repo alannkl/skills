@@ -79,6 +79,6 @@ Load a reference at the step named here when its condition holds, or where anoth
 
 ## Gotchas
 
-- Before outputting a rule, cut every example, qualifier and reason that changes no behavior, and collapse each list or synonym pair into one word.
+- Before outputting a rule, cut every example, qualifier and reason, and collapse each list or synonym pair into one word, wherever that changes no behavior.
   - Before: "Bring back an earlier item so the reader can act on it without scrolling back: in full when it's short or meant to be copied, such as a prompt or command; otherwise its gist and where the full version is."
   - After: "Restate an earlier item when bringing it back: in full if short or copyable, else its gist and location."
