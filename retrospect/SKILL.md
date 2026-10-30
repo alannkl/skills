@@ -11,10 +11,10 @@ Run bundled scripts by absolute path, using `<skill-dir>` for this skill's insta
 
 ## Workflow
 
-1. Index the window. Scope is every project unless the user names one. A `focus <topic>` keeps only findings and memory entries whose signal or proposed fix bears on the topic; every collector work order names it.
-   - Run `python3 <skill-dir>/scripts/collect-messages.py`. `--project <path>` keeps that directory and its subdirectories; `--since <ISO date or time>` overrides the window, which otherwise starts at the later of 14 days ago and the time in `~/.agents/retrospect-last-run`; `--slices <n>` sets the slice count (default 3); `--out <dir>` replaces the default `~/.tmp/retrospect/<UTC time>/`.
+1. Index the window. Scope is every project unless the user names one. A `focus <topic>` keeps only findings and memory entries whose signal or proposed fix bears on the topic; every collector work order names it. Pass it as `--focus <slug>`: the slug of an existing `~/.agents/retrospect-last-run-<slug>` naming the same topic, asking when unsure, else a new kebab-case slug of the topic.
+   - Run `python3 <skill-dir>/scripts/collect-messages.py`. `--project <path>` keeps that directory and its subdirectories; `--since <ISO date or time>` overrides the window, which otherwise starts at the later of 14 days ago, the time in `~/.agents/retrospect-last-run` and, with `--focus`, the time in `~/.agents/retrospect-last-run-<slug>`; `--slices <n>` sets the slice count (default 3); `--out <dir>` replaces the default `~/.tmp/retrospect/<UTC time>/`.
    - It reads Claude Code, Codex, Cursor CLI and Antigravity CLI logs read-only, keeps only messages the user typed, drops every session that invokes retrospect (this one included), and writes `slice-<n>.json` files, each holding its messages and the sessions active in its time range.
-   - Stdout is a JSON summary: `window` (`since`, `until`, `source`), per-harness `status` (`read`, `absent`, `unrecognized`) with session, headless, subagent and unrecognized-file counts and known `limits`, `excluded_sessions`, message counts per project, and the slice files. Exit 2 means an unusable `--since`.
+   - Stdout is a JSON summary: `window` (`since`, `until`, `source`), per-harness `status` (`read`, `absent`, `unrecognized`) with session, headless, subagent and unrecognized-file counts and known `limits`, `excluded_sessions`, message counts per project, and the slice files. Exit 2 means an unusable `--since` or `--focus`.
    - When a slice holds more than about 300 messages, rerun with more slices.
    - Never open the slice files or transcripts yourself; collectors read them.
    - Read the running harness's memory for every project in scope, such as `~/.claude/projects/<slug>/memory/` for Claude Code; the window does not apply to it.
@@ -46,7 +46,7 @@ Run bundled scripts by absolute path, using `<skill-dir>` for this skill's insta
    - Once every lesson in a picked memory entry is in a file, written this run or already there, re-read the entry to confirm, then delete it and its index line, such as in `MEMORY.md`. Keep an entry routed to a brief until a later run finds it captured.
 
 8. Report: coverage; lessons applied, with paths; memory entries deleted; briefs, ready to paste; lessons not picked; open items from dropped task status; and the "already captured" list with where each is saved, which needs no pick.
-   - After an all-projects run reaches this report, picked lessons or not, run `mkdir -p ~/.agents && printf '%s\n' <window.until> > ~/.agents/retrospect-last-run`. Skip it for runs narrowed by `--project` or `focus`, runs whose `--since` started later than the default window, and aborted runs.
+   - After an all-projects run reaches this report, picked lessons or not, run `mkdir -p ~/.agents && printf '%s\n' <window.until> > ~/.agents/retrospect-last-run`, writing `~/.agents/retrospect-last-run-<slug>` instead for a focus run. Skip it for runs narrowed by `--project`, runs whose `--since` started later than the default window, and aborted runs.
 
 ## Destinations
 

@@ -162,6 +162,29 @@ class CollectMessages(unittest.TestCase):
         self.assertEqual([m["text"] for m in messages], ["one day"])
         self.assertEqual(summary["window"]["since"], ago(3))
 
+    def test_focus_window_starts_at_latest_of_full_and_focus_stamps(self):
+        """Given a full-run stamp three days old and a focus stamp two days old, when collected with that focus, then the window starts at the focus stamp; without --focus or with another slug, at the full-run stamp; with a focus stamp older than the full-run stamp, at the full-run stamp; an invalid slug exits 2."""
+        self.claude_session([claude_typed("five days", days=5), claude_typed("2.5 days", days=2.5),
+                             claude_typed("one day", days=1)])
+        stamps = self.home / ".agents"
+        stamps.mkdir()
+        (stamps / "retrospect-last-run").write_text(ago(3) + "\n")
+        (stamps / "retrospect-last-run-shortcuts").write_text(ago(2) + "\n")
+        (stamps / "retrospect-last-run-old-topic").write_text(ago(10) + "\n")
+
+        summary, messages = self.messages("--focus", "shortcuts")
+        self.assertEqual([m["text"] for m in messages], ["one day"])
+        self.assertEqual(summary["window"]["source"], f"last run stamp {stamps / 'retrospect-last-run-shortcuts'}")
+
+        for args in [(), ("--focus", "new-topic"), ("--focus", "old-topic")]:
+            summary, messages = self.messages(*args)
+            self.assertEqual([m["text"] for m in messages], ["2.5 days", "one day"], args)
+            self.assertEqual(summary["window"]["source"], f"last run stamp {stamps / 'retrospect-last-run'}")
+
+        completed, summary, _ = self.run_script("--focus", "Bad Slug")
+        self.assertEqual(completed.returncode, 2)
+        self.assertIn("--focus", summary["error"])
+
     def test_sessions_invoking_retrospect_are_excluded(self):
         """Given a session whose typed message invokes /retrospect, when collected, then none of its messages are indexed and its id is listed as excluded."""
         self.claude_session([claude_typed("keep this")])
