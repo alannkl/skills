@@ -9,7 +9,7 @@ Agent instructions are text a model or agent executes: skills and slash commands
 
 ## Boundaries
 
-- Answer planning-only requests in conversation: plans, designs, critiques, outlines, and discussions of instruction structure. For mixed requests, resolve the plan first and write files once the implementation path is clear.
+- Answer planning-only requests in conversation: plans, designs, critiques, outlines, and discussions of instruction structure. For mixed requests, resolve the plan first and write files once the implementation path is clear. Apply steps 3 and 5 to instruction text you draft in conversation, proposals included, before showing it.
 - Treat named tools, skills, frameworks, and workflows as context for the plan; switch to file creation only on the user's explicit ask. When file-writing intent is ambiguous and edits would be surprising, ask before editing.
 - A review-only or evaluation-only request stays read-only: check the artifact against this skill's rules and report findings in conversation.
 - Existing explicit authorization carries forward. Ask only about unresolved scope or material preferences.
@@ -76,3 +76,9 @@ Load a reference at the step named here when its condition holds, or where anoth
    - Check the artifact against its job and every format a consumer requires. Keep terminology consistent across the main file and its references, and verify each pointer, documented command, argument, and output against its target.
    - A wording edit needs a meaning review, not behavior runs. Outside the evaluation reference's conditions, suggest useful behavior checks rather than running them.
    - Report what changed, each intentionally removed requirement separately from wording changes, suggested removals, the checks performed, and material limits.
+
+## Gotchas
+
+- Before outputting a rule, cut every example, qualifier and reason that changes no behavior, and collapse each list into one covering word.
+  - Before: "Bring back an earlier item so the reader can act on it without scrolling back: in full when it's short or meant to be copied, such as a prompt or command; otherwise its gist and where the full version is."
+  - After: "Restate an earlier item when bringing it back: in full if short or copyable, else its gist and location."
