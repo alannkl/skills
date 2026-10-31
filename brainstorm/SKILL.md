@@ -1,7 +1,6 @@
 ---
 name: brainstorm
-description: Host a structured brainstorming session as both facilitator and participant, guiding the user from problem framing through divergent ideation to evaluation and an actionable shortlist.
-disable-model-invocation: true
+description: Runs a facilitated brainstorming session with the user, from problem framing through divergent ideation to an evaluated shortlist. Use when the user asks to brainstorm or to generate and explore ideas or options together; not for a direct request for one answer or a ready-made list.
 ---
 
 # Brainstorm

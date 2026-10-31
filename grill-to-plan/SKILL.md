@@ -1,7 +1,6 @@
 ---
 name: grill-to-plan
-description: Turn casual ideas, vague goals, plans, or designs into clearer decisions through scoped questioning, decision-tree review, and optional records.
-disable-model-invocation: true
+description: Turns a vague goal, idea, plan, or design into clear decisions and an actionable plan through scoped questioning. Use when the user asks to be grilled, to stress-test a plan or design, or to pin an idea down into decisions before building; not for generating new ideas or reviewing code.
 ---
 
 # Grill to Plan

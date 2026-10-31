@@ -1,7 +1,6 @@
 ---
 name: panel
-description: Keep a multi-agent panel across harnesses, or read-only consultants, available in the current chat, consulting them when independent input is worth the cost and completing requested or promised reviews.
-disable-model-invocation: true
+description: Keeps read-only consultants or a multi-agent panel across harnesses available in the current chat, routing decisions and reviews to them when independent input is worth the cost. Use when the user asks to open or consult a panel or consultants, or wants other models' opinions during the conversation; not for a one-off panel review of changes (review-panel) or delegating a subtask (spawn-agent).
 ---
 
 # Panel

@@ -1,7 +1,6 @@
 ---
 name: review-panel
-description: "Panel review of any chosen scope: a review brief, parallel reviewer model voices (presets standard/max/ultra), merged findings, triage, and optionally fixes and verification. Fixes are user-gated by default; an upfront auto-fix option approves them. Spawns several fresh agent sessions, so cost scales with the preset; strongest with multiple harnesses installed (claude, codex, cursor), falls back to one."
-disable-model-invocation: true
+description: Reviews a diff, branch, pull request, or named files with a panel of parallel reviewer models, then merges and triages their findings and optionally applies approved fixes. Use only when the user asks for a panel, multi-model, or multi-agent review, since it spawns several agent sessions; for an ordinary review use code-review.
 ---
 
 # Review panel
