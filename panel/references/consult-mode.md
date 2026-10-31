@@ -16,7 +16,7 @@ Only a stop, a reset or the user removing that consultant closes it: `python3 sc
 
 ## Consultations
 
-Choose consultations by their purpose, without a fixed count per task:
+Choose consultations by their purpose, without a fixed count per task. A question the user left open is a focused or design question; an approach review needs a direction the host already chose or started:
 
 - **Focused question.** Ask the question and relay the second opinion. One usable exchange can complete requests such as "ask Fable what it thinks"; it needs no separate approach or deliverable review.
 - **Approach.** Send the proposed direction and ask for objections, risks and alternatives, before committing where possible; if work has started, include the direction already taken. Relay the reply and record how each objection was handled.

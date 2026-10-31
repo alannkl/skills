@@ -54,7 +54,7 @@ User decision: the shared document addresses communication for any audience. Rev
 
 In panel mode, resume the saved participants with `panel.py`, passing the active directory to `--continue` and this brief file to `--follow-up`.
 
-In consult mode, put the routed follow-up and the host's current approach or proposed answer in the question, asking for objections or review as appropriate, and resume each saved consultation:
+In consult mode, write the routed follow-up as a question whose content follows its purpose under Consultations in `references/consult-mode.md`, and resume each saved consultation:
 
 ```bash
 python3 scripts/consult.py ask /absolute/consult/astra --question /absolute/follow-up.md
