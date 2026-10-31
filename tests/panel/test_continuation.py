@@ -173,7 +173,7 @@ class ContinuationBehavior(unittest.TestCase):
                 self.assertTrue(all(e['data'].get('brief_revision') == 2 for e in first['events']))
                 self.assertEqual(first['prior_briefs'], [])
                 history_file = Path(first['history_file'])
-                self.assertEqual(history_file.parent, Path(root) / 'run' / 'participants' / pid / 'scratch')
+                self.assertEqual(history_file.parent, Path(root).resolve() / 'run' / 'participants' / pid / 'scratch')
                 self.assertIn(str(history_file.parent), first['read_directories'])
                 history = json.loads(history_file.read_text())
                 self.assertEqual([b['text'] for b in history['prior_briefs']], ['Design a bounded runner'])

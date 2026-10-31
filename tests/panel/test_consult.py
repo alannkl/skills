@@ -241,7 +241,7 @@ class ConsultBehavior(unittest.TestCase):
                 self.assertEqual(len(commands), 2)
                 self.assertTrue(all('--json-schema' in c['argv'] or '--output-schema' in c['argv'] for c in commands))
                 if harness == 'claude':
-                    self.assertIn(str(root / 'repo'), commands[1]['argv'])
+                    self.assertIn(str((root / 'repo').resolve()), commands[1]['argv'])
                     self.assertNotIn('Edit', ','.join(commands[1]['argv']).split('--tools')[1].split(' ')[0])
                 self.assertEqual(len((root / 'c' / 'log.jsonl').read_text().splitlines()), 2)
                 self.assertEqual(run(*base, 'close', str(root / 'c'))['status'], 'closed')
