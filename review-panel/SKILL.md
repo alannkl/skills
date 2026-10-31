@@ -7,7 +7,9 @@ description: Reviews a diff, branch, pull request, or named files with a panel o
 
 Run the pipeline: scope → brief → panel → merge → triage → findings report → approval gate → fix → verify → final report.
 
-Set the **approval mode** when the run starts. The default is **gated**. `/review-panel auto-fix` sets **auto-fix**, which grants standing approval for findings triaged with a **fix** disposition. Auto-fix never selects an **escalate** fork; escalations always require a later user decision.
+Set the **approval mode** when the run starts. The default is **gated**. `/review-panel auto-fix` sets **auto-fix**, which grants standing approval for findings triaged with a **fix** disposition. Auto-fix never selects an **escalate** fork; escalations always require a later user decision. `/review-panel review-only` sets **review-only**, which ends the run at step 4.
+
+Arguments combine in any order: approval mode, branch, tier, and effort (`/review-panel review-only adversarial frontier xhigh`).
 
 ## 1. Scope
 
@@ -19,40 +21,40 @@ Collect the acceptance criteria from the conversation, ticket, or commit message
 
 ## 3. Panel
 
-Assemble the reviewer **voices** from the preset the user named (`/review-panel max`), the exact composition they specified, or the default `standard`. A composition the user spells out overrides every preset. Fresh eyes come from the context, not the model. A fresh context using the parent's model is still a fresh reviewer.
+The parent, meaning this session's harness and model, always runs `code-review` inline on the resolved scope (the **parent voice**), even under a composition the user spells out. Add the **fresh voices** of the user's **branch** and **tier**, each defaulting independently to `normal standard`. A spelled-out composition replaces both. Fresh eyes come from the context, not the model. A fresh context using the parent's model is still a fresh reviewer.
 
-Roster, ranked by capability:
+| Branch             | Each fresh voice runs                                   |
+| ------------------ | ------------------------------------------------------- |
+| `normal` (default) | `code-review`                                           |
+| `adversarial`      | `code-review` and `adversarial-review`, in two contexts |
 
-| Rank | Member        | Harness | Sibling |
-| ---- | ------------- | ------- | ------- |
-| 1    | fable 5       | claude  | opus 5  |
-| 2    | codex 5.6 sol | codex   | terra   |
-| 3    | opus 5        | claude  | fable 5 |
-| 4    | grok 4.6      | cursor  | kimi k3 |
+| Tier                 | Fresh voices                |
+| -------------------- | --------------------------- |
+| `quick`              | the first strong rival      |
+| `standard` (default) | the first two strong rivals |
+| `frontier`           | every frontier member       |
 
-Ranks 3–4 are reserves. They enter as siblings, as fallback rivals, or as `ultra`'s second rival.
+Roster, in rank order within each tier:
 
-Resolve three roles relative to the **parent**, meaning this session's harness and model:
+| Member           | Harness | Tier     | Sibling          |
+| ---------------- | ------- | -------- | ---------------- |
+| Claude Fable 5.1 | claude  | frontier | Claude Opus 5.5  |
+| GPT-6 Astra      | codex   | frontier | GPT-6.1 Sol      |
+| GPT-6.1 Sol      | codex   | strong   | GPT-6.1 Terra    |
+| Claude Opus 5.5  | claude  | strong   | Claude Fable 5.1 |
+| Grok 4.7         | cursor  | strong   | GLM 5.3          |
 
-- **rivals**: the highest-ranked members on harnesses other than the parent's, in rank order. `standard` and `max` use the first rival; `ultra` uses the first two. With no other harness installed, the sibling stands in as rival; with a single-model harness, the twin stands in.
-- **sibling**: the strongest model on the parent's harness other than the parent's own; the roster lists each member's. With a single-model harness, the twin stands in.
-- **twin**: the parent's own model in a fresh context.
+- **Strong rivals** are the strong members on harnesses other than the parent's, in rank order. With no other harness installed, fill the tier with the parent's sibling, then the **twin**: the parent's own model in a fresh context.
+- A frontier member that is the parent's own model runs as its twin.
+- An unavailable member's sibling stands in, on the same harness.
 
-The parent always runs `code-review` inline on the resolved scope (the **parent voice**), plus the preset's fresh voices:
-
-| Preset               | Fresh voices                                                                |
-| -------------------- | --------------------------------------------------------------------------- |
-| `standard` (default) | code-review: rival · adversarial: rival                                     |
-| `max`                | code-review: rival, sibling · adversarial: rival, sibling, twin             |
-| `ultra`              | code-review: both rivals, sibling · adversarial: both rivals, sibling, twin |
-
-Step 7 verification always goes to the first rival. With a fable parent in a full environment, the rivals are sol, then grok, and the sibling is opus. `standard` reviews with sol in both roles; `max` adds opus in both roles plus adversarial fable; `ultra` adds grok in both roles.
+With an Opus 5.5 parent in a full environment, `quick` reviews with Sol, `standard` with Sol and Grok, and `frontier` with Fable and Astra; `adversarial` runs each in both roles. Step 7 verification goes to the first strong rival or its stand-in, whatever the tier.
 
 Rules:
 
-- Every panel includes at least one `adversarial-review` voice in a fresh context; `adversarial-review` never runs in the parent context. A member named twice runs as two separate fresh contexts.
-- **Effort.** Under `standard`, fresh voices run at high reasoning effort. Under `max` and `ultra`, they default to xhigh; fable and kimi k3 stay at high. Terra always runs at max. The parent voice keeps the session's own effort. The user can override any voice's effort.
-- **Missing member.** When a preset or user-named member is unavailable, stop and recommend a composition built from the available members. Proceed only after the user chooses. The prescribed rival fallback chain needs no confirmation.
+- `adversarial-review` runs only in fresh contexts, never in the parent context. A member named twice runs as two separate fresh contexts.
+- **Effort.** Every fresh voice runs at one effort per run: high, or the level the user names. The parent voice keeps the session's own effort.
+- **Missing member.** When a tier or user-named member is unavailable with no stand-in, stop and recommend a composition built from the available members. Proceed only after the user chooses. Sibling and twin stand-ins need no confirmation.
 - Route a voice whose model runs on the parent's own harness through the harness's builtin subagent tool if it has one; route every other voice through `spawn-agent`. Either way, pass the reviewing skill's `SKILL.md` path in the prompt as its charter. Tell the voice to perform the review itself, without spawning agents or invoking `review-panel`.
 - The user may name members beyond the roster: any harness or model the environment can run. For a harness `spawn-agent` has no reference for, run a headless CLI session by that harness's own conventions (its `--help` is the source of truth); if it cannot be run, treat it as a missing member.
 - Before launching, report the resolved scope, the intent from the brief, and the panel composition to the user. Report and continue; do not wait for approval.
@@ -61,6 +63,8 @@ Rules:
 ## 4. Merge
 
 Merge the reports into one findings list. Collapse findings with the same root cause and remedy into one, listing every affected location; keep independently actionable defects separate. Keep the highest severity, the most concrete failure scenario, and a **concurrence** tag (`flagged by 2/3 voices`). Origin carries no weight. The parent voice's findings count like any other, while concurrence signals credibility and feeds triage's confidence. Merging is done when no two findings share a root cause and remedy.
+
+In review-only mode, present the merged findings with the panel composition and any substitutions; the pipeline ends there.
 
 ## 5. Triage
 
