@@ -39,7 +39,7 @@ In user-facing progress, reply headings, relayed advice and final ledgers, name 
 
 ## Prepare
 
-1. Write a brief defining the goal, scope, evidence, deliverable and acceptance criteria, adapting `references/brief-examples.md` when useful. To run an existing skill collaboratively, first read that skill and `references/skill-collaboration.md`.
+1. Write a brief defining the goal, scope, evidence, deliverable and acceptance criteria, adapting `references/brief-examples.md` when useful. In every brief and consultation question, quote the user's request verbatim and mark each constraint user-stated or host-inferred. To run an existing skill collaboratively, first read that skill and `references/skill-collaboration.md`.
 2. Select the mode. Invoking `panel` alone selects consult mode with two consultants, and a request for several consultants or second opinions selects consult mode with that many; an explicit request for a panel, a group discussion or multiple agents doing the work selects panel mode. Honor an explicit mode or preset name: "consult" or "pair" selects consult mode, "independent" or "independent discussion" selects `independent-discussion`, "leader" or "leader and members" selects `leader-members`, and "peers" or "flat peers" selects `flat-peers`. Use the same criteria when running an interactive skill, without overriding that skill's own mode-selection rules.
 3. Apply `references/consult-mode.md` for consult mode or `references/panel-mode.md` for panel mode, through preparation, running, follow-ups and delivery.
 
