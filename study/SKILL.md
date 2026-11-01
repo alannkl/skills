@@ -1,6 +1,6 @@
 ---
 name: study
-description: Research a question from sources into an evidence-graded report, either one subject in depth or how several sources and approaches answer one question. Use when the answer must be built from sources rather than from what the agent already knows: how a tool, product, or system works under the hood, what the landscape of an area is, how others handle a problem, what the literature or the market says, or a survey or comparison of tools, prompts, or practices; also loaded by learn-from. Not for explaining code in the working tree, explaining a concept the agent already knows, or a single fact lookup.
+description: "Research a question from sources into an evidence-graded report, either one subject in depth or how several sources and approaches answer one question. Use when the answer must be built from sources rather than from what the agent already knows: how a tool, product, or system works under the hood, what the landscape of an area is, how others handle a problem, what the literature or the market says, or a survey or comparison of tools, prompts, or practices; also loaded by learn-from. Not for explaining code in the working tree, explaining a concept the agent already knows, or a single fact lookup."
 ---
 
 # Study
