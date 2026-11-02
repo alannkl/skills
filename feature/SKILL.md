@@ -7,43 +7,24 @@ argument-hint: "[goal]"
 
 # Feature
 
-Take the goal in the argument, else from the conversation so far, through plan, build and review to an open PR, then wait for the user. Start at the grill: whether to build is already settled. The unattended run ends at step 7's stop or an earlier one; the user's return resumes at the stage the Run state records.
+Take the goal in the argument, else the conversation, from the grill to an open, reviewed PR; whether to build is settled. The run is unattended from round 1's end to step 7's stop.
 
 ## Record
 
-- The **anchor** is the user's own decisions from the grill. A **provisional decision** is one made without the user's explicit pick, held for the walkthrough.
-- Record each provisional decision in `session.md` as it arises: grill open questions, panel rounds, gate deviations, triage deferrals and rejections.
-- Keep a compact Run state block in `session.md`, updated at each stage boundary: current stage, approved plan revision, panel directory and status, PR URL, last reviewed commit, and unresolved verification results. After context compaction, reload this skill and resume from it.
-- A **stop** updates the Run state and waits for the user, naming what it needs from them.
+In `session.md`, record each provisional decision as it arises, triage deferrals and rejections included. Keep a Run state block there, updated at each stage boundary and stop: stage, approved plan revision, panel directory and status, PR URL, last reviewed commit, open verification results. Resume from it when the user returns, and after compaction once this skill is reloaded.
 
 ## Authority
 
-Invoking `/feature` authorizes pushing the branch, opening the PR, choosing the review tier by risk, fixing accepted review findings and PR check failures the change caused, closing a panel this run opened, and reopening the plan consultation for a material design change, bounded by step 4's stops and closed again once resolved. Merge stays with the user.
+`/feature` authorizes pushing the branch, opening the PR, fixing accepted findings and PR check failures the change caused, closing a panel this run opened, and reopening the plan consultation for a material design change. Merge stays with the user.
 
 ## Workflow
 
-1. **Grill.** Run `grill-to-plan` in documented mode. `plan.md` lists the anchor apart from provisional decisions. When merge deploys, the acceptance criteria include at least one check runnable against the deployed environment, with its target, deploy-completion signal and command: the **deployed check**.
-
-2. **Confirm the anchor.** Ask one question listing the anchor items, without re-walking the grill's decisions. Only an explicit confirmation counts; a reply that edits or asks about the anchor is not one, so settle it and ask again.
-
-3. **Round 1, with the user.** After confirmation, open a panel through `panel` in consult mode unless one is open, and have it review `plan.md` with the anchor as settled context. Put all of round 1 to the user in one batch, recommended options first: challenges to the anchor and every other change. Whatever they leave undecided becomes provisional. Then ask, in one batch, for whatever the unattended run needs beyond the Authority section. The run is unattended from here.
-
-4. **Iterate to approval.** Revise the plan and reconsult until it is **approved**: a round whose replies raise no new material objection and leave none unresolved, recorded as your conclusion, never as consultant approval, whatever the panel's mode. An unavailable consultant is not assent. Stop, listing the open objections, when a material objection persists with no new evidence or viable next revision; when resolving one needs an anchor change; after 3 unattended rounds; or when a consultation fails after its one retry. Whatever the panel, its deliverable is the plan; code review goes only through step 6. Once approved, close a panel this run opened, keeping its directory. Build nothing before approval.
-
-5. **Build, then gate.** Build with subagents, even where `delegate` would judge inline cheaper; `delegate` governs work orders, builder models and parallelism. Then gate the result yourself before any review:
-   - Run the build and tests, and check the diff against the plan's decisions, units, non-goals and acceptance criteria, without hunting bugs. Run the deployed check against a local or preview environment when one exists.
-   - Builders close the gaps and the gate reruns; stop when gaps remain after two such rounds.
-   - A deliberate deviation that is an implementation choice becomes provisional; one that changes the anchor stops; one that materially changes the reviewed design reopens the closed plan consultation through `panel`'s reopen before proceeding.
-   - Leave simplify and document passes to the repo's precommit.
-
-6. **Review.** Each PR gets one initial review route; step 7's verification and step 8's re-review are its only later checks.
-   - Commit the build first.
-   - Where the repo has its own PR workflow, configured by the user's per-repo PR rules such as `~/.claude/<repo>.md`, open the PR through it; it runs the review, triage and fixes.
-   - Otherwise run `review-panel review-only` on `<target>...HEAD` with branch, tier and effort by risk: `standard high` by default; `frontier` for cross-service, schema or contract changes or a large diff; add `adversarial` for secrets, permissions, migrations, stored state, concurrency or money paths. Triage the findings yourself with `review-triage` and fix the accepted ones.
-   - An escalation stops.
-
-7. **Verify, then stop.** Verify any review fixes with `review-panel`'s step 7, with this session as its parent and the Authority section as auto-fix approval. Accepted findings still unresolved at its cap make the run blocked, not ready: stop. Without a repo PR workflow, open the PR with `gh` once verification resolves. Fix PR check failures the change caused and verify them the same way; stop on any other failure. Stop when the PR is open, its checks pass and verification is resolved.
-
-8. **Walkthrough.** When the user returns, walk through every provisional decision and open question, code-changing ones first. When answers change a decision, record it in `plan.md`; when they change code, the change passes step 5's gate, then the commits since the last review are re-reviewed on the open PR before merge: by the scope-growth rule in the user's per-repo PR rules, never a close-and-reopen rule in the repo's PR workflow; without per-repo rules, by `review-panel review-only` on that range, triage and step 7's verification. Merge only on the user's word.
-
-9. **After merge.** Where merge deploys, wait for the deploy, confirm the deployed version contains the merged commit, then run the deployed check. On failure, build a repair that reproduces the failed check, against the approved plan; a plan change follows step 5's deviation rule. The repair goes through step 5, then enters step 6 as its own PR, whose merge the user decides. Report missing access or an unfinished deploy as unverified.
+1. **Grill** with `grill-to-plan` in documented mode. `plan.md` lists the **anchor**, the user's own decisions, apart from **provisional** ones, made without their explicit pick. When merge deploys, its acceptance criteria include a **deployed check** against the deployed environment, with target, deploy-completion signal and command.
+2. **Confirm the anchor** in one question listing its items, without re-walking the grill; only an explicit yes counts.
+3. **Round 1.** Open a consult-mode panel through `panel` unless one is open, to review `plan.md` with the anchor settled. Put all its changes, anchor challenges included, to the user in one batch, recommended options first; anything left undecided is provisional.
+4. **Iterate to approval.** Revise and reconsult until **approved**: a round with no new material objection and none unresolved, by your conclusion, never consultant approval; an unavailable consultant is not assent. Stop with the open objections when one persists without new evidence or a viable revision or needs an anchor change, after 3 unattended rounds, or when a consultation fails its retry. A panel reviews only the plan; on approval, close one this run opened, keeping its directory. Build nothing before approval.
+5. **Build, then gate.** Build with subagents even where `delegate` would go inline; follow it otherwise. Gate the result yourself: run build and tests, check the diff against the plan's decisions, units, non-goals and acceptance criteria without hunting bugs, and run the deployed check on any local or preview environment. Builders close gaps and the gate reruns; stop if gaps remain after two rounds. A deliberate deviation is provisional if an implementation choice and stops if it changes the anchor; one that materially changes the reviewed design reopens the closed consultation through `panel`'s reopen and step 4 before proceeding. Leave simplify and document passes to the repo's precommit.
+6. **Review.** Commit the build. Where the user's per-repo PR rules, such as `~/.claude/<repo>.md`, set a repo PR workflow, open the PR through it; it reviews, triages and fixes. Otherwise run `review-panel review-only` on `<target>...HEAD`, branch, tier and effort by risk: `standard high` by default, `frontier` for contract changes or a large diff, plus `adversarial` for security, stored state, concurrency or money. Then triage with `review-triage` and fix accepted findings. An escalation stops. Each PR gets one of these routes; steps 7 and 8 are its only later checks.
+7. **Verify, then stop.** Verify fixes with `review-panel`'s step 7, this session as parent and Authority as auto-fix approval; accepted findings unresolved at its cap block the run: stop. Without a repo PR workflow, then open the PR with `gh`. Fix check failures the change caused, verifying likewise; stop on others. Stop once the PR is open, checks pass and verification is resolved.
+8. **Walkthrough.** Go through every provisional decision and open question, code-changing ones first, recording changed decisions in `plan.md`. A code change passes step 5's gate; then re-review the commits since the last review on the open PR, by the per-repo rules' scope-growth rule, never the repo workflow's close-and-reopen, else by step 6's `review-panel` route on that range and step 7.
+9. **After merge**, where merge deploys: wait for the deploy, confirm it contains the merged commit, and run the deployed check. On failure, build a repair that reproduces the failed check, against the approved plan under step 5's deviation rule; it passes all of step 5, then enters step 6 as its own PR.
