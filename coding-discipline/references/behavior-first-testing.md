@@ -2,18 +2,18 @@
 
 ## Scaffold and evidence plan
 
-- Derive every expected outcome, in scaffolds and tests, from intent, contracts, or known-good examples, never from the code's output or logic. Scaffold or assert counts, logs, metrics, traces, ordering, or timing only when they are the contract.
+- Derive every expected outcome, in scaffolds and tests, from intent, contracts, established behavior, or known-good examples, never from the change's own output or logic. Scaffold or assert counts, logs, metrics, traces, ordering, timing, or payload shape only when they are the contract.
 - Before implementing new or changed behavior or writing test bodies, write a behavior scaffold: one concrete Given → When → Then scenario per case, pinning the starting state, the action through an established public seam, and the complete observable outcome, including boundary and failure cases. If the seam is unknown, describe the domain-visible action and mark the seam unresolved. Prescribe no internals.
 - Record each scenario as a non-running declaration (`test.todo`, a skipped test) in the real test file. For one or two scenarios, or with no suitable test file (state why), list them in the plan instead.
 - Surface the scaffold for material or ambiguous behavior.
 - Then choose evidence strength:
   - Routine: implement once the scaffold is complete.
   - Reproducible regression: write and run its test before the fix; confirm it fails for the expected behavioral reason, not broken setup.
-  - High-risk (security, money, data loss, migrations, concurrency or retries, irreversible effects, public compatibility): identify the critical unsafe outcomes. Run behavior-level tests before finishing the implementation when the seam is stable and the test can fail meaningfully without choosing internals; otherwise record why and use an independent check. Add real-infrastructure, failure-injection, and rollback checks as the risk requires.
+  - High-risk (security, money, data loss, migrations, concurrency or retries, irreversible effects, public compatibility): identify the critical unsafe outcomes and record a proportionate validation plan. Run behavior-level tests before finishing the implementation when the seam is stable and the test can fail meaningfully without choosing internals; otherwise record why and use an independent check. Add real-infrastructure, failure-injection, and rollback checks as the risk requires.
 
 ## Test behavior, not implementation
 
-- New or changed behavior needs automated tests. Skip only with a reason in the handoff: no test infrastructure, existing coverage of a behavior-preserving change, explicitly throwaway work, or read-only operational scripts verified by a safe non-mutating run. Test mutating and rollback paths on disposable infrastructure, or state the gap; never verify by executing an irreversible effect on real data.
+- New or changed behavior needs automated tests. Skip only with a reason in the handoff: no test infrastructure, existing coverage of a behavior-preserving change, explicitly throwaway work, or read-only operational scripts verified by a safe non-mutating run. Test a script's mutating and rollback paths on disposable infrastructure, or state the gap; never verify by executing an irreversible effect on real data.
 - After implementation, turn every remaining scenario into an executable test proving its complete outcome through the public seam, or document why it stays skipped.
 - Never revise the scaffold because the implementation disagrees. When intent, a contract, established behavior, or proof of impossibility shows it wrong, surface the conflict, revise it, and record why in the handoff. Add discovered scenarios, flagged as assumptions when intent is silent.
 - Assert observable outcomes, not internals. Read stored state directly only when its format is a contract; otherwise read back through the public seam.

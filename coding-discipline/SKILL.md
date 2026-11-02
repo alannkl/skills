@@ -54,7 +54,7 @@ Follow these steps when changing code. For reviews, use them as criteria, weight
    - Zoom out on friction: a third special case, a second synced boolean, a fix needing its own fix, a solution larger than the problem. Restate the problem one level up and look for a simpler structure; continuing is then a stated decision.
    - In typed languages, make illegal states unrepresentable where partiality appears, then stop; never lie to the type checker with casts or silencing escapes.
    - Reuse canonical domain types and APIs instead of local aliases.
-   - Suggest dependencies that reduce complexity, after weighing security, licensing, and fit.
+   - Suggest or add dependencies that reduce complexity or risk, after weighing security, licensing, and fit.
 
 5. Handle data, errors, and concurrency deliberately.
    - Validate untrusted input at boundaries into a canonical model; past that, trust the types, asserting only high-stakes invariants.
@@ -82,4 +82,4 @@ Follow these steps when changing code. For reviews, use them as criteria, weight
    - Review the diff: every line traces to the request or to cleanup your change caused. Remove unused code your edit introduced; mention unrelated issues when useful instead of fixing them.
    - Before deleting code, files, branches, or worktrees, confirm they are unneeded; keep pre-existing uncommitted work and unmerged commits unless removal is authorized.
    - When offering to commit, include the proposed message.
-   - Write the handoff for the maintaining engineer, scaled to consequence: what changed for callers, operators, or stored data; non-obvious tradeoffs; which criteria passed and what the checks didn't establish; assumptions, deviations, and skipped tests or revised scaffolds with reasons; pending actions.
+   - Write the handoff for the maintaining engineer, scaled to consequence: what changed for callers, operators, or stored data and, for consequential changes, the invariant future edits must preserve; non-obvious tradeoffs; which criteria passed and what the checks didn't establish; assumptions, deviations, exclusions, and skipped tests or revised scaffolds with reasons; pending actions.
