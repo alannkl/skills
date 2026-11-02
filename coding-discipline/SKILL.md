@@ -31,19 +31,20 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - When the request prescribes a mechanism ("add a retry loop here"), contradicts the code, or names only a symptom, restate the goal it serves before planning; recommend what serves it better.
    - If multiple materially different interpretations exist, present them with a clear recommendation instead of picking silently.
    - When a materially simpler or more capable design exists, present it with the tradeoff and a recommendation; build it only if the user takes the bet.
-   - Offer safeguards beyond present requirements (shadow phases, guard bands, fallback tiers) as separate options the user can decline, with the downside quantified.
+   - When a failure the present requirements don't cover would be costly, offer a safeguard (shadow phases, guard bands, fallback tiers) as a separate option the user can decline, quantifying its downside where evidence allows.
    - For a bug fix, treat the report as a symptom, not the cause: trace the callers of the code you touch and fix the shared cause once, rather than patching only the path the report names and leaving sibling callers broken — the smallest change in the wrong place is a second bug.
    - When the cause is not already evident, read `references/diagnosing-bugs.md` and diagnose before fixing.
 
 2. Define the smallest verifiable plan.
    - Convert the request into concrete success criteria, each written as an observable check: a command to run, an expected output, or an assertion — not a vague goal. ("`GET /users/:id` returns 404 for unknown ids" beats "handle missing users".)
    - For new or changed behavior, reproducible regressions, test work, or reviews of test adequacy, read `references/behavior-first-testing.md` before implementation or executable test bodies and follow its Behavior-First Testing workflow.
+   - For a refactor, first pin current behavior with passing tests, adding any the change needs; restructure, then rerun them with inputs and expected outcomes unchanged, adjusting only test wiring.
    - Stay surgical: the narrowest change that satisfies the criteria without worsening system shape.
    - Ask when ambiguity would materially change the solution, create risk, or leave success criteria too weak to verify.
    - If no one is available to answer, choose the most reversible interpretation, state the assumption prominently in the handoff, and proceed.
    - When mid-implementation discovery contradicts the agreed plan, take the most reversible option that honors the plan's intent, record the deviation in a notes file (preferred over commit messages or PR descriptions; the handoff summary is not a record), and surface it in the handoff.
    - If the discovery invalidates the plan's premise, stop and re-plan instead of pushing through.
-   - For multi-step work, state each step with its verification check and run it before starting the next step; in a sweep of similar edits, verify each edit as it lands — never batch the edits and verify once at the end. When a slow run (a full or real-model suite) surfaces several issues, let it finish, verify each fix with the fastest check that covers it, then rerun the slow run once for the batch.
+   - For multi-step work, state each step with its verification check and run it before starting the next step; in a sweep of independent edits, verify each edit as it lands — never batch them and verify once at the end; edits that only work together, such as a rename across files, form one step, verified once complete. When a slow run (a full or real-model suite) surfaces several issues, let it finish, verify each fix with the fastest check that covers it, then rerun the slow run once for the batch.
 
 3. Preserve system shape.
    - Treat the codebase's existing structure — its system shape — and conventions as evidence of taste, not proof: match them by default, but when the user's word or recent work is moving away from a pattern, extend the destination, not the legacy majority; when the current structure blocks the change or conflicts with these principles, propose the improvement with its reason.
@@ -58,6 +59,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - The best code is the code never written. Before adding code, stop at the first rung that holds: does it need to exist (YAGNI); does the repo already provide it; does the standard library or platform cover it; does an already-installed dependency cover it. Only then write the minimum that works. Smaller never means flimsier: between two equally small options, take the edge-case-correct one.
    - Name by intent; make side effects visible in names.
    - Keep functions and modules focused on one purpose, using guard clauses to reduce nesting.
+   - Give each decision (a rule, threshold, or mapping) one home, and derive the rest from it.
    - Add no speculative machinery until duplication, risk, contracts, or complexity prove it needed. A request to "send one email" needs a function call, not a pluggable `NotificationProvider` interface with retry config.
    - In library or public-API code, extension points promised by the published contract are requirements, not speculation.
    - Prefer meaningful modules with small, honest interfaces over shallow pass-through wrappers.
@@ -72,7 +74,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - Treat authorization, injection risks, secrets, personal data, and least-privilege access as part of the design, not as afterthoughts.
    - When changing stored data, configs, queues, or external contracts, account for old data, mixed versions, migrations, defaults, and rollback behavior.
    - Make errors actionable with enough context to diagnose.
-   - Never log or commit secrets, credentials, tokens, private keys, personal data, or full sensitive payloads.
+   - Never log or commit secrets, credentials, tokens, private keys, or full sensitive payloads, and never commit personal data; log personal data only when a stated requirement, such as an audit trail, needs it, and only the fields it needs.
    - Make production behavior observable with appropriate logs, metrics, traces, or audit events when the system would otherwise be hard to diagnose.
    - Avoid hidden concurrency and fire-and-forget work unless intentional, documented, and observable.
    - In hot paths, consider data volume, algorithmic complexity, indexing, batching, caching, and N+1 risks; measure before broad optimization.
@@ -87,7 +89,7 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - Document or enforce only load-bearing naming, ownership, dependency, and boundary rules.
 
 7. Document only useful intent.
-   - Make code clear through names and structure first; add comments only for non-obvious why: invariants, tradeoffs, ordering, retries, idempotency, fallbacks, security constraints, or business rules.
+   - Make code clear through names and structure first; document public interfaces as the repo's conventions expect, and otherwise add comments only for non-obvious why: invariants, tradeoffs, ordering, retries, idempotency, fallbacks, security constraints, or business rules.
    - When you deliberately choose a simpler implementation with a known ceiling (a coarse lock, an O(n²) scan, a naive heuristic), comment the ceiling and the condition that would justify upgrading it — so the shortcut reads as a decision, not an oversight.
    - Do not comment obvious syntax, trivial control flow, or unclear code that should instead be simplified.
 
@@ -95,10 +97,11 @@ Follow these steps when changing artifacts. For reviews, use the same principles
    - Run the most relevant formatter, linter, typecheck, test, build, or targeted smoke check available.
    - If a full check is expensive or unavailable, run the narrowest meaningful check and state the gap.
    - In every check — automated, manual, or against a real model — fast-forward time you control instead of waiting it out: inject a clock, age timestamps, or set short horizons for the run, and wait only the minimum the check needs. When elapsed time is itself the evidence (a soak, a latency measurement) or outside your control (an external system's window), bound the wait and state what a compressed check could not prove. A check's runtime is a cost to optimize: aim for a single test in seconds and the full suite in minutes.
-   - For a risky change, name the single fact its safety hinges on and verify that fact by running code, not by argument — a written justification reads as convincing whether or not it is true. Check impact where symbol search stops: serialized data, wire formats, readers in other languages, feature flags. A search that finds nothing is still an answer worth recording.
+   - For a risky change, name each fact its safety hinges on and verify it by running code, not by argument — a written justification reads as convincing whether or not it is true. Check impact where symbol search stops: serialized data, wire formats, readers in other languages, feature flags. A search that finds nothing is still an answer worth recording.
    - Review the diff: every changed line should trace to the request or to cleanup caused by your change.
    - Keep changes reviewable: avoid unrelated churn, explain non-obvious tradeoffs, and make contract or migration effects explicit.
    - Remove unused imports, variables, functions, and branches introduced by your edit.
+   - Before deleting code, files, Git branches, or worktrees, confirm they are no longer needed; keep pre-existing uncommitted work and unmerged commits unless their removal is authorized.
    - Leave unrelated pre-existing issues untouched and mention them separately when useful.
    - When surfacing findings, weigh substance over taste: a divergence from the repo's own norms is a strong finding; a mere difference from your preferred style is not.
    - Confirm every scaffolded scenario has an executable test body or a documented reason for remaining skipped.
