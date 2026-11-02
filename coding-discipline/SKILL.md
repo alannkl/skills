@@ -45,7 +45,7 @@ Follow these steps when changing code. For reviews, use them as criteria, weight
    - Point dependencies toward the stable core; prefer explicit collaborators over hidden globals; avoid cycles.
    - Protect public contracts and persisted data across old data, mixed versions, rollout, and rollback.
 
-4. Write clear code.
+4. Write clean code.
    - Before adding code, stop at the first rung that holds: not needed; the repo has it; the standard library; an installed dependency; the minimum that works. Between equally small options, take the edge-case-correct one.
    - Name by intent, with side effects visible. Give functions and modules one purpose; prefer guard clauses to nesting.
    - Give each decision one home; derive the rest from it.
