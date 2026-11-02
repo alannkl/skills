@@ -59,7 +59,7 @@ The scaffold should not prescribe:
 - incidental calls, logs, ordering, or timing;
 - test harness mechanics beyond what is needed to keep the scenario visible.
 
-Store the scaffold as non-running declarations in the real test file—`test.todo`, skipped tests, or the framework equivalent—so it remains visible in the diff and naturally becomes the executable suite. Use a written list only when the repository has no suitable test file or framework.
+Store the scaffold as non-running declarations in the real test file—`test.todo`, skipped tests, or the framework equivalent—so it remains visible in the diff and naturally becomes the executable suite. Use a written list for a change with one or two scenarios, or when the repository has no suitable test file or framework.
 
 The scaffold and a TDD red test can describe the same intended behavior, but they provide different evidence. The scaffold is **specification evidence**: it fixes what must be observed without yet choosing how the test reaches or measures it. A red test is **executable detection evidence**: when it fails for the expected behavioral reason, it shows that the chosen setup and assertions can detect the behavior's absence. Keeping the scaffold non-running is deliberate when writing the body would prematurely settle an unstable interface or harness.
 
@@ -91,7 +91,7 @@ Establish expected behavior from user intent, applicable contracts, repository e
 
 ### 2. Create the scaffold
 
-The agent records one non-running declaration per scenario before implementing new or changed behavior. The scaffold must pin the complete observable outcome and identify the public seam when it is already established. A genuinely unknown technical seam remains explicitly unresolved rather than being invented for the test.
+The agent records one non-running declaration per scenario, or a written list for a change with one or two scenarios, before implementing new or changed behavior. The scaffold must pin the complete observable outcome and identify the public seam when it is already established. A genuinely unknown technical seam remains explicitly unresolved rather than being invented for the test.
 
 ### 3. Choose the required evidence strength
 
