@@ -4,7 +4,7 @@
 
 - Derive every expected outcome, in scaffolds and test bodies, from intent, contracts, or worked examples (known-good literals), never from the code's output or by recomputing with its logic.
 - Before implementing new or changed behavior or writing executable test bodies, write a behavior scaffold: one concrete Given → When → Then scenario per case.
-- Pin each scenario's starting state or input, its action through an established public seam, and its complete observable outcome, including important boundary and failure conditions. If the seam is unknown, describe the domain-visible action and outcome and mark the seam unresolved instead of inventing one. Don't prescribe algorithms, internal collaborators, mocks, or decomposition, or scaffold logs, metrics, or traces unless that signal is the contract.
+- Pin each scenario's starting state or input, its action through an established public seam, and its complete observable outcome, including important boundary and failure conditions. If the seam is unknown, describe the domain-visible action and outcome and mark the seam unresolved instead of inventing one. Don't prescribe algorithms, internal collaborators, mocks, decomposition, or incidental calls; scaffold logs, metrics, or traces only when that signal is the contract.
 - Record each scenario as a non-running declaration (`test.todo`, a skipped test) in the real test file, without bodies. For one or two scenarios, or when the repo has no suitable test file or framework (state why), list them in the plan or notes instead.
 - Surface the scaffold for material or ambiguous behavior while correction is cheap; small self-evident changes need no approval.
 - Then choose evidence strength:

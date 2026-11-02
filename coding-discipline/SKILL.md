@@ -38,12 +38,12 @@ Follow these steps when changing artifacts. For reviews, use them as criteria, w
    - For a refactor, pin current behavior with passing tests, adding any needed; restructure; rerun with inputs and expected outcomes unchanged, adjusting only wiring.
    - Ask when ambiguity would materially change the solution, add risk, or leave criteria unverifiable. With no one to answer, take the most reversible interpretation, state it prominently in the handoff, and proceed.
    - When discovery contradicts the agreed plan, take the most reversible option that honors its intent, record the deviation in a notes file (not only in commit messages, PR descriptions, or the handoff), and surface it in the handoff. If it breaks the plan's premise, stop and re-plan.
-   - Verify each step before the next. In a sweep, verify each independent edit as it lands; edits that only work together, such as a cross-file rename, are one step. When a slow run surfaces several issues, let it finish, verify each fix with the fastest covering check, then rerun once.
+   - For multi-step work, state each step's verification check and run it before the next. In a sweep, verify each independent edit as it lands; edits that only work together, such as a cross-file rename, are one step. When a slow run surfaces several issues, let it finish, verify each fix with the fastest covering check, then rerun once.
 
 3. Preserve system shape.
    - Match existing structure and conventions by default, as evidence of taste, not proof. When the user or recent work moves away from a pattern, extend the new direction; when the structure blocks the change or conflicts with these principles, propose the improvement.
    - Prefer domain or capability ownership over technical-role buckets unless the repo dictates otherwise.
-   - In layered systems, boundaries validate and translate, core logic decides, persistence and integration code does I/O, unless the code already mixes them and the change is tiny. Add no layers to small scripts.
+   - In layered systems, boundaries validate and translate, core logic decides, persistence and integration code does I/O, unless the code already mixes them and the change is tiny. Add no layers or indirection to small scripts or single-file programs.
    - Point dependencies toward stable core behavior; prefer explicit collaborators over hidden globals, ambient state, and hard-to-control side effects; avoid dependency cycles.
    - Protect public contracts (APIs, schemas, migrations, events, queues, config, CLI flags, serialized formats, persisted data): account for old data, mixed versions, defaults, rollout, and rollback.
 
@@ -55,7 +55,7 @@ Follow these steps when changing artifacts. For reviews, use them as criteria, w
    - Extension points a library's published contract promises are requirements, not speculation.
    - Prefer modules with small, honest interfaces over pass-through wrappers.
    - Zoom out on friction, not just failure: a third special case, a growing if/else chain, a second boolean synced with the first, a fix needing its own fix, working around the design, or a solution much larger than the problem. Restate the problem one level up and look for a simpler path, often a structure (state machine, lookup table, discriminated union). Continuing is then a stated decision.
-   - In typed languages, make illegal states unrepresentable where partiality appears (`completed: boolean` beside optional `completedAt`), then stop; never cast or silence the type checker.
+   - In typed languages, make illegal states unrepresentable where partiality appears (`completed: boolean` beside optional `completedAt`), then stop; never lie to the type checker with casts or silencing escapes.
    - Reuse canonical domain types and APIs instead of local aliases.
    - Suggest dependencies that reduce complexity, risk, or maintenance, after weighing security, licensing, size, compatibility, and repo fit.
 
@@ -82,7 +82,7 @@ Follow these steps when changing artifacts. For reviews, use them as criteria, w
    - Run the most relevant formatter, linter, typecheck, tests, build, or smoke check; if that is expensive or unavailable, run the narrowest meaningful one and state the gap.
    - In every check, including manual and real-model ones, fast-forward time you control (inject a clock, age timestamps, set short horizons) and wait only the minimum. When elapsed time is the evidence or outside your control, bound the wait and state what a compressed check could not prove. Aim for seconds per test, minutes per suite.
    - For a risky change, verify each fact its safety hinges on by running code, not by argument; a written justification convinces whether or not it is true. Check impact past symbol search: serialized data, wire formats, readers in other languages, feature flags. Record searches that find nothing.
-   - Review the diff: every line traces to the request or to cleanup your change caused. Remove unused code your edit introduced; mention unrelated pre-existing issues separately instead of fixing them.
+   - Review the diff: every line traces to the request or to cleanup your change caused. Remove unused code your edit introduced; mention unrelated pre-existing issues separately when useful instead of fixing them.
    - Before deleting code, files, Git branches, or worktrees, confirm they are unneeded; keep pre-existing uncommitted work and unmerged commits unless their removal is authorized.
    - When offering to commit, include the proposed message.
    - Write the handoff for the maintaining engineer, scaled to consequence (a rename: one sentence naming the behavior and the check; a changed transaction boundary: the mechanism and the invariant to preserve). Cover what changed for callers, operators, or stored data; non-obvious tradeoffs; which criteria passed and what the checks did not establish; assumptions, plan deviations, skipped tests or revised scaffold outcomes with reasons, exclusions, and real pending actions.

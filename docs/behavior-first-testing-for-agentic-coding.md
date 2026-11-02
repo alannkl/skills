@@ -91,7 +91,7 @@ Establish expected behavior from user intent, applicable contracts, repository e
 
 ### 2. Create the scaffold
 
-The agent records one non-running declaration per scenario before implementing new or changed behavior. The scaffold must pin the complete observable outcome and identify the public seam when it is already established. A genuinely unknown technical seam remains explicitly unresolved rather than being invented for the test.
+The agent records one non-running declaration per scenario, or a written list for a change with one or two scenarios, before implementing new or changed behavior. The scaffold must pin the complete observable outcome and identify the public seam when it is already established. A genuinely unknown technical seam remains explicitly unresolved rather than being invented for the test.
 
 ### 3. Choose the required evidence strength
 
