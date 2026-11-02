@@ -26,6 +26,7 @@ Loaded before the work starts rather than for a task. Wire both into your instru
 | [`handoff`](handoff/SKILL.md)                       | Create a compact temporary handoff so another agent can continue the current conversation.                                                                                                                                  |
 | [`retrospect`](retrospect/SKILL.md)                 | Mine recent sessions across projects and harnesses for repeated corrections and friction, then turn the lessons and harness memory entries you pick into checks, rules, skill fixes, or hand-off briefs where each belongs. User-invoked. |
 | [`next`](next/SKILL.md)                             | Clean up after finished work, then list what's still open and what needs you, and recommend the next step. User-invoked.                                                                                                       |
+| [`feature`](feature/SKILL.md)                       | Take a goal from grill to an open, reviewed PR, unattended after the first plan review, then walk through the provisional decisions with you and verify the deploy after you merge. User-invoked. |
 
 ### Coding
 
