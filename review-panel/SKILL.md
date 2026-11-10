@@ -38,10 +38,10 @@ Roster, in rank order within each tier:
 
 | Member           | Harness | Tier     | Sibling          |
 | ---------------- | ------- | -------- | ---------------- |
-| Claude Fable 5.1 | claude  | frontier | Claude Opus 5.5  |
+| Claude Fable 5.2 | claude  | frontier | Claude Opus 5.5  |
 | GPT-6 Astra      | codex   | frontier | GPT-6.1 Sol      |
 | GPT-6.1 Sol      | codex   | strong   | GPT-6.1 Terra    |
-| Claude Opus 5.5  | claude  | strong   | Claude Fable 5.1 |
+| Claude Opus 5.5  | claude  | strong   | Claude Fable 5.2 |
 | Grok 4.7         | cursor  | strong   | GLM 5.3          |
 
 - **Strong rivals** are the strong members on harnesses other than the parent's, in rank order. With no other harness installed, fill the tier with the parent's sibling, then the **twin**: the parent's own model in a fresh context.

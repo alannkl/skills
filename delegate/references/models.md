@@ -1,12 +1,12 @@
 # Model tiers and cost inputs
 
-Opinionated working preferences as of 2026-10-18, not benchmark results. When the supported models change, review the tier placements against observed results on each role's tasks, update the defaults, fallback order and the cost weights under Cost inputs, then refresh the date. A model's name alone does not establish its tier.
+Opinionated working preferences as of 2026-11-11, not benchmark results. When the supported models change, review the tier placements against observed results on each role's tasks, update the defaults, fallback order and the cost weights under Cost inputs, then refresh the date. A model's name alone does not establish its tier.
 
 ## Capability tiers
 
 | Harness | Frontier | Strong | Routine |
 | --- | --- | --- | --- |
-| Claude Code | Claude Fable 5.1 | Claude Opus 5.5 | Claude Sonnet 5.5 |
+| Claude Code | Claude Fable 5.2 | Claude Opus 5.5 | Claude Sonnet 5.5 |
 | Codex | GPT-6 Astra | GPT-6.1 Sol | No separate default |
 | Cursor | No default | Grok 4.7 High; Grok 4.7 Medium | Composer 2.5 |
 
@@ -40,7 +40,7 @@ When the role default is unavailable:
 3. If the chain reaches the host's own model, stop and do the step inline, reporting it as inline because the fallback reached the host model. Match model identity, not tier: aliases, context-window suffixes and effort variants count as the same model, so Grok 4.7 Medium and High match. Use the host's runtime-confirmed model, or its requested model if unconfirmed. This stop applies only to fallbacks; the initial role-default dispatch uses the decision rule in `SKILL.md` step 3.
 4. Before dispatch, rerun that decision rule with the fallback's weights and speed. If no selectable choice still pays, do the step inline.
 
-The fallback keeps the role's capability limits and, where separately selectable, its effort; on Cursor, the fallback's selector sets the effort. For frontier fallbacks, expect `claude-fable-5-1` or `gpt-6-astra`; pass that exact ID where the tool accepts it, otherwise an exposed selector for that model.
+The fallback keeps the role's capability limits and, where separately selectable, its effort; on Cursor, the fallback's selector sets the effort. For frontier fallbacks, expect `claude-fable-5-2` or `gpt-6-astra`; pass that exact ID where the tool accepts it, otherwise an exposed selector for that model.
 
 ## Cost inputs
 
@@ -58,7 +58,7 @@ Token weights, in units of one Claude Sonnet 5.5 input token. Use the selected m
 
 | Model             | Input | Cache write | Cache read | Output |
 | ----------------- | ----- | ----------- | ---------- | ------ |
-| Claude Fable 5.1  | 5     | 6.25        | 0.125      | 25     |
+| Claude Fable 5.2  | 4     | 5           | 0.1        | 20     |
 | Claude Opus 5.5   | 2     | 2.5         | 0.1        | 10     |
 | Claude Sonnet 5.5 | 1     | 1.25        | 0.1        | 5      |
 | GPT-6 Astra       | 5     | 6.25        | 0.5        | 25     |
@@ -80,10 +80,10 @@ Estimate each unknown rate from the model's capability tier with the table below
 
 Extract the configuration keys from a 30,000-token reference on Claude Code, with 20 session turns to follow. The delegate is an Explore collector on Sonnet 5.5 that reads the reference and returns a 1,500-token record; the main agent writes a 400-token work order, spot-checks 2,000 tokens of cited locations, and carries a 10% retry risk.
 
-| Path                                                                                                                  | Main on Fable 5.1                                                            | Main on Sonnet 5.5                                                         |
+| Path                                                                                                                  | Main on Fable 5.2                                                            | Main on Sonnet 5.5                                                         |
 | --------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
-| Inline: read 30,000 tokens as cache write, then re-read them as cache read on 20 turns                                | 187,500 + 75,000 = 262,500                                                   | 37,500 + 60,000 = 97,500                                                   |
-| Delegated: start-up, delegate read, delegate reply, then the work order, record, re-reads, spot check, and retry risk | 70,000 + 37,500 + 7,500 + 10,000 + 9,400 + 4,800 + 12,500 + 12,000 = 163,700 | 70,000 + 37,500 + 7,500 + 2,000 + 1,900 + 3,800 + 2,500 + 12,000 = 137,200 |
+| Inline: read 30,000 tokens as cache write, then re-read them as cache read on 20 turns                                | 150,000 + 60,000 = 210,000                                                   | 37,500 + 60,000 = 97,500                                                   |
+| Delegated: start-up, delegate read, delegate reply, then the work order, record, re-reads, spot check, and retry risk | 70,000 + 37,500 + 7,500 + 8,000 + 7,500 + 3,800 + 10,000 + 12,000 = 156,300  | 70,000 + 37,500 + 7,500 + 2,000 + 1,900 + 3,800 + 2,500 + 12,000 = 137,200 |
 | Decision                                                                                                              | delegate                                                                     | inline                                                                     |
 
 The main agent's tier decides: the same step pays on Fable and does not on Sonnet.
