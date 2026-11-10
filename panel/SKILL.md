@@ -49,7 +49,7 @@ An unspecified panel roster has two participants; `references/consult-mode.md` s
 
 | Harness | Preferred model | Effort |
 | --- | --- | --- |
-| Claude Code | Claude Fable 5.1 | `high` |
+| Claude Code | Claude Fable 5.2 | `high` |
 | Codex | GPT-6 Astra | `high` |
 
 1. Preserve explicit user choices and apply task-specific model restrictions only within their stated scope. Fill unspecified models and effort on matching harnesses from the table.
