@@ -28,11 +28,11 @@ The parent, meaning this session's harness and model, always runs `code-review` 
 | `normal` (default) | `code-review`                                           |
 | `adversarial`      | `code-review` and `adversarial-review`, in two contexts |
 
-| Tier                 | Fresh voices                                |
-| -------------------- | ------------------------------------------- |
-| `quick`              | the first strong rival                      |
-| `standard` (default) | the first strong rival and Fable at medium  |
-| `frontier`           | every frontier member                       |
+| Tier                 | Fresh voices                               |
+| -------------------- | ------------------------------------------ |
+| `quick`              | the first strong rival                     |
+| `standard` (default) | the first strong rival and Fable at medium |
+| `frontier`           | every frontier member                      |
 
 Roster, in rank order within each tier:
 
@@ -44,9 +44,9 @@ Roster, in rank order within each tier:
 | Claude Opus 5.5  | claude  | strong   | Claude Fable 5.2 |
 | Grok 4.7         | cursor  | named    | GLM 5.3          |
 
-- **Strong rivals** are the strong members on harnesses other than the parent's, in rank order. With no other harness installed, fill each rival slot with the parent's sibling, then the **twin**: the parent's own model in a fresh context, skipping a model already in the tier.
-- A `named` member joins only when the user names it.
-- A tier member that is the parent's own model runs as its twin.
+- **Strong rivals** are the strong members on harnesses other than the parent's, in rank order. With no other harness installed, fill the tier with the parent's sibling, then the **twin**: the parent's own model in a fresh context, skipping duplicates.
+- `named` members join only when named.
+- A member that is the parent's own model runs as its twin.
 - An unavailable member's sibling stands in, on the same harness.
 
 With an Opus 5.5 parent in a full environment, `quick` reviews with Sol, `standard` with Sol and Fable at medium, and `frontier` with Fable and Astra; `adversarial` runs each in both roles. Step 7 verification goes to the first strong rival or its stand-in, whatever the tier.
@@ -54,7 +54,7 @@ With an Opus 5.5 parent in a full environment, `quick` reviews with Sol, `standa
 Rules:
 
 - `adversarial-review` runs only in fresh contexts, never in the parent context. A member named twice runs as two separate fresh contexts.
-- **Effort.** Every fresh voice runs at one effort per run: high, or the level the user names. A tier entry with its own effort keeps it unless the user names that member's effort. The parent voice keeps the session's own effort.
+- **Effort.** Every fresh voice runs at one effort per run: high, or the level the user names. An effort set in a tier holds unless the user names that member's. The parent voice keeps the session's own effort.
 - **Missing member.** When a tier or user-named member is unavailable with no stand-in, stop and recommend a composition built from the available members. Proceed only after the user chooses. Sibling and twin stand-ins need no confirmation.
 - Route a voice whose model runs on the parent's own harness through the harness's builtin subagent tool if it has one; route every other voice through `spawn-agent`. Either way, pass the reviewing skill's `SKILL.md` path in the prompt as its charter. Tell the voice to perform the review itself, without spawning agents or invoking `review-panel`.
 - The user may name members beyond the roster: any harness or model the environment can run. For a harness `spawn-agent` has no reference for, run a headless CLI session by that harness's own conventions (its `--help` is the source of truth); if it cannot be run, treat it as a missing member.
