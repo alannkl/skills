@@ -28,3 +28,18 @@ For descriptions and pointers an agent follows on its own:
 ## Rushed done-conditions
 
 When a step's done-condition is irreducibly fuzzy and runs show the agent rushing past it, first sharpen the bound; that fix is local and cheap. Only if sharpening fails, split the sequence so the later steps sit behind a real context boundary: a new session or a subagent that does not inherit the earlier conversation.
+
+## Parity tuning
+
+Use only when asked to tune an artifact for a target model; a compare-only request stays read-only. Tuning delivers a separate skill for the target model and adds nothing to the original. State the planned prune and run count; get approval unless already authorized.
+
+- When the original is not minimal per step 3 of `SKILL.md`, prune it first as a structural revision.
+- Before any run, declare scenarios and what each output must show.
+- Run both models on the original, repeated runs per scenario, with fresh contexts and grading per the Behavior checks section.
+- Each expectation's bar is the reference model's pass rate on it; safeguards and consumer formats must pass every run. Report any the reference model fails.
+- Copy the original into a variant named for its target model. For each expectation below its bar, add one elaboration per step 3, rerun, and keep it only if that pass rate rises and no other expectation falls below its bar.
+- Set an expectation aside after two elaborations fail to raise its pass rate.
+- Stop when every expectation meets its bar or is set aside, or the approved run count is spent; report each remaining gap with its suspected cause.
+- Polish only the elaborations, then confirm the variant on a scenario unused in tuning.
+- Make only the target model load the variant; where only installation can ensure that, report it. The variant follows `references/skill-mechanics.md` except its splitting rule.
+- Report the models, effort, harness, tested artifacts, pass rates, and token growth, and that a changed original needs re-tuning.
