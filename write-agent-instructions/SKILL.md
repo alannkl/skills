@@ -23,12 +23,12 @@ Load a reference at the step named here when its condition holds, or where anoth
 | `references/skill-mechanics.md` | 1 | Creating or reviewing a skill or slash command, or changing its name, invocation, description, packaging, bundled scripts, interfaces, or how its body tells the agent to run a bundled script. Not for other changes to body wording. |
 | `references/pruning-instructions.md` | 2 | Pruning, renaming, or structurally reorganizing an existing artifact, including changes to its required sections, ordering, output formats, or loading behavior; recommending such a change in a review; or uncertainty about whether a change is structural. |
 | `references/context-design.md` | 4 | Designing or changing retrieval or loading paths, such as choosing which sources an agent reads or retrieves at run time, moving an existing artifact's material into or out of a conditional reference, adding a load condition, or changing which branches reach an existing pointer's target; designing retained context or continuation state; an explicit request to design context management; or uncertainty about one of these decisions. Rewording a condition without changing its target or the branches it covers, and the ordinary placement of a new skill's own references, follow step 4 alone. A persistent file, a long task, or several agents are not reasons on their own. |
-| `references/evaluating-instructions.md` | 1 for an explicit evaluation request, otherwise 5 or 6 | An explicit evaluation request, a consequential authorized behavior change (a removed, added, or changed safeguard or approval gate, consumer format, ordering, or load condition), a disputed no-op, or a change to an existing description or pointer condition that alters which cases reach it. Use the section that applies. |
+| `references/evaluating-instructions.md` | 1 for an explicit evaluation or parity tuning request, otherwise 5 or 6 | An explicit evaluation or parity tuning request, a consequential authorized behavior change (a removed, added, or changed safeguard or approval gate, consumer format, ordering, or load condition), a disputed no-op, or a change to an existing description or pointer condition that alters which cases reach it. Use the section that applies. |
 
 ## Workflow
 
 1. Identify the job.
-   - Name the artifact, the agent that executes it, the outcome the user wants, and the operation: create, wording edit, structural revision including pruning, review, or evaluation.
+   - Name the artifact, the agent that executes it, the outcome the user wants, and the operation: create, wording edit, structural revision including pruning, parity tuning (writing a separate variant of an artifact so a weaker target model matches a reference model), review, or evaluation.
    - A wording edit, such as shortening or polishing, keeps every requirement. Removing, merging, or reordering requirements is a structural revision; make one only when the request calls for it.
 
 2. Gather the material.
@@ -38,7 +38,10 @@ Load a reference at the step named here when its condition holds, or where anoth
    - Before writing a lesson as an instruction, check whether a lint rule, type, runtime check, script, or hook can enforce it. When enforcement fits in the artifact's own files, put it there and omit the prose rule; when it belongs in the target repo, recommend it rather than editing beyond the artifact.
    - Separate judgment and approval from mechanical steps, and give each mechanical step a script or a direct command where the executor can run one, choosing per the Scripts section of `references/skill-mechanics.md` when the choice is unclear.
 
-3. Write for the outcome. Write each rule in the fewest words that state it; add detail or an example only for a failure you can name. Count length in tokens.
+3. Write for the outcome. Draft each rule in the fewest words that keep its requirements. Aim for 10 words; exceed 15 only on a ground below. Elaborate only to keep a requirement, guard a costly failure you can name, or fix an observed violation. Fix a violation caused by a failed load or rule conflict at its source instead. Make the smallest change that works. Count artifact length in tokens.
+   - Before outputting a rule, cut every example, qualifier and reason, and collapse each list or synonym pair into one word, wherever that changes no behavior.
+     - Before: "Bring back an earlier item so the reader can act on it without scrolling back: in full when it's short or meant to be copied, such as a prompt or command; otherwise its gist or summary and where the full version is."
+     - After: "Restate an earlier item when bringing it back: in full if short or copyable, else its gist and location."
    - Start with what a finished run delivers and its required content. List terminal outcomes when the work can end more than one way; for audit, review, and maintenance work, include "nothing worth changing" as a complete result without padding the report.
    - Use ordered steps when sequence matters. Prescribe other steps, fixed headings, or templates only for fragile operations, cases the agent gets wrong by default, or formats another skill or tool consumes. Otherwise state the outcome and constraints; let the agent choose the method and form.
    - Give steps and sets of rules a checkable completion criterion where one naturally exists; prefer exhaustive phrasing ("every changed file reviewed") over vague phrasing ("review the changes"). Name concrete checks for judgment outcomes instead of forcing artificial metrics.
@@ -76,9 +79,3 @@ Load a reference at the step named here when its condition holds, or where anoth
    - Check the artifact against its job and every format a consumer requires. Keep terminology consistent across the main file and its references, and verify each pointer, documented command, argument, and output against its target.
    - A wording edit needs a meaning review, not behavior runs. Outside the evaluation reference's conditions, suggest useful behavior checks rather than running them.
    - Report what changed, each intentionally removed requirement separately from wording changes, suggested removals, the checks performed, and material limits.
-
-## Gotchas
-
-- Before outputting a rule, cut every example, qualifier and reason, and collapse each list or synonym pair into one word, wherever that changes no behavior.
-  - Before: "Bring back an earlier item so the reader can act on it without scrolling back: in full when it's short or meant to be copied, such as a prompt or command; otherwise its gist or summary and where the full version is."
-  - After: "Restate an earlier item when bringing it back: in full if short or copyable, else its gist and location."
