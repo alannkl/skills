@@ -48,6 +48,8 @@ def consultation(harness='claude', web_args=()):
                           '                if mode == "wait":\n                    await asyncio.sleep(3600)\n'
                           '                if mode == "different":\n'
                           '                    return Terminal("other", block={"text":"wrong session"}, exit_status=0, outcome="completed")\n'
+                          '                if mode == "no-text":\n'
+                          '                    return Terminal(session, block={"reply":"no text"}, exit_status=0, outcome="completed")\n'
                           '                return Terminal(session, exit_status=1, outcome=mode, error=mode)\n'
                           '            return Handle(completion=asyncio.create_task(reply()))\n'
                           '        return super().resume(session, prompt, settings)\n'
@@ -61,6 +63,16 @@ def consultation(harness='claude', web_args=()):
 
 
 class ConsultBehavior(unittest.TestCase):
+    def test_reply_without_text_is_a_recorded_failure(self):
+        """Given a completed reply whose JSON lacks text, when asked, then the turn is recorded as failed and the consultation accepts the next question."""
+        with consultation() as (root, base):
+            (root / 'c' / 'mode').write_text('no-text')
+            failed = run(*base, 'ask', str(root / 'c'), '--question', str(root / 'question.md'), expect=2)
+            self.assertIn('text field', failed['error'])
+            self.assertNotIn('pending_turn', json.loads((root / 'c' / 'consult.json').read_text()))
+            (root / 'c' / 'mode').unlink()
+            self.assertTrue(run(*base, 'ask', str(root / 'c'), '--question', str(root / 'question.md'))['ok'])
+
     def test_web_default_and_opt_out_persist(self):
         """Given no web flag, --web or --no-web, both harnesses enable web unless opted out and retain that choice on ask and reopen."""
         for harness in ('claude', 'codex'):
@@ -209,8 +221,8 @@ class ConsultBehavior(unittest.TestCase):
             self.assertIn('unfinished or uncertain', result['error'])
 
     def test_open_ask_close_keeps_one_session(self):
-        """Given a brief, when opened then asked with an attachment, then both harnesses answer from one session that sees the readable directories and attachment, and a closed consultation refuses further questions."""
-        for harness in ('claude', 'codex'):
+        """Given a brief, when opened then asked with an attachment, then every bundled harness answers from one session that sees the readable directories and attachment, and a closed consultation refuses further questions."""
+        for harness in ('claude', 'codex', 'cursor'):
             with tempfile.TemporaryDirectory() as root, self.subTest(harness=harness):
                 root = Path(root)
                 (root / 'brief.md').write_text('Task: tighten the parser. First question: where is the risk?')
@@ -225,7 +237,17 @@ class ConsultBehavior(unittest.TestCase):
                                   '        return super().command(session_id, dict(settings, executable=' + repr(EXECUTABLE) + '))\n'
                                   'def create_adapter():\n    return Fixture()\n')
                 base = ['--adapter', f'fixture={plugin}']
-                opened = run(*base, 'open', str(root / 'c'), '--harness', 'fixture', '--model', 'fixture', '--effort', 'high',
+                effort = ['--effort', 'high']
+                if harness == 'cursor':
+                    refused = run(*base, 'open', str(root / 'e'), '--harness', 'fixture', '--model', 'fixture', *effort,
+                                  '--brief', str(root / 'brief.md'), expect=2)
+                    self.assertIn('model ID', refused['error'])
+                    refused = run(*base, 'open', str(root / 'w'), '--harness', 'fixture', '--model', 'fixture', '--no-web',
+                                  '--brief', str(root / 'brief.md'), expect=2)
+                    self.assertIn('web', refused['error'])
+                    self.assertFalse((root / 'w' / 'consult.json').exists(), 'a refused open leaves no consultation behind')
+                    effort = []
+                opened = run(*base, 'open', str(root / 'c'), '--harness', 'fixture', '--model', 'fixture', *effort,
                              '--brief', str(root / 'brief.md'), '--read', str(root / 'repo'))
                 self.assertTrue(opened['ok'], opened)
                 self.assertIn('where is the risk?', opened['text'])
@@ -239,7 +261,12 @@ class ConsultBehavior(unittest.TestCase):
                 self.assertEqual(json.loads((root / 'c' / 'consult.json').read_text())['session_id'], manifest['session_id'])
                 commands = [json.loads(p.read_text()) for p in sorted((root / 'c' / 'turns').glob('t*/command.json'))]
                 self.assertEqual(len(commands), 2)
-                self.assertTrue(all('--json-schema' in c['argv'] or '--output-schema' in c['argv'] for c in commands))
+                inputs = [p.read_text() for p in sorted((root / 'c' / 'turns').glob('t*/input.txt'))]
+                self.assertTrue(all('--json-schema' in c['argv'] or '--output-schema' in c['argv'] or 'JSON Schema' in i
+                                    for c, i in zip(commands, inputs)))
+                if harness == 'cursor':
+                    self.assertIn(str((root / 'repo').resolve()), commands[1]['argv'])
+                    self.assertNotIn('--force', commands[1]['argv'])
                 if harness == 'claude':
                     self.assertIn(str((root / 'repo').resolve()), commands[1]['argv'])
                     self.assertNotIn('Edit', ','.join(commands[1]['argv']).split('--tools')[1].split(' ')[0])

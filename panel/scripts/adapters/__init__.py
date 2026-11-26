@@ -6,10 +6,11 @@ import sys
 
 from .claude import ClaudeAdapter
 from .codex import CodexAdapter
+from .cursor import CursorAdapter
 
 
 def production_adapters(specifications=()):
-    adapters = {'claude': ClaudeAdapter(), 'codex': CodexAdapter()}
+    adapters = {'claude': ClaudeAdapter(), 'codex': CodexAdapter(), 'cursor': CursorAdapter()}
     for specification in specifications:
         name, separator, filename = specification.partition('=')
         if not separator or not re.fullmatch(r'[a-zA-Z0-9_-]+', name) or not filename:

@@ -11,16 +11,25 @@ import uuid
 
 args = sys.argv[1:]
 raw = sys.stdin.read()
+if '--trust' in args:
+    # Cursor receives the schema in its prompt.
+    raw = raw.split('\n\nReturn only one JSON object matching this JSON Schema')[0]
 if raw in ('RESUME_MISSING', 'RESUME_WRONG_ID', 'RESUME_TRANSIENT', 'RESUME_BLOCKED', 'RESUME_WITH_ACTIVITY'):
     is_codex = 'exec' in args
     session = args[-2] if is_codex else args[args.index('--resume' if '--resume' in args else '--session-id') + 1]
     if raw == 'RESUME_WRONG_ID':
         session = 'different-session'
     message = ('Error: no rollout found for thread id ' if is_codex else 'No conversation found with session ID: ') + session
+    if '--trust' in args:
+        # Cursor emits no missing-session diagnostic, so a missing session stays a plain failure.
+        message = 'Cursor resume failed for ' + session
     if raw == 'RESUME_TRANSIENT':
         message = 'Connection timed out while loading session ' + session
     if raw == 'RESUME_BLOCKED':
         event = ({'type': 'error', 'error': {'code': 'permission_denied'}} if is_codex else
+                 {'type': 'tool_call', 'subtype': 'completed', 'session_id': session, 'tool_call': {'editToolCall': {
+                     'args': {'path': 'evidence.txt'}, 'result': {'permissionDenied': {'path': 'evidence.txt'}}}}}
+                 if '--trust' in args else
                  {'type': 'result', 'session_id': session, 'permission_denials': [{'tool_name': 'Read'}]})
         print(json.dumps(event))
     if raw == 'RESUME_WITH_ACTIVITY':
@@ -57,6 +66,22 @@ if 'exec' in args:
                   {'type': 'item.completed', 'item': {'type': 'command_execution', 'command': 'ls', 'status': 'completed'}},
                   {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': json.dumps(block)}},
                   {'type': 'turn.completed', 'usage': {'input_tokens': 10, 'output_tokens': 3}}):
+        print(json.dumps(event))
+elif '--trust' in args:
+    session = args[args.index('--resume') + 1] if '--resume' in args else str(uuid.uuid4())
+    message = lambda text: {'type': 'assistant', 'session_id': session, 'message': {'role': 'assistant', 'content': [{'type': 'text', 'text': text}]}}
+    # Reasoning arrives as deltas; the result event joins every assistant message, narration included.
+    for event in ({'type': 'system', 'subtype': 'init', 'session_id': session},
+                  {'type': 'thinking', 'subtype': 'delta', 'text': 'Weighing ', 'session_id': session},
+                  {'type': 'thinking', 'subtype': 'delta', 'text': 'the brief', 'session_id': session},
+                  {'type': 'thinking', 'subtype': 'completed', 'session_id': session},
+                  message('I will read the evidence.'),
+                  {'type': 'tool_call', 'subtype': 'started', 'session_id': session, 'tool_call': {'readToolCall': {'args': {'path': 'evidence.txt'}}}},
+                  {'type': 'tool_call', 'subtype': 'completed', 'session_id': session, 'tool_call': {'readToolCall': {
+                      'args': {'path': 'evidence.txt'}, 'result': {'success': {'content': 'evidence'}}}}},
+                  message(json.dumps(block)),
+                  {'type': 'result', 'subtype': 'success', 'is_error': False, 'result': 'I will read the evidence.' + json.dumps(block),
+                   'session_id': session, 'usage': {'inputTokens': 10}}):
         print(json.dumps(event))
 else:
     flag = '--resume' if '--resume' in args else '--session-id'

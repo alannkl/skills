@@ -7,8 +7,10 @@ import time
 from adapters.base import structured
 
 
-def render(line):
-    """Return (kind, text) pairs for reasoning or message content in either bundled dialect; tool activity is skipped."""
+def render(line, thinking=None):
+    """Return (kind, text) pairs for reasoning or message content in each bundled dialect; tool activity is skipped.
+
+    Cursor streams reasoning as deltas; pass one list per capture as `thinking` to collect them until completion."""
     try:
         event = json.loads(line)
     except ValueError:
@@ -16,7 +18,7 @@ def render(line):
     if not isinstance(event, dict):
         return []
     found = []
-    if event.get('type') == 'assistant':  # Claude stream-json
+    if event.get('type') == 'assistant':  # Claude stream-json, and Cursor's complete messages
         for block in event.get('message', {}).get('content', []):
             if block.get('type') == 'thinking' and block.get('thinking'):
                 found.append(('reasoning', block['thinking']))
@@ -28,6 +30,14 @@ def render(line):
             found.append(('reasoning', item['text']))
         elif item.get('type') == 'agent_message' and item.get('text'):
             found.append(('message', unwrap(item['text'])))
+    elif event.get('type') == 'thinking' and thinking is not None:  # Cursor stream-json
+        if event.get('subtype') == 'delta':
+            thinking.append(str(event.get('text', '')))
+        elif event.get('subtype') == 'completed':
+            text = ''.join(thinking).strip()
+            thinking.clear()
+            if text:
+                found.append(('reasoning', text))
     return found
 
 
@@ -76,6 +86,7 @@ def finished(run_dir):
 
 def stream(run_dir, follow, out, every_discussion=False):
     offsets = {}
+    thinking = {}
     while True:
         done = finished(run_dir)
         first = 1 if every_discussion else first_current_turn(run_dir)
@@ -89,7 +100,7 @@ def stream(run_dir, follow, out, every_discussion=False):
             offsets[path] = offsets.get(path, 0) + complete
             participant, attempt = path.parent.parent.name, path.parent.name
             for line in raw[:complete].decode(errors='replace').splitlines():
-                for kind, text in render(line):
+                for kind, text in render(line, thinking.setdefault(path, [])):
                     out.write(f'[{participant} {attempt} {kind}]\n{text}\n\n')
                     out.flush()
         if not follow or done:

@@ -170,6 +170,28 @@ The extension keeps the N-participant scheduler, presets, delivery records and e
 - Pointers in `references/brief-examples.md` and `references/skill-collaboration.md` follow the new files. After context compaction the host reloads the skill and the active mode's file, so the working record names the mode.
 - Final command: `python3 -m unittest discover -s tests/panel`. Result: **111 tests passed, no skips**, in 95 seconds. No script reads the instruction files, so the change is prose-only; the consult and panel read paths were not exercised live.
 - Pair mode is now consult mode, matching `consult.py` and its consultants now that it can run more than two agents; "pair" still selects it. Earlier entries keep the old name.
+
+## Bundled Cursor adapter, 2026-11-26
+
+- `adapters/cursor.py` runs `agent -p --output-format stream-json`: `--mode ask` for consultants, `--force` for participants, `--add-dir` for declared and scratch directories, `--resume` for follow-ups. The prompt and schema travel on stdin. Effort is rejected through `settings_keys`; `web: false` is rejected by the adapter's `check`, which `consult.py open` and panel setup run before creating any state.
+- Final command: `python3 -m unittest discover -s tests/panel`. Result: **112 tests passed, no skips**. The fixture gained a Cursor dialect; adapter loops now branch per harness.
+- Live evidence with GPT-5.6 Luna low on Cursor: a two-turn consultation read a `--read` file and answered the follow-up in one session; a full-tools turn wrote a file in its scratch directory and returned a valid envelope. Resuming an unknown UUID exited 0 and started an empty session under that ID, with a stream identical to a real resume, so session loss is undetectable and never triggers replacement. Thinking deltas streamed during reasoning.
+- Not exercised live: a full panel with a Cursor participant.
+
+## Cursor adapter review fixes, 2026-11-26
+
+- A review panel (Opus parent, Sol high, Fable medium, Gemini 4 Neon high) found that the first entry was wrong: print mode reads the prompt from stdin when no prompt argument is given. The earlier check passed a `-` argument, which disables stdin. A live Luna run confirmed stdin delivery for new and resumed sessions.
+- The same live run showed the `result` event joins every assistant message of the turn, so narration before a tool call precedes the JSON. The adapter now takes the last `assistant` event, which without `--stream-partial-output` is a complete message, and keeps `result` for success, session and usage. Every event carries `session_id`, so a turn cut off before its result event keeps its session.
+- Reasoning arrives as `thinking` events (`delta`, then `completed`) with or without partial output; `progress.py` joins the deltas and prints them on completion. Partial output was dropped because each text delta arrived as its own `assistant` event.
+- Completed `tool_call` events carry a `result` keyed `success`, `error`, `rejected` or `permissionDenied` (installed bundle, 2026.11.22); the last two mark the turn blocked, as Claude and Codex denials do.
+- `consult.py` records a reply without a string `text` as a failed turn instead of raising, so the consultation stays usable.
+- Final command: `python3 -m unittest discover -s tests/panel`. Result: **114 tests passed, no skips**.
 ---
 
 Renamed from `agent-panel` to `panel` on 2026-09-11. Earlier entries keep the old paths.
+
+## Three-harness consult test, 2026-11-26
+
+- Consult mode opened three consultants on one brief in the default order for a Claude Code host: Codex Luna (`gpt-6-luna`, low), Claude Sonnet (low) and Cursor Luna (`gpt-5.6-luna-low`). Each returned a valid reply in one turn. The Codex provider rejected `gpt-5.6-luna` and `gpt-6.1-luna` as unknown. The user then ruled out GPT and Claude models on Cursor; the README now names `gpt-6-luna` for Codex and Composer 2.5 for Cursor live tests.
+- Their advice on the Cursor reply rule changed it: the adapter joins the assistant text after the last tool call instead of taking the last assistant event, so a trailing event without text or a reply split across events still parses.
+- Final command: `python3 -m unittest discover -s tests/panel`. Result: **114 tests passed, no skips**.

@@ -12,6 +12,6 @@ The suite uses local fixtures, including disposable Git repositories and subproc
 
 `test_consult.py` covers consultation reopening, retained settings and history, writer exclusion, unfinished records and terminal session replacement. Adapter fixtures distinguish definitive session loss from transient errors, denied permissions and misleading successful content.
 
-For live testing, use only Claude Sonnet (`sonnet`) and GPT Luna (`gpt-5.6-luna`). Include reasoning effort in the proposed roster before launching. This testing constraint does not restrict models available for normal panel work.
+For live testing, use only Claude Sonnet (`sonnet`) on Claude Code, GPT Luna (`gpt-6-luna`) on Codex and Composer 2.5 (`composer-2.5`) on Cursor. Never run a GPT or Claude model on Cursor. Include reasoning effort in the proposed roster before launching. This testing constraint does not restrict models available for normal panel work.
 
 See [validation history](VALIDATION.md) for recorded live checks and limitations.

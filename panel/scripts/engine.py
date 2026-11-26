@@ -100,6 +100,9 @@ class Panel:
         if 'task' in roster:
             raise ValueError('Put the task in the brief; use execution for access and checks')
         self.execution = ExecutionPolicy(roster.get('execution'), self.required, self.drafter)
+        for person in roster['participants']:
+            if hasattr(adapters[person['harness']], 'check'):
+                adapters[person['harness']].check(dict(person.get('settings', {}), capabilities=self.execution.capabilities()))
         if self.execution.worktree and not roster.get('repository'):
             raise ValueError('Working-copy tasks require repository and base_revision')
         self.records = Records(root)
@@ -143,7 +146,7 @@ class Panel:
                          'source_hash': source_hash, 'independence': 'procedural; filesystem isolation is absent',
                          'limits': {'max_cycles': max_cycles, 'max_rounds': self.max_rounds, 'idle_seconds': idle_seconds,
                                     'run_seconds': run_seconds, 'report_seconds': report_seconds},
-                         'usage_limits': 'Claude turn/budget limits where supplied; Codex has a wall deadline only. Usage is reported after turns, not a guaranteed token ceiling.',
+                         'usage_limits': 'Claude turn/budget limits where supplied; Codex and Cursor have a wall deadline only. Usage is reported after turns, not a guaranteed token ceiling.',
                          'status': 'running'}
         self.records.save_manifest(self.manifest)
         self.records.append('run_start', self.phase, brief_revision=1, required_approvers=self.required)

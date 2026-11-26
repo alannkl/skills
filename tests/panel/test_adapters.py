@@ -14,15 +14,19 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'panel' / 'scripts'))
 from adapters import production_adapters
 from adapters.base import atomic_json
+import progress
 from records import Records
 
 PACKAGE = Path(__file__).resolve().parents[2] / 'panel'
 EXECUTABLE = str(Path(__file__).resolve().with_name('harness_fixture.py'))
 
 
-def settings(root, attempt='turn'):
-    return {'model': 'fixture', 'effort': 'high', 'cwd': root,
-            'attempt_dir': str(Path(root) / attempt), 'executable': EXECUTABLE}
+def settings(root, attempt='turn', harness=None):
+    value = {'model': 'fixture', 'effort': 'high', 'cwd': root,
+             'attempt_dir': str(Path(root) / attempt), 'executable': EXECUTABLE}
+    if harness == 'cursor':
+        del value['effort']  # Cursor takes effort in the model ID
+    return value
 
 
 
@@ -31,16 +35,18 @@ class AdapterBehavior(unittest.TestCase):
         """Given a failed native resume, when its diagnostic identifies the requested session as missing, then report session_unavailable; other errors and successful content must not trigger replacement."""
         async def scenario(root):
             for name, adapter in production_adapters().items():
-                for message, expected in [('RESUME_MISSING', 'session_unavailable'),
+                # Cursor emits no missing-session diagnostic, so a missing session stays a plain failure.
+                detected = name != 'cursor'
+                for message, expected in [('RESUME_MISSING', 'session_unavailable' if detected else 'failed'),
                                           ('RESUME_WRONG_ID', 'failed'), ('RESUME_TRANSIENT', 'failed'),
                                           ('RESUME_BLOCKED', 'blocked'), ('RESUME_WITH_ACTIVITY', 'failed')]:
-                    result = await adapter.resume('known-session', message, settings(root, name + message)).completion
+                    result = await adapter.resume('known-session', message, settings(root, name + message, name)).completion
                     self.assertEqual(result.outcome, expected, result.error)
                     self.assertEqual(result.session_id, 'known-session')
                     self.assertEqual(adapter.recover(Path(root) / (name + message)).outcome, expected)
                 diagnostic = ('No conversation found with session ID: known-session' if name == 'claude' else
                               'Error: no rollout found for thread id known-session')
-                result = await adapter.resume('known-session', diagnostic, settings(root, name + '-success')).completion
+                result = await adapter.resume('known-session', diagnostic, settings(root, name + '-success', name)).completion
                 self.assertEqual(result.outcome, 'completed', 'Success text is not a resume diagnostic')
         self.run_scenario(scenario)
 
@@ -85,8 +91,8 @@ class AdapterBehavior(unittest.TestCase):
         """Given a recorded session and settings, when resumed, then model, effort, cwd and permissions persist without start-only flags or credential changes."""
 
         for name, adapter in production_adapters().items():
-            first, session = adapter.command(None, settings('/tmp'))
-            resumed, _ = adapter.command(session or 'known-session', settings('/tmp'))
+            first, session = adapter.command(None, settings('/tmp', harness=name))
+            resumed, _ = adapter.command(session or 'known-session', settings('/tmp', harness=name))
             self.assertEqual(first[first.index('--model') + 1], 'fixture')
             self.assertEqual(resumed[resumed.index('--model') + 1], 'fixture')
             self.assertFalse(any('bypass' in x for x in first + resumed))
@@ -98,6 +104,12 @@ class AdapterBehavior(unittest.TestCase):
                 self.assertIn('model_reasoning_effort="high"', resumed)
                 self.assertIn('approval_policy="never"', resumed)
                 self.assertEqual(resumed[-2], 'known-session')
+            elif name == 'cursor':
+                self.assertEqual(resumed[resumed.index('--resume') + 1], 'known-session')
+                self.assertEqual(resumed[resumed.index('--mode') + 1], 'ask')
+                self.assertEqual(resumed[resumed.index('--workspace') + 1], '/tmp')
+                self.assertNotIn('--stream-partial-output', resumed, 'text deltas would arrive as fragmentary assistant events')
+                self.assertNotIn('--force', resumed)
             else:
                 self.assertEqual(resumed[resumed.index('--permission-mode') + 1], 'auto')
                 self.assertIn('--resume', resumed)
@@ -147,17 +159,78 @@ class AdapterBehavior(unittest.TestCase):
             self.assertNotEqual(adapters['codex'].parse(events('{"text": "ok", "data": "not json"}'), 0, 's').outcome, 'completed')
 
 
+    def test_cursor_launch_and_terminal_contract(self):
+        """Given Cursor's print mode, when a consultant or participant launches, then the prompt and schema travel on stdin, read-only runs use ask mode, full tools use --force with the scratch directory, web-off fails before launch, and only a successful result with the expected session completes, taking the final assistant message as the reply."""
+
+        adapter = production_adapters()['cursor']
+        base = {'model': 'gemini-4-neon', 'cwd': '/tmp/work'}
+        command, session = adapter.command(None, dict(base, capabilities={'web': True}, read_dirs=['/evidence']))
+        self.assertIsNone(session)
+        self.assertEqual(command[command.index('--mode') + 1], 'ask')
+        self.assertEqual(command[command.index('--add-dir') + 1], '/evidence')
+        self.assertEqual(command[-1], '/evidence', 'no prompt argument; the prompt arrives on stdin')
+        full = {'web': True, 'full_tools': True}
+        command, _ = adapter.command('s1', dict(base, capabilities=full, scratch_dir='/tmp/scratch'))
+        self.assertIn('--force', command)
+        self.assertNotIn('--mode', command)
+        self.assertEqual(command[command.index('--add-dir') + 1], '/tmp/scratch')
+        for call in (adapter.check, lambda s: adapter.command(None, s)):
+            with self.assertRaises(ValueError):
+                call(dict(base, capabilities={'web': False}))
+
+        async def schema_on_stdin(root):
+            schema = {'type': 'object', 'properties': {'text': {'type': 'string'}}, 'required': ['text']}
+            await adapter.start('question', dict(settings(root, 'schema', 'cursor'), schema=schema)).completion
+            sent = Path(root, 'schema', 'input.txt').read_text()
+            self.assertTrue(sent.startswith('question'))
+            self.assertIn(json.dumps(schema), sent)
+        self.run_scenario(schema_on_stdin)
+
+        encoded = lambda *events: '\n'.join(json.dumps(e) for e in events)
+        message = lambda text: {'type': 'assistant', 'session_id': 's1', 'message': {'content': [{'type': 'text', 'text': text}]}}
+        tool = lambda result: {'type': 'tool_call', 'subtype': 'completed', 'session_id': 's1',
+                               'tool_call': {'readToolCall': {'args': {}, 'result': result}}}
+        valid = {'type': 'result', 'subtype': 'success', 'is_error': False, 'result': 'I will read it.{"text":"ok"}', 'session_id': 's1'}
+        narrated = (message('I will read it.'), tool({'success': {}}), message('{"text":"ok"}'))
+        self.assertEqual(adapter.parse(encoded(*narrated, valid), 0, None).block, {'text': 'ok'},
+                         'narration before a tool call stays out of the reply')
+        self.assertEqual(adapter.parse(encoded(*narrated, valid), 0, 's1').outcome, 'completed')
+        self.assertEqual(adapter.parse(encoded(dict(valid, result='{"text":"ok"}')), 0, 's1').block, {'text': 'ok'},
+                         'without assistant events the result text is the reply')
+        split = (*narrated[:2], message('{"text":'), message(''), message('"ok"}'))
+        self.assertEqual(adapter.parse(encoded(*split, valid), 0, 's1').block, {'text': 'ok'},
+                         'a reply split across events after the last tool call is joined; empty events add nothing')
+        self.assertEqual(adapter.parse(encoded(message('```json\n{"text":"ok"}\n```'), valid), 0, 's1').outcome, 'completed')
+        for change in ({'subtype': 'error'}, {'is_error': True}, {'session_id': 's2'}, {'session_id': None}):
+            self.assertNotEqual(adapter.parse(encoded(*narrated, dict(valid, **change)), 0, 's1').outcome, 'completed')
+        self.assertNotEqual(adapter.parse(encoded(message('prose'), valid), 0, 's1').outcome, 'completed')
+        self.assertNotEqual(adapter.parse(encoded(*narrated, valid), 1, 's1').outcome, 'completed')
+        for denial in ({'permissionDenied': {}}, {'rejected': {}}):
+            blocked = adapter.parse(encoded(tool(denial), *narrated, valid), 0, 's1')
+            self.assertEqual(blocked.outcome, 'blocked')
+            self.assertEqual(blocked.raw_text, '{"text":"ok"}', 'a blocked turn keeps its contribution')
+        cut_off = adapter.parse(encoded({'type': 'system', 'subtype': 'init', 'session_id': 'new'}, message('partial')), -9, None)
+        self.assertEqual((cut_off.outcome, cut_off.session_id), ('failed', 'new'), 'a turn without a result keeps its session')
+
+        thinking = []
+        shown = [found for line in (encoded({'type': 'thinking', 'subtype': 'delta', 'text': 'Weighing '}),
+                                    encoded({'type': 'thinking', 'subtype': 'delta', 'text': 'it'}),
+                                    encoded({'type': 'thinking', 'subtype': 'completed'}), encoded(narrated[0]),
+                                    encoded(narrated[1]), encoded(narrated[2])) for found in progress.render(line, thinking)]
+        self.assertEqual(shown, [('reasoning', 'Weighing it'), ('message', 'I will read it.'), ('message', 'ok')])
+
+
     def test_subprocess_start_resume(self):
         """Given executable harness fixtures, when started and resumed, then return immediate handles, capture outputs and reuse each distinct session."""
 
         async def scenario(root):
             for name, adapter in production_adapters().items():
-                first = adapter.start('remember marker', settings(root, name + '-first'))
+                first = adapter.start('remember marker', settings(root, name + '-first', name))
                 self.assertIsNotNone(first.completion)
                 self.assertFalse(first.completion.done())
                 result = await asyncio.wait_for(first.completion, 3)
                 self.assertEqual(result.outcome, 'completed', result.error)
-                resumed = adapter.resume(result.session_id, 'repeat marker', settings(root, name + '-resume'))
+                resumed = adapter.resume(result.session_id, 'repeat marker', settings(root, name + '-resume', name))
                 response = await asyncio.wait_for(resumed.completion, 3)
                 self.assertEqual(response.outcome, 'completed', response.error)
                 self.assertEqual(result.session_id, response.session_id)
