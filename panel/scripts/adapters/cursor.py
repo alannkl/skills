@@ -48,11 +48,12 @@ class CursorAdapter(ProcessAdapter):
                 and {'permissionDenied', 'rejected'} & set(call['result'])
                 for call in (e.get('tool_call') or {}).values()) for e in events)
             # The result event's text joins every assistant message of the turn, narration before tool calls included;
-            # the last assistant event is the final message alone.
-            messages = [''.join(part.get('text', '') for part in (e.get('message') or {}).get('content') or []
-                                if isinstance(part, dict)) for e in events if e.get('type') == 'assistant']
+            # the reply is the assistant text after the last tool call, which may span several events.
+            last_tool = max((i for i, e in enumerate(events) if e.get('type') == 'tool_call'), default=-1)
+            reply = ''.join(part.get('text', '') for e in events[last_tool + 1:] if e.get('type') == 'assistant'
+                            for part in (e.get('message') or {}).get('content') or [] if isinstance(part, dict))
             results = [e for e in events if e.get('type') == 'result']
-            result.raw_text = messages[-1] if messages else results[-1].get('result', '') if results else ''
+            result.raw_text = reply if reply.strip() else results[-1].get('result', '') if results else ''
             if denied:
                 result.outcome = 'blocked'
                 raise ValueError('native tool permission denied; see captured output')

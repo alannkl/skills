@@ -197,6 +197,9 @@ class AdapterBehavior(unittest.TestCase):
         self.assertEqual(adapter.parse(encoded(*narrated, valid), 0, 's1').outcome, 'completed')
         self.assertEqual(adapter.parse(encoded(dict(valid, result='{"text":"ok"}')), 0, 's1').block, {'text': 'ok'},
                          'without assistant events the result text is the reply')
+        split = (*narrated[:2], message('{"text":'), message(''), message('"ok"}'))
+        self.assertEqual(adapter.parse(encoded(*split, valid), 0, 's1').block, {'text': 'ok'},
+                         'a reply split across events after the last tool call is joined; empty events add nothing')
         self.assertEqual(adapter.parse(encoded(message('```json\n{"text":"ok"}\n```'), valid), 0, 's1').outcome, 'completed')
         for change in ({'subtype': 'error'}, {'is_error': True}, {'session_id': 's2'}, {'session_id': None}):
             self.assertNotEqual(adapter.parse(encoded(*narrated, dict(valid, **change)), 0, 's1').outcome, 'completed')

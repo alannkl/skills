@@ -189,3 +189,9 @@ The extension keeps the N-participant scheduler, presets, delivery records and e
 ---
 
 Renamed from `agent-panel` to `panel` on 2026-09-11. Earlier entries keep the old paths.
+
+## Three-harness consult test, 2026-11-26
+
+- Consult mode opened three consultants on one brief in the default order for a Claude Code host: Codex Luna (`gpt-6-luna`, low), Claude Sonnet (low) and Cursor Luna (`gpt-5.6-luna-low`). Each returned a valid reply in one turn. The Codex provider rejected `gpt-5.6-luna` and `gpt-6.1-luna` as unknown. The user then ruled out GPT and Claude models on Cursor; the README now names `gpt-6-luna` for Codex and Composer 2.5 for Cursor live tests.
+- Their advice on the Cursor reply rule changed it: the adapter joins the assistant text after the last tool call instead of taking the last assistant event, so a trailing event without text or a reply split across events still parses.
+- Final command: `python3 -m unittest discover -s tests/panel`. Result: **114 tests passed, no skips**.
