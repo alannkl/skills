@@ -7,7 +7,7 @@ description: Keeps read-only consultants or a multi-agent panel across harnesses
 
 Choose between two modes:
 
-- **Consult:** the host does the work with advice from read-only consultants, two by default.
+- **Consult:** the host does the work with advice from read-only consultants, three by default.
 - **Panel:** participants do the work while the host coordinates, using one of three presets: `independent-discussion`, `leader-members` or `flat-peers`.
 
 Web retrieval is on by default in both modes. For tasks restricted to supplied evidence, set `execution.web: false` in the panel roster or pass `--no-web` when opening a consultant. Both modes need Python 3.10+ on Linux or macOS and authenticated harness CLIs; no Python packages are required.
@@ -40,7 +40,7 @@ In user-facing progress, reply headings, relayed advice and final ledgers, name 
 ## Prepare
 
 1. Write a brief defining the goal, scope, evidence, deliverable and acceptance criteria, adapting `references/brief-examples.md` when useful. In every brief and consultation question, quote the user's request verbatim and mark each constraint user-stated or host-inferred. To run an existing skill collaboratively, first read that skill and `references/skill-collaboration.md`.
-2. Select the mode. Invoking `panel` alone selects consult mode with two consultants, and a request for several consultants or second opinions selects consult mode with that many; an explicit request for a panel, a group discussion or multiple agents doing the work selects panel mode. Honor an explicit mode or preset name: "consult" or "pair" selects consult mode, "independent" or "independent discussion" selects `independent-discussion`, "leader" or "leader and members" selects `leader-members`, and "peers" or "flat peers" selects `flat-peers`. Use the same criteria when running an interactive skill, without overriding that skill's own mode-selection rules.
+2. Select the mode. Invoking `panel` alone selects consult mode with three consultants, and a request for several consultants or second opinions selects consult mode with that many; an explicit request for a panel, a group discussion or multiple agents doing the work selects panel mode. Honor an explicit mode or preset name: "consult" or "pair" selects consult mode, "independent" or "independent discussion" selects `independent-discussion`, "leader" or "leader and members" selects `leader-members`, and "peers" or "flat peers" selects `flat-peers`. Use the same criteria when running an interactive skill, without overriding that skill's own mode-selection rules.
 3. Apply `references/consult-mode.md` for consult mode or `references/panel-mode.md` for panel mode, through preparation, running, follow-ups and delivery.
 
 ## Default roster
@@ -51,6 +51,7 @@ An unspecified panel roster has two participants; `references/consult-mode.md` s
 | --- | --- | --- |
 | Claude Code | Claude Fable 5.2 | `high` |
 | Codex | GPT-6 Astra | `high` |
+| Cursor | Gemini 4 Neon | `high`, set through the model ID |
 
 1. Preserve explicit user choices and apply task-specific model restrictions only within their stated scope. Fill unspecified models and effort on matching harnesses from the table.
 2. Resolve exact model identifiers for the installed harness and current account from current model listings or account availability evidence, consulting current official vendor guidance when identifiers or capability are unclear. If a preferred model is unavailable, choose that harness's most capable available model for general reasoning and coding, ranked by current model descriptions rather than names or speed/cost defaults; apply the same rule to other requested harnesses. Report fallbacks and reasons, or unresolved availability or ranking, before launch; never invent an identifier.

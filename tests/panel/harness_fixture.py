@@ -17,6 +17,9 @@ if raw in ('RESUME_MISSING', 'RESUME_WRONG_ID', 'RESUME_TRANSIENT', 'RESUME_BLOC
     if raw == 'RESUME_WRONG_ID':
         session = 'different-session'
     message = ('Error: no rollout found for thread id ' if is_codex else 'No conversation found with session ID: ') + session
+    if '--trust' in args:
+        # Cursor emits no missing-session or denial diagnostic, so every resume failure stays a plain failure.
+        message = 'Cursor resume failed for ' + session
     if raw == 'RESUME_TRANSIENT':
         message = 'Connection timed out while loading session ' + session
     if raw == 'RESUME_BLOCKED':
@@ -57,6 +60,13 @@ if 'exec' in args:
                   {'type': 'item.completed', 'item': {'type': 'command_execution', 'command': 'ls', 'status': 'completed'}},
                   {'type': 'item.completed', 'item': {'type': 'agent_message', 'text': json.dumps(block)}},
                   {'type': 'turn.completed', 'usage': {'input_tokens': 10, 'output_tokens': 3}}):
+        print(json.dumps(event))
+elif '--trust' in args:
+    session = args[args.index('--resume') + 1] if '--resume' in args else str(uuid.uuid4())
+    for event in ({'type': 'system', 'subtype': 'init', 'session_id': session},
+                  {'type': 'assistant', 'session_id': session, 'message': {'role': 'assistant', 'content': [{'type': 'text', 'text': json.dumps(block)}]}},
+                  {'type': 'result', 'subtype': 'success', 'is_error': False, 'result': json.dumps(block),
+                   'session_id': session, 'usage': {'inputTokens': 10}}):
         print(json.dumps(event))
 else:
     flag = '--resume' if '--resume' in args else '--session-id'

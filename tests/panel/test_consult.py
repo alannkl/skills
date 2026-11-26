@@ -209,8 +209,8 @@ class ConsultBehavior(unittest.TestCase):
             self.assertIn('unfinished or uncertain', result['error'])
 
     def test_open_ask_close_keeps_one_session(self):
-        """Given a brief, when opened then asked with an attachment, then both harnesses answer from one session that sees the readable directories and attachment, and a closed consultation refuses further questions."""
-        for harness in ('claude', 'codex'):
+        """Given a brief, when opened then asked with an attachment, then every bundled harness answers from one session that sees the readable directories and attachment, and a closed consultation refuses further questions."""
+        for harness in ('claude', 'codex', 'cursor'):
             with tempfile.TemporaryDirectory() as root, self.subTest(harness=harness):
                 root = Path(root)
                 (root / 'brief.md').write_text('Task: tighten the parser. First question: where is the risk?')
@@ -225,7 +225,13 @@ class ConsultBehavior(unittest.TestCase):
                                   '        return super().command(session_id, dict(settings, executable=' + repr(EXECUTABLE) + '))\n'
                                   'def create_adapter():\n    return Fixture()\n')
                 base = ['--adapter', f'fixture={plugin}']
-                opened = run(*base, 'open', str(root / 'c'), '--harness', 'fixture', '--model', 'fixture', '--effort', 'high',
+                effort = ['--effort', 'high']
+                if harness == 'cursor':
+                    refused = run(*base, 'open', str(root / 'e'), '--harness', 'fixture', '--model', 'fixture', *effort,
+                                  '--brief', str(root / 'brief.md'), expect=2)
+                    self.assertIn('model ID', refused['error'])
+                    effort = []
+                opened = run(*base, 'open', str(root / 'c'), '--harness', 'fixture', '--model', 'fixture', *effort,
                              '--brief', str(root / 'brief.md'), '--read', str(root / 'repo'))
                 self.assertTrue(opened['ok'], opened)
                 self.assertIn('where is the risk?', opened['text'])
@@ -239,7 +245,11 @@ class ConsultBehavior(unittest.TestCase):
                 self.assertEqual(json.loads((root / 'c' / 'consult.json').read_text())['session_id'], manifest['session_id'])
                 commands = [json.loads(p.read_text()) for p in sorted((root / 'c' / 'turns').glob('t*/command.json'))]
                 self.assertEqual(len(commands), 2)
-                self.assertTrue(all('--json-schema' in c['argv'] or '--output-schema' in c['argv'] for c in commands))
+                self.assertTrue(all('--json-schema' in c['argv'] or '--output-schema' in c['argv'] or 'JSON Schema' in c['argv'][-1]
+                                    for c in commands))
+                if harness == 'cursor':
+                    self.assertIn(str((root / 'repo').resolve()), commands[1]['argv'])
+                    self.assertNotIn('--force', commands[1]['argv'])
                 if harness == 'claude':
                     self.assertIn(str((root / 'repo').resolve()), commands[1]['argv'])
                     self.assertNotIn('Edit', ','.join(commands[1]['argv']).split('--tools')[1].split(' ')[0])

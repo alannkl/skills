@@ -2,7 +2,7 @@
 
 ## Open consultants
 
-Unless the user names a harness or model, the first consultant runs on the harness the host is not on, Codex for a Claude Code host and Claude Code for a Codex host, with that harness's model, effort and fallback rules from Default roster in `SKILL.md`. Further unnamed consultants alternate harnesses, starting with the host's own, so two consultants cover both.
+Unless the user names a harness or model, the first consultant runs on the harness the host is not on, Codex for a Claude Code host and Claude Code for a Codex host; the second on the host's own harness; and the third on Cursor. Further unnamed consultants repeat that order. Each takes its harness's model, effort and fallback rules from Default roster in `SKILL.md`.
 
 Before opening, report each consultant's harness, model and effort, the directories it may read, web access and the turn timeout, reusing existing authorization and confirming only what falls outside it. Open each consultant once per chat in its own directory under one consultation directory, such as `/absolute/consult/astra`, with the same brief stating the goal, scope and acceptance criteria; `ask` continues it, as described under Consultant commands. Run from this skill's directory:
 
@@ -44,12 +44,12 @@ Deliver routed work through the consultation ledger: list the current task's con
 
 | Command | Behavior |
 | --- | --- |
-| `open DIR --harness H --model M [--effort E] [--web \| --no-web] --brief FILE [--read DIR ...]` | Start a session and answer the brief. Web retrieval defaults to enabled; `--no-web` disables it. A fresh consultation requires a new directory. |
+| `open DIR --harness H --model M [--effort E] [--web \| --no-web] --brief FILE [--read DIR ...]` | Start a session and answer the brief. Web retrieval defaults to enabled; `--no-web` disables it. Cursor rejects `--effort` and `--no-web`. A fresh consultation requires a new directory. |
 | `ask DIR --question FILE [--attach FILE ...] [--read DIR ...]` | Resume the saved session. Also the retry path for a failed opening turn once the consultation exists, since a second `open` rejects that directory. Rejects closed consultations. |
 | `close DIR` | Close the consultation on stop or reset. |
 | `reopen DIR --question FILE [--attach FILE ...] [--read DIR ...]` | Reopen a closed consultation and answer the new question with the saved session, model, effort and permissions. |
 
-Attachments are inlined into the question. `--read` grants directory access through Claude's `--add-dir` or Codex's read-only sandbox. Neither harness grants the consultant write capability; consultants keep file reads, skills, subagents and web when enabled, and can read installed skills. Register external harnesses with `--adapter NAME=FILE`, as described under Additional harnesses in `references/panel-mode.md`.
+Attachments are inlined into the question. `--read` grants directory access through `--add-dir` on Claude and Cursor, or Codex's read-only sandbox. No harness grants the consultant write capability; consultants keep file reads, skills, subagents and web when enabled, and can read installed skills. Register external harnesses with `--adapter NAME=FILE`, as described under Additional harnesses in `references/panel-mode.md`.
 
 A one-field schema requires each reply as text. `--timeout` defaults to 600 seconds and cancels a turn that never returns, leaving the session open. Stdout carries one JSON object with `ok`, `text` and the turn number. Exit 2 means no reply; the `error` text distinguishes a timeout, failed turn or configuration error. An unconfirmed timeout cancellation warns that the process may still be running.
 

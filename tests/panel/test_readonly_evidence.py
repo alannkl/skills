@@ -43,6 +43,8 @@ class ReadonlyEvidence(unittest.TestCase):
                 self.assertIn('sandbox_mode="workspace-write"', resume)
                 self.assertTrue(all('sandbox_workspace_write.writable_roots=["/tmp/scratch"]' in argv for argv in (start, resume)))
                 self.assertTrue(all('approval_policy="never"' in argv for argv in (start, resume)))
+            elif name == 'cursor':
+                self.assertTrue(all('--force' in argv and argv[argv.index('--add-dir') + 1] == '/tmp/scratch' for argv in (start, resume)))
             else:
                 self.assertTrue(all('--tools' not in argv for argv in (start, resume)))
             self.assertFalse(any('bypass' in argument for argument in start + resume))

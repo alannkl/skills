@@ -171,6 +171,15 @@ class TaskBehavior(unittest.TestCase):
             task = ExecutionPolicy({'workspace': 'edit', 'web': False, 'checks': [[sys.executable, '-m', 'unittest']]} if kind == 'implementation' else {'web': True}, ['a', 'b'], 'a')
             for name, adapter in production_adapters().items():
                 settings = {'model': 'fixture', 'cwd': '/tmp/workspace', 'capabilities': task.capabilities()}
+                if name == 'cursor':
+                    if kind == 'implementation':
+                        with self.assertRaises(ValueError, msg='Cursor cannot disable web search'):
+                            adapter.command(None, settings)
+                        continue
+                    for argv in (adapter.command(None, settings)[0], adapter.command('existing', settings)[0]):
+                        self.assertIn('--force', argv)
+                        self.assertEqual(argv[argv.index('--workspace') + 1], '/tmp/workspace')
+                    continue
                 first, session = adapter.command(None, settings)
                 resumed, _ = adapter.command(session or 'existing', settings)
                 if name == 'claude':
@@ -265,6 +274,8 @@ class LiveRegression(unittest.TestCase):
                         self.assertEqual(argv[argv.index('--permission-mode') + 1], 'auto')
                         self.assertEqual(argv[argv.index('--permission-prompts') + 1], 'none')
                         self.assertFalse(any(argument.startswith('Bash(') for argument in argv))
+                    elif name == 'cursor':
+                        self.assertIn('--force', argv)
                     else:
                         self.assertIn('approval_policy="never"', argv)
 

@@ -170,6 +170,13 @@ The extension keeps the N-participant scheduler, presets, delivery records and e
 - Pointers in `references/brief-examples.md` and `references/skill-collaboration.md` follow the new files. After context compaction the host reloads the skill and the active mode's file, so the working record names the mode.
 - Final command: `python3 -m unittest discover -s tests/panel`. Result: **111 tests passed, no skips**, in 95 seconds. No script reads the instruction files, so the change is prose-only; the consult and panel read paths were not exercised live.
 - Pair mode is now consult mode, matching `consult.py` and its consultants now that it can run more than two agents; "pair" still selects it. Earlier entries keep the old name.
+
+## Bundled Cursor adapter, 2026-11-26
+
+- `adapters/cursor.py` runs `agent -p --output-format stream-json --stream-partial-output`: `--mode ask` for consultants, `--force` for participants, `--add-dir` for declared and scratch directories, `--resume` for follow-ups. The prompt and schema travel as the final argument because print mode does not read stdin (checked in the installed bundle, version 2026.11.22). Effort and `web: false` are rejected before launch; `consult.py open` rejects `--effort` for adapters without that setting.
+- Final command: `python3 -m unittest discover -s tests/panel`. Result: **112 tests passed, no skips**. The fixture gained a Cursor dialect; adapter loops now branch per harness.
+- Live evidence with GPT-5.6 Luna low on Cursor: a two-turn consultation read a `--read` file and answered the follow-up in one session; a full-tools turn wrote a file in its scratch directory and returned a valid envelope. Resuming an unknown UUID exited 0 and started an empty session under that ID, with a stream identical to a real resume, so session loss is undetectable and never triggers replacement. Thinking deltas streamed during reasoning.
+- Not exercised live: a full panel with a Cursor participant, `progress.py` on Cursor captures, and prompts near the Linux 128 KiB argument cap.
 ---
 
 Renamed from `agent-panel` to `panel` on 2026-09-11. Earlier entries keep the old paths.

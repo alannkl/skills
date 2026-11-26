@@ -132,6 +132,8 @@ async def open_consultation(args, adapters):
         raise ValueError(f'Consultation already exists at {root}')
     if args.harness not in adapters:
         raise ValueError(f'Unknown harness: {args.harness}')
+    if args.effort and 'effort' not in getattr(adapters[args.harness], 'settings_keys', {'effort'}):
+        raise ValueError(f'Harness {args.harness} takes no --effort; choose effort through the model ID')
     settings = {'model': args.model}
     if args.effort:
         settings['effort'] = args.effort
