@@ -195,6 +195,18 @@ class TaskBehavior(unittest.TestCase):
                     self.assertNotIn('--cd', resumed)
 
 
+    def test_cursor_web_off_fails_before_setup(self):
+        """Given a panel with a Cursor participant and web disabled, when the panel is created, then it fails before writing run state or launching anyone."""
+
+        roster = {'drafter': 'a', 'leader': 'a', 'execution': {'web': False}, 'participants': [
+            {'id': 'a', 'role': 'member', 'harness': 'claude', 'settings': {'model': 'fixture'}},
+            {'id': 'b', 'role': 'member', 'harness': 'cursor', 'settings': {'model': 'fixture'}}]}
+        with tempfile.TemporaryDirectory() as root:
+            with self.assertRaisesRegex(ValueError, 'web'):
+                Panel(preset('leader-members'), 'brief', roster, Path(root, 'run'), production_adapters())
+            self.assertFalse(Path(root, 'run').exists())
+
+
     def test_cancel_validation(self):
         """Given an assembled-result check still running, when the host cancels, then terminate its process and report interrupted without approval."""
 

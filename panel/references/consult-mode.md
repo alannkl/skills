@@ -2,7 +2,7 @@
 
 ## Open consultants
 
-Unless the user names a harness or model, the first consultant runs on the harness the host is not on, Codex for a Claude Code host and Claude Code for a Codex host; the second on the host's own harness; and the third on Cursor. Further unnamed consultants repeat that order. Each takes its harness's model, effort and fallback rules from Default roster in `SKILL.md`.
+Unless the user names a harness or model, consultants run in this order: Codex, Claude Code, Cursor for a Claude Code host; Claude Code, Codex, Cursor for a Codex host; and Claude Code, Codex, Cursor for any other host. Further unnamed consultants repeat that order. Each takes its harness's model, effort and fallback rules from Default roster in `SKILL.md`.
 
 Before opening, report each consultant's harness, model and effort, the directories it may read, web access and the turn timeout, reusing existing authorization and confirming only what falls outside it. Open each consultant once per chat in its own directory under one consultation directory, such as `/absolute/consult/astra`, with the same brief stating the goal, scope and acceptance criteria; `ask` continues it, as described under Consultant commands. Run from this skill's directory:
 

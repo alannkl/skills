@@ -101,7 +101,7 @@ def main():
                         help='Register a trusted Python adapter exporting create_adapter(); repeat to add harnesses')
     parser.add_argument('--run-dir', help='New directory outside source and skill; default: unique temporary directory')
     parser.add_argument('--max-cycles', type=int, help='Draft/review cycle cap per discussion, including brief changes; default 3, or the saved value with --continue or --reopen')
-    parser.add_argument('--idle-seconds', type=float, help='Kill an invocation after this long without new output, and cap each check; default: each harness\'s own window (Claude 300, Codex 600), or the saved value with --continue or --reopen')
+    parser.add_argument('--idle-seconds', type=float, help='Kill an invocation after this long without new output, and cap each check; default: each harness\'s own window (Claude 300, Codex and Cursor 600), or the saved value with --continue or --reopen')
     parser.add_argument('--run-seconds', type=float, help='Autonomous-work allowance per discussion; waiting for a host decision pauses it and only --continue or --reopen renews it; default 3600, or the saved value with --continue or --reopen')
     parser.add_argument('--report-seconds', type=float, help='Reporting reserve; default 10, or the saved value with --continue or --reopen')
     parser.add_argument('--unbounded', action='store_true', help='Explicit opt-in: no discussion deadline; idle and round caps still apply, so a turn that keeps writing is never killed. Saved across follow-ups until --run-seconds restores a ceiling')

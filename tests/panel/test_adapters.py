@@ -14,6 +14,7 @@ from unittest.mock import patch
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'panel' / 'scripts'))
 from adapters import production_adapters
 from adapters.base import atomic_json
+import progress
 from records import Records
 
 PACKAGE = Path(__file__).resolve().parents[2] / 'panel'
@@ -34,11 +35,11 @@ class AdapterBehavior(unittest.TestCase):
         """Given a failed native resume, when its diagnostic identifies the requested session as missing, then report session_unavailable; other errors and successful content must not trigger replacement."""
         async def scenario(root):
             for name, adapter in production_adapters().items():
-                # Cursor emits no missing-session or denial diagnostic, so those resumes stay plain failures.
+                # Cursor emits no missing-session diagnostic, so a missing session stays a plain failure.
                 detected = name != 'cursor'
                 for message, expected in [('RESUME_MISSING', 'session_unavailable' if detected else 'failed'),
                                           ('RESUME_WRONG_ID', 'failed'), ('RESUME_TRANSIENT', 'failed'),
-                                          ('RESUME_BLOCKED', 'blocked' if detected else 'failed'), ('RESUME_WITH_ACTIVITY', 'failed')]:
+                                          ('RESUME_BLOCKED', 'blocked'), ('RESUME_WITH_ACTIVITY', 'failed')]:
                     result = await adapter.resume('known-session', message, settings(root, name + message, name)).completion
                     self.assertEqual(result.outcome, expected, result.error)
                     self.assertEqual(result.session_id, 'known-session')
@@ -107,7 +108,7 @@ class AdapterBehavior(unittest.TestCase):
                 self.assertEqual(resumed[resumed.index('--resume') + 1], 'known-session')
                 self.assertEqual(resumed[resumed.index('--mode') + 1], 'ask')
                 self.assertEqual(resumed[resumed.index('--workspace') + 1], '/tmp')
-                self.assertIn('--stream-partial-output', resumed, 'text deltas keep the idle bound honest')
+                self.assertNotIn('--stream-partial-output', resumed, 'text deltas would arrive as fragmentary assistant events')
                 self.assertNotIn('--force', resumed)
             else:
                 self.assertEqual(resumed[resumed.index('--permission-mode') + 1], 'auto')
@@ -159,35 +160,61 @@ class AdapterBehavior(unittest.TestCase):
 
 
     def test_cursor_launch_and_terminal_contract(self):
-        """Given Cursor's print mode, when a consultant or participant launches, then the prompt and schema travel as the final argument, read-only runs use ask mode, full tools use --force with the scratch directory, unsupported effort or web-off settings fail before launch, and only a successful result event with the expected session completes."""
+        """Given Cursor's print mode, when a consultant or participant launches, then the prompt and schema travel on stdin, read-only runs use ask mode, full tools use --force with the scratch directory, web-off fails before launch, and only a successful result with the expected session completes, taking the final assistant message as the reply."""
 
         adapter = production_adapters()['cursor']
-        schema = {'type': 'object', 'properties': {'text': {'type': 'string'}}, 'required': ['text']}
-        base = {'model': 'gemini-4-neon', 'cwd': '/tmp/work', 'prompt': 'question'}
-        command, session = adapter.command(None, dict(base, schema=schema, capabilities={'web': True}, read_dirs=['/evidence']))
+        base = {'model': 'gemini-4-neon', 'cwd': '/tmp/work'}
+        command, session = adapter.command(None, dict(base, capabilities={'web': True}, read_dirs=['/evidence']))
         self.assertIsNone(session)
-        self.assertEqual(command[-2], '--')
-        self.assertTrue(command[-1].startswith('question'))
-        self.assertIn(json.dumps(schema), command[-1])
         self.assertEqual(command[command.index('--mode') + 1], 'ask')
         self.assertEqual(command[command.index('--add-dir') + 1], '/evidence')
+        self.assertEqual(command[-1], '/evidence', 'no prompt argument; the prompt arrives on stdin')
         full = {'web': True, 'full_tools': True}
         command, _ = adapter.command('s1', dict(base, capabilities=full, scratch_dir='/tmp/scratch'))
         self.assertIn('--force', command)
         self.assertNotIn('--mode', command)
         self.assertEqual(command[command.index('--add-dir') + 1], '/tmp/scratch')
-        for change in ({'effort': 'high'}, {'capabilities': {'web': False}}):
+        for call in (adapter.check, lambda s: adapter.command(None, s)):
             with self.assertRaises(ValueError):
-                adapter.command(None, dict(base, **change))
-        valid = {'type': 'result', 'subtype': 'success', 'is_error': False, 'result': '{"text":"ok"}', 'session_id': 's1'}
+                call(dict(base, capabilities={'web': False}))
+
+        async def schema_on_stdin(root):
+            schema = {'type': 'object', 'properties': {'text': {'type': 'string'}}, 'required': ['text']}
+            await adapter.start('question', dict(settings(root, 'schema', 'cursor'), schema=schema)).completion
+            sent = Path(root, 'schema', 'input.txt').read_text()
+            self.assertTrue(sent.startswith('question'))
+            self.assertIn(json.dumps(schema), sent)
+        self.run_scenario(schema_on_stdin)
+
         encoded = lambda *events: '\n'.join(json.dumps(e) for e in events)
-        self.assertEqual(adapter.parse(encoded({'type': 'system', 'subtype': 'init'}, valid), 0, None).block, {'text': 'ok'})
-        self.assertEqual(adapter.parse(encoded(valid), 0, 's1').outcome, 'completed')
-        self.assertEqual(adapter.parse(encoded(dict(valid, result='```json\n{"text":"ok"}\n```')), 0, 's1').outcome, 'completed')
-        for change in ({'subtype': 'error'}, {'is_error': True}, {'session_id': 's2'}, {'result': 'prose'}, {'session_id': None}):
-            self.assertNotEqual(adapter.parse(encoded(dict(valid, **change)), 0, 's1').outcome, 'completed')
-        self.assertNotEqual(adapter.parse(encoded(valid), 1, 's1').outcome, 'completed')
-        self.assertNotEqual(adapter.parse(encoded({'type': 'system'}), 0, 's1').outcome, 'completed')
+        message = lambda text: {'type': 'assistant', 'session_id': 's1', 'message': {'content': [{'type': 'text', 'text': text}]}}
+        tool = lambda result: {'type': 'tool_call', 'subtype': 'completed', 'session_id': 's1',
+                               'tool_call': {'readToolCall': {'args': {}, 'result': result}}}
+        valid = {'type': 'result', 'subtype': 'success', 'is_error': False, 'result': 'I will read it.{"text":"ok"}', 'session_id': 's1'}
+        narrated = (message('I will read it.'), tool({'success': {}}), message('{"text":"ok"}'))
+        self.assertEqual(adapter.parse(encoded(*narrated, valid), 0, None).block, {'text': 'ok'},
+                         'narration before a tool call stays out of the reply')
+        self.assertEqual(adapter.parse(encoded(*narrated, valid), 0, 's1').outcome, 'completed')
+        self.assertEqual(adapter.parse(encoded(dict(valid, result='{"text":"ok"}')), 0, 's1').block, {'text': 'ok'},
+                         'without assistant events the result text is the reply')
+        self.assertEqual(adapter.parse(encoded(message('```json\n{"text":"ok"}\n```'), valid), 0, 's1').outcome, 'completed')
+        for change in ({'subtype': 'error'}, {'is_error': True}, {'session_id': 's2'}, {'session_id': None}):
+            self.assertNotEqual(adapter.parse(encoded(*narrated, dict(valid, **change)), 0, 's1').outcome, 'completed')
+        self.assertNotEqual(adapter.parse(encoded(message('prose'), valid), 0, 's1').outcome, 'completed')
+        self.assertNotEqual(adapter.parse(encoded(*narrated, valid), 1, 's1').outcome, 'completed')
+        for denial in ({'permissionDenied': {}}, {'rejected': {}}):
+            blocked = adapter.parse(encoded(tool(denial), *narrated, valid), 0, 's1')
+            self.assertEqual(blocked.outcome, 'blocked')
+            self.assertEqual(blocked.raw_text, '{"text":"ok"}', 'a blocked turn keeps its contribution')
+        cut_off = adapter.parse(encoded({'type': 'system', 'subtype': 'init', 'session_id': 'new'}, message('partial')), -9, None)
+        self.assertEqual((cut_off.outcome, cut_off.session_id), ('failed', 'new'), 'a turn without a result keeps its session')
+
+        thinking = []
+        shown = [found for line in (encoded({'type': 'thinking', 'subtype': 'delta', 'text': 'Weighing '}),
+                                    encoded({'type': 'thinking', 'subtype': 'delta', 'text': 'it'}),
+                                    encoded({'type': 'thinking', 'subtype': 'completed'}), encoded(narrated[0]),
+                                    encoded(narrated[1]), encoded(narrated[2])) for found in progress.render(line, thinking)]
+        self.assertEqual(shown, [('reasoning', 'Weighing it'), ('message', 'I will read it.'), ('message', 'ok')])
 
 
     def test_subprocess_start_resume(self):

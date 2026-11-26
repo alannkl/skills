@@ -52,6 +52,9 @@ class PreDispatchTransient(Exception):
 
 
 class ProcessAdapter:
+    def check(self, settings):
+        """Raise ValueError for settings this harness cannot honor; callers run it before creating any state."""
+
     def session_unavailable(self, stderr, session_id):
         return False
 

@@ -115,7 +115,11 @@ async def turn(root, manifest, prompt, timeout, adapters):
         manifest['session_id'] = result.session_id
         if 'replacement' in details:
             details['replacement']['new_session'] = result.session_id
-        return dict(details, ok=True, text=result.block['text'], usage=result.usage)
+        text = result.block.get('text')
+        if not isinstance(text, str) or not text.strip():
+            # Harnesses without native schema enforcement can return other JSON; record a failed turn, never crash.
+            return dict(details, ok=False, error='consultant reply lacks the required text field')
+        return dict(details, ok=True, text=text, usage=result.usage)
 
 
 def record(root, manifest, question, outcome):
@@ -137,6 +141,8 @@ async def open_consultation(args, adapters):
     settings = {'model': args.model}
     if args.effort:
         settings['effort'] = args.effort
+    if hasattr(adapters[args.harness], 'check'):
+        adapters[args.harness].check(dict(settings, capabilities={'web': args.web}))
     question = Path(args.brief).read_text()
     read_dirs = [str(Path(d).resolve()) for d in args.read]
     prompt = compose(question, read_dirs, args.attach)
